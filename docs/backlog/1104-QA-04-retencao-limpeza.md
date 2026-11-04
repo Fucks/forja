@@ -14,7 +14,7 @@ terminadas.
 
 ## Objetivo
 Um job diário (e sob demanda) remove logs de runs terminadas há mais de N dias e, se o total passar do teto, os mais antigos
-primeiro; remove worktrees órfãos em `.sandcastle/worktrees/` dos projetos; e informa o espaço liberado.
+primeiro; remove worktrees órfãos em `~/.forja/worktrees/` (e containers `forja.workspace` sem run ativa); e informa o espaço liberado.
 
 ## Escopo
 **Inclui:** `planCleanup` puro, executor da limpeza, job pelos hooks do módulo de runs, rota sob demanda, item no diagnóstico com uso de disco.
@@ -39,7 +39,7 @@ export function planCleanup(dirs: LogDirInfo[], policy: { retentionDays: number;
 // nunca remove runs ativas; primeiro as vencidas, depois as mais antigas até caber no teto
 export async function runCleanup(deps: { logs: LogStore; runs: RunRepository; settings: SettingsService; projects: ProjectService; git: GitProvider; clock: Clock }): Promise<{ deletedRuns: number; freedBytes: number; prunedWorktrees: number }>;
 ```
-Worktrees: para cada projeto, `git worktree prune` e remoção de diretórios em `.sandcastle/worktrees/` sem worktree registrado
+Worktrees: para cada projeto, `git worktree prune` e remoção de diretórios em `~/.forja/worktrees/<projectId>/` sem worktree registrado
 (mesma ideia de `removeOrphanedWorktreeDirs` do `.sandcastle/main.mts`); nunca toca em worktrees de runs ativas.
 
 ### Passo a passo

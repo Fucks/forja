@@ -9,9 +9,9 @@ depends_on: [FLW-01, F-07]
 
 ## Contexto
 Atende RNF-EXT-01 e RNF-MAN-01. O motor e a UI precisam ser construídos e testados sem Docker e sem o `claude` real
-(o sandbox do pipeline não tem nenhum dos dois). A interface `AgentRuntime` espelha o que o Sandcastle 0.12 oferece
-(`createSandbox` por branch, `sandbox.run`, `Output.object`, `onAgentStreamEvent`, `usage`, `AbortSignal`) para que o
-`SandcastleAgentRuntime` (#{RT-01}) seja uma tradução fina. O `FakeAgentRuntime` é roteirizável e será usado por
+(o sandbox do pipeline não tem nenhum dos dois). A interface `AgentRuntime` é **da Forja**: workspace por item, rodar um
+agente com eventos em tempo real, saída estruturada, uso de tokens e cancelamento. A implementação real (`DockerAgentRuntime`,
+#{RT-01}/#{RT-02}) é própria e pode ser trocada no futuro (outro isolamento, outro harness) sem mexer no motor. O `FakeAgentRuntime` é roteirizável e será usado por
 todos os testes de motor, de executor e pelo modo demo (#{OBS-06}).
 
 ## Objetivo

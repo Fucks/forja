@@ -2,7 +2,7 @@
 key: RT-04
 title: "Parser de mensagens de limite de uso do Claude Code"
 type: issue
-milestone: "Fase 6 — Runtime Sandcastle"
+milestone: "Fase 6 — Runtime de agentes"
 labels: [tipo:feature, area:harness]
 depends_on: [ENG-01]
 ---

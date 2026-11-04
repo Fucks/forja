@@ -43,7 +43,7 @@ export const envSchema = z.object({
     FORJA_DATA_DIR: z.string().optional(),
     FORJA_PORT: z.coerce.number().int().min(1).max(65535).default(4317),
     FORJA_HOST: z.literal("127.0.0.1").default("127.0.0.1"),
-    FORJA_AGENT_RUNTIME: z.enum(["sandcastle", "fake"]).default("sandcastle"),
+    FORJA_AGENT_RUNTIME: z.enum(["docker", "fake"]).default("docker"),
     FORJA_LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 });
 export type Env = z.infer<typeof envSchema>;

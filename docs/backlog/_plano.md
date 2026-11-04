@@ -1,6 +1,6 @@
 # Plano do backlog — Forja
 
-Fonte de verdade de chaves, dependências e nomes de arquivos. 87 issues de agente + 6 tarefas humanas + PRD.
+Fonte de verdade de chaves, dependências e nomes de arquivos. 88 issues de agente + 6 tarefas humanas + PRD.
 
 ## Convenções que todas as issues seguem
 
@@ -52,7 +52,7 @@ Fonte de verdade de chaves, dependências e nomes de arquivos. 87 issues de agen
 | PRJ-02 | Telas de projetos: lista, criação e visão geral | 2 | PRJ-01, DS-04, F-09 | src/web/app/projects/use_projects.ts, src/web/app/projects/new_project_dialog.tsx, src/web/app/projects/projects_page.tsx |
 | CFG-01 | Cofre de segredos (AES-256-GCM) e redator de logs | 2 | F-05 | src/integrations/secrets/secret_box.ts, src/integrations/secrets/master_key.ts, src/integrations/secrets/secret_redactor.ts |
 | CFG-02 | Credenciais: API e tela | 2 | CFG-01, PRJ-01, DS-04, F-09 | src/shared/credential_types.ts, src/server/db/migrations/0200_credentials.sql, src/server/db/schema/credentials.ts |
-| CFG-03 | Diagnóstico do ambiente: Docker, git, gh, Node e Sandcastle | 2 | PRJ-01, DS-04, F-09 | src/shared/diagnostic_types.ts, src/server/diagnostics/diagnostic_checks.ts, src/server/diagnostics/diagnostic_service.ts |
+| CFG-03 | Diagnóstico do ambiente: Docker, git, gh e Node | 2 | PRJ-01, DS-04, F-09 | src/shared/diagnostic_types.ts, src/server/diagnostics/diagnostic_checks.ts, src/server/diagnostics/diagnostic_service.ts |
 | CFG-04 | Perfis de ferramentas: MCP, CodeGraph e permissões | 2 | PRJ-01, FLW-01, DS-04, F-09 | src/shared/tool_profile_types.ts, src/server/db/migrations/0300_tool_profiles.sql, src/server/db/schema/tool_profiles.ts |
 | CFG-05 | Configurações do projeto e globais | 2 | PRJ-02, CFG-02, CFG-04, FLW-01 | src/shared/settings_types.ts, src/server/db/migrations/0400_settings.sql, src/server/db/schema/settings.ts |
 | FLW-01 | Contrato FlowGraph e configs de todos os tipos de nó | 3 | F-01 | src/shared/flow_graph.ts, src/shared/conditions.ts, src/shared/node_configs/trigger_config.ts |
@@ -85,14 +85,15 @@ Fonte de verdade de chaves, dependências e nomes de arquivos. 87 issues de agen
 | ENG-11 | Recuperação de runs após reinício do servidor | 5 | ENG-10 | src/server/runtime/recovery.ts, src/engine/scheduler_types.ts, src/server/runtime/executor.ts |
 | ENG-12 | API de runs: iniciar, pausar, retomar, cancelar e repetir | 5 | ENG-11 | src/shared/run_types.ts, src/server/runs/run_service.ts, src/server/runs/run_view.ts |
 | ENG-13 | Executores dos nós trigger, script, condition e output | 5 | ENG-12 | src/server/runtime/executors/trigger_executor.ts, src/server/runtime/executors/script_executor.ts, src/server/runtime/executors/condition_executor.ts |
-| RT-01 | SandcastleAgentRuntime: workspace Docker por item | 6 | ENG-01 | src/integrations/agent_runtime/sandcastle_api.ts, src/integrations/agent_runtime/sandcastle_agent_runtime.ts |
-| RT-02 | Executar nó agente no Sandcastle com effort, saída estruturada e eventos | 6 | RT-01, RT-04 | src/integrations/agent_runtime/run_agent_node.ts, src/integrations/agent_runtime/agent_event_mapper.ts, src/integrations/agent_runtime/output_schema.ts |
+| RT-01 | Runtime próprio: workspace por item com git worktree e container Docker | 6 | ENG-01 | src/integrations/agent_runtime/worktree_manager.ts, src/integrations/agent_runtime/container_manager.ts, src/integrations/agent_runtime/docker_agent_runtime.ts |
+| RT-02 | Adaptador Claude Code: executar nó agente no container | 6 | RT-01, RT-04, RT-09 | src/integrations/agent_runtime/claude_command.ts, src/integrations/agent_runtime/run_agent_in_container.ts, src/integrations/agent_runtime/prompt_commands.ts |
 | RT-03 | Log store NDJSON por NodeRun com redação de segredos | 6 | RT-02, CFG-02, ENG-12 | src/shared/log_types.ts, src/server/runtime/log_store.ts, src/server/db/migrations/0610_log_index.sql |
 | RT-04 | Parser de mensagens de limite de uso do Claude Code | 6 | ENG-01 | src/integrations/agent_runtime/usage_limit_parser.ts |
 | RT-05 | Registro de uso de tokens e custo estimado | 6 | RT-03, CFG-05 | src/shared/usage_types.ts, src/server/db/migrations/0650_usage.sql, src/server/db/schema/usage.ts |
 | RT-06 | Imagem Docker do agente por projeto | 6 | RT-01, CFG-03, CFG-05 | assets/agent-image/Dockerfile, src/server/agent_images/agent_image_service.ts, src/web/app/projects/agent_image_panel.tsx |
-| RT-07 | Aplicar perfil de ferramentas (MCP, CodeGraph) no workspace | 6 | RT-05, CFG-04, ENG-13 | src/integrations/agent_runtime/tool_profile_files.ts, src/server/runtime/executor.ts, src/server/runtime/executors/agent_executor.ts |
+| RT-07 | Aplicar perfil de ferramentas por nó: MCP, CodeGraph e permissões | 6 | RT-05, CFG-04, ENG-13 | src/integrations/agent_runtime/tool_profile_materializer.ts, src/integrations/agent_runtime/docker_agent_runtime.ts, src/server/runtime/executor.ts |
 | RT-08 | Credenciais no runtime e teste de credencial | 6 | RT-07, CFG-02 | src/integrations/agent_runtime/agent_env.ts, src/server/credentials/credential_check.ts, src/server/runtime/executor.ts |
+| RT-09 | Parser do stream-json do Claude Code | 6 | ENG-01 | src/integrations/agent_runtime/stream_json_parser.ts |
 | OBS-01 | Execução ao vivo no canvas | 7 | EDT-09, ENG-12 | src/web/canvas/live/run_view_model.ts, src/web/canvas/live/use_live_run.ts, src/web/canvas/live/run_canvas.tsx |
 | OBS-02 | Drawer do nó com NodeRuns, entradas e saídas | 7 | OBS-01 | src/web/canvas/live/node_run_drawer.tsx, src/web/canvas/live/node_run_list.tsx, src/web/canvas/live/node_run_detail.tsx |
 | OBS-03 | Logs em streaming no drawer do nó | 7 | OBS-02, DS-06, RT-03 | src/web/logs/use_node_run_logs.ts, src/web/logs/to_log_lines.ts, src/web/logs/event_renderers.tsx |
@@ -121,8 +122,8 @@ Fonte de verdade de chaves, dependências e nomes de arquivos. 87 issues de agen
 | QA-04 | Retenção e limpeza de logs e workspaces | 11 | GIT-02, RT-06, OBS-03 | src/server/maintenance/plan_cleanup.ts, src/server/maintenance/cleanup_service.ts, src/server/runs/logs_routes.ts |
 | QA-05 | Empacotamento npm, docker-compose opcional e README | 11 | QA-02, QA-03, QA-04, GIT-05 | README.md, docker-compose.yml, Dockerfile.server |
 | HUM-01 | Definir nome do pacote npm e checar a marca Forja | 11 | — | (humano) |
-| HUM-02 | Gravar fixtures reais de eventos do Sandcastle e de limite de uso | 6 | — | (humano) |
-| HUM-03 | Validar MCP e permissões por run no Sandcastle | 6 | — | (humano) |
+| HUM-02 | Gravar fixtures reais do stream-json do Claude Code e de limite de uso | 6 | — | (humano) |
+| HUM-03 | Validar no container as flags de MCP, ferramentas, effort e saída estruturada | 6 | — | (humano) |
 | HUM-04 | Preparar a máquina: Docker Desktop, credencial, preços e imagem do agente | 6 | — | (humano) |
 | HUM-05 | Medir a economia de tokens com CodeGraph | 11 | — | (humano) |
 | HUM-06 | Teste de aceitação com 3 issues reais | 11 | — | (humano) |
@@ -131,4 +132,4 @@ Fonte de verdade de chaves, dependências e nomes de arquivos. 87 issues de agen
 
 - Após F-01: F-02, F-07 e FLW-01 desbloqueadas (F-03 → F-04 → F-05 seguem em cadeia por mexerem em scripts e no build). Após FLW-01: FLW-02, FLW-03, ENG-02 (e ENG-01 com F-07).
 - Ciclo central com fake: FLW-01 → ENG-01..ENG-10 → ENG-12 → OBS-01/OBS-03 → OBS-06 (demo).
-- O runtime real (RT-*) anda em paralelo ao motor a partir de ENG-01.
+- O runtime próprio (RT-01 workspace Docker, RT-09 parser de stream-json, RT-04 limite de uso, depois RT-02 adaptador do Claude Code) anda em paralelo ao motor a partir de ENG-01.

@@ -65,7 +65,8 @@ export type Condition =
 // configs (cada uma em seu arquivo em node_configs/)
 triggerConfig   = { kind: "manual" | "schedule" | "event" | "webhook" | "board_column" }   // detalhes do gatilho vivem em Trigger (#{TRG-01})
 sourceConfig    = { provider: "github" | "local"; label?: string; state: "open"; limit: number (1–100, padrão 20); skipBlocked: boolean (padrão true) }
-agentConfig     = { prompt: string; model?: string; effort?: Effort; maxIterations: number (1–200, padrão 1);
+agentConfig     = { prompt: string; model?: string; effort?: Effort; maxIterations: number (1–200, padrão 1); maxTurns?: number (1–500; `--max-turns` do CLI); maxBudgetUsd?: number (`--max-budget-usd`);
+                    expandPromptCommands: boolean (padrão true; executa !`cmd` do prompt no workspace, #{RT-02});
                     toolProfileId?: string; credentialId?: string; outputSchema?: JsonSchema;
                     workspace: "item" | "none"; timeoutMinutes: number (padrão 60); idleTimeoutMinutes: number (padrão 10);
                     retries: number (0–5, padrão 1); completionSignal?: string }

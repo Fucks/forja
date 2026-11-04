@@ -2,7 +2,7 @@
 key: RT-08
 title: "Credenciais no runtime e teste de credencial"
 type: issue
-milestone: "Fase 6 — Runtime Sandcastle"
+milestone: "Fase 6 — Runtime de agentes"
 labels: [tipo:seguranca, area:credenciais]
 depends_on: [RT-07, CFG-02]
 ---
@@ -56,7 +56,7 @@ export async function checkCredential(id: string, deps: { credentials: Credentia
 ## Critérios de aceite
 - [ ] Token OAuth gera `CLAUDE_CODE_OAUTH_TOKEN` e nunca `ANTHROPIC_API_KEY` no mesmo env.
 - [ ] O token do GitHub vai como `GH_TOKEN` e `GITHUB_TOKEN`.
-- [ ] Nenhum segredo aparece em argumentos de comando (teste inspeciona as chamadas da fachada).
+- [ ] Nenhum segredo aparece em argumentos de comando (teste inspeciona as chamadas registradas no `FakeCommandRunner`).
 - [ ] Nó sem credencial falha com a mensagem clara e sem retentativas.
 - [ ] "Testar" mostra sucesso ou o erro do agente; `lastCheckedAt` é atualizado.
 - [ ] `npm run typecheck`, `npm run lint` e `npm run test` passam.

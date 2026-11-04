@@ -2,7 +2,7 @@
 key: RT-06
 title: "Imagem Docker do agente por projeto"
 type: issue
-milestone: "Fase 6 — Runtime Sandcastle"
+milestone: "Fase 6 — Runtime de agentes"
 labels: [tipo:feature, area:harness]
 depends_on: [RT-01, CFG-03, CFG-05]
 ---
@@ -47,8 +47,10 @@ export interface AgentImageService {
 - Build: `docker build -t <imagem> --build-arg AGENT_UID=<uid> --build-arg AGENT_GID=<gid> -f <dockerfile> <contexto>` via
   `CommandRunner` com timeout de 30 min (no Windows, UID/GID = 1000). Linhas pelo `onLine`.
 - Rotas: `GET /api/projects/:id/agent-image`, `POST /api/projects/:id/agent-image/build` (resposta SSE com as linhas e um evento final `done`).
-- `assets/agent-image/Dockerfile`: copie `.sandcastle/Dockerfile` deste repositório, com Playwright opcional via
-  `ARG INSTALL_PLAYWRIGHT=false`, e mantenha o MCP do CodeGraph e o trust do workspace.
+- `assets/agent-image/Dockerfile`: parta de `.sandcastle/Dockerfile` deste repositório (usuário `agent`, worktree em
+  `/home/agent/workspace`, `ENTRYPOINT ["sleep", "infinity"]` — o contrato que o runtime próprio de #{RT-01} espera), com
+  Playwright opcional via `ARG INSTALL_PLAYWRIGHT=false`, CodeGraph instalado **sem** registrar MCP em escopo de usuário (os MCPs
+  vêm por nó via `--mcp-config`, #{RT-07}), o trust de `/home/agent/workspace` e comentários reescritos para a Forja (sem referências ao Sandcastle).
 
 ### Passo a passo
 1. Dockerfile padrão.

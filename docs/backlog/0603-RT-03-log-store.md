@@ -2,7 +2,7 @@
 key: RT-03
 title: "Log store NDJSON por NodeRun com redação de segredos"
 type: issue
-milestone: "Fase 6 — Runtime Sandcastle"
+milestone: "Fase 6 — Runtime de agentes"
 labels: [tipo:feature, area:logs]
 depends_on: [RT-02, CFG-02, ENG-12]
 ---
@@ -34,7 +34,7 @@ Alterar:
 - `src/server/runs/logs_routes.ts` (substituir o stub de #{F-03})
 - `src/server/runtime/executor.ts` (usar o `LogStore` em `onAgentEvent`)
 - `src/server/app.ts` (`AppDeps` ganha `logs: LogStore`)
-- `src/server/main.ts` (com `FORJA_AGENT_RUNTIME=sandcastle` — o padrão —, usar `createSandcastleAgentRuntime({ api: createSandcastleApi(), ... })` de #{RT-01}; `fake` continua com o runtime indisponível até #{OBS-06})
+- `src/server/main.ts` (com `FORJA_AGENT_RUNTIME=docker` — o padrão —, usar `createDockerAgentRuntime(...)` de #{RT-01}/#{RT-02}; `fake` continua com o runtime indisponível até #{OBS-06})
 
 ### Contratos
 ```ts

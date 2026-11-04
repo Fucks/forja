@@ -2,14 +2,14 @@
 key: RT-05
 title: "Registro de uso de tokens e custo estimado"
 type: issue
-milestone: "Fase 6 — Runtime Sandcastle"
+milestone: "Fase 6 — Runtime de agentes"
 labels: [tipo:feature, area:uso-custo]
 depends_on: [RT-03, CFG-05]
 ---
 
 ## Contexto
 Atende RF-OBS-05 e RNF-CUS-01: todo token gasto precisa ser atribuível a projeto, fluxo, nó, item e iteração. O
-Sandcastle devolve tokens (input, output, cache read, cache creation), não dólares; o custo é estimado com a tabela de
+o resultado do Claude Code traz tokens (input, output, cache read, cache creation) e um `total_cost_usd` estimado pelo próprio CLI; a Forja grava os tokens e calcula o custo com a tabela de
 preços por modelo das configurações globais (#{CFG-05}), editável pelo usuário. O orçamento (#{ENG-07}) precisa do
 gasto do dia ao criar o scheduler.
 

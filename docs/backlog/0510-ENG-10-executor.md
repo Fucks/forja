@@ -36,7 +36,7 @@ Criar:
 - `src/server/runtime/executor.test.ts`
 - `src/server/runtime/workspace_pool.test.ts`
 - `src/integrations/agent_runtime/unavailable_agent_runtime.ts` (implementa `AgentRuntime` rejeitando tudo com
-  `WorkspaceError("Runtime de agentes ainda não configurado")`; é o que `main.ts` usa até #{RT-03} ligar o Sandcastle
+  `WorkspaceError("Runtime de agentes ainda não configurado")`; é o que `main.ts` usa até #{RT-03} ligar o runtime Docker
   e #{OBS-06} ligar o modo demo — código de produção nunca importa de `src/test/`)
 Alterar:
 - `src/server/app.ts` e `src/server/main.ts` (`AppDeps` ganha `agentRuntime` e `executor`)

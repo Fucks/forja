@@ -1,6 +1,6 @@
 ---
 key: CFG-03
-title: "Diagnóstico do ambiente: Docker, git, gh, Node e Sandcastle"
+title: "Diagnóstico do ambiente: Docker, git, gh e Node"
 type: issue
 milestone: "Fase 2 — Projetos, credenciais e ferramentas"
 labels: [tipo:feature, area:ferramentas]
@@ -13,8 +13,7 @@ usuário precisa de uma tela que diga exatamente o quê e como resolver, em vez 
 obscuro. Usa o `CommandRunner` de #{PRJ-01}.
 
 ## Objetivo
-`GET /api/diagnostics` devolve o estado de Node, git, Docker (cliente e daemon), `gh` (instalado e autenticado) e
-`@ai-hero/sandcastle` (versão), e `/settings/diagnostics` mostra cada item com o que fazer quando falha.
+`GET /api/diagnostics` devolve o estado de Node, git, Docker (cliente e daemon), `gh` (instalado e autenticado), e `/settings/diagnostics` mostra cada item com o que fazer quando falha.
 
 ## Escopo
 **Inclui:** service de diagnóstico, rota, tela, cache de 30 s, botão "verificar de novo".
@@ -39,14 +38,14 @@ export type DiagnosticStatus = "ok" | "warning" | "error";
 export interface DiagnosticItem { id: string; label: string; status: DiagnosticStatus; detail: string; fix?: string }
 export interface DiagnosticReport { checkedAt: string; items: DiagnosticItem[] }
 
-export type DiagnosticCheck = (deps: { commands: CommandRunner; nodeVersion: string; readPackageVersion(name: string): string | undefined }) => Promise<DiagnosticItem>;
+export type DiagnosticCheck = (deps: { commands: CommandRunner; nodeVersion: string; }) => Promise<DiagnosticItem>;
 export const DIAGNOSTIC_CHECKS: DiagnosticCheck[]; // ordem de exibição; #{RT-06} acrescenta um item
 export function createDiagnosticService(deps: { checks: DiagnosticCheck[]; commands: CommandRunner; clock: Clock; cacheMs?: number }): { run(force?: boolean): Promise<DiagnosticReport> };
 ```
 Checks: `node` (≥ 22, senão error), `git --version`, `docker version --format '{{.Server.Version}}'` (cliente sem daemon →
 error "Docker instalado mas não está rodando"; ausente → error com fix "instale o Docker Desktop"), `gh --version`
-e `gh auth status` (sem auth → warning "PRs e issues do GitHub não vão funcionar"; fix `gh auth login`),
-`sandcastle` (versão instalada de `@ai-hero/sandcastle`). Cada comando com timeout de 10 s; timeout → error com detalhe.
+e `gh auth status` (sem auth → warning "PRs e issues do GitHub não vão funcionar"; fix `gh auth login`).
+Cada comando com timeout de 10 s; timeout → error com detalhe.
 
 ### Passo a passo
 1. Implemente cada check como função pura sobre o `CommandRunner`.

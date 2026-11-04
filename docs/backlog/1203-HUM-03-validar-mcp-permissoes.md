@@ -1,24 +1,26 @@
 ---
 key: HUM-03
-title: "Validar MCP e permissões por run no Sandcastle"
+title: "Validar no container as flags de MCP, ferramentas, effort e saída estruturada"
 type: human
-milestone: "Fase 6 — Runtime Sandcastle"
+milestone: "Fase 6 — Runtime de agentes"
 labels: [tipo:qualidade, area:ferramentas]
 depends_on: []
 ---
 
 ## Contexto
-A Forja aplica perfis de ferramentas escrevendo `.mcp.json` e `.claude/settings.local.json` no worktree do item (#{RT-07}),
-porque o Sandcastle 0.12 não repassa `--mcp-config`/`--allowedTools` por run. É preciso confirmar com o CLI real que o
-Claude Code dentro do container carrega esses arquivos sem diálogo de confiança e respeita `allow`/`deny`, e que prompts com
-`{{` literal (escapado) não são reprocessados pelo Sandcastle.
+O runtime próprio (#{RT-01}, #{RT-02}, #{RT-07}) monta o comando do Claude Code com `--mcp-config <arquivo> --strict-mcp-config`,
+`--allowedTools`/`--disallowedTools`, `--permission-mode`, `--effort` e `--json-schema`, com o worktree montado num container e o
+`.git` comum montado no mesmo caminho. É preciso confirmar com o CLI real, dentro da imagem do agente, que tudo se comporta como a
+documentação diz — inclusive no Windows com Docker Desktop.
 
 ## O que fazer
-1. Construir a imagem do agente e abrir um sandbox com `createSandbox` num repositório de teste.
-2. Escrever `.mcp.json` com o servidor `codegraph` e `.claude/settings.local.json` negando `Write`; rodar um agente que tente listar as ferramentas MCP e escrever um arquivo.
-3. Verificar nos eventos: MCP `codegraph` conectado; escrita negada.
-4. Rodar um prompt contendo `\{{x}}` renderizado pela Forja como `{{x}}` e ver se o Sandcastle tenta substituir.
-5. Registrar o resultado no PRD ("Premissas e decisões em aberto") e, se algo não funcionar, abrir issue de agente com a alternativa (ex.: `claude mcp add` no setup do sandbox, ou PR no Sandcastle para expor flags).
+1. Construir a imagem do agente (#{RT-06}) e subir um container com um worktree de um repositório de teste montado como o runtime faz
+   (worktree em `/home/agent/workspace`, `.git` comum no mesmo caminho absoluto). Rodar `git status` dentro dele.
+2. Rodar `claude -p` com `--mcp-config` do CodeGraph e `--strict-mcp-config`: o `init` do stream-json mostra `codegraph` conectado e nenhum outro MCP.
+3. Rodar com `--disallowedTools Write` pedindo para criar um arquivo: a escrita é negada (`permission_denials`).
+4. Rodar com `--effort low` e `--effort max` e com `--json-schema`: o resultado tem `structured_output` válido.
+5. Passar `CLAUDE_CODE_OAUTH_TOKEN` via `docker exec -e CLAUDE_CODE_OAUTH_TOKEN` (valor só no ambiente do host) e confirmar autenticação.
+6. Registrar o resultado no PRD ("Premissas e decisões em aberto"); se algo divergir, abrir issue de agente com a correção.
 
 ## Resultado esperado
-Estratégia de ferramentas por nó confirmada (ou issue de correção criada) e anotada no PRD.
+Flags e montagem confirmadas (ou issues de correção criadas) e anotadas no PRD com a versão do CLI.

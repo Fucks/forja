@@ -18,7 +18,7 @@ Existem `parsePromptTemplate`, `renderPrompt`, `availableVariables(node, graph)`
 
 ## Escopo
 **Inclui:** sintaxe `{{caminho}}`, escape `\{{`, renderização de objetos como JSON indentado, lista de variáveis por nó.
-**Não inclui:** argumentos `promptArgs` do Sandcastle (o runtime #{RT-02} entrega o texto já renderizado).
+**Não inclui:** comandos de contexto `` !`cmd` `` (passam intactos pelo template; o runtime os expande, #{RT-02}).
 
 ## Especificação técnica
 ### Arquivos

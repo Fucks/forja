@@ -48,7 +48,7 @@ Alterar:
 
 Os prompts: copie de `.sandcastle/*.md` e troque `{{TASK_ID}}`→`{{item.number}}`, `{{ISSUE_TITLE}}`→`{{item.title}}`,
 `{{BRANCH}}`→`{{item.branch}}`, `{{BASE_BRANCH}}`→`{{project.baseBranch}}`, `{{EVIDENCE_DIR}}`→`.pr-evidence`. Mantenha
-as diretivas `` !`…` `` (o Sandcastle as executa no sandbox).
+as diretivas `` !`…` `` (o runtime da Forja as executa no workspace, #{RT-02}).
 
 ### Passo a passo
 1. Prompts adaptados e template.

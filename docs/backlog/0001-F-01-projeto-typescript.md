@@ -54,9 +54,9 @@ Scripts:
 
 **Todas as dependências do MVP são instaladas aqui**, de uma vez, para que as dezenas de issues seguintes não editem
 `package.json` em paralelo (o planner do Sandcastle bloqueia issues que mexem no mesmo arquivo). Versões: a estável mais
-recente de cada uma, exceto `@ai-hero/sandcastle`, fixada em `0.12.0` e movida para `dependencies`.
+recente de cada uma. `@ai-hero/sandcastle` continua **só em `devDependencies`**: ele é usado pelo pipeline `.sandcastle/` que desenvolve a Forja, não pelo produto (a Forja tem runtime próprio).
 
-- `dependencies`: `@ai-hero/sandcastle@0.12.0`, `zod`, `fastify`, `fastify-type-provider-zod`, `@fastify/static`,
+- `dependencies`: `zod`, `fastify`, `fastify-type-provider-zod`, `@fastify/static`,
   `better-sqlite3`, `drizzle-orm`, `execa`, `open`, `ulid`, `yaml`, `croner`, `diff`, `react`, `react-dom`,
   `react-router`, `@tanstack/react-query`, `@tanstack/react-virtual`, `zustand`, `@xyflow/react`, `elkjs`,
   `@radix-ui/react-dialog`, `@radix-ui/react-select`, `@radix-ui/react-switch`, `@radix-ui/react-slider`,
@@ -64,7 +64,7 @@ recente de cada uma, exceto `@ai-hero/sandcastle`, fixada em `0.12.0` e movida p
   `@radix-ui/react-tabs`, `clsx`, `tailwind-merge`, `lucide-react`, `@fontsource/ibm-plex-sans`,
   `@fontsource/ibm-plex-sans-condensed`, `@fontsource/jetbrains-mono`, `@uiw/react-codemirror`,
   `@codemirror/autocomplete`, `@codemirror/lang-markdown`, `@codemirror/view`, `@codemirror/state`, `recharts`, `@dnd-kit/core`.
-- `devDependencies`: `typescript`, `tsx`, `vitest`, `@types/node`, `vite-tsconfig-paths`, `eslint`, `typescript-eslint`,
+- `devDependencies`: `@ai-hero/sandcastle` (versão atual, para o pipeline), `typescript`, `tsx`, `vitest`, `@types/node`, `vite-tsconfig-paths`, `eslint`, `typescript-eslint`,
   `eslint-plugin-react-hooks`, `eslint-plugin-check-file`, `eslint-config-prettier`, `prettier`, `vite`,
   `@vitejs/plugin-react`, `tailwindcss`, `@tailwindcss/vite`, `@testing-library/react`, `@testing-library/jest-dom`,
   `@testing-library/user-event`, `jsdom`, `tsup`, `concurrently`, `@types/react`, `@types/react-dom`,

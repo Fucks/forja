@@ -2,7 +2,7 @@
 key: HUM-04
 title: "Preparar a máquina: Docker Desktop, credencial, preços e imagem do agente"
 type: human
-milestone: "Fase 6 — Runtime Sandcastle"
+milestone: "Fase 6 — Runtime de agentes"
 labels: [tipo:infra, area:harness]
 depends_on: []
 ---

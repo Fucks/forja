@@ -16,10 +16,10 @@ repositório, worktree, PR nem limite de uso do Claude Code.
 
 O espaço da Forja: **um canvas editável que é a própria linha de montagem em execução** — com itens
 (issues) fluindo como fichas, concorrência limitada visível (Dev ×3, Reviewer ×1), loops com teto, logs por
-nó, board derivado do fluxo e operação AFK que sobrevive a limites de uso. Em vez de reinventar sandbox e
-harness, a Forja usa o **Sandcastle como runtime** (Docker por nó, Claude Code, effort, saída estruturada,
-stream de eventos, uso de tokens, cancelamento) e coloca em cima o que ele não tem: visual, motor de fluxo,
-board, schedules e armazenamento.
+nó, board derivado do fluxo e operação AFK que sobrevive a limites de uso. A Forja tem **motor e runtime próprios**
+(worktree + Docker por item + adaptador direto do `claude -p` stream-json), aproveitando do Sandcastle as ideias que deram
+certo no pipeline atual (workspace por branch, iterações com sinal de conclusão, comandos de contexto no prompt), mas sem
+depender dele — decisão do produto para poder mudar o funcionamento e acrescentar recursos no futuro (2026-11-04).
 
 ## Sistemas analisados
 
@@ -38,7 +38,9 @@ board, schedules e armazenamento.
   hooks (`npm i`, `codegraph init`), cancelamento por `AbortSignal`, multiagente (Claude Code, Codex, OpenCode...).
 - Pontos fracos: sem UI, sem schedule, sem board, sem persistência de estado; o usuário mantém um script
   de ~800 linhas com guarda de limite de uso escrita à mão (`usage_guard.mts`).
-- O que vale copiar: tudo — é o runtime. A Forja é "o Sandcastle visual".
+- O que vale copiar: o modelo de workspace por branch montado em container, iterações em contexto limpo até um sinal de
+  conclusão, comandos de contexto no prompt, saída estruturada validada, hooks de setup (`npm i`, `codegraph init`). Decisão:
+  **reimplementar no runtime próprio da Forja** em vez de usar como dependência (controle total sobre o funcionamento).
 
 ### Paperclip — control plane — github.com/paperclipai/paperclip (`npx paperclipai onboard`)
 - O que é: app Node + React (MIT) que gerencia agentes como empresa: organograma, metas, tickets,
@@ -142,9 +144,9 @@ board, schedules e armazenamento.
   `num_turns`, `session_id`, `duration_ms`, `permission_denials`, `structured_output`).
 - Autenticação: `ANTHROPIC_API_KEY` (sempre usada em `-p` se presente; sobrepõe a assinatura) ou
   `CLAUDE_CODE_OAUTH_TOKEN` gerado por `claude setup-token` (assinatura, válido por um ano).
-- Sandcastle 0.12 expõe `effort` e `permissionMode` em `claudeCode()`; MCPs são configurados na imagem Docker
-  (`claude mcp add --scope user codegraph ...`) — ferramentas por nó exigem montar `.mcp.json`/settings no
-  worktree ou flags extras (a confirmar na integração; ver tarefa humana HUM-03).
+- Com o adaptador próprio, todas essas flags são usadas diretamente por nó — inclusive `--mcp-config --strict-mcp-config`
+  e `--allowedTools`/`--disallowedTools`, o que permite perfil de ferramentas por nó sem tocar no repositório (validar no
+  container: tarefa humana HUM-03).
 
 ## Matriz de funcionalidades
 
@@ -188,8 +190,8 @@ Legenda: ✅ completo · ◐ parcial · ❌ não tem · ? não verificado.
 - **Falta de visibilidade** ("o que está rodando, em qual issue, por que travou") → canvas ao vivo, timeout por
   inatividade explícito, log por `NodeRun`.
 - **Windows de segunda classe** (RondoFlow só WSL; split panes não funcionam no Windows Terminal) → CI em Windows.
-- **Ferramentas de terceiros pequenas e abandonadas** (Opaal arquivado, Vibe Kanban em sunset) → construir sobre um
-  runtime ativo (Sandcastle) e manter fluxos exportáveis para não prender o usuário.
+- **Ferramentas de terceiros pequenas e abandonadas** (Opaal arquivado, Vibe Kanban em sunset) → não depender de
+  biblioteca de orquestração externa no núcleo (motor e runtime próprios) e manter fluxos exportáveis para não prender o usuário.
 
 ## Oportunidades priorizadas
 
@@ -200,7 +202,7 @@ Legenda: ✅ completo · ◐ parcial · ❌ não tem · ? não verificado.
 | 3 | Loop com condição e teto, custo por iteração | Matriz: lacuna; dor de custo | Alto | Médio | MVP | RF-RUN-03, RF-OBS-05 |
 | 4 | Retomada automática após limite de uso | `usage_guard.mts` do usuário; matriz: lacuna | Alto | Médio | MVP | RF-RUN-06, RF-TRG-01 |
 | 5 | Board derivado do fluxo | Vibe Kanban/Paperclip só board; Opaal colunas | Alto | Médio | MVP | RF-BRD-* |
-| 6 | Sandcastle como runtime (Docker por nó) | Requisito do usuário; Sandcastle 0.12 cobre effort, saída, stream, usage, abort | Alto | Baixo | MVP | RNF-EXT-01, RF-RUN-* |
+| 6 | Runtime próprio com Docker por item | Requisito do usuário (Docker por nó; motor próprio para evoluir); flags do CLI cobrem effort, saída estruturada, MCP, ferramentas | Alto | Médio | MVP | RNF-EXT-01, RF-RUN-08 |
 | 7 | Orçamento e concorrência global | Dores de quota e TPM | Alto | Baixo | MVP | RF-RUN-07, RNF-CUS-01 |
 | 8 | Entrada/saída por nó + repetir NodeRun | n8n, LangGraph Studio | Médio | Médio | MVP (repetir); Pós-MVP (fork com estado editado) | RF-OBS-02, RF-RUN-01 |
 | 9 | Perfis de ferramentas (CodeGraph/MCP) por nó | Dockerfile do usuário já usa CodeGraph | Médio | Médio | MVP | RF-CFG-02 |
@@ -213,14 +215,14 @@ Legenda: ✅ completo · ◐ parcial · ❌ não tem · ? não verificado.
 
 ## Riscos e restrições
 
-- **Sandcastle 0.x**: API instável. Mitigação: tudo atrás de `AgentRuntime` com `SandcastleAgentRuntime` e
-  `FakeAgentRuntime`; versão fixada; testes de contrato.
+- **Runtime próprio**: mais código para manter (worktrees, containers, parsing do stream-json, encerramento de processos no
+  Windows). Mitigação: tudo atrás de `AgentRuntime`; `CommandRunner` injetável; fixtures reais do CLI (HUM-02); testes de integração opcionais com Docker.
 - **Mudanças no CLI/termos do Claude Code** (flags, contagem de uso, `setup-token`): adaptador isolado, diagnóstico
   da versão na tela de configurações.
 - **Docker obrigatório no Windows** (Docker Desktop, desempenho de bind mount): premissa registrada; diagnóstico
   claro quando o Docker não está disponível.
-- **Segurança**: agentes rodam com permissões amplas dentro do container (`bypassPermissions` é o padrão do
-  Sandcastle em AFK). O container é a fronteira; nunca montar o home do usuário nem segredos fora do env.
+- **Segurança**: agentes rodam com permissões amplas dentro do container (`bypassPermissions` dentro do container
+  é o padrão). O container é a fronteira; nunca montar o home do usuário nem segredos fora do env.
 - **Nome**: `forja` no npm está retido pelo npm (pacote removido); há repos homônimos no GitHub, incluindo
   `nandomoreirame/forja` ("GUI client for vibe coders", 12 estrelas). Distribuir como pacote com escopo.
 - **Concorrência dominante**: a Anthropic pode lançar um visual oficial para agent teams; o diferencial deve
