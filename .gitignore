@@ -1,0 +1,13 @@
+/node_modules/
+/dist/
+.env
+coverage/
+*.tsbuildinfo
+.pr-evidence/
+.codegraph/
+.codegraph-wsl/
+.sandcastle/logs/
+.sandcastle/state/
+.sandcastle/worktrees/
+.forja-data/
+docs/backlog/_preview.md
