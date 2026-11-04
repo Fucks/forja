@@ -1,6 +1,6 @@
 ---
 key: GIT-05
-title: "Template \"Pipeline Sandcastle\" de ponta a ponta"
+title: "Template Pipeline Sandcastle de ponta a ponta"
 type: issue
 milestone: "Fase 10 — Git, gates e PR"
 labels: [tipo:feature, area:fluxo]
