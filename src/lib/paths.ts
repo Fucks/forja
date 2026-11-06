@@ -13,7 +13,7 @@ export interface ForjaPaths {
     tmp: string;
 }
 
-export type RuntimeAssetKind = "migrations" | "prompts" | "assets" | "web";
+export type RuntimeAssetKind = "migrations" | "prompts" | "assets";
 
 export type RuntimeAssetResolver = (kind: RuntimeAssetKind, ...segments: string[]) => string;
 
@@ -22,7 +22,6 @@ export const RUNTIME_ASSET_SOURCE_DIRS: Record<RuntimeAssetKind, string> = {
     migrations: path.join("src", "server", "db", "migrations"),
     prompts: path.join("src", "server"),
     assets: "assets",
-    web: path.join("dist", "web"),
 };
 
 export function resolvePaths(dataDir: string | undefined, homeDir: string): ForjaPaths {

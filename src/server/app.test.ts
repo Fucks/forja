@@ -36,4 +36,11 @@ describe("buildApp", () => {
 
         expect(response.statusCode).toBe(404);
     });
+
+    it("answers an unknown /api route with a JSON 404", async () => {
+        const response = await app.inject({ method: "GET", url: "/api/inexistente" });
+
+        expect(response.statusCode).toBe(404);
+        expect(response.headers["content-type"]).toContain("application/json");
+    });
 });

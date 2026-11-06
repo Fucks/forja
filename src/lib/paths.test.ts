@@ -106,12 +106,6 @@ describe("createRuntimeAssetResolver", () => {
                 path.join(repositoryRoot, "assets", "agent-image", "Dockerfile"),
             );
         });
-
-        it("finds the web app in the Vite output folder", () => {
-            const webDir = resolveAsset("web");
-
-            expect(webDir).toBe(path.join(repositoryRoot, "dist", "web"));
-        });
     });
 
     describe("when running from the bundle", () => {
@@ -132,10 +126,12 @@ describe("createRuntimeAssetResolver", () => {
             );
         });
 
-        it("finds the web app next to the bundle", () => {
-            const webDir = resolveAsset("web");
+        it("finds assets next to the bundle", () => {
+            const dockerfilePath = resolveAsset("assets", "agent-image", "Dockerfile");
 
-            expect(webDir).toBe(path.join(bundleDir, "web"));
+            expect(dockerfilePath).toBe(
+                path.join(bundleDir, "assets", "agent-image", "Dockerfile"),
+            );
         });
     });
 });

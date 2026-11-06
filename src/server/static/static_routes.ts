@@ -1,16 +1,19 @@
 import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import fastifyStatic from "@fastify/static";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
-import { runtimeAssetPath } from "@/lib/paths.js";
 import type { RouteModule } from "@/server/route_modules.js";
 
 const WEB_APP_ENTRY_FILE = "index.html";
 const API_PATH_PREFIX = "/api";
 const NOT_FOUND_STATUS = 404;
 
-export const registerStaticRoutes: RouteModule = (app) => serveWebApp(app, runtimeAssetPath("web"));
+// Only the bundle ships the SPA (dist/web next to dist/cli.js); from the sources, Vite serves it.
+const BUNDLED_WEB_DIR = fileURLToPath(new URL("web", import.meta.url));
+
+export const registerStaticRoutes: RouteModule = (app) => serveWebApp(app, BUNDLED_WEB_DIR);
 
 export async function serveWebApp(app: FastifyInstance, webDir: string): Promise<void> {
     if (!existsSync(webDir)) {
