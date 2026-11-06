@@ -1,7 +1,11 @@
 {
     "name": "forja",
     "private": true,
+    "version": "0.1.0",
     "type": "module",
+    "bin": {
+        "forja": "./dist/cli.js"
+    },
     "engines": {
         "node": ">=22"
     },
