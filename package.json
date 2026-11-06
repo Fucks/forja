@@ -1,12 +1,17 @@
 {
     "name": "forja",
     "private": true,
+    "version": "0.1.0",
     "type": "module",
+    "bin": {
+        "forja": "./dist/cli.js"
+    },
     "engines": {
         "node": ">=22"
     },
     "scripts": {
         "sandcastle": "tsx .sandcastle/main.mts",
+        "dev:server": "tsx watch src/cli.ts --no-open",
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
         "format": "prettier --write .",

@@ -16,7 +16,8 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "isolatedModules": true
+        "isolatedModules": true,
+        "resolveJsonModule": true
     },
     "include": ["src", "e2e", "*.config.ts"],
     "exclude": [".sandcastle", "dist"]
