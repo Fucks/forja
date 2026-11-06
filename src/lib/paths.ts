@@ -13,7 +13,9 @@ export interface ForjaPaths {
     tmp: string;
 }
 
-export type RuntimeAssetKind = "migrations" | "prompts" | "assets";
+export const RUNTIME_ASSET_KINDS = ["migrations", "prompts", "assets"] as const;
+
+export type RuntimeAssetKind = (typeof RUNTIME_ASSET_KINDS)[number];
 
 export type RuntimeAssetResolver = (kind: RuntimeAssetKind, ...segments: string[]) => string;
 

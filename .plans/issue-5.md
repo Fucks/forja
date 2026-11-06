@@ -25,6 +25,6 @@
 - [x] 4. Test + implement `runtimeAssetPath` for source and build — `src/lib/paths.ts`, `paths.test.ts`
 - [x] 5. Test + implement `serveWebApp`/`registerStaticRoutes` with fallback — `src/server/static/static_routes.ts`, `static_routes.test.ts`
 - [x] 6. Register the static module at the root, outside `/api` — `src/server/app.ts`
-- [ ] 7. tsup config with asset copy + `dev`/`build`/`start` scripts — `tsup.config.ts`, `package.json`
-- [ ] 8. Manual check: `npm run build && npm run start -- --no-open` serves SPA, fallback, `/api/health` JSON; `npm run dev` serves on 5317
+- [x] 7. tsup config with asset copy + `dev`/`build`/`start` scripts — `tsup.config.ts`, `package.json`
+- [x] 8. Manual check: `npm run build && npm run start -- --no-open` serves SPA, fallback, `/api/health` JSON; `npm run dev` serves on 5317
 - [ ] 9. Self-review checklist (section 5) and feedback loops (section 6)

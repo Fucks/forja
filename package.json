@@ -11,7 +11,10 @@
     },
     "scripts": {
         "sandcastle": "tsx .sandcastle/main.mts",
+        "dev": "concurrently -k -n server,web \"npm:dev:server\" \"vite\"",
         "dev:server": "tsx watch src/cli.ts --no-open",
+        "build": "vite build && tsup",
+        "start": "node dist/cli.js",
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
         "format": "prettier --write .",
