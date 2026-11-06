@@ -13,7 +13,7 @@ interface CliFlags {
     port: string | undefined;
     dataDir: string | undefined;
     shouldOpenBrowser: boolean;
-    seedDemo: boolean;
+    shouldSeedDemo: boolean;
 }
 
 try {
@@ -29,7 +29,7 @@ async function runForja(args: string[]): Promise<void> {
     const paths = resolvePaths(env.FORJA_DATA_DIR, homedir());
     ensureDataDirs(paths);
 
-    await startServer({ env, paths, options: { seedDemo: flags.seedDemo } });
+    await startServer({ env, paths, options: { seedDemo: flags.shouldSeedDemo } });
 
     if (flags.shouldOpenBrowser) {
         await open(buildServerUrl(env));
@@ -51,7 +51,7 @@ function parseCliFlags(args: string[]): CliFlags {
         port: values.port,
         dataDir: values["data-dir"],
         shouldOpenBrowser: !values["no-open"],
-        seedDemo: values["seed-demo"],
+        shouldSeedDemo: values["seed-demo"],
     };
 }
 
