@@ -19,6 +19,7 @@ describe("parseFlowGraph", () => {
 
         expect(parseFlowGraph(loopFlow)).toEqual(loopFlow);
     });
+
     it("accepts a graph with a single trigger and fills port defaults", () => {
         const graph = parseFlowGraph(buildSingleTriggerGraph());
 

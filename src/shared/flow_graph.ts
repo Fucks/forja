@@ -22,8 +22,10 @@ export const PORT_TYPES = [
 ] as const;
 export type PortType = (typeof PORT_TYPES)[number];
 
+const PORT_NAME_PATTERN = /^[a-z][a-zA-Z0-9_]*$/;
+
 export const portSchema = z.object({
-    name: z.string().regex(/^[a-z][a-zA-Z0-9_]*$/),
+    name: z.string().regex(PORT_NAME_PATTERN),
     type: z.enum(PORT_TYPES),
     required: z.boolean().default(true),
     schema: jsonSchemaSchema.optional(),
@@ -43,6 +45,8 @@ export const NODE_TYPES = [
 export type NodeType = (typeof NODE_TYPES)[number];
 
 const positionSchema = z.object({ x: z.number(), y: z.number() });
+export type Position = z.infer<typeof positionSchema>;
+
 const sizeSchema = z.object({ width: z.number().positive(), height: z.number().positive() });
 
 const nodeFieldsSchema = z.object({
@@ -65,6 +69,7 @@ export const flowNodeSchema = z.discriminatedUnion("type", [
     nodeFieldsSchema.extend({ type: z.literal("output"), config: outputConfigSchema }),
 ]);
 export type FlowNode = z.infer<typeof flowNodeSchema>;
+export type NodeOfType<Type extends NodeType> = Extract<FlowNode, { type: Type }>;
 
 const portReferenceSchema = z.object({ nodeId: z.string(), port: z.string() });
 

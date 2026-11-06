@@ -1,10 +1,17 @@
-import type { FlowEdge, FlowGraph, FlowGroup, FlowNode, NodeType } from "@/shared/flow_graph.js";
+import type {
+    FlowEdge,
+    FlowGraph,
+    FlowGroup,
+    FlowNode,
+    NodeOfType,
+    NodeType,
+    Position,
+} from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 
-type NodeOfType<Type extends NodeType> = Extract<FlowNode, { type: Type }>;
-
 const GRID_STEP_PX = 240;
-const GROUP_PADDING_PX = 40;
+const LOOP_GROUP_PADDING_PX = 40;
+const MAP_GROUP_PADDING_PX = 2 * LOOP_GROUP_PADDING_PX;
 const NODE_HEIGHT_PX = 120;
 const ROWS_PER_GROUP = 3;
 const LOOP_COLUMNS = { first: 2, count: 3 };
@@ -208,7 +215,7 @@ function buildReviewLoopGroup(parentGroupId: string): FlowGroup {
         kind: "loop",
         label: "Revisar até aprovar",
         parentGroupId,
-        ...frameColumns(LOOP_COLUMNS, GROUP_PADDING_PX),
+        ...frameColumns(LOOP_COLUMNS, LOOP_GROUP_PADDING_PX),
         config: {
             maxIterations: 3,
             until: { op: "eq", path: "review.approved", value: true },
@@ -232,7 +239,7 @@ function buildMapGroup(group: {
         id: group.id,
         kind: "map",
         label: group.label,
-        ...frameColumns(group.columns, 2 * GROUP_PADDING_PX),
+        ...frameColumns(group.columns, MAP_GROUP_PADDING_PX),
         config: { concurrency: group.concurrency, barrier: false, failFast: false },
     };
 }
@@ -255,7 +262,7 @@ function frameColumns(
 function createNodeOfType<Type extends NodeType>(
     type: Type,
     id: string,
-    position: { x: number; y: number },
+    position: Position,
 ): NodeOfType<Type> {
     const node = createDefaultNode(type, id, position);
     if (!isNodeOfType(node, type)) {
@@ -280,6 +287,6 @@ function connect(
     };
 }
 
-function gridPosition(column: number, row = 0): { x: number; y: number } {
+function gridPosition(column: number, row = 0): Position {
     return { x: column * GRID_STEP_PX, y: row * NODE_HEIGHT_PX };
 }

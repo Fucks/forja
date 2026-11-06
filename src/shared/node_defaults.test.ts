@@ -128,7 +128,7 @@ describe("createDefaultNode", () => {
         ]);
     });
 
-    it("does not share ports between created nodes", () => {
+    it("does not share ports or config between created nodes", () => {
         const first = createDefaultNode("agent", "n1", ORIGIN);
         const second = createDefaultNode("agent", "n2", ORIGIN);
 

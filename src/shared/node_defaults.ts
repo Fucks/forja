@@ -1,4 +1,11 @@
-import type { FlowNode, NodeType, Port, PortType } from "@/shared/flow_graph.js";
+import type {
+    FlowNode,
+    NodeOfType,
+    NodeType,
+    Port,
+    PortType,
+    Position,
+} from "@/shared/flow_graph.js";
 import { agentConfigSchema } from "@/shared/node_configs/agent_config.js";
 import { GATE_REVIEW_SECTIONS } from "@/shared/node_configs/gate_config.js";
 import { gitConfigSchema } from "@/shared/node_configs/git_config.js";
@@ -6,28 +13,15 @@ import { outputConfigSchema } from "@/shared/node_configs/output_config.js";
 import { scriptConfigSchema } from "@/shared/node_configs/script_config.js";
 import { sourceConfigSchema } from "@/shared/node_configs/source_config.js";
 
-type NodeOfType<Type extends NodeType> = Extract<FlowNode, { type: Type }>;
 type NodeTemplate<Type extends NodeType> = Pick<
     NodeOfType<Type>,
     "type" | "label" | "inputs" | "outputs" | "config"
 >;
 
-export function createDefaultNode(
-    type: NodeType,
-    id: string,
-    position: { x: number; y: number },
-): FlowNode {
+export function createDefaultNode(type: NodeType, id: string, position: Position): FlowNode {
     const template = structuredClone(NODE_TEMPLATES[type]);
 
     return { ...template, id, position: { ...position } };
-}
-
-function requiredPort(name: string, type: PortType): Port {
-    return { name, type, required: true };
-}
-
-function optionalPort(name: string, type: PortType): Port {
-    return { name, type, required: false };
 }
 
 const NODE_TEMPLATES: { [Type in NodeType]: NodeTemplate<Type> } = {
@@ -88,3 +82,11 @@ const NODE_TEMPLATES: { [Type in NodeType]: NodeTemplate<Type> } = {
         config: outputConfigSchema.parse({ moveItemTo: "done" }),
     },
 };
+
+function requiredPort(name: string, type: PortType): Port {
+    return { name, type, required: true };
+}
+
+function optionalPort(name: string, type: PortType): Port {
+    return { name, type, required: false };
+}
