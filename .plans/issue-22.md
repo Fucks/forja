@@ -17,7 +17,7 @@
 
 ## Tasks
 
-- [ ] 1. `agent_types.ts`, `json_schema.ts`, `validation_issue.ts` (pure declarations)
+- [x] 1. `agent_types.ts`, `json_schema.ts`, `validation_issue.ts` (pure declarations)
 - [ ] 2. Test + implement `conditionSchema` and `evaluateCondition` — `src/shared/conditions.ts`, `conditions.test.ts`
 - [ ] 3. Config schemas of the eight node types — `src/shared/node_configs/*.ts`
 - [ ] 4. Test + implement node/edge/group/graph schemas, `parseFlowGraph`, `FlowGraphParseError` — `flow_graph.ts`, `flow_graph.test.ts` (unknown node type path, group limits)
