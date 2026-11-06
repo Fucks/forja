@@ -18,7 +18,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `loadEnv` defaults, invalid port and non-loopback host — `src/lib/env.ts`, `src/lib/env.test.ts`
+- [x] 1. Test + implement `loadEnv` defaults, invalid port and non-loopback host — `src/lib/env.ts`, `src/lib/env.test.ts`
 - [ ] 2. Test + implement `resolvePaths` (home default, explicit dir, path with spaces) and `ensureDataDirs` — `src/lib/paths.ts`, `src/lib/paths.test.ts`
 - [ ] 3. Test + implement `buildApp`, `routeModules` with stubs and `GET /api/health` — `src/server/app.ts`, `src/server/route_modules.ts`, `src/server/health/health_routes.ts`, stubs, `src/server/app.test.ts`
 - [ ] 4. `startServer` with graceful shutdown on SIGINT/SIGTERM — `src/server/main.ts`
