@@ -23,4 +23,4 @@
 - [x] 3. Test + implement `buildApp`, `routeModules` with stubs and `GET /api/health` — `src/server/app.ts`, `src/server/route_modules.ts`, `src/server/health/health_routes.ts`, stubs, `src/server/app.test.ts`
 - [x] 4. `startServer` with graceful shutdown on SIGINT/SIGTERM — `src/server/main.ts`
 - [x] 5. CLI `forja` with flags, browser opening, `bin` and `dev:server` script — `src/cli.ts`, `package.json`
-- [ ] 6. Self-review checklist and feedback loops; manual smoke run of `npm run dev:server`
+- [x] 6. Self-review checklist and feedback loops; manual smoke run of `npm run dev:server`

@@ -25,7 +25,7 @@ try {
 
 async function runForja(args: string[]): Promise<void> {
     const flags = parseCliFlags(args);
-    const env = loadEnv({ ...process.env, ...overrideEnvWithFlags(flags) });
+    const env = loadEnv({ ...process.env, ...collectEnvOverrides(flags) });
     const paths = resolvePaths(env.FORJA_DATA_DIR, homedir());
     ensureDataDirs(paths);
 
@@ -55,7 +55,7 @@ function parseCliFlags(args: string[]): CliFlags {
     };
 }
 
-function overrideEnvWithFlags(flags: CliFlags): Record<string, string> {
+function collectEnvOverrides(flags: CliFlags): Record<string, string> {
     const overrides: Record<string, string> = {};
     if (flags.port !== undefined) {
         overrides.FORJA_PORT = flags.port;
