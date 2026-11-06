@@ -11,6 +11,7 @@
     },
     "scripts": {
         "sandcastle": "tsx .sandcastle/main.mts",
+        "dev:server": "tsx watch src/cli.ts --no-open",
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
         "format": "prettier --write .",
