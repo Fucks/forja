@@ -1,6 +1,6 @@
 const LOCALE = "pt-BR";
 const USD_PREFIX = "US$ ";
-const SMALLEST_CENT_USD = 0.01;
+const ONE_CENT_USD = 0.01;
 const DECIMAL_STEPS_PER_UNIT = 10;
 
 const MS_PER_SECOND = 1_000;
@@ -53,7 +53,7 @@ export function formatUsd(amount: number): string {
     assertNonNegativeFinite(amount);
 
     // Agent calls often cost fractions of a cent; two decimals would show them as free.
-    const isBelowOneCent = amount > 0 && amount < SMALLEST_CENT_USD;
+    const isBelowOneCent = amount > 0 && amount < ONE_CENT_USD;
     if (isBelowOneCent) {
         return USD_PREFIX + twoSignificantDigits.format(amount);
     }
@@ -84,7 +84,13 @@ function truncateToOneDecimal(value: number, unitSize: number): number {
     return decimalSteps / DECIMAL_STEPS_PER_UNIT;
 }
 
-function splitIntoClockUnits(ms: number): { hours: number; minutes: number; seconds: number } {
+interface ClockUnits {
+    hours: number;
+    minutes: number;
+    seconds: number;
+}
+
+function splitIntoClockUnits(ms: number): ClockUnits {
     return {
         hours: Math.floor(ms / MS_PER_HOUR),
         minutes: Math.floor((ms % MS_PER_HOUR) / MS_PER_MINUTE),

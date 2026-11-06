@@ -39,17 +39,6 @@ export class FakeClock implements Clock {
         this.moveTo(date.getTime());
     }
 
-    private moveTo(targetMs: number): void {
-        let timer = this.takeNextTimerDueBy(targetMs);
-        while (timer) {
-            this.currentMs = timer.dueAtMs;
-            timer.fire();
-            timer = this.takeNextTimerDueBy(targetMs);
-        }
-
-        this.currentMs = targetMs;
-    }
-
     private schedule(timer: PendingTimer): void {
         const timersInDueOrder = [...this.pendingTimers, timer].sort(
             (a, b) => a.dueAtMs - b.dueAtMs,
@@ -59,6 +48,17 @@ export class FakeClock implements Clock {
 
     private cancel(timer: PendingTimer): void {
         this.pendingTimers = this.pendingTimers.filter((pending) => pending !== timer);
+    }
+
+    private moveTo(targetMs: number): void {
+        let timer = this.takeNextTimerDueBy(targetMs);
+        while (timer) {
+            this.currentMs = timer.dueAtMs;
+            timer.fire();
+            timer = this.takeNextTimerDueBy(targetMs);
+        }
+
+        this.currentMs = targetMs;
     }
 
     private takeNextTimerDueBy(targetMs: number): PendingTimer | undefined {
