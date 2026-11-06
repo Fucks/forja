@@ -27,4 +27,4 @@
 - [x] 6. Register the static module at the root, outside `/api` — `src/server/app.ts`
 - [x] 7. tsup config with asset copy + `dev`/`build`/`start` scripts — `tsup.config.ts`, `package.json`
 - [x] 8. Manual check: `npm run build && npm run start -- --no-open` serves SPA, fallback, `/api/health` JSON; `npm run dev` serves on 5317
-- [ ] 9. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 9. Self-review checklist (section 5) and feedback loops (section 6)
