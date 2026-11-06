@@ -1,0 +1,285 @@
+import type { FlowEdge, FlowGraph, FlowGroup, FlowNode, NodeType } from "@/shared/flow_graph.js";
+import { createDefaultNode } from "@/shared/node_defaults.js";
+
+type NodeOfType<Type extends NodeType> = Extract<FlowNode, { type: Type }>;
+
+const GRID_STEP_PX = 240;
+const GROUP_PADDING_PX = 40;
+const NODE_HEIGHT_PX = 120;
+const ROWS_PER_GROUP = 3;
+const LOOP_COLUMNS = { first: 2, count: 3 };
+
+const TL_OUTPUT_SCHEMA = {
+    type: "object",
+    properties: { ready: { type: "boolean" } },
+    required: ["ready"],
+};
+
+const REVIEWER_OUTPUT_SCHEMA = {
+    type: "object",
+    properties: { approved: { type: "boolean" }, notes: { type: "string" } },
+    required: ["approved", "notes"],
+};
+
+export function buildCanonicalFlow(): FlowGraph {
+    const specifyGroup = buildMapGroup({
+        id: "specify",
+        label: "Especificar",
+        columns: { first: 2, count: 1 },
+        concurrency: 1,
+    });
+    const developGroup = buildMapGroup({
+        id: "develop",
+        label: "Desenvolver",
+        columns: { first: 3, count: 1 },
+        concurrency: 3,
+    });
+    const reviewGroup = buildMapGroup({
+        id: "review_and_open_pr",
+        label: "Revisar e abrir PR",
+        columns: { first: 4, count: 1 },
+        concurrency: 1,
+    });
+
+    return {
+        schemaVersion: 1,
+        nodes: [
+            buildTriggerNode(),
+            buildSourceNode(),
+            { ...buildTechLeadNode(), parentGroupId: specifyGroup.id },
+            { ...buildDeveloperNode(), parentGroupId: developGroup.id },
+            { ...buildReviewerNode(), parentGroupId: reviewGroup.id },
+            { ...buildOpenPullRequestNode(), parentGroupId: reviewGroup.id },
+            { ...buildDoneOutputNode(), parentGroupId: reviewGroup.id },
+        ],
+        edges: [
+            connect(["trigger", "items"], ["source", "trigger"]),
+            connect(["source", "items"], ["tl", "item"]),
+            connect(["tl", "summary"], ["dev", "spec"]),
+            connect(["dev", "summary"], ["reviewer", "context"]),
+            connect(["reviewer", "summary"], ["open_pr", "body"]),
+        ],
+        groups: [specifyGroup, developGroup, reviewGroup],
+    };
+}
+
+export function buildLoopFlow(): FlowGraph {
+    const itemsGroup = buildMapGroup({
+        id: "items",
+        label: "Por item",
+        columns: LOOP_COLUMNS,
+        concurrency: 2,
+    });
+    const reviewLoop = buildReviewLoopGroup(itemsGroup.id);
+
+    return {
+        schemaVersion: 1,
+        nodes: [
+            buildTriggerNode(),
+            buildSourceNode(),
+            { ...buildLoopDeveloperNode(), parentGroupId: reviewLoop.id },
+            { ...buildTestsScriptNode(), parentGroupId: reviewLoop.id },
+            { ...buildLoopReviewerNode(), parentGroupId: reviewLoop.id },
+        ],
+        edges: [
+            connect(["trigger", "items"], ["source", "trigger"]),
+            connect(["source", "items"], ["dev", "item"]),
+            connect(["dev", "summary"], ["review", "context"]),
+            connect(["tests", "result"], ["review", "tests"]),
+            connect(["review", "summary"], ["dev", "notes"]),
+        ],
+        groups: [itemsGroup, reviewLoop],
+    };
+}
+
+function buildTriggerNode(): FlowNode {
+    return createDefaultNode("trigger", "trigger", gridPosition(0));
+}
+
+function buildSourceNode(): FlowNode {
+    const source = createNodeOfType("source", "source", gridPosition(1));
+
+    return { ...source, config: { ...source.config, label: "Sandcastle", skipBlocked: true } };
+}
+
+function buildTechLeadNode(): FlowNode {
+    const techLead = createNodeOfType("agent", "tl", gridPosition(2));
+
+    return {
+        ...techLead,
+        label: "TL",
+        config: {
+            ...techLead.config,
+            prompt: "Escreva a especificação da issue #{{item.number}} ({{item.title}}):\n{{item.body}}",
+            workspace: "none",
+            effort: "high",
+            toolProfileId: "tlp_builtin_readonly",
+            outputSchema: TL_OUTPUT_SCHEMA,
+        },
+    };
+}
+
+function buildDeveloperNode(): FlowNode {
+    const developer = createNodeOfType("agent", "dev", gridPosition(3));
+
+    return {
+        ...developer,
+        label: "Dev",
+        inputs: [...developer.inputs, { name: "spec", type: "text", required: true }],
+        config: {
+            ...developer.config,
+            prompt: "Implemente a issue #{{item.number}} seguindo a especificação:\n{{inputs.spec}}",
+            maxIterations: 50,
+            completionSignal: "<promise>COMPLETE</promise>",
+            toolProfileId: "tlp_builtin_codegraph",
+        },
+    };
+}
+
+function buildReviewerNode(): FlowNode {
+    const reviewer = createNodeOfType("agent", "reviewer", gridPosition(4));
+
+    return {
+        ...reviewer,
+        label: "Reviewer",
+        config: {
+            ...reviewer.config,
+            prompt: "Revise o branch da issue #{{item.number}}.\n{{inputs.context}}",
+            effort: "high",
+            outputSchema: REVIEWER_OUTPUT_SCHEMA,
+        },
+    };
+}
+
+function buildOpenPullRequestNode(): FlowNode {
+    const openPullRequest = createNodeOfType("git", "open_pr", gridPosition(4, 1));
+
+    return {
+        ...openPullRequest,
+        label: "Abrir PR",
+        config: { ...openPullRequest.config, action: "open_pr", bodyFrom: "summary" },
+    };
+}
+
+function buildDoneOutputNode(): FlowNode {
+    const output = createNodeOfType("output", "output", gridPosition(4, 2));
+
+    return { ...output, config: { ...output.config, moveItemTo: "done" } };
+}
+
+function buildLoopDeveloperNode(): FlowNode {
+    const developer = createNodeOfType("agent", "dev", gridPosition(2));
+
+    return {
+        ...developer,
+        label: "Desenvolver",
+        inputs: [...developer.inputs, { name: "notes", type: "text", required: false }],
+        config: {
+            ...developer.config,
+            prompt: "Implemente a issue #{{item.number}}. Comentários da revisão:\n{{inputs.notes}}",
+        },
+    };
+}
+
+function buildTestsScriptNode(): FlowNode {
+    const tests = createNodeOfType("script", "tests", gridPosition(3));
+
+    return { ...tests, label: "Testes", config: { ...tests.config, command: "npm run test" } };
+}
+
+function buildLoopReviewerNode(): FlowNode {
+    const reviewer = createNodeOfType("agent", "review", gridPosition(4));
+
+    return {
+        ...reviewer,
+        label: "Revisar",
+        inputs: [...reviewer.inputs, { name: "tests", type: "json", required: true }],
+        config: {
+            ...reviewer.config,
+            prompt: "Revise a issue #{{item.number}} com o resultado dos testes:\n{{inputs.tests}}",
+            outputSchema: REVIEWER_OUTPUT_SCHEMA,
+        },
+    };
+}
+
+function buildReviewLoopGroup(parentGroupId: string): FlowGroup {
+    return {
+        id: "review_loop",
+        kind: "loop",
+        label: "Revisar até aprovar",
+        parentGroupId,
+        ...frameColumns(LOOP_COLUMNS, GROUP_PADDING_PX),
+        config: {
+            maxIterations: 3,
+            until: { op: "eq", path: "review.approved", value: true },
+            carry: ["notes"],
+        },
+    };
+}
+
+interface ColumnSpan {
+    first: number;
+    count: number;
+}
+
+function buildMapGroup(group: {
+    id: string;
+    label: string;
+    columns: ColumnSpan;
+    concurrency: number;
+}): FlowGroup {
+    return {
+        id: group.id,
+        kind: "map",
+        label: group.label,
+        ...frameColumns(group.columns, 2 * GROUP_PADDING_PX),
+        config: { concurrency: group.concurrency, barrier: false, failFast: false },
+    };
+}
+
+function frameColumns(
+    columns: ColumnSpan,
+    paddingPx: number,
+): Pick<FlowGroup, "position" | "size"> {
+    const topLeft = gridPosition(columns.first);
+
+    return {
+        position: { x: topLeft.x - paddingPx, y: topLeft.y - paddingPx },
+        size: {
+            width: columns.count * GRID_STEP_PX + 2 * paddingPx,
+            height: ROWS_PER_GROUP * NODE_HEIGHT_PX + 2 * paddingPx,
+        },
+    };
+}
+
+function createNodeOfType<Type extends NodeType>(
+    type: Type,
+    id: string,
+    position: { x: number; y: number },
+): NodeOfType<Type> {
+    const node = createDefaultNode(type, id, position);
+    if (!isNodeOfType(node, type)) {
+        throw new Error(`createDefaultNode("${type}") returned a ${node.type} node`);
+    }
+
+    return node;
+}
+
+function isNodeOfType<Type extends NodeType>(node: FlowNode, type: Type): node is NodeOfType<Type> {
+    return node.type === type;
+}
+
+function connect(
+    [fromNodeId, fromPort]: [string, string],
+    [toNodeId, toPort]: [string, string],
+): FlowEdge {
+    return {
+        id: `${fromNodeId}.${fromPort}->${toNodeId}.${toPort}`,
+        from: { nodeId: fromNodeId, port: fromPort },
+        to: { nodeId: toNodeId, port: toPort },
+    };
+}
+
+function gridPosition(column: number, row = 0): { x: number; y: number } {
+    return { x: column * GRID_STEP_PX, y: row * NODE_HEIGHT_PX };
+}

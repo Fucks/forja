@@ -5,8 +5,20 @@ import {
     type MapConfig,
     parseFlowGraph,
 } from "@/shared/flow_graph.js";
+import { buildCanonicalFlow, buildLoopFlow } from "@/test/factories/flow_graph_factory.js";
 
 describe("parseFlowGraph", () => {
+    it("accepts the canonical flow unchanged", () => {
+        const canonicalFlow = buildCanonicalFlow();
+
+        expect(parseFlowGraph(canonicalFlow)).toEqual(canonicalFlow);
+    });
+
+    it("accepts the loop flow unchanged", () => {
+        const loopFlow = buildLoopFlow();
+
+        expect(parseFlowGraph(loopFlow)).toEqual(loopFlow);
+    });
     it("accepts a graph with a single trigger and fills port defaults", () => {
         const graph = parseFlowGraph(buildSingleTriggerGraph());
 
@@ -58,6 +70,73 @@ describe("parseFlowGraph", () => {
         const parse = () => parseFlowGraph({ ...graph, nodes: [triggerWithAgentConfig] });
 
         expect(parse).toThrow(/nodes\.0\.config\.kind/);
+    });
+});
+
+describe("buildCanonicalFlow", () => {
+    it("chains three maps with concurrency 1, 3 and 1", () => {
+        const { groups } = buildCanonicalFlow();
+
+        expect(groups.map((group) => [group.id, group.kind, group.config])).toEqual([
+            ["specify", "map", { concurrency: 1, barrier: false, failFast: false }],
+            ["develop", "map", { concurrency: 3, barrier: false, failFast: false }],
+            ["review_and_open_pr", "map", { concurrency: 1, barrier: false, failFast: false }],
+        ]);
+    });
+
+    it("places each node in its stage of the PRD flow", () => {
+        const { nodes } = buildCanonicalFlow();
+
+        expect(nodes.map((node) => [node.id, node.type, node.parentGroupId])).toEqual([
+            ["trigger", "trigger", undefined],
+            ["source", "source", undefined],
+            ["tl", "agent", "specify"],
+            ["dev", "agent", "develop"],
+            ["reviewer", "agent", "review_and_open_pr"],
+            ["open_pr", "git", "review_and_open_pr"],
+            ["output", "output", "review_and_open_pr"],
+        ]);
+    });
+
+    it("feeds the TL summary into the Dev spec port across maps", () => {
+        const { edges } = buildCanonicalFlow();
+
+        expect(edges).toContainEqual(
+            expect.objectContaining({
+                from: { nodeId: "tl", port: "summary" },
+                to: { nodeId: "dev", port: "spec" },
+            }),
+        );
+    });
+});
+
+describe("buildLoopFlow", () => {
+    it("nests a review loop with a test script inside a map", () => {
+        const { nodes, groups } = buildLoopFlow();
+
+        expect(groups.map((group) => [group.id, group.kind, group.parentGroupId])).toEqual([
+            ["items", "map", undefined],
+            ["review_loop", "loop", "items"],
+        ]);
+        expect(
+            nodes.filter((node) => node.parentGroupId === "review_loop").map((node) => node.id),
+        ).toEqual(["dev", "tests", "review"]);
+    });
+
+    it("sends the review back to the developer until it is approved", () => {
+        const { edges, groups } = buildLoopFlow();
+
+        expect(edges).toContainEqual(
+            expect.objectContaining({
+                from: { nodeId: "review", port: "summary" },
+                to: { nodeId: "dev", port: "notes" },
+            }),
+        );
+        expect(groups[1]?.config).toEqual({
+            maxIterations: 3,
+            until: { op: "eq", path: "review.approved", value: true },
+            carry: ["notes"],
+        });
     });
 });
 
