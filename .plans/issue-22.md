@@ -23,4 +23,4 @@
 - [x] 4. Test + implement node/edge/group/graph schemas, `parseFlowGraph`, `FlowGraphParseError` — `flow_graph.ts`, `flow_graph.test.ts` (unknown node type path, group limits)
 - [x] 5. Test + implement `createDefaultNode` with default ports and config per type — `node_defaults.ts`, `node_defaults.test.ts`
 - [x] 6. Test + implement `buildCanonicalFlow` / `buildLoopFlow` and check they parse — `src/test/factories/flow_graph_factory.ts`, `flow_graph.test.ts`
-- [ ] 7. Self-review checklist and feedback loops (typecheck, lint, test; nothing in `src/shared/` imports server/web)
+- [x] 7. Self-review checklist and feedback loops (typecheck, lint, test; nothing in `src/shared/` imports server/web)
