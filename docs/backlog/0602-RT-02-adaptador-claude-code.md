@@ -8,6 +8,7 @@ depends_on: [RT-01, RT-04, RT-09]
 ---
 
 ## Contexto
+
 Atende RF-EDT-04 (modelo e effort por nó executados de verdade), RF-OBS-03 (eventos ao vivo) e RF-RUN-04. Com o workspace de
 #{RT-01} e o parser de #{RT-09}, esta issue roda o agente: `docker exec` de `claude -p` dentro do container do item, com o
 prompt por stdin e as flags montadas a partir da config do nó. Flags confirmadas na documentação oficial (2026-11-03):
@@ -20,18 +21,23 @@ vezes no mesmo workspace, cada vez em contexto limpo, até emitir um sinal de co
 (`` !`git log --oneline -5` `` é executado no workspace e substituído pela saída — os prompts do pipeline atual usam isso).
 
 ## Objetivo
+
 `Workspace.runAgent` e `AgentRuntime.runHeadless` executam o Claude Code no container com as opções do nó, entregam os eventos
 em tempo real, devolvem saída estruturada validada, commits, uso somado e `sessionId`, e lançam os erros tipados de #{ENG-01}.
 
 ## Escopo
+
 **Inclui:** montagem do comando, prompt por stdin, iterações com sinal de conclusão, comandos de contexto, timeout total e por
 inatividade, saída estruturada via `--json-schema` + validação local, commits do workspace (antes/depois), mapeamento de erros.
 **Não inclui:** arquivo de MCP e regras de ferramentas (#{RT-07} fornece os caminhos/flags), env de credenciais (#{RT-08}),
 gravação de logs (#{RT-03}).
 
 ## Especificação técnica
+
 ### Arquivos
+
 Criar:
+
 - `src/integrations/agent_runtime/claude_command.ts`
 - `src/integrations/agent_runtime/run_agent_in_container.ts`
 - `src/integrations/agent_runtime/prompt_commands.ts`
@@ -40,26 +46,37 @@ Criar:
 - `src/integrations/agent_runtime/run_agent_in_container.test.ts`
 - `src/integrations/agent_runtime/prompt_commands.test.ts`
 - `src/integrations/agent_runtime/output_schema.test.ts`
-Alterar:
+  Alterar:
 - `src/integrations/agent_runtime/docker_agent_runtime.ts` (usar `runAgentInContainer`)
 - `src/integrations/agent_runtime/agent_runtime.ts` (`AgentRunRequest` ganha `maxTurns?`, `maxBudgetUsd?`, `toolArgs: string[]`, `expandPromptCommands: boolean`)
 
 ### Contratos
+
 ```ts
-export function buildClaudeArgs(request: AgentRunRequest, opts: { iteration: number; resumeSessionId?: string }): string[];
+export function buildClaudeArgs(
+    request: AgentRunRequest,
+    opts: { iteration: number; resumeSessionId?: string },
+): string[];
 // ["claude", "-p", "--output-format", "stream-json", "--verbose", "--model", m, "--effort", e,
 //  ...(maxTurns ? ["--max-turns", n] : []), ...(maxBudgetUsd ? ["--max-budget-usd", v] : []),
 //  "--permission-mode", mode, ...(outputSchema ? ["--json-schema", JSON.stringify(schema)] : []),
 //  ...request.toolArgs /* de #{RT-07} */, "--append-system-prompt", systemPrompt?]
 // Nunca coloque segredos aqui; o prompt vai por stdin.
-export type RunAgentInContainer = (ws: { containerId: string; exec: ContainerManager["exec"]; root: string; git: GitProvider },
-    request: AgentRunRequest, hooks: AgentRunHooks) => Promise<AgentRunResult>;
-export async function expandPromptCommands(prompt: string, run: (cmd: string) => Promise<{ exitCode: number; stdoutTail: string }>): Promise<string>;
+export type RunAgentInContainer = (
+    ws: { containerId: string; exec: ContainerManager["exec"]; root: string; git: GitProvider },
+    request: AgentRunRequest,
+    hooks: AgentRunHooks,
+) => Promise<AgentRunResult>;
+export async function expandPromptCommands(
+    prompt: string,
+    run: (cmd: string) => Promise<{ exitCode: number; stdoutTail: string }>,
+): Promise<string>;
 // substitui cada ocorrência de !`cmd` (fora de blocos de código cercados) pela saída; falha vira "[comando falhou (exit N): …]"
 export function jsonSchemaToZod(schema: Record<string, unknown>): z.ZodType; // object, properties, required, string, number, integer, boolean, array, enum
 ```
 
 ### Semântica
+
 - **Uma iteração** = um `docker exec` do `claude` com o prompt (já renderizado pela Forja e com comandos de contexto expandidos
   quando `expandPromptCommands`) em stdin; cada linha do stdout vai para o parser (#{RT-09}) e os `AgentEvent`s para `hooks.onEvent`.
 - **Iterações**: se `maxIterations > 1` e há `completionSignal`, repete enquanto o sinal não aparecer no texto do agente e houver
@@ -78,11 +95,13 @@ export function jsonSchemaToZod(schema: Record<string, unknown>): z.ZodType; // 
 - `runHeadless` usa a mesma função no container efêmero.
 
 ### Passo a passo
+
 1. `buildClaudeArgs`, `expandPromptCommands`, `output_schema.ts` puros com testes.
 2. `runAgentInContainer` com `ContainerManager` falso que reproduz as fixtures de #{RT-09} linha a linha (com atrasos no FakeClock).
 3. Integração no `DockerAgentRuntime`.
 
 ## Critérios de aceite
+
 - [ ] Os argumentos contêm `--model`, `--effort` e `--permission-mode` do request; nenhum segredo e nenhum prompt em argv.
 - [ ] Eventos chegam ao `onEvent` durante a execução, na ordem.
 - [ ] Com `completionSignal` e `maxIterations: 3`, para na iteração em que o sinal aparece; uso soma as iterações.
@@ -93,4 +112,5 @@ export function jsonSchemaToZod(schema: Record<string, unknown>): z.ZodType; // 
 - [ ] `npm run typecheck`, `npm run lint` e `npm run test` passam.
 
 ## Testes
+
 - `claude_command.test.ts`, `prompt_commands.test.ts`, `output_schema.test.ts`, `run_agent_in_container.test.ts` (fixtures + FakeClock).

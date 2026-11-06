@@ -1,0 +1,5 @@
+dist
+coverage
+.sandcastle/logs
+.sandcastle/worktrees
+package-lock.json

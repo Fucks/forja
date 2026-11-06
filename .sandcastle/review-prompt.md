@@ -32,23 +32,23 @@ Read it with `gh issue view {{TASK_ID}}` — especially **Não inclui** (scope b
    with `codegraph_search`. Use Grep/Read only for non-code files or plain-text searches.
 
 2. **Check correctness first.**
-   - Does the implementation do what the issue asks? Are the listed edge cases handled?
-   - Are new behaviors covered by tests whose names describe the behavior?
-   - Any `any`, unchecked `as` casts, non-null assertions (`value!.prop`) or unhandled promise?
-   - Injection, credential leaks, data exposed to the client that shouldn't be?
-   Fix real bugs you find (with a test) — that is the one exception to "don't change behavior", and it must be
-   called out in the commit message.
+    - Does the implementation do what the issue asks? Are the listed edge cases handled?
+    - Are new behaviors covered by tests whose names describe the behavior?
+    - Any `any`, unchecked `as` casts, non-null assertions (`value!.prop`) or unhandled promise?
+    - Injection, credential leaks, data exposed to the client that shouldn't be?
+      Fix real bugs you find (with a test) — that is the one exception to "don't change behavior", and it must be
+      called out in the commit message.
 
 3. **Improve readability.** Look for:
-   - Names that don't say what the thing is or does; abbreviations; generic names (`data`, `info`, `handle`).
-   - Functions doing more than one thing, or mixing orchestration with low-level details → extract named steps.
-   - Nesting deeper than two levels, `else` after `return`, nested ternaries → guard clauses, `switch`, lookup objects.
-   - Magic numbers/strings → named constants.
-   - Comments that restate the code → delete them, and rename/extract if the code wasn't clear without them.
-     Keep comments that explain *why*.
-   - Duplication of something that already exists elsewhere in the codebase → reuse the existing code.
-   - Dead code, unused exports, commented-out code → delete.
-   - Files not ordered top-down (public function first, helpers below in call order).
+    - Names that don't say what the thing is or does; abbreviations; generic names (`data`, `info`, `handle`).
+    - Functions doing more than one thing, or mixing orchestration with low-level details → extract named steps.
+    - Nesting deeper than two levels, `else` after `return`, nested ternaries → guard clauses, `switch`, lookup objects.
+    - Magic numbers/strings → named constants.
+    - Comments that restate the code → delete them, and rename/extract if the code wasn't clear without them.
+      Keep comments that explain _why_.
+    - Duplication of something that already exists elsewhere in the codebase → reuse the existing code.
+    - Dead code, unused exports, commented-out code → delete.
+    - Files not ordered top-down (public function first, helpers below in call order).
 
 4. **Keep the balance.** Don't over-simplify into clever code, don't merge unrelated concerns to save lines,
    and don't remove abstractions that make the code easier to follow or test. Explicit and slightly longer

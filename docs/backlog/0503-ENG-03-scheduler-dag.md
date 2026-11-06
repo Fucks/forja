@@ -8,6 +8,7 @@ depends_on: [ENG-02, FLW-02]
 ---
 
 ## Contexto
+
 Atende RF-RUN-01 e RF-RUN-07. O scheduler é o coração da Forja: decide qual `NodeRun` começa, para qual item, e
 quando. Ele é um **núcleo funcional puro** — recebe eventos e devolve comandos — para ser testado à exaustão com relógio
 fake; o executor (#{ENG-10}) interpreta os comandos (abrir workspace, rodar agente, gravar no banco). Bugs de
@@ -17,27 +18,39 @@ Esta issue cobre o DAG **fora de grupos** e o teto global/projeto de concorrênc
 limite de uso entram em #{ENG-04}…#{ENG-08}, todas estendendo este mesmo arquivo em cadeia.
 
 ## Objetivo
+
 Existe `createScheduler(graph, options)` com `start`, `handle(event)` e `tick(now)` que, para um fluxo sem grupos,
 executa os nós na ordem do DAG por item, respeitando o teto de concorrência e o intervalo mínimo entre inícios, e
 conclui a run.
 
 ## Escopo
+
 **Inclui:** estado do scheduler, prontidão por item, fila FIFO, tetos, intervalo entre inícios, propagação de saídas
 pelas arestas, nós que recebem lista, conclusão da run (sucesso/falha), cancelamento simples da run.
 **Não inclui:** grupos (#{ENG-04}, #{ENG-05}), retentativas/timeouts (#{ENG-06}), orçamento (#{ENG-07}), limite de uso (#{ENG-08}).
 
 ## Especificação técnica
+
 ### Arquivos
+
 Criar:
+
 - `src/engine/scheduler_types.ts`
 - `src/engine/scheduler.ts`
 - `src/engine/scheduler.test.ts`
 - `src/test/factories/scheduler_harness.ts`
 
 ### Contratos
+
 ```ts
-export interface SchedulerOptions { maxConcurrentAgents: number; minStartIntervalMs: number; newId(): string }
-export interface WorkItemRef { id: string } // dados completos ficam fora do motor
+export interface SchedulerOptions {
+    maxConcurrentAgents: number;
+    minStartIntervalMs: number;
+    newId(): string;
+}
+export interface WorkItemRef {
+    id: string;
+} // dados completos ficam fora do motor
 
 export type SchedulerEvent =
     | { type: "start"; items: WorkItemRef[]; at: Date }
@@ -50,17 +63,31 @@ export type SchedulerCommand =
     | { type: "cancel_node_run"; nodeRunId: string }
     | { type: "node_run_changed"; nodeRun: NodeRunState }
     | { type: "run_changed"; run: RunState }
-    | { type: "group_progress"; groupId: string; queued: number; running: number; succeeded: number; failed: number }
+    | {
+          type: "group_progress";
+          groupId: string;
+          queued: number;
+          running: number;
+          succeeded: number;
+          failed: number;
+      }
     | { type: "schedule_wakeup"; at: Date }; // o executor chama tick(at) nessa hora
 
 export interface Scheduler {
     handle(event: SchedulerEvent): SchedulerCommand[];
     tick(now: Date): SchedulerCommand[];
-    snapshot(): SchedulerSnapshot;                  // serializável (JSON) — persistido em #{ENG-09}
+    snapshot(): SchedulerSnapshot; // serializável (JSON) — persistido em #{ENG-09}
 }
-export function createScheduler(graph: FlowGraph, run: RunState, options: SchedulerOptions, restore?: SchedulerSnapshot): Scheduler;
+export function createScheduler(
+    graph: FlowGraph,
+    run: RunState,
+    options: SchedulerOptions,
+    restore?: SchedulerSnapshot,
+): Scheduler;
 ```
+
 Regras:
+
 - Um `NodeRun` de nó **por item** quando o nó está no "caminho do item" (a jusante de uma aresta `workItem`/correlacionada);
   um único `NodeRun` (sem `workItemId`) quando o nó recebe `workItemList` ou não tem item (ex.: `source`).
 - `trigger` produz `items` = itens do evento `start`; vira `SUCCEEDED` imediatamente (sem comando de execução).
@@ -78,6 +105,7 @@ Regras:
 mínimo) e devolve a linha do tempo de NodeRuns — usado por todos os testes de motor.
 
 ### Passo a passo
+
 1. Tipos e estado interno (mapas por id, índice por nó+item).
 2. Prontidão por item usando `incomingEdges`/`topologicalOrder` de #{FLW-02}.
 3. Comandos de início respeitando tetos e intervalo; `schedule_wakeup` quando há fila esperando o intervalo.
@@ -86,6 +114,7 @@ mínimo) e devolve a linha do tempo de NodeRuns — usado por todos os testes de
 6. `scheduler_harness` e testes.
 
 ## Critérios de aceite
+
 - [ ] Fluxo linear trigger → agent A → agent B com 2 itens: B do item 1 começa assim que A do item 1 termina (não espera o item 2).
 - [ ] Com `maxConcurrentAgents: 2` e 5 itens, nunca há mais de 2 agentes RUNNING.
 - [ ] `minStartIntervalMs: 5000` espaça os inícios em pelo menos 5 s (verificado no FakeClock).
@@ -96,4 +125,5 @@ mínimo) e devolve a linha do tempo de NodeRuns — usado por todos os testes de
 - [ ] `npm run typecheck`, `npm run lint` e `npm run test` passam.
 
 ## Testes
+
 - `scheduler.test.ts` com `scheduler_harness`: cada critério acima como um cenário com linha do tempo explícita.

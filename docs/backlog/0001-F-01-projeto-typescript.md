@@ -8,31 +8,38 @@ depends_on: []
 ---
 
 ## Contexto
+
 Primeira issue do backlog (RNF-MAN-01). O repositório hoje só tem o pipeline Sandcastle (`.sandcastle/`), o
 `CODING_STANDARDS.md` e um `package.json` mínimo com `@ai-hero/sandcastle`, `tsx` e `zod` e o script
 `sandcastle`. Todas as issues seguintes rodam `npm run typecheck` e `npm run test` antes de commitar, então
 esses scripts precisam existir e passar desde já.
 
 ## Objetivo
+
 O projeto compila em TypeScript strict (ESM, Node ≥ 22) e `npm run typecheck` e `npm run test` passam com um teste de exemplo.
 
 ## Escopo
+
 **Inclui:** `tsconfig.json`, Vitest com setup, config de integração, scripts npm, alias `@/` → `src/`, teste de exemplo.
 **Não inclui:** ESLint/Prettier (#{F-02}), servidor (#{F-03}), React/Vite (#{F-04}).
 
 ## Especificação técnica
+
 ### Arquivos
+
 Criar:
+
 - `tsconfig.json`
 - `vitest.config.ts`
 - `vitest.integration.config.ts`
 - `src/test/setup.ts`
 - `src/lib/assert_never.ts`
 - `src/lib/assert_never.test.ts`
-Alterar:
+  Alterar:
 - `package.json` (**mesclar**: manter `@ai-hero/sandcastle`, `tsx`, `zod`, `"type": "module"` e o script `sandcastle`)
 
 ### Contratos
+
 `tsconfig.json`: `"strict": true`, `"noUncheckedIndexedAccess": true`, `"module": "NodeNext"`,
 `"moduleResolution": "NodeNext"`, `"target": "ES2023"`, `"jsx": "react-jsx"`, `"lib": ["ES2023", "DOM",
 "DOM.Iterable"]`, `"types": ["node", "vitest/globals"]`, `"paths": { "@/*": ["./src/*"] }`, `"noEmit": true`,
@@ -44,12 +51,14 @@ export function assertNever(value: never, message?: string): never;
 ```
 
 Scripts:
+
 ```json
 "typecheck": "tsc --noEmit",
 "test": "vitest run",
 "test:watch": "vitest",
 "test:integration": "vitest run --config vitest.integration.config.ts"
 ```
+
 `vitest.integration.config.ts` inclui só `src/**/*.integration.test.ts`; o `vitest.config.ts` principal os exclui.
 
 **Todas as dependências do MVP são instaladas aqui**, de uma vez, para que as dezenas de issues seguintes não editem
@@ -74,6 +83,7 @@ Se uma issue futura precisar de um pacote que não está aqui, ela o adiciona e 
 alterou `package.json`.
 
 ### Passo a passo
+
 1. Instale as dependências acima (`npm install …` e `npm install -D …`). Não remova nada do `package.json` atual.
 2. Crie `tsconfig.json` como acima.
 3. Crie `vitest.config.ts` com `globals: true`, `environment: "node"`, `setupFiles: ["src/test/setup.ts"]`,
@@ -85,6 +95,7 @@ alterou `package.json`.
 6. Rode `npm install`, `npm run typecheck`, `npm run test`.
 
 ## Critérios de aceite
+
 - [ ] `npm run typecheck` passa.
 - [ ] `npm run test` roda o teste de exemplo e passa; `*.integration.test.ts` não é incluído.
 - [ ] O script `sandcastle` e as dependências originais continuam no `package.json`.
@@ -92,4 +103,5 @@ alterou `package.json`.
 - [ ] `npm run typecheck` e `npm run test` passam.
 
 ## Testes
+
 - `src/lib/assert_never.test.ts`: lança erro com a mensagem informada; a mensagem padrão inclui o valor recebido.

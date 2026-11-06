@@ -49,16 +49,14 @@ import { createUsageGuard } from "./usage_guard.mts";
 // Schema validator works just as well — Valibot, ArkType, etc. See
 // https://standardschema.dev.
 const planSchema = z.object({
-  issues: z.array(
-    z.object({ id: z.string(), title: z.string(), branch: z.string() }),
-  ),
+    issues: z.array(z.object({ id: z.string(), title: z.string(), branch: z.string() })),
 });
 
 // The evidence agent writes EVIDENCE_DIR/result.json with this shape, next to
 // the PR body. (sandbox.run() has no structured output, so it goes in a file.)
 const evidenceResultSchema = z.object({
-  checksPassed: z.boolean(),
-  failureSummary: z.string().optional(),
+    checksPassed: z.boolean(),
+    failureSummary: z.string().optional(),
 });
 
 type PlannedIssue = z.infer<typeof planSchema>["issues"][number];
@@ -104,11 +102,11 @@ const ISSUE_BRANCH_PATTERN = /^sandcastle\/issue-(\d+)$/;
 // null, look at the "~N tokens estimated" printed when a limit is hit, and use
 // about 90% of that value.
 const usageGuard = createUsageGuard({
-  statePath: "./.sandcastle/state/usage_guard.json",
-  windowHours: 5,
-  tokenBudgetPerWindow: null,
-  resetMarginMinutes: 2,
-  maxLimitRetries: 20,
+    statePath: "./.sandcastle/state/usage_guard.json",
+    windowHours: 5,
+    tokenBudgetPerWindow: null,
+    resetMarginMinutes: 2,
+    maxLimitRetries: 20,
 });
 
 // Hooks run inside the sandbox before the agent starts each iteration.
@@ -117,12 +115,12 @@ const usageGuard = createUsageGuard({
 // and its native binaries (Next.js SWC, sharp) don't run in the Linux sandbox.
 // CodeGraph's MCP server keeps the index in sync as the agents edit files.
 const hooks = {
-  sandbox: {
-    onSandboxReady: [
-      { command: "npm i", timeoutMs: 600000 },
-      { command: "codegraph init --yes", timeoutMs: 300000 },
-    ],
-  },
+    sandbox: {
+        onSandboxReady: [
+            { command: "npm i", timeoutMs: 600000 },
+            { command: "codegraph init --yes", timeoutMs: 300000 },
+        ],
+    },
 };
 
 // vitest starts one worker per core by default, and the sandbox runs it while
@@ -141,13 +139,13 @@ const BASH_TIMEOUT_MS = 25 * 60 * 1000;
 const AGENT_IDLE_TIMEOUT_SECONDS = 30 * 60;
 
 const sandboxEnv = {
-  VITEST_MAX_WORKERS: String(VITEST_MAX_WORKERS),
-  CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: "1",
-  BASH_DEFAULT_TIMEOUT_MS: String(BASH_TIMEOUT_MS),
-  BASH_MAX_TIMEOUT_MS: String(BASH_TIMEOUT_MS),
-  // With tool search on, the CodeGraph MCP tools start deferred behind
-  // ToolSearch and the agents read code with `cat` and `grep` in Bash instead.
-  ENABLE_TOOL_SEARCH: "false",
+    VITEST_MAX_WORKERS: String(VITEST_MAX_WORKERS),
+    CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: "1",
+    BASH_DEFAULT_TIMEOUT_MS: String(BASH_TIMEOUT_MS),
+    BASH_MAX_TIMEOUT_MS: String(BASH_TIMEOUT_MS),
+    // With tool search on, the CodeGraph MCP tools start deferred behind
+    // ToolSearch and the agents read code with `cat` and `grep` in Bash instead.
+    ENABLE_TOOL_SEARCH: "false",
 };
 
 // npm and Next.js create Linux symlinks (node_modules/.bin, .next/node_modules)
@@ -168,13 +166,12 @@ const BASE_BRANCH = PR_BASE_BRANCH;
 
 const currentBranch = git(["branch", "--show-current"]);
 if (currentBranch !== BASE_BRANCH) {
-  throw new Error(
-    `Check out "${BASE_BRANCH}" before running (current: "${currentBranch || "detached HEAD"}"). Issue branches start from it and PRs target it.`,
-  );
+    throw new Error(
+        `Check out "${BASE_BRANCH}" before running (current: "${currentBranch || "detached HEAD"}"). Issue branches start from it and PRs target it.`,
+    );
 }
 
 const repoSlug = gh(["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"]);
-
 
 // ---------------------------------------------------------------------------
 // Main loop
@@ -184,134 +181,134 @@ const repoSlug = gh(["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWi
 const consecutiveFailures = new Map<string, number>();
 
 while (true) {
-  let workedOnIssue = false;
-  try {
-    workedOnIssue = await workOnNextIssue();
-  } catch (error) {
-    // Sync or planner failure (network, GitHub, malformed plan): try again later
-    // instead of stopping the loop.
-    console.error(`Round failed: ${error}`);
-  }
+    let workedOnIssue = false;
+    try {
+        workedOnIssue = await workOnNextIssue();
+    } catch (error) {
+        // Sync or planner failure (network, GitHub, malformed plan): try again later
+        // instead of stopping the loop.
+        console.error(`Round failed: ${error}`);
+    }
 
-  if (!workedOnIssue) {
-    console.log(`Checking the issues again in ${IDLE_WAIT_MS / 60_000} minutes.`);
-    await sleep(IDLE_WAIT_MS);
-  }
+    if (!workedOnIssue) {
+        console.log(`Checking the issues again in ${IDLE_WAIT_MS / 60_000} minutes.`);
+        await sleep(IDLE_WAIT_MS);
+    }
 }
 
 // One round: sync, plan and run the pipeline of the next issue. Resolves to
 // false when there was no issue to work on.
 async function workOnNextIssue() {
-  console.log(`\n=== ${new Date().toLocaleString()} ===\n`);
+    console.log(`\n=== ${new Date().toLocaleString()} ===\n`);
 
-  // -------------------------------------------------------------------------
-  // Phase 0: Sync
-  //
-  // PRs are merged on GitHub, so the local base branch is fast-forwarded to
-  // include them before new branches are created from it. PRs into a branch
-  // other than the default don't close their issues, so that's done here.
-  // -------------------------------------------------------------------------
-  git(["pull", "--ff-only", "origin", BASE_BRANCH]);
-  const closedIssueIds = closeIssuesWithMergedPullRequests();
-  const issuesAwaitingReview = listIssuesAwaitingReview();
-  removeOrphanedWorktreeDirs();
-  if (closedIssueIds.size > 0) {
-    await sleep(ISSUE_CLOSE_SETTLE_MS);
-  }
-
-  // -------------------------------------------------------------------------
-  // Phase 1: Plan
-  //
-  // The planning agent reads the open issue list, builds a dependency graph,
-  // and lists the issues that can be worked right now (i.e., no blocking
-  // dependencies on other open issues), most important first.
-  //
-  // It outputs a <plan> JSON block — Output.object parses and validates it.
-  // -------------------------------------------------------------------------
-  const plan = await usageGuard.retryOnUsageLimit("planner", () =>
-    sandcastle.run({
-      // No npm install hook: without a branch the planner runs in head mode, which
-      // bind-mounts the host checkout, so the install would overwrite the host's
-      // Windows node_modules with Linux binaries. The planner only reads issues.
-      sandbox: docker(),
-      name: "planner",
-      logging: agentLogging("planner", BASE_BRANCH),
-      // One iteration is enough: the planner just needs to read and reason,
-      // not write code. (Structured output requires maxIterations: 1.)
-      maxIterations: 1,
-      agent: sandcastle.claudeCode(MODEL),
-      idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
-      promptFile: "./.sandcastle/plan-prompt.md",
-      promptArgs: {
-        AWAITING_REVIEW: formatAwaitingReview(issuesAwaitingReview),
-      },
-      // Extract and validate the <plan> JSON into a typed object. Throws
-      // StructuredOutputError if the tag is missing, the JSON is malformed, or
-      // validation fails — which ends the round.
-      output: sandcastle.Output.object({ tag: "plan", schema: planSchema }),
-    }),
-  );
-  usageGuard.recordUsage(plan);
-
-  // The prompt already excludes issues awaiting review; filtering again keeps
-  // a planner mistake from opening a second PR for the same issue. Issues
-  // closed this round are filtered too, in case GitHub still listed them open.
-  const issue = plan.output.issues.find(
-    (candidate) =>
-      !issuesAwaitingReview.has(candidate.id) &&
-      !closedIssueIds.has(candidate.id) &&
-      (consecutiveFailures.get(candidate.id) ?? 0) < MAX_CONSECUTIVE_FAILURES,
-  );
-
-  if (!issue) {
-    console.log(
-      issuesAwaitingReview.size > 0
-        ? `No unblocked issues. ${issuesAwaitingReview.size} PR(s) awaiting review.`
-        : "No unblocked issues to work on.",
-    );
-    return false;
-  }
-
-  console.log(`Next issue: ${issue.id}: ${issue.title} → ${issue.branch}`);
-
-  // -------------------------------------------------------------------------
-  // Phase 2 + 3: Execute, review and open the PR
-  //
-  // One sandbox per issue, so the implementer, reviewer and evidence agents
-  // share the same sandbox instance on the branch.
-  //
-  // A pipeline that hits the usage limit waits for the reset and starts again
-  // on the same branch; commits made before the limit are kept on the branch
-  // and the implementer prompt continues from them.
-  // -------------------------------------------------------------------------
-  try {
-    const pullRequestUrl = await usageGuard.retryOnUsageLimit(`issue ${issue.id}`, () =>
-      implementReviewAndOpenPullRequest(issue),
-    );
-    if (pullRequestUrl === undefined) {
-      // Counted as a failure: otherwise the planner picks the issue again forever.
-      recordFailure(issue, "the implementer made no commits");
-    } else {
-      consecutiveFailures.delete(issue.id);
-      console.log(`\nPR opened: ${pullRequestUrl}`);
+    // -------------------------------------------------------------------------
+    // Phase 0: Sync
+    //
+    // PRs are merged on GitHub, so the local base branch is fast-forwarded to
+    // include them before new branches are created from it. PRs into a branch
+    // other than the default don't close their issues, so that's done here.
+    // -------------------------------------------------------------------------
+    git(["pull", "--ff-only", "origin", BASE_BRANCH]);
+    const closedIssueIds = closeIssuesWithMergedPullRequests();
+    const issuesAwaitingReview = listIssuesAwaitingReview();
+    removeOrphanedWorktreeDirs();
+    if (closedIssueIds.size > 0) {
+        await sleep(ISSUE_CLOSE_SETTLE_MS);
     }
-  } catch (error) {
-    // Network error, sandbox crash, failing checks, etc.
-    recordFailure(issue, String(error));
-  }
 
-  return true;
+    // -------------------------------------------------------------------------
+    // Phase 1: Plan
+    //
+    // The planning agent reads the open issue list, builds a dependency graph,
+    // and lists the issues that can be worked right now (i.e., no blocking
+    // dependencies on other open issues), most important first.
+    //
+    // It outputs a <plan> JSON block — Output.object parses and validates it.
+    // -------------------------------------------------------------------------
+    const plan = await usageGuard.retryOnUsageLimit("planner", () =>
+        sandcastle.run({
+            // No npm install hook: without a branch the planner runs in head mode, which
+            // bind-mounts the host checkout, so the install would overwrite the host's
+            // Windows node_modules with Linux binaries. The planner only reads issues.
+            sandbox: docker(),
+            name: "planner",
+            logging: agentLogging("planner", BASE_BRANCH),
+            // One iteration is enough: the planner just needs to read and reason,
+            // not write code. (Structured output requires maxIterations: 1.)
+            maxIterations: 1,
+            agent: sandcastle.claudeCode(MODEL),
+            idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
+            promptFile: "./.sandcastle/plan-prompt.md",
+            promptArgs: {
+                AWAITING_REVIEW: formatAwaitingReview(issuesAwaitingReview),
+            },
+            // Extract and validate the <plan> JSON into a typed object. Throws
+            // StructuredOutputError if the tag is missing, the JSON is malformed, or
+            // validation fails — which ends the round.
+            output: sandcastle.Output.object({ tag: "plan", schema: planSchema }),
+        }),
+    );
+    usageGuard.recordUsage(plan);
+
+    // The prompt already excludes issues awaiting review; filtering again keeps
+    // a planner mistake from opening a second PR for the same issue. Issues
+    // closed this round are filtered too, in case GitHub still listed them open.
+    const issue = plan.output.issues.find(
+        (candidate) =>
+            !issuesAwaitingReview.has(candidate.id) &&
+            !closedIssueIds.has(candidate.id) &&
+            (consecutiveFailures.get(candidate.id) ?? 0) < MAX_CONSECUTIVE_FAILURES,
+    );
+
+    if (!issue) {
+        console.log(
+            issuesAwaitingReview.size > 0
+                ? `No unblocked issues. ${issuesAwaitingReview.size} PR(s) awaiting review.`
+                : "No unblocked issues to work on.",
+        );
+        return false;
+    }
+
+    console.log(`Next issue: ${issue.id}: ${issue.title} → ${issue.branch}`);
+
+    // -------------------------------------------------------------------------
+    // Phase 2 + 3: Execute, review and open the PR
+    //
+    // One sandbox per issue, so the implementer, reviewer and evidence agents
+    // share the same sandbox instance on the branch.
+    //
+    // A pipeline that hits the usage limit waits for the reset and starts again
+    // on the same branch; commits made before the limit are kept on the branch
+    // and the implementer prompt continues from them.
+    // -------------------------------------------------------------------------
+    try {
+        const pullRequestUrl = await usageGuard.retryOnUsageLimit(`issue ${issue.id}`, () =>
+            implementReviewAndOpenPullRequest(issue),
+        );
+        if (pullRequestUrl === undefined) {
+            // Counted as a failure: otherwise the planner picks the issue again forever.
+            recordFailure(issue, "the implementer made no commits");
+        } else {
+            consecutiveFailures.delete(issue.id);
+            console.log(`\nPR opened: ${pullRequestUrl}`);
+        }
+    } catch (error) {
+        // Network error, sandbox crash, failing checks, etc.
+        recordFailure(issue, String(error));
+    }
+
+    return true;
 }
 
 function recordFailure(issue: PlannedIssue, reason: string) {
-  const failures = (consecutiveFailures.get(issue.id) ?? 0) + 1;
-  consecutiveFailures.set(issue.id, failures);
-  console.error(
-    `  ✗ ${issue.id} (${issue.branch}) failed (${failures}/${MAX_CONSECUTIVE_FAILURES}): ${reason}`,
-  );
-  if (failures >= MAX_CONSECUTIVE_FAILURES) {
-    console.error(`  Skipping issue ${issue.id} until the loop is restarted.`);
-  }
+    const failures = (consecutiveFailures.get(issue.id) ?? 0) + 1;
+    consecutiveFailures.set(issue.id, failures);
+    console.error(
+        `  ✗ ${issue.id} (${issue.branch}) failed (${failures}/${MAX_CONSECUTIVE_FAILURES}): ${reason}`,
+    );
+    if (failures >= MAX_CONSECUTIVE_FAILURES) {
+        console.error(`  Skipping issue ${issue.id} until the loop is restarted.`);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -321,81 +318,81 @@ function recordFailure(issue: PlannedIssue, reason: string) {
 // ---------------------------------------------------------------------------
 
 async function implementReviewAndOpenPullRequest(issue: PlannedIssue) {
-  const sandbox = await sandcastle.createSandbox({
-    branch: issue.branch,
-    sandbox: docker({
-      env: {
-        ...sandboxEnv,
-      },
-    }),
-    hooks,
-  });
-
-  const promptArgs = {
-    TASK_ID: issue.id,
-    ISSUE_TITLE: issue.title,
-    BRANCH: issue.branch,
-    BASE_BRANCH,
-  };
-
-  try {
-    const implement = await sandbox.run({
-      name: "implementer",
-      logging: agentLogging("implementer", issue.branch),
-      maxIterations: 100,
-      agent: sandcastle.claudeCode(MODEL),
-      idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
-      promptFile: "./.sandcastle/implement-prompt.md",
-      promptArgs,
+    const sandbox = await sandcastle.createSandbox({
+        branch: issue.branch,
+        sandbox: docker({
+            env: {
+                ...sandboxEnv,
+            },
+        }),
+        hooks,
     });
-    usageGuard.recordUsage(implement);
 
-    if (implement.commits.length === 0) {
-      return undefined;
+    const promptArgs = {
+        TASK_ID: issue.id,
+        ISSUE_TITLE: issue.title,
+        BRANCH: issue.branch,
+        BASE_BRANCH,
+    };
+
+    try {
+        const implement = await sandbox.run({
+            name: "implementer",
+            logging: agentLogging("implementer", issue.branch),
+            maxIterations: 100,
+            agent: sandcastle.claudeCode(MODEL),
+            idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
+            promptFile: "./.sandcastle/implement-prompt.md",
+            promptArgs,
+        });
+        usageGuard.recordUsage(implement);
+
+        if (implement.commits.length === 0) {
+            return undefined;
+        }
+
+        const review = await sandbox.run({
+            name: "reviewer",
+            logging: agentLogging("reviewer", issue.branch),
+            maxIterations: 1,
+            agent: sandcastle.claudeCode(MODEL),
+            idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
+            promptFile: "./.sandcastle/review-prompt.md",
+            promptArgs,
+        });
+        usageGuard.recordUsage(review);
+
+        // Before the evidence, so the checks and screenshots run on the code the PR will merge.
+        await rebaseOntoBase(sandbox, promptArgs);
+
+        const evidence = await sandbox.run({
+            name: "evidence",
+            logging: agentLogging("evidence", issue.branch),
+            maxIterations: 1,
+            agent: sandcastle.claudeCode(MODEL),
+            idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
+            promptFile: "./.sandcastle/evidence-prompt.md",
+            promptArgs: { ...promptArgs, EVIDENCE_DIR },
+        });
+        usageGuard.recordUsage(evidence);
+
+        // The evidence lives in the worktree, which close() removes.
+        const evidenceDir = join(sandbox.worktreePath, EVIDENCE_DIR);
+        const evidenceResult = readEvidenceResult(evidenceDir);
+        if (!evidenceResult.checksPassed) {
+            // The issue stays open and the next round resumes from these commits.
+            throw new Error(
+                `checks failed, PR not opened: ${evidenceResult.failureSummary ?? "see the evidence log"}`,
+            );
+        }
+
+        return openPullRequest(issue, evidenceDir);
+    } finally {
+        // A sandbox that crashed can't run this; removeOrphanedWorktreeDirs()
+        // catches what's left at the start of the next round.
+        await sandbox.exec(`rm -rf ${SYMLINKED_DIRS.join(" ")}`).catch(() => undefined);
+        await sandbox.close();
     }
-
-    const review = await sandbox.run({
-      name: "reviewer",
-      logging: agentLogging("reviewer", issue.branch),
-      maxIterations: 1,
-      agent: sandcastle.claudeCode(MODEL),
-      idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
-      promptFile: "./.sandcastle/review-prompt.md",
-      promptArgs,
-    });
-    usageGuard.recordUsage(review);
-
-    // Before the evidence, so the checks and screenshots run on the code the PR will merge.
-    await rebaseOntoBase(sandbox, promptArgs);
-
-    const evidence = await sandbox.run({
-      name: "evidence",
-      logging: agentLogging("evidence", issue.branch),
-      maxIterations: 1,
-      agent: sandcastle.claudeCode(MODEL),
-      idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
-      promptFile: "./.sandcastle/evidence-prompt.md",
-      promptArgs: { ...promptArgs, EVIDENCE_DIR },
-    });
-    usageGuard.recordUsage(evidence);
-
-    // The evidence lives in the worktree, which close() removes.
-    const evidenceDir = join(sandbox.worktreePath, EVIDENCE_DIR);
-    const evidenceResult = readEvidenceResult(evidenceDir);
-    if (!evidenceResult.checksPassed) {
-      // The issue stays open and the next round resumes from these commits.
-      throw new Error(
-        `checks failed, PR not opened: ${evidenceResult.failureSummary ?? "see the evidence log"}`,
-      );
-    }
-
-    return openPullRequest(issue, evidenceDir);
-  } finally {
-    // A sandbox that crashed can't run this; removeOrphanedWorktreeDirs()
-    // catches what's left at the start of the next round.
-    await sandbox.exec(`rm -rf ${SYMLINKED_DIRS.join(" ")}`).catch(() => undefined);
-    await sandbox.close();
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -405,32 +402,40 @@ async function implementReviewAndOpenPullRequest(issue: PlannedIssue) {
 // ---------------------------------------------------------------------------
 
 function removeOrphanedWorktreeDirs() {
-  if (!existsSync(WORKTREES_DIR)) {
-    return;
-  }
-  git(["worktree", "prune"]);
-  const normalize = (path: string) => path.replace(/\\/g, "/").toLowerCase();
-  const trackedPaths = new Set(
-    git(["worktree", "list", "--porcelain"])
-      .split("\n")
-      .filter((line) => line.startsWith("worktree "))
-      .map((line) => normalize(line.slice("worktree ".length).trim())),
-  );
-  const orphans = readdirSync(WORKTREES_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .filter((name) => !trackedPaths.has(normalize(join(WORKTREES_DIR, name))));
-  if (orphans.length === 0) {
-    return;
-  }
+    if (!existsSync(WORKTREES_DIR)) {
+        return;
+    }
+    git(["worktree", "prune"]);
+    const normalize = (path: string) => path.replace(/\\/g, "/").toLowerCase();
+    const trackedPaths = new Set(
+        git(["worktree", "list", "--porcelain"])
+            .split("\n")
+            .filter((line) => line.startsWith("worktree "))
+            .map((line) => normalize(line.slice("worktree ".length).trim())),
+    );
+    const orphans = readdirSync(WORKTREES_DIR, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .filter((name) => !trackedPaths.has(normalize(join(WORKTREES_DIR, name))));
+    if (orphans.length === 0) {
+        return;
+    }
 
-  console.log(`Removing ${orphans.length} orphaned worktree dir(s): ${orphans.join(", ")}`);
-  execFileSync("docker", [
-    "run", "--rm",
-    "-v", `${WORKTREES_DIR.replace(/\\/g, "/")}:/worktrees`,
-    CLEANUP_IMAGE,
-    "rm", "-rf", ...orphans.map((name) => `/worktrees/${name}`),
-  ], { stdio: "inherit" });
+    console.log(`Removing ${orphans.length} orphaned worktree dir(s): ${orphans.join(", ")}`);
+    execFileSync(
+        "docker",
+        [
+            "run",
+            "--rm",
+            "-v",
+            `${WORKTREES_DIR.replace(/\\/g, "/")}:/worktrees`,
+            CLEANUP_IMAGE,
+            "rm",
+            "-rf",
+            ...orphans.map((name) => `/worktrees/${name}`),
+        ],
+        { stdio: "inherit" },
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -439,37 +444,37 @@ function removeOrphanedWorktreeDirs() {
 // ---------------------------------------------------------------------------
 
 async function rebaseOntoBase(sandbox: sandcastle.Sandbox, promptArgs: sandcastle.PromptArgs) {
-  // Pulled on the host, since the sandbox token can't read the repository. The
-  // worktree shares its refs with the host repository, so the sandbox sees it.
-  git(["pull", "--ff-only", "origin", BASE_BRANCH]);
+    // Pulled on the host, since the sandbox token can't read the repository. The
+    // worktree shares its refs with the host repository, so the sandbox sees it.
+    git(["pull", "--ff-only", "origin", BASE_BRANCH]);
 
-  // Rebased inside the sandbox: on Windows the host's core.autocrlf makes the
-  // files the sandbox wrote look modified, and git refuses to rebase.
-  const rebase = await sandbox.exec(`git rebase ${BASE_BRANCH}`);
-  if (rebase.exitCode !== 0) {
-    const resolveConflicts = await sandbox.run({
-      name: "rebaser",
-      logging: agentLogging("rebaser", String(promptArgs.BRANCH)),
-      maxIterations: 10,
-      agent: sandcastle.claudeCode(MODEL),
-      idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
-      promptFile: "./.sandcastle/rebase-prompt.md",
-      promptArgs,
-    });
-    usageGuard.recordUsage(resolveConflicts);
-  }
+    // Rebased inside the sandbox: on Windows the host's core.autocrlf makes the
+    // files the sandbox wrote look modified, and git refuses to rebase.
+    const rebase = await sandbox.exec(`git rebase ${BASE_BRANCH}`);
+    if (rebase.exitCode !== 0) {
+        const resolveConflicts = await sandbox.run({
+            name: "rebaser",
+            logging: agentLogging("rebaser", String(promptArgs.BRANCH)),
+            maxIterations: 10,
+            agent: sandcastle.claudeCode(MODEL),
+            idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
+            promptFile: "./.sandcastle/rebase-prompt.md",
+            promptArgs,
+        });
+        usageGuard.recordUsage(resolveConflicts);
+    }
 
-  const rebased = await sandbox.exec(
-    `test ! -d "$(git rev-parse --git-path rebase-merge)" && git merge-base --is-ancestor ${BASE_BRANCH} HEAD`,
-  );
-  if (rebased.exitCode !== 0) {
-    await sandbox.exec("git rebase --abort");
-    // The issue stays open and the next round resumes from the unrebased commits.
-    throw new Error(`could not rebase onto ${BASE_BRANCH}, PR not opened`);
-  }
+    const rebased = await sandbox.exec(
+        `test ! -d "$(git rev-parse --git-path rebase-merge)" && git merge-base --is-ancestor ${BASE_BRANCH} HEAD`,
+    );
+    if (rebased.exitCode !== 0) {
+        await sandbox.exec("git rebase --abort");
+        // The issue stays open and the next round resumes from the unrebased commits.
+        throw new Error(`could not rebase onto ${BASE_BRANCH}, PR not opened`);
+    }
 
-  // The base may have added dependencies.
-  await sandbox.exec("npm install");
+    // The base may have added dependencies.
+    await sandbox.exec("npm install");
 }
 
 // ---------------------------------------------------------------------------
@@ -478,142 +483,190 @@ async function rebaseOntoBase(sandbox: sandcastle.Sandbox, promptArgs: sandcastl
 // ---------------------------------------------------------------------------
 
 function readEvidenceResult(evidenceDir: string) {
-  const resultPath = join(evidenceDir, "result.json");
-  if (!existsSync(resultPath)) {
-    throw new Error(`evidence agent did not write ${EVIDENCE_DIR}/result.json`);
-  }
-  return evidenceResultSchema.parse(JSON.parse(readFileSync(resultPath, "utf8")));
+    const resultPath = join(evidenceDir, "result.json");
+    if (!existsSync(resultPath)) {
+        throw new Error(`evidence agent did not write ${EVIDENCE_DIR}/result.json`);
+    }
+    return evidenceResultSchema.parse(JSON.parse(readFileSync(resultPath, "utf8")));
 }
 
 function openPullRequest(issue: PlannedIssue, evidenceDir: string) {
-  const bodyPath = join(evidenceDir, "body.md");
-  if (!existsSync(bodyPath)) {
-    throw new Error(`evidence agent did not write ${EVIDENCE_DIR}/body.md`);
-  }
+    const bodyPath = join(evidenceDir, "body.md");
+    if (!existsSync(bodyPath)) {
+        throw new Error(`evidence agent did not write ${EVIDENCE_DIR}/body.md`);
+    }
 
-  const screenshotsUrl = publishScreenshots(issue.id, join(evidenceDir, "screenshots"));
-  const body = [
-    linkScreenshots(readFileSync(bodyPath, "utf8"), screenshotsUrl),
-    `Closes #${issue.id}`,
-  ].join("\n\n");
+    const screenshotsUrl = publishScreenshots(issue.id, join(evidenceDir, "screenshots"));
+    const body = [
+        linkScreenshots(readFileSync(bodyPath, "utf8"), screenshotsUrl),
+        `Closes #${issue.id}`,
+    ].join("\n\n");
 
-  // The rebase rewrites commits that an earlier, failed attempt may have pushed.
-  git(["push", "--force-with-lease", "--set-upstream", "origin", issue.branch]);
-  return gh(
-    [
-      "pr", "create",
-      "--base", BASE_BRANCH,
-      "--head", issue.branch,
-      "--title", `${issue.title} (#${issue.id})`,
-      "--body-file", "-",
-    ],
-    body,
-  );
+    // The rebase rewrites commits that an earlier, failed attempt may have pushed.
+    git(["push", "--force-with-lease", "--set-upstream", "origin", issue.branch]);
+    return gh(
+        [
+            "pr",
+            "create",
+            "--base",
+            BASE_BRANCH,
+            "--head",
+            issue.branch,
+            "--title",
+            `${issue.title} (#${issue.id})`,
+            "--body-file",
+            "-",
+        ],
+        body,
+    );
 }
 
 // Commits the screenshots to EVIDENCE_BRANCH through a temporary index, so the
 // host's working tree and index are never touched. Returns the base URL of the
 // issue's folder, or undefined when there are no screenshots.
 function publishScreenshots(issueId: string, screenshotsDir: string) {
-  const screenshots = existsSync(screenshotsDir)
-    ? readdirSync(screenshotsDir).filter((file) => file.endsWith(".png"))
-    : [];
-  if (screenshots.length === 0) {
-    return undefined;
-  }
-
-  const issueFolder = `issue-${issueId}`;
-  const indexFile = join(tmpdir(), `sandcastle-evidence-${issueId}.index`);
-  const withTemporaryIndex = { ...process.env, GIT_INDEX_FILE: indexFile };
-  const parentCommit = fetchRemoteBranchTip(EVIDENCE_BRANCH);
-
-  try {
-    git(parentCommit ? ["read-tree", parentCommit] : ["read-tree", "--empty"], withTemporaryIndex);
-    for (const screenshot of screenshots) {
-      const blob = git(["hash-object", "-w", "--no-filters", join(screenshotsDir, screenshot)]);
-      git(
-        ["update-index", "--add", "--cacheinfo", `100644,${blob},${issueFolder}/${screenshot}`],
-        withTemporaryIndex,
-      );
+    const screenshots = existsSync(screenshotsDir)
+        ? readdirSync(screenshotsDir).filter((file) => file.endsWith(".png"))
+        : [];
+    if (screenshots.length === 0) {
+        return undefined;
     }
-    const tree = git(["write-tree"], withTemporaryIndex);
-    const parentArgs = parentCommit ? ["-p", parentCommit] : [];
-    const commit = git(["commit-tree", tree, ...parentArgs, "-m", `Evidências da issue #${issueId}`]);
-    git(["push", "origin", `${commit}:refs/heads/${EVIDENCE_BRANCH}`]);
-  } finally {
-    rmSync(indexFile, { force: true });
-  }
 
-  return `https://github.com/${repoSlug}/blob/${EVIDENCE_BRANCH}/${issueFolder}`;
+    const issueFolder = `issue-${issueId}`;
+    const indexFile = join(tmpdir(), `sandcastle-evidence-${issueId}.index`);
+    const withTemporaryIndex = { ...process.env, GIT_INDEX_FILE: indexFile };
+    const parentCommit = fetchRemoteBranchTip(EVIDENCE_BRANCH);
+
+    try {
+        git(
+            parentCommit ? ["read-tree", parentCommit] : ["read-tree", "--empty"],
+            withTemporaryIndex,
+        );
+        for (const screenshot of screenshots) {
+            const blob = git([
+                "hash-object",
+                "-w",
+                "--no-filters",
+                join(screenshotsDir, screenshot),
+            ]);
+            git(
+                [
+                    "update-index",
+                    "--add",
+                    "--cacheinfo",
+                    `100644,${blob},${issueFolder}/${screenshot}`,
+                ],
+                withTemporaryIndex,
+            );
+        }
+        const tree = git(["write-tree"], withTemporaryIndex);
+        const parentArgs = parentCommit ? ["-p", parentCommit] : [];
+        const commit = git([
+            "commit-tree",
+            tree,
+            ...parentArgs,
+            "-m",
+            `Evidências da issue #${issueId}`,
+        ]);
+        git(["push", "origin", `${commit}:refs/heads/${EVIDENCE_BRANCH}`]);
+    } finally {
+        rmSync(indexFile, { force: true });
+    }
+
+    return `https://github.com/${repoSlug}/blob/${EVIDENCE_BRANCH}/${issueFolder}`;
 }
 
 function fetchRemoteBranchTip(branch: string) {
-  const remoteRef = git(["ls-remote", "--heads", "origin", branch]);
-  if (!remoteRef) {
-    return undefined;
-  }
-  git(["fetch", "origin", branch]);
-  return git(["rev-parse", "FETCH_HEAD"]);
+    const remoteRef = git(["ls-remote", "--heads", "origin", branch]);
+    if (!remoteRef) {
+        return undefined;
+    }
+    git(["fetch", "origin", branch]);
+    return git(["rev-parse", "FETCH_HEAD"]);
 }
 
 // The agent links screenshots as `screenshots/<file>.png`; `?raw=true` makes
 // GitHub render them inline, including in a private repo.
 function linkScreenshots(body: string, screenshotsUrl: string | undefined) {
-  if (!screenshotsUrl) {
-    return body;
-  }
-  return body.replace(
-    /\]\(screenshots\/([^)\s]+)\)/g,
-    (_, file: string) => `](${screenshotsUrl}/${file}?raw=true)`,
-  );
+    if (!screenshotsUrl) {
+        return body;
+    }
+    return body.replace(
+        /\]\(screenshots\/([^)\s]+)\)/g,
+        (_, file: string) => `](${screenshotsUrl}/${file}?raw=true)`,
+    );
 }
 
 // Returns the ids of the issues it closed.
 function closeIssuesWithMergedPullRequests() {
-  const closedIssueIds = new Set<string>();
-  const openIssueIds = new Set(
-    ghJson<{ number: number }[]>([
-      "issue", "list", "--state", "open", "--label", "Sandcastle", "--limit", "500", "--json", "number",
-    ]).map((issue) => String(issue.number)),
-  );
+    const closedIssueIds = new Set<string>();
+    const openIssueIds = new Set(
+        ghJson<{ number: number }[]>([
+            "issue",
+            "list",
+            "--state",
+            "open",
+            "--label",
+            "Sandcastle",
+            "--limit",
+            "500",
+            "--json",
+            "number",
+        ]).map((issue) => String(issue.number)),
+    );
 
-  for (const pullRequest of listIssuePullRequests("merged")) {
-    if (!openIssueIds.has(pullRequest.issueId)) {
-      continue;
+    for (const pullRequest of listIssuePullRequests("merged")) {
+        if (!openIssueIds.has(pullRequest.issueId)) {
+            continue;
+        }
+        gh([
+            "issue",
+            "close",
+            pullRequest.issueId,
+            "--comment",
+            `Concluída pelo PR #${pullRequest.number}.`,
+        ]);
+        console.log(`Closed issue #${pullRequest.issueId} (PR #${pullRequest.number} merged).`);
+        closedIssueIds.add(pullRequest.issueId);
     }
-    gh([
-      "issue", "close", pullRequest.issueId,
-      "--comment", `Concluída pelo PR #${pullRequest.number}.`,
-    ]);
-    console.log(`Closed issue #${pullRequest.issueId} (PR #${pullRequest.number} merged).`);
-    closedIssueIds.add(pullRequest.issueId);
-  }
-  return closedIssueIds;
+    return closedIssueIds;
 }
 
 // Issue id → PR number for every open PR from an issue branch.
 function listIssuesAwaitingReview() {
-  return new Map(
-    listIssuePullRequests("open").map((pullRequest) => [pullRequest.issueId, pullRequest.number]),
-  );
+    return new Map(
+        listIssuePullRequests("open").map((pullRequest) => [
+            pullRequest.issueId,
+            pullRequest.number,
+        ]),
+    );
 }
 
 function listIssuePullRequests(state: "open" | "merged") {
-  return ghJson<{ number: number; headRefName: string }[]>([
-    "pr", "list", "--base", BASE_BRANCH, "--state", state, "--limit", "500", "--json", "number,headRefName",
-  ]).flatMap((pullRequest) => {
-    const issueId = ISSUE_BRANCH_PATTERN.exec(pullRequest.headRefName)?.[1];
-    return issueId ? [{ issueId, number: pullRequest.number }] : [];
-  });
+    return ghJson<{ number: number; headRefName: string }[]>([
+        "pr",
+        "list",
+        "--base",
+        BASE_BRANCH,
+        "--state",
+        state,
+        "--limit",
+        "500",
+        "--json",
+        "number,headRefName",
+    ]).flatMap((pullRequest) => {
+        const issueId = ISSUE_BRANCH_PATTERN.exec(pullRequest.headRefName)?.[1];
+        return issueId ? [{ issueId, number: pullRequest.number }] : [];
+    });
 }
 
 function formatAwaitingReview(issuesAwaitingReview: Map<string, number>) {
-  if (issuesAwaitingReview.size === 0) {
-    return "(none)";
-  }
-  return [...issuesAwaitingReview]
-    .map(([issueId, pullRequestNumber]) => `- #${issueId} (PR #${pullRequestNumber})`)
-    .join("\n");
+    if (issuesAwaitingReview.size === 0) {
+        return "(none)";
+    }
+    return [...issuesAwaitingReview]
+        .map(([issueId, pullRequestNumber]) => `- #${issueId} (PR #${pullRequestNumber})`)
+        .join("\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -628,67 +681,76 @@ const TOOLS_REPORTED_BY_SANDCASTLE = new Set(["Bash", "WebSearch", "WebFetch", "
 const MAX_TOOL_INPUT_LENGTH = 160;
 
 type ClaudeStreamLine = {
-  type?: string;
-  subtype?: string;
-  mcp_servers?: { name: string; status: string }[];
-  message?: { content?: { type: string; name?: string; input?: Record<string, unknown> }[] };
+    type?: string;
+    subtype?: string;
+    mcp_servers?: { name: string; status: string }[];
+    message?: { content?: { type: string; name?: string; input?: Record<string, unknown> }[] };
 };
 
 function agentLogging(name: string, branch: string): sandcastle.LoggingOption {
-  const issueId = ISSUE_BRANCH_PATTERN.exec(branch)?.[1];
-  const label = issueId ? `#${issueId} ${name}` : name;
-  return {
-    type: "file",
-    path: join(LOGS_DIR, `${branch.replace(/[/\\:*?"<>|]/g, "-")}-${name}.log`),
-    onAgentStreamEvent: (event) => {
-      const prefix = styleText("dim", `[${label} · ${event.iteration}]`);
-      const text = describeStreamEvent(event);
-      for (const line of text.split("\n")) {
-        if (line.trim()) {
-          console.log(`${prefix} ${line}`);
-        }
-      }
-    },
-  };
+    const issueId = ISSUE_BRANCH_PATTERN.exec(branch)?.[1];
+    const label = issueId ? `#${issueId} ${name}` : name;
+    return {
+        type: "file",
+        path: join(LOGS_DIR, `${branch.replace(/[/\\:*?"<>|]/g, "-")}-${name}.log`),
+        onAgentStreamEvent: (event) => {
+            const prefix = styleText("dim", `[${label} · ${event.iteration}]`);
+            const text = describeStreamEvent(event);
+            for (const line of text.split("\n")) {
+                if (line.trim()) {
+                    console.log(`${prefix} ${line}`);
+                }
+            }
+        },
+    };
 }
 
 function describeStreamEvent(event: sandcastle.AgentStreamEvent) {
-  switch (event.type) {
-    case "text":
-      return event.message;
-    case "toolCall":
-      return styleText("cyan", `→ ${event.name} ${event.formattedArgs}`);
-    case "raw":
-      return describeRawLine(event.line);
-  }
+    switch (event.type) {
+        case "text":
+            return event.message;
+        case "toolCall":
+            return styleText("cyan", `→ ${event.name} ${event.formattedArgs}`);
+        case "raw":
+            return describeRawLine(event.line);
+    }
 }
 
 // MCP server status at startup, and the tool calls Sandcastle doesn't report.
 function describeRawLine(line: string) {
-  let parsed: ClaudeStreamLine;
-  try {
-    parsed = JSON.parse(line) as ClaudeStreamLine;
-  } catch {
-    return "";
-  }
+    let parsed: ClaudeStreamLine;
+    try {
+        parsed = JSON.parse(line) as ClaudeStreamLine;
+    } catch {
+        return "";
+    }
 
-  if (parsed.type === "system" && parsed.subtype === "init") {
-    const servers = (parsed.mcp_servers ?? []).map((server) => `${server.name} ${server.status}`);
-    return styleText("dim", `MCP: ${servers.join(", ") || "none"}`);
-  }
+    if (parsed.type === "system" && parsed.subtype === "init") {
+        const servers = (parsed.mcp_servers ?? []).map(
+            (server) => `${server.name} ${server.status}`,
+        );
+        return styleText("dim", `MCP: ${servers.join(", ") || "none"}`);
+    }
 
-  if (parsed.type !== "assistant") {
-    return "";
-  }
-  return (parsed.message?.content ?? [])
-    .filter((block) => block.type === "tool_use" && block.name && !TOOLS_REPORTED_BY_SANDCASTLE.has(block.name))
-    .map((block) => {
-      const input = JSON.stringify(block.input ?? {});
-      const shortInput =
-        input.length > MAX_TOOL_INPUT_LENGTH ? `${input.slice(0, MAX_TOOL_INPUT_LENGTH)}…` : input;
-      return styleText("cyan", `→ ${block.name} ${shortInput}`);
-    })
-    .join("\n");
+    if (parsed.type !== "assistant") {
+        return "";
+    }
+    return (parsed.message?.content ?? [])
+        .filter(
+            (block) =>
+                block.type === "tool_use" &&
+                block.name &&
+                !TOOLS_REPORTED_BY_SANDCASTLE.has(block.name),
+        )
+        .map((block) => {
+            const input = JSON.stringify(block.input ?? {});
+            const shortInput =
+                input.length > MAX_TOOL_INPUT_LENGTH
+                    ? `${input.slice(0, MAX_TOOL_INPUT_LENGTH)}…`
+                    : input;
+            return styleText("cyan", `→ ${block.name} ${shortInput}`);
+        })
+        .join("\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -696,26 +758,29 @@ function describeRawLine(line: string) {
 // ---------------------------------------------------------------------------
 
 function git(args: string[], env?: NodeJS.ProcessEnv) {
-  return execFileSync("git", args, { encoding: "utf8", env }).trim();
+    return execFileSync("git", args, { encoding: "utf8", env }).trim();
 }
 
 function gh(args: string[], input?: string) {
-  return execFileSync("gh", args, { encoding: "utf8", input }).trim();
+    return execFileSync("gh", args, { encoding: "utf8", input }).trim();
 }
 
 function ghJson<T>(args: string[]): T {
-  return JSON.parse(gh(args)) as T;
+    return JSON.parse(gh(args)) as T;
 }
 
 function dockerCli(args: string[]) {
-  return execFileSync("docker", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    return execFileSync("docker", args, {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
 }
 
 // undefined when the command fails (e.g. the network or container doesn't exist).
 function tryDocker(args: string[]) {
-  try {
-    return dockerCli(args);
-  } catch {
-    return undefined;
-  }
+    try {
+        return dockerCli(args);
+    } catch {
+        return undefined;
+    }
 }

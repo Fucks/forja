@@ -8,22 +8,28 @@ depends_on: [F-01]
 ---
 
 ## Contexto
+
 O grafo do fluxo é o contrato entre o editor (Fase 4), o motor (Fase 5), o runtime (Fase 6) e o YAML exportado. Ver
 PRD, "Modelo de execução". Para que canvas e motor possam ser construídos em paralelo, esta issue declara **todos os
 tipos de nó e grupo do MVP** de uma vez; issues seguintes só consomem (ou ajustam o arquivo do seu tipo em
 `src/shared/node_configs/`).
 
 ## Objetivo
+
 Existem os schemas Zod e tipos de `FlowGraph`, `FlowNode`, `Port`, `FlowEdge`, `FlowGroup` e das configs dos oito
 tipos de nó, com `parseFlowGraph` e uma fábrica `createDefaultNode(type)` testadas.
 
 ## Escopo
+
 **Inclui:** schemas e tipos, defaults de cada tipo (portas e config), condição declarativa, fixtures de grafo para testes.
 **Não inclui:** validação semântica (#{FLW-02}), templates de prompt (#{FLW-03}), persistência (#{FLW-04}).
 
 ## Especificação técnica
+
 ### Arquivos
+
 Criar:
+
 - `src/shared/flow_graph.ts`
 - `src/shared/conditions.ts`
 - `src/shared/node_configs/trigger_config.ts`
@@ -42,6 +48,7 @@ Criar:
 - `src/shared/node_defaults.test.ts`
 
 ### Contratos
+
 ```ts
 export const PORT_TYPES = ["text", "json", "workItem", "workItemList", "branch", "prUrl", "any"] as const;
 export const portSchema = z.object({ name: z.string().regex(/^[a-z][a-zA-Z0-9_]*$/), type: z.enum(PORT_TYPES),
@@ -86,7 +93,9 @@ export type FlowGraph = z.infer<typeof flowGraphSchema>;
 export function parseFlowGraph(input: unknown): FlowGraph; // lança FlowGraphParseError com caminhos legíveis
 export function createDefaultNode(type: NodeType, id: string, position: { x: number; y: number }): FlowNode;
 ```
+
 Portas padrão por tipo (de `node_defaults.ts`):
+
 - `trigger`: saídas `items: workItemList` (obrigatória: não).
 - `source`: entrada `trigger: any` (opcional); saída `items: workItemList`.
 - `agent`: entrada `item: workItem` (opcional), `context: text` (opcional); saída `result: json`, `summary: text`.
@@ -95,9 +104,10 @@ Portas padrão por tipo (de `node_defaults.ts`):
 - `gate`: entrada `item: workItem`; saídas `approved: workItem`, `rejected: workItem`.
 - `git`: entrada `item: workItem`, `body: text` (opcional); saída `result: json` (`{ branch, prUrl? }`).
 - `output`: entrada `item: workItem`.
-O usuário pode acrescentar portas a nós `agent` (ex.: `spec: text`); os demais têm portas fixas.
+  O usuário pode acrescentar portas a nós `agent` (ex.: `spec: text`); os demais têm portas fixas.
 
 ### Passo a passo
+
 1. Escreva os schemas de cada config no seu arquivo e o `flowNodeSchema` discriminado.
 2. `conditions.ts`: schema recursivo com `z.lazy` e `evaluateCondition(condition, data): boolean` puro (path com pontos; ausente → `false`, exceto `not`).
 3. `node_defaults.ts`: portas e config padrão por tipo.
@@ -106,15 +116,18 @@ O usuário pode acrescentar portas a nós `agent` (ex.: `spec: text`); os demais
    item entre maps — e `buildLoopFlow()` (map com loop Dev → script de testes → Reviewer). Usados pelos testes do
    motor e do editor.
 5. `src/shared/validation_issue.ts`: o tipo `ValidationIssue` (abaixo), usado por #{FLW-02} e #{FLW-03}, que rodam em paralelo:
-   ```ts
-   export interface ValidationIssue {
-       level: "error" | "warning"; code: string; message: string;
-       target: { kind: "node" | "edge" | "group" | "flow"; id?: string };
-   }
-   ```
+    ```ts
+    export interface ValidationIssue {
+        level: "error" | "warning";
+        code: string;
+        message: string;
+        target: { kind: "node" | "edge" | "group" | "flow"; id?: string };
+    }
+    ```
 6. Testes.
 
 ## Critérios de aceite
+
 - [ ] `parseFlowGraph(buildCanonicalFlow())` passa; grafo com tipo de nó desconhecido falha com caminho do erro.
 - [ ] `createDefaultNode` devolve portas e config padrão de cada um dos oito tipos.
 - [ ] `evaluateCondition` cobre `eq`, `neq`, `gt`, `lt`, `exists`, `and`, `or`, `not` e path ausente.
@@ -123,6 +136,7 @@ O usuário pode acrescentar portas a nós `agent` (ex.: `spec: text`); os demais
 - [ ] `npm run typecheck`, `npm run lint` e `npm run test` passam.
 
 ## Testes
+
 - `flow_graph.test.ts`: fluxos das fábricas válidos; erros de parse; limites de grupo.
 - `node_defaults.test.ts`: portas por tipo.
 - Testes de `evaluateCondition` em `src/shared/conditions.test.ts` (criar).

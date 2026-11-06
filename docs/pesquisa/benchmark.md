@@ -1,4 +1,5 @@
 # Benchmark — Forja
+
 Data da pesquisa: 2026-11-03
 
 Fontes: READMEs, documentação oficial e artigos (lista no fim). Nenhum produto foi instalado e executado;
@@ -24,12 +25,13 @@ depender dele — decisão do produto para poder mudar o funcionamento e acresce
 ## Sistemas analisados
 
 ### Sandcastle — motor/biblioteca — github.com/mattpocock/sandcastle (npm `@ai-hero/sandcastle`)
+
 - O que é: biblioteca TypeScript (MIT) para rodar agentes de código em sandbox. Versão usada pelo autor do
   projeto: 0.12.0 (pipeline em produção em `auto-development/.sandcastle/main.mts`).
 - Como modela fluxo: em código. `createSandbox({ branch, sandbox: docker({ env }), hooks })` cria um
   container com o worktree montado; `sandbox.run({ agent: claudeCode(model, { effort, permissionMode }),
-  promptFile, promptArgs, maxIterations, idleTimeoutSeconds, output: Output.object({ tag, schema }),
-  logging: { type: "file", path, onAgentStreamEvent }, signal })` roda um agente; vários `run` compartilham
+promptFile, promptArgs, maxIterations, idleTimeoutSeconds, output: Output.object({ tag, schema }),
+logging: { type: "file", path, onAgentStreamEvent }, signal })` roda um agente; vários `run` compartilham
   o mesmo sandbox/branch. Paralelismo e loops ficam a cargo de quem escreve o script.
 - Observabilidade: arquivo de log por run e callback `onAgentStreamEvent` (`text`, `toolCall`, `raw`) —
   exatamente o necessário para logs ao vivo. `IterationResult` traz `sessionId` e `usage` (input, output,
@@ -43,6 +45,7 @@ depender dele — decisão do produto para poder mudar o funcionamento e acresce
   **reimplementar no runtime próprio da Forja** em vez de usar como dependência (controle total sobre o funcionamento).
 
 ### Paperclip — control plane — github.com/paperclipai/paperclip (`npx paperclipai onboard`)
+
 - O que é: app Node + React (MIT) que gerencia agentes como empresa: organograma, metas, tickets,
   orçamento mensal por agente, "heartbeats" (agentes acordam em intervalos), humano como "board" que aprova.
   Tração alta (relatos de ~70 mil estrelas em 2026).
@@ -55,6 +58,7 @@ depender dele — decisão do produto para poder mudar o funcionamento e acresce
 - O que vale copiar: orçamento por agente com parada automática; aprovações como cidadãs de primeira classe.
 
 ### RondoFlow — canvas para Claude Code — rondoflow-landing.pages.dev (landing; código não verificado)
+
 - O que é: canvas local (MIT) para orquestrar Claude Code: nós de agente, skill, policy, MCP, webhook,
   HTTP; DAG paralelo com condições; papéis Planner (antes), Director (durante), Advisor (depois); cron.
 - Stack: Next.js, React Flow, Fastify, PostgreSQL/Prisma, Socket.IO; `docker compose up`.
@@ -65,6 +69,7 @@ depender dele — decisão do produto para poder mudar o funcionamento e acresce
 - O que vale copiar: políticas por nó; reanexar a execução; Director como ideia Pós-MVP.
 
 ### Claude Workflow Composer — canvas + export — github.com/fayzan123/claude-workflow-composer
+
 - O que é: servidor local Express + UI React Flow (`npx claude-cwc`), MIT, ~37 estrelas.
 - Fluxo: arquivo `.cwc` (nós, arestas "handoffs", gates, nós terminais); fan-out; loop como skill com
   retry. Exporta para `.claude/` (skills e agentes).
@@ -76,29 +81,35 @@ depender dele — decisão do produto para poder mudar o funcionamento e acresce
 - O que vale copiar: UX de nó pulsando + timeline; gate com diff; "apply/discard" do resultado.
 
 ### CC Workflow Studio — extensão VS Code (open-vsx `breaking-brake/cc-wf-studio`)
+
 - Canvas dentro do VS Code que exporta workflows como Markdown para o Claude Code; servidor MCP permite que
   o Claude edite o fluxo. Não orquestra execução concorrente. Licença AGPL.
 - O que vale copiar: fluxo editável também pelo próprio agente (MCP) — Pós-MVP.
 
 ### Opaal — Electron — github.com/Agravak/opaal
+
 - Colunas = fases (sequenciais), cartões = agentes (paralelos na coluna); gera um prompt para o Claude Code.
   **Arquivado em 13/04/2026.** Sem logs, sem schedule.
 - O que vale copiar: o modelo mental "colunas sequenciais, paralelo dentro da coluna" é fácil de entender —
   o board da Forja usa a mesma leitura.
 
 ### Vibe Kanban — board de agentes — vibekanban.com
+
 - Kanban para planejar, rodar e revisar vários agentes em worktrees isolados, com terminal por workspace.
   **Em sunset** (segue como open source comunitário).
 - O que vale copiar: worktree automático por cartão; revisão de diff no cartão. Lição: board sozinho não
   segurou o produto — falta o fluxo multi-etapa.
 
 ### Claude Squad / agtx — TUI
+
 - Vários agentes em paralelo via tmux + worktrees. Simples; sem fluxo, sem board rico, sem schedule.
 
 ### claude-flow — framework CLI
+
 - Swarms/hive-mind sobre o Claude Code, MIT, pausa/retomada. Sem canvas; curva de aprendizado alta.
 
 ### Agent teams e agent view do Claude Code — code.claude.com/docs/en/agent-teams
+
 - Recurso oficial **experimental** (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`): um líder e colegas (instâncias
   separadas, cada uma com seu contexto), lista de tarefas compartilhada com dependências e mailbox em arquivos
   em `~/.claude/teams/`. Painel no terminal; split panes exigem tmux/iTerm2 (não Windows Terminal).
@@ -109,6 +120,7 @@ depender dele — decisão do produto para poder mudar o funcionamento e acresce
   não uma linha de montagem determinística, e não tem visual de fluxo nem board.
 
 ### ForgeAI — "fábrica de software autônoma" — github.com/pmadalozzo/ForgeAI
+
 - README em português; papéis fixos (PM, Arquiteto, Front, Back, QA...); UI de "escritório virtual 2D" com
   bonecos animados; modos Autopilot/Approve/Watch/Pair; React Flow + Fastify + BullMQ/Redis + Supabase.
   Em desenvolvimento, 0 estrelas. Modelo de fluxo/paralelismo não documentado.
@@ -116,17 +128,20 @@ depender dele — decisão do produto para poder mudar o funcionamento e acresce
   os modos de supervisão (Autopilot/Approve/Watch) são uma boa ideia de configuração por fluxo.
 
 ### n8n — workflow visual genérico — docs.n8n.io
+
 - Lista de execuções com status, duração e gatilho; clicar no nó mostra entrada e saída daquela execução;
   "Debug in editor" copia os dados de uma execução passada para o editor e fixa ("pin") no primeiro nó.
 - O que vale copiar: **inspecionar entrada/saída por nó** e **reexecutar a partir de dados de uma run passada**.
 
 ### LangGraph Studio — IDE de grafos de agentes
+
 - Interrupções antes/depois de nós, checkpoints, "time travel" (inspecionar qualquer checkpoint, editar o
   estado e criar um fork). Atrelado ao LangGraph.
 - O que vale copiar: retomar/repetir a partir de um nó com o estado salvo (nossas saídas persistidas por
   `NodeRun` permitem isso).
 
 ### Agentes autônomos fechados (Devin, Factory, Copilot coding agent, Codex cloud)
+
 - Issue → PR na nuvem, sessões observáveis. Caixa-preta: o usuário não desenha a linha de montagem, paga por
   assento/uso e não roda localmente. Não verificados nesta rodada (fora do foco local).
 
@@ -152,29 +167,29 @@ depender dele — decisão do produto para poder mudar o funcionamento e acresce
 
 Legenda: ✅ completo · ◐ parcial · ❌ não tem · ? não verificado.
 
-| Capacidade | Sandcastle | Paperclip | RondoFlow | CWC | Vibe Kanban | Agent teams | n8n | Classificação |
-|---|---|---|---|---|---|---|---|---|
-| Fluxo definido visualmente | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ✅ | obrigatória |
-| Editar e executar o mesmo artefato | ❌ | ❌ | ✅ | ◐ (export) | ❌ | ❌ | ✅ | obrigatória |
-| Contexto limpo por etapa | ✅ | ✅ | ? | ❌ | ✅ | ✅ | n/a | diferencial |
-| Portas de entrada/saída tipadas | ◐ (Output) | ❌ | ? | ◐ (artefatos) | ❌ | ❌ | ✅ | diferencial |
-| Loop com condição e teto | código | ❌ | ? | ◐ | ❌ | ❌ | ◐ | **lacuna** |
-| Concorrência limitada visível (map ×N) | código | ❌ | ◐ (DAG) | ◐ | ◐ | ◐ | ◐ | **lacuna** |
-| Execução ao vivo no grafo | ❌ | ❌ | ✅ | ✅ | n/a | ❌ | ◐ | obrigatória |
-| Logs por etapa | ◐ (arquivo) | ◐ | ✅ | ✅ | ✅ | ◐ | ✅ | obrigatória |
-| Entrada/saída por nó e reexecução | ❌ | ❌ | ? | ◐ | ❌ | ❌ | ✅ | diferencial |
-| Board de itens derivado do fluxo | ❌ | ◐ (tickets) | ❌ | ❌ | ◐ (manual) | ◐ (tasks) | ❌ | **lacuna** |
-| GitHub Issues → PR | código | ◐ | ? | ❌ | ◐ | ❌ | ◐ | obrigatória |
-| Isolamento Docker por nó | ✅ | ❌ | ✅ | ❌ (worktree) | ❌ (worktree) | ❌ | n/a | diferencial |
-| Gates humanos | código | ✅ | ✅ | ✅ | ◐ | ◐ (hooks) | ✅ | obrigatória |
-| Schedules (cron) | ❌ | ◐ (heartbeat) | ✅ | ✅ | ❌ | ❌ | ✅ | obrigatória |
-| Retomada automática após limite de uso | código | ❌ | ? | ❌ | ❌ | ❌ | n/a | **lacuna** |
-| Orçamento/custo por etapa | ◐ (usage) | ✅ (por agente) | ◐ | ❌ | ❌ | ❌ | n/a | diferencial |
-| Modelo/effort por etapa | ✅ | ✅ | ? | ✅ | ◐ | ◐ | n/a | obrigatória |
-| MCP/ferramentas por etapa | ◐ (imagem) | ◐ | ✅ | ✅ | ❌ | ❌ | n/a | diferencial |
-| Credenciais gerenciadas na UI | ❌ | ◐ | ? | ❌ | ◐ | n/a | ✅ | obrigatória |
-| Windows nativo sem WSL | ✅ (Docker) | ✅ | ❌ | ✅ | ✅ | ◐ | ✅ | diferencial |
-| Fluxo exportável em arquivo | código | ❌ | ? | ✅ | ❌ | ❌ | ✅ | obrigatória |
+| Capacidade                             | Sandcastle  | Paperclip       | RondoFlow | CWC           | Vibe Kanban   | Agent teams | n8n | Classificação |
+| -------------------------------------- | ----------- | --------------- | --------- | ------------- | ------------- | ----------- | --- | ------------- |
+| Fluxo definido visualmente             | ❌          | ❌              | ✅        | ✅            | ❌            | ❌          | ✅  | obrigatória   |
+| Editar e executar o mesmo artefato     | ❌          | ❌              | ✅        | ◐ (export)    | ❌            | ❌          | ✅  | obrigatória   |
+| Contexto limpo por etapa               | ✅          | ✅              | ?         | ❌            | ✅            | ✅          | n/a | diferencial   |
+| Portas de entrada/saída tipadas        | ◐ (Output)  | ❌              | ?         | ◐ (artefatos) | ❌            | ❌          | ✅  | diferencial   |
+| Loop com condição e teto               | código      | ❌              | ?         | ◐             | ❌            | ❌          | ◐   | **lacuna**    |
+| Concorrência limitada visível (map ×N) | código      | ❌              | ◐ (DAG)   | ◐             | ◐             | ◐           | ◐   | **lacuna**    |
+| Execução ao vivo no grafo              | ❌          | ❌              | ✅        | ✅            | n/a           | ❌          | ◐   | obrigatória   |
+| Logs por etapa                         | ◐ (arquivo) | ◐               | ✅        | ✅            | ✅            | ◐           | ✅  | obrigatória   |
+| Entrada/saída por nó e reexecução      | ❌          | ❌              | ?         | ◐             | ❌            | ❌          | ✅  | diferencial   |
+| Board de itens derivado do fluxo       | ❌          | ◐ (tickets)     | ❌        | ❌            | ◐ (manual)    | ◐ (tasks)   | ❌  | **lacuna**    |
+| GitHub Issues → PR                     | código      | ◐               | ?         | ❌            | ◐             | ❌          | ◐   | obrigatória   |
+| Isolamento Docker por nó               | ✅          | ❌              | ✅        | ❌ (worktree) | ❌ (worktree) | ❌          | n/a | diferencial   |
+| Gates humanos                          | código      | ✅              | ✅        | ✅            | ◐             | ◐ (hooks)   | ✅  | obrigatória   |
+| Schedules (cron)                       | ❌          | ◐ (heartbeat)   | ✅        | ✅            | ❌            | ❌          | ✅  | obrigatória   |
+| Retomada automática após limite de uso | código      | ❌              | ?         | ❌            | ❌            | ❌          | n/a | **lacuna**    |
+| Orçamento/custo por etapa              | ◐ (usage)   | ✅ (por agente) | ◐         | ❌            | ❌            | ❌          | n/a | diferencial   |
+| Modelo/effort por etapa                | ✅          | ✅              | ?         | ✅            | ◐             | ◐           | n/a | obrigatória   |
+| MCP/ferramentas por etapa              | ◐ (imagem)  | ◐               | ✅        | ✅            | ❌            | ❌          | n/a | diferencial   |
+| Credenciais gerenciadas na UI          | ❌          | ◐               | ?         | ❌            | ◐             | n/a         | ✅  | obrigatória   |
+| Windows nativo sem WSL                 | ✅ (Docker) | ✅              | ❌        | ✅            | ✅            | ◐           | ✅  | diferencial   |
+| Fluxo exportável em arquivo            | código      | ❌              | ?         | ✅            | ❌            | ❌          | ✅  | obrigatória   |
 
 ## Dores dos usuários
 
@@ -195,23 +210,23 @@ Legenda: ✅ completo · ◐ parcial · ❌ não tem · ? não verificado.
 
 ## Oportunidades priorizadas
 
-| # | Oportunidade | Evidência | Impacto | Esforço | Decisão | Requisitos |
-|---|---|---|---|---|---|---|
-| 1 | Canvas editável que é a execução ao vivo | CWC/RondoFlow provam a UX; nenhum une com itens e board | Alto | Alto | MVP | RF-EDT-*, RF-OBS-01/02 |
-| 2 | Grupo map com concorrência e fila visível | Template TL→Dev×3→Reviewer×1; matriz: lacuna | Alto | Médio | MVP | RF-RUN-02, RF-OBS-01 |
-| 3 | Loop com condição e teto, custo por iteração | Matriz: lacuna; dor de custo | Alto | Médio | MVP | RF-RUN-03, RF-OBS-05 |
-| 4 | Retomada automática após limite de uso | `usage_guard.mts` do usuário; matriz: lacuna | Alto | Médio | MVP | RF-RUN-06, RF-TRG-01 |
-| 5 | Board derivado do fluxo | Vibe Kanban/Paperclip só board; Opaal colunas | Alto | Médio | MVP | RF-BRD-* |
-| 6 | Runtime próprio com Docker por item | Requisito do usuário (Docker por nó; motor próprio para evoluir); flags do CLI cobrem effort, saída estruturada, MCP, ferramentas | Alto | Médio | MVP | RNF-EXT-01, RF-RUN-08 |
-| 7 | Orçamento e concorrência global | Dores de quota e TPM | Alto | Baixo | MVP | RF-RUN-07, RNF-CUS-01 |
-| 8 | Entrada/saída por nó + repetir NodeRun | n8n, LangGraph Studio | Médio | Médio | MVP (repetir); Pós-MVP (fork com estado editado) | RF-OBS-02, RF-RUN-01 |
-| 9 | Perfis de ferramentas (CodeGraph/MCP) por nó | Dockerfile do usuário já usa CodeGraph | Médio | Médio | MVP | RF-CFG-02 |
-| 10 | Template que reproduz o pipeline Sandcastle | `main.mts` do usuário | Alto | Médio | MVP | RF-EDT-08 |
-| 11 | Políticas de permissão por nó | RondoFlow; CWC usa bypass | Médio | Baixo | MVP (modo de permissão por nó) | RNF-SEG-03 |
-| 12 | Modos de supervisão (Autopilot/Approve/Watch) | ForgeAI | Médio | Baixo | Pós-MVP (gates cobrem o MVP) | — |
-| 13 | Planner/Director/Advisor (IA que ajusta o fluxo) | RondoFlow | Médio | Alto | Pós-MVP | — |
-| 14 | Fluxo editável pelo próprio agente via MCP | CC Workflow Studio | Médio | Médio | Pós-MVP | — |
-| 15 | App desktop | — | Baixo | Alto | Pós-MVP | — |
+| #   | Oportunidade                                     | Evidência                                                                                                                         | Impacto | Esforço | Decisão                                          | Requisitos             |
+| --- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ------- | ------- | ------------------------------------------------ | ---------------------- |
+| 1   | Canvas editável que é a execução ao vivo         | CWC/RondoFlow provam a UX; nenhum une com itens e board                                                                           | Alto    | Alto    | MVP                                              | RF-EDT-*, RF-OBS-01/02 |
+| 2   | Grupo map com concorrência e fila visível        | Template TL→Dev×3→Reviewer×1; matriz: lacuna                                                                                      | Alto    | Médio   | MVP                                              | RF-RUN-02, RF-OBS-01   |
+| 3   | Loop com condição e teto, custo por iteração     | Matriz: lacuna; dor de custo                                                                                                      | Alto    | Médio   | MVP                                              | RF-RUN-03, RF-OBS-05   |
+| 4   | Retomada automática após limite de uso           | `usage_guard.mts` do usuário; matriz: lacuna                                                                                      | Alto    | Médio   | MVP                                              | RF-RUN-06, RF-TRG-01   |
+| 5   | Board derivado do fluxo                          | Vibe Kanban/Paperclip só board; Opaal colunas                                                                                     | Alto    | Médio   | MVP                                              | RF-BRD-*               |
+| 6   | Runtime próprio com Docker por item              | Requisito do usuário (Docker por nó; motor próprio para evoluir); flags do CLI cobrem effort, saída estruturada, MCP, ferramentas | Alto    | Médio   | MVP                                              | RNF-EXT-01, RF-RUN-08  |
+| 7   | Orçamento e concorrência global                  | Dores de quota e TPM                                                                                                              | Alto    | Baixo   | MVP                                              | RF-RUN-07, RNF-CUS-01  |
+| 8   | Entrada/saída por nó + repetir NodeRun           | n8n, LangGraph Studio                                                                                                             | Médio   | Médio   | MVP (repetir); Pós-MVP (fork com estado editado) | RF-OBS-02, RF-RUN-01   |
+| 9   | Perfis de ferramentas (CodeGraph/MCP) por nó     | Dockerfile do usuário já usa CodeGraph                                                                                            | Médio   | Médio   | MVP                                              | RF-CFG-02              |
+| 10  | Template que reproduz o pipeline Sandcastle      | `main.mts` do usuário                                                                                                             | Alto    | Médio   | MVP                                              | RF-EDT-08              |
+| 11  | Políticas de permissão por nó                    | RondoFlow; CWC usa bypass                                                                                                         | Médio   | Baixo   | MVP (modo de permissão por nó)                   | RNF-SEG-03             |
+| 12  | Modos de supervisão (Autopilot/Approve/Watch)    | ForgeAI                                                                                                                           | Médio   | Baixo   | Pós-MVP (gates cobrem o MVP)                     | —                      |
+| 13  | Planner/Director/Advisor (IA que ajusta o fluxo) | RondoFlow                                                                                                                         | Médio   | Alto    | Pós-MVP                                          | —                      |
+| 14  | Fluxo editável pelo próprio agente via MCP       | CC Workflow Studio                                                                                                                | Médio   | Médio   | Pós-MVP                                          | —                      |
+| 15  | App desktop                                      | —                                                                                                                                 | Baixo   | Alto    | Pós-MVP                                          | —                      |
 
 ## Riscos e restrições
 
