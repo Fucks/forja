@@ -19,7 +19,7 @@
 
 ## Tasks
 
-- [ ] 1. Vitest projects (node/jsdom) + jest-dom setup — `vitest.config.ts`, `vitest.integration.config.ts`, `src/test/setup.ts`
+- [x] 1. Vitest projects (node/jsdom) + jest-dom setup — `vitest.config.ts`, `vitest.integration.config.ts`, `src/test/setup.ts`
 - [ ] 2. Test + implement `HomePage` showing "servidor: ok" / "servidor indisponível" — `src/web/app/home_page.tsx`, `home_page.test.tsx`
 - [ ] 3. `createAppRouter`, `main.tsx`, `index.html`, `global.css`, `vite.config.ts`
 - [ ] 4. Test + implement `runtimeAssetPath` for source and build — `src/lib/paths.ts`, `paths.test.ts`
