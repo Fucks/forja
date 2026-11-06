@@ -17,7 +17,7 @@
 - [x] 1. `Clock` interface and `systemClock` with cancellable timeout — `src/lib/clock.ts`
 - [x] 2. Test + implement `FakeClock` now/set/advance firing due timers in time order, skipping cancelled,
       firing timers scheduled during advance — `src/test/fakes/fake_clock.ts`, `fake_clock.test.ts`
-- [ ] 3. Test + implement `newId` with prefix and lexical ordering — `src/lib/ids.ts`, `ids.test.ts`
+- [x] 3. Test + implement `newId` with prefix and lexical ordering — `src/lib/ids.ts`, `ids.test.ts`
 - [ ] 4. Test + implement `formatDuration` — `src/lib/format.ts`, `format.test.ts`
 - [ ] 5. Test + implement `formatTokens` — `src/lib/format.ts`, `format.test.ts`
 - [ ] 6. Test + implement `formatUsd` — `src/lib/format.ts`, `format.test.ts`
