@@ -2,7 +2,12 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { ensureDataDirs, resolvePaths } from "@/lib/paths.js";
+import {
+    createRuntimeAssetResolver,
+    ensureDataDirs,
+    resolvePaths,
+    runtimeAssetPath,
+} from "@/lib/paths.js";
 
 describe("resolvePaths", () => {
     it("uses .forja inside the home directory when no data directory is given", () => {
@@ -68,5 +73,77 @@ describe("ensureDataDirs", () => {
         ensureDataDirs(paths);
 
         expect(() => ensureDataDirs(paths)).not.toThrow();
+    });
+});
+
+describe("createRuntimeAssetResolver", () => {
+    describe("when running from the TypeScript sources", () => {
+        const repositoryRoot = path.resolve("/projetos/minha forja");
+        const resolveAsset = createRuntimeAssetResolver(
+            path.join(repositoryRoot, "src", "lib", "paths.ts"),
+        );
+
+        it("finds migrations in the database source folder", () => {
+            const migrationPath = resolveAsset("migrations", "0001_init.sql");
+
+            expect(migrationPath).toBe(
+                path.join(repositoryRoot, "src", "server", "db", "migrations", "0001_init.sql"),
+            );
+        });
+
+        it("finds prompts by their path relative to src/server", () => {
+            const promptPath = resolveAsset("prompts", "flows", "prompts", "reviewer.md");
+
+            expect(promptPath).toBe(
+                path.join(repositoryRoot, "src", "server", "flows", "prompts", "reviewer.md"),
+            );
+        });
+
+        it("finds assets in the assets folder of the repository", () => {
+            const dockerfilePath = resolveAsset("assets", "agent-image", "Dockerfile");
+
+            expect(dockerfilePath).toBe(
+                path.join(repositoryRoot, "assets", "agent-image", "Dockerfile"),
+            );
+        });
+
+        it("finds the web app in the Vite output folder", () => {
+            const webDir = resolveAsset("web");
+
+            expect(webDir).toBe(path.join(repositoryRoot, "dist", "web"));
+        });
+    });
+
+    describe("when running from the bundle", () => {
+        const bundleDir = path.resolve("/usr/lib/node_modules/forja/dist");
+        const resolveAsset = createRuntimeAssetResolver(path.join(bundleDir, "cli.js"));
+
+        it("finds migrations next to the bundle", () => {
+            const migrationPath = resolveAsset("migrations", "0001_init.sql");
+
+            expect(migrationPath).toBe(path.join(bundleDir, "migrations", "0001_init.sql"));
+        });
+
+        it("finds prompts next to the bundle, keeping their relative path", () => {
+            const promptPath = resolveAsset("prompts", "flows", "prompts", "reviewer.md");
+
+            expect(promptPath).toBe(
+                path.join(bundleDir, "prompts", "flows", "prompts", "reviewer.md"),
+            );
+        });
+
+        it("finds the web app next to the bundle", () => {
+            const webDir = resolveAsset("web");
+
+            expect(webDir).toBe(path.join(bundleDir, "web"));
+        });
+    });
+});
+
+describe("runtimeAssetPath", () => {
+    it("resolves assets from the sources of this repository during tests", () => {
+        const migrationsDir = runtimeAssetPath("migrations");
+
+        expect(migrationsDir).toBe(path.resolve("src", "server", "db", "migrations"));
     });
 });
