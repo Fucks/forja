@@ -47,13 +47,13 @@ You may be continuing work from a previous iteration. Check this before doing an
    context, the architecture, the domain rules (money in cents, stock rules, etc.) and the naming used
    across the project.
 3. Note the issue's sections:
-   - **Escopo / Não inclui** — the boundary. Don't implement things listed under "Não inclui"; another issue
-     owns them and is probably being built in parallel. Expanding scope causes merge conflicts.
-   - **Arquivos** — the files to create and change. Stay close to this list; if you need to touch other
-     files, keep the change minimal and mention it in the commit.
-   - **Contratos** — the exact names, types and signatures to use. Other issues depend on these names; don't
-     rename them, even if you'd prefer another name.
-   - **Critérios de aceite** and **Testes** — your definition of done.
+    - **Escopo / Não inclui** — the boundary. Don't implement things listed under "Não inclui"; another issue
+      owns them and is probably being built in parallel. Expanding scope causes merge conflicts.
+    - **Arquivos** — the files to create and change. Stay close to this list; if you need to touch other
+      files, keep the change minimal and mention it in the commit.
+    - **Contratos** — the exact names, types and signatures to use. Other issues depend on these names; don't
+      rename them, even if you'd prefer another name.
+    - **Critérios de aceite** and **Testes** — your definition of done.
 
 # 2. EXPLORE BEFORE WRITING
 
@@ -94,13 +94,15 @@ half-done, finish it or redo it. Add tasks to the end only when you find work th
 # Issue #{{TASK_ID}}: {{ISSUE_TITLE}}
 
 ## Decisions
+
 - Choices that a restarted agent must keep (reused helpers, where new code lives, contract details).
 
 ## Tasks
+
 - [ ] 1. Test: rejects the order when the store is paused — `src/server/orders/place_order.test.ts`
 - [ ] 2. Implement the paused-store check in `placeOrder` — `src/server/orders/place_order.ts`
 - [ ] 3. Refactor: extract `assertStoreIsOpen` and run the checks
-...
+      ...
 - [ ] N. Self-review checklist (section 5) and feedback loops (section 6)
 ```
 
@@ -129,7 +131,7 @@ Work task by task through the plan, in small cycles:
 4. Check the task off in the plan and commit (section 7).
 5. Repeat until every task is checked.
 
-While writing, keep asking: *"Would a new developer understand this line without me explaining it?"*
+While writing, keep asking: _"Would a new developer understand this line without me explaining it?"_
 If the answer is no, the fix is almost always a better name or an extracted function — not a comment.
 
 # 5. SELF-REVIEW BEFORE COMMITTING
@@ -141,7 +143,7 @@ and fix what you find:
 - [ ] Each function does one thing, at one level of abstraction; the top-level functions read like a summary.
 - [ ] No nesting deeper than two levels; no nested ternaries; guard clauses instead of `else` after `return`.
 - [ ] No magic numbers or strings; no `any`, unchecked `as` casts or non-null assertions (`value!.prop`).
-- [ ] Comments only explain *why*; no comment restates the code; no commented-out code; no dead code.
+- [ ] Comments only explain _why_; no comment restates the code; no commented-out code; no dead code.
 - [ ] Nothing duplicated that already existed in the codebase.
 - [ ] Names and signatures match the issue's contracts exactly.
 - [ ] Tests describe behavior and cover the edge cases listed in the issue.

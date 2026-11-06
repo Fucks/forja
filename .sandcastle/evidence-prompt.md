@@ -93,19 +93,22 @@ playwright screenshot --full-page --viewport-size "390,844" --wait-for-timeout 1
 
 Write `{{EVIDENCE_DIR}}/body.md` in Portuguese, in this structure:
 
-~~~markdown
+````markdown
 ## Resumo
+
 <2–4 frases: o que a issue entrega e as decisões principais>
 
 ## Critérios de aceite
+
 - [x] <critério> — <prova: `caminho/do/teste.test.ts` › "nome do teste", saída de comando ou screenshot>
 - [ ] <critério sem prova> — <por quê>
 
 ## Checks
-| Comando | Resultado |
-|---|---|
-| `npm run typecheck` | ✅ / ❌ |
-| ... | ... |
+
+| Comando             | Resultado |
+| ------------------- | --------- |
+| `npm run typecheck` | ✅ / ❌   |
+| ...                 | ...       |
 
 <details><summary>Saída dos testes</summary>
 
@@ -116,11 +119,13 @@ Write `{{EVIDENCE_DIR}}/body.md` in Portuguese, in this structure:
 </details>
 
 ## Screenshots
+
 ![Catálogo no desktop](screenshots/catalogo-desktop.png)
 
 ## Como testar
+
 <passos para o revisor reproduzir localmente>
-~~~
+````
 
 - Link screenshots exactly as `screenshots/<file>.png`; the pipeline turns these into real URLs.
 - Omit the **Screenshots** section when step 3 was skipped, or replace it with one line saying why.
@@ -131,7 +136,7 @@ Write `{{EVIDENCE_DIR}}/body.md` in Portuguese, in this structure:
 Write `{{EVIDENCE_DIR}}/result.json`:
 
 ```json
-{"checksPassed": true}
+{ "checksPassed": true }
 ```
 
 When any check failed, use `{"checksPassed": false, "failureSummary": "<command that failed and why, one sentence>"}`.

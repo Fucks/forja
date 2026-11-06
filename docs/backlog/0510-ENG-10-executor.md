@@ -8,16 +8,19 @@ depends_on: [ENG-08, ENG-09, F-06, FLW-04, PRJ-01, CFG-05, BRD-01]
 ---
 
 ## Contexto
+
 O scheduler (#{ENG-03}…#{ENG-08}) só decide; esta issue é a "casca imperativa": interpreta os comandos, abre um
 workspace por item no `AgentRuntime`, roda os nós de agente com o prompt renderizado (#{FLW-03}), grava cada
 transição (#{ENG-09}) e publica eventos (#{F-06}). Depois dela, um fluxo roda de ponta a ponta com o
 `FakeAgentRuntime` — o ciclo central do produto.
 
 ## Objetivo
+
 Existe `createExecutor(deps)` que inicia uma run de uma versão publicada para uma lista de itens, executa nós `agent`
 via `AgentRuntime`, persiste e publica cada mudança, e conclui a run; testado de ponta a ponta com o fake.
 
 ## Escopo
+
 **Inclui:** executor, registro de executores de nó (`node_executors.ts`) com o executor de `agent`, gestão de workspaces
 por item (abrir na primeira necessidade, fechar quando o item termina), renderização de prompt, mapeamento de erros
 do runtime para `FailureKind`, timers do scheduler via `Clock`.
@@ -25,8 +28,11 @@ do runtime para `FailureKind`, timers do scheduler via `Clock`.
 logs em arquivo (#{RT-03}), uso persistido (#{RT-05}), recuperação (#{ENG-11}), API (#{ENG-12}).
 
 ## Especificação técnica
+
 ### Arquivos
+
 Criar:
+
 - `src/server/runtime/executor.ts`
 - `src/server/runtime/node_executors.ts`
 - `src/server/runtime/executors/agent_executor.ts`
@@ -38,26 +44,56 @@ Criar:
 - `src/integrations/agent_runtime/unavailable_agent_runtime.ts` (implementa `AgentRuntime` rejeitando tudo com
   `WorkspaceError("Runtime de agentes ainda não configurado")`; é o que `main.ts` usa até #{RT-03} ligar o runtime Docker
   e #{OBS-06} ligar o modo demo — código de produção nunca importa de `src/test/`)
-Alterar:
+  Alterar:
 - `src/server/app.ts` e `src/server/main.ts` (`AppDeps` ganha `agentRuntime` e `executor`)
 
 ### Contratos
+
 ```ts
 export interface NodeExecutionContext {
-    run: RunRecord; nodeRun: NodeRunState; node: FlowNode; graph: FlowGraph; inputs: Record<string, unknown>;
-    item?: WorkItemSnapshot; project: Project; settings: ProjectSettings;
-    workspaces: WorkspacePool; runtime: AgentRuntime; clock: Clock; signal: AbortSignal;
-    onAgentEvent(event: AgentEvent): void;     // #{RT-03} grava em arquivo; aqui só publica `log.appended` numerado em memória
+    run: RunRecord;
+    nodeRun: NodeRunState;
+    node: FlowNode;
+    graph: FlowGraph;
+    inputs: Record<string, unknown>;
+    item?: WorkItemSnapshot;
+    project: Project;
+    settings: ProjectSettings;
+    workspaces: WorkspacePool;
+    runtime: AgentRuntime;
+    clock: Clock;
+    signal: AbortSignal;
+    onAgentEvent(event: AgentEvent): void; // #{RT-03} grava em arquivo; aqui só publica `log.appended` numerado em memória
 }
-export interface NodeExecutionResult { outputs: Record<string, unknown>; artifacts?: Omit<ArtifactRecord, "id" | "nodeRunId" | "runId" | "createdAt">[]; usage?: TokenUsage & { costUsd?: number } }
+export interface NodeExecutionResult {
+    outputs: Record<string, unknown>;
+    artifacts?: Omit<ArtifactRecord, "id" | "nodeRunId" | "runId" | "createdAt">[];
+    usage?: TokenUsage & { costUsd?: number };
+}
 export type NodeExecutor = (ctx: NodeExecutionContext) => Promise<NodeExecutionResult>;
 export const nodeExecutors: Partial<Record<NodeType, NodeExecutor>>; // aqui: agent. Cadeia: #{ENG-13} → #{BRD-04} → #{GIT-01} → #{GIT-03}
 
-export interface WorkItemSnapshot { id: string; title: string; body: string; number?: number; url?: string; labels: string[]; branch: string }
-export interface ItemSource { getItems(projectId: string, ids: string[]): Promise<WorkItemSnapshot[]> } // em produção: `WorkItemService.snapshots` de #{BRD-01}; nos testes, um fake
+export interface WorkItemSnapshot {
+    id: string;
+    title: string;
+    body: string;
+    number?: number;
+    url?: string;
+    labels: string[];
+    branch: string;
+}
+export interface ItemSource {
+    getItems(projectId: string, ids: string[]): Promise<WorkItemSnapshot[]>;
+} // em produção: `WorkItemService.snapshots` de #{BRD-01}; nos testes, um fake
 
 export interface Executor {
-    startRun(input: { projectId: string; flowId: string; version?: number /* padrão: última publicada */; itemIds: string[]; triggerId?: string }): Promise<RunRecord>;
+    startRun(input: {
+        projectId: string;
+        flowId: string;
+        version?: number /* padrão: última publicada */;
+        itemIds: string[];
+        triggerId?: string;
+    }): Promise<RunRecord>;
     cancelRun(runId: string): Promise<void>;
     pauseRun(runId: string): Promise<void>;
     resumeRun(runId: string): Promise<void>;
@@ -65,15 +101,26 @@ export interface Executor {
     retryNodeRun(nodeRunId: string): Promise<void>;
     activeRunIds(): string[];
 }
-export function createExecutor(deps: { runs: RunRepository; flows: FlowService; projects: ProjectService; settings: SettingsService;
-    items: ItemSource; runtime: AgentRuntime; events: EventBus; clock: Clock; newId(p: IdPrefix): string }): Executor;
+export function createExecutor(deps: {
+    runs: RunRepository;
+    flows: FlowService;
+    projects: ProjectService;
+    settings: SettingsService;
+    items: ItemSource;
+    runtime: AgentRuntime;
+    events: EventBus;
+    clock: Clock;
+    newId(p: IdPrefix): string;
+}): Executor;
 
 export function mapAgentError(error: unknown): NonNullable<NodeRunState["error"]>; // UsageLimitError → usage_limit, AgentTimeoutError → timeout_total|timeout_idle, ...
 ```
+
 Pausa/retomada pelo usuário: acrescente ao scheduler os eventos `pause_requested`/`resume_requested` (altere
 `src/engine/scheduler.ts`, `scheduler_types.ts` e o teste) — run `PAUSED` com `pauseReason: "user"`, nada novo começa.
 
 ### Semântica
+
 - `startRun`: carrega a versão publicada (erro 422 se não houver), cria `RunRecord` QUEUED, cria o scheduler com
   opções de `GlobalSettings`/`ProjectSettings` (tetos, intervalo, margem de limite, orçamento diário com o gasto do dia = 0
   até #{RT-05}), envia `start` e executa os comandos.
@@ -91,6 +138,7 @@ Pausa/retomada pelo usuário: acrescente ao scheduler os eventos `pause_requeste
 - Branch do item: `forja/issue-<número>` para issues do GitHub; `forja/item-<id curto>` para itens locais.
 
 ### Passo a passo
+
 1. `error_mapping.ts`, `run_context.ts` (monta `PromptContext`), `workspace_pool.ts` (contagem de uso por item, abrir uma vez mesmo com pedidos concorrentes).
 2. `agent_executor.ts` e o registro.
 3. Loop do executor por run (fila de eventos serializada por run para não intercalar `handle`).
@@ -98,6 +146,7 @@ Pausa/retomada pelo usuário: acrescente ao scheduler os eventos `pause_requeste
 5. Teste de ponta a ponta: `buildCanonicalFlow()` publicado num banco de teste, 4 itens, `FakeAgentRuntime`, `FakeClock`.
 
 ## Critérios de aceite
+
 - [ ] O fluxo canônico com 4 itens termina `SUCCEEDED` no fake, com o pico de 3 Devs simultâneos e 1 Reviewer por vez.
 - [ ] Cada item usa um único workspace aberto uma vez e fechado ao final; nós `none` usam `runHeadless`.
 - [ ] O prompt enviado ao runtime contém as variáveis renderizadas e o system prompt do projeto.
@@ -107,5 +156,6 @@ Pausa/retomada pelo usuário: acrescente ao scheduler os eventos `pause_requeste
 - [ ] `npm run typecheck`, `npm run lint` e `npm run test` passam.
 
 ## Testes
+
 - `executor.test.ts`: ponta a ponta com fakes (InMemoryRunRepository ou `createTestDb`), ordem gravar→publicar, pausa/retomada, cancelamento, limite de uso.
 - `workspace_pool.test.ts`: aquisição concorrente abre uma vez; release fecha.
