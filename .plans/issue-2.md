@@ -13,14 +13,16 @@ PRD: #1 · Key: F-01
 - `vitest.config.ts` reads `VITEST_MAX_WORKERS`; without it Vitest uses its default.
 - `vitest.integration.config.ts` reuses the main config and only includes `src/**/*.integration.test.ts`.
 
+- Under NodeNext, alias imports need the `.js` extension: `@/lib/assert_never.js`.
+
 ## Tasks
 - [x] 1. Install runtime and dev dependencies, keeping the original ones — `package.json`, `package-lock.json`
 - [x] 2. Add scripts `typecheck`, `test`, `test:watch`, `test:integration` — `package.json`
 - [x] 3. Create the strict TypeScript config with the `@/` alias — `tsconfig.json`
 - [x] 4. Create the Vitest config with setup file and integration exclusion — `vitest.config.ts`, `src/test/setup.ts`
 - [x] 5. Create the integration Vitest config — `vitest.integration.config.ts`
-- [ ] 6. Test: `assertNever` throws with the given message — `src/lib/assert_never.test.ts`
-- [ ] 7. Test: the default message includes the received value — `src/lib/assert_never.test.ts`
-- [ ] 8. Implement `assertNever` — `src/lib/assert_never.ts`
-- [ ] 9. Verify `*.integration.test.ts` is excluded from `npm run test` and included by `test:integration`
+- [x] 6. Test: `assertNever` throws with the given message — `src/lib/assert_never.test.ts`
+- [x] 7. Test: the default message includes the received value — `src/lib/assert_never.test.ts`
+- [x] 8. Implement `assertNever` — `src/lib/assert_never.ts`
+- [x] 9. Verify `*.integration.test.ts` is excluded from `npm run test` and included by `test:integration`
 - [ ] 10. Self-review checklist and feedback loops (typecheck, test)
