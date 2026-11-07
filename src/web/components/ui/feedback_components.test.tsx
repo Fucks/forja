@@ -1,10 +1,9 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { UserEvent } from "@testing-library/user-event";
+import { Workflow } from "lucide-react";
 import { useState } from "react";
 import type { JSX } from "react";
-
-import { Workflow } from "lucide-react";
 
 import { Dialog } from "@/web/components/ui/dialog.js";
 import { Drawer } from "@/web/components/ui/drawer.js";
@@ -110,7 +109,7 @@ describe("Toast", () => {
     const TOAST_DURATION_MS = 5_000;
     const ONE_MINUTE_MS = 60_000;
 
-    // Fake timers with fireEvent: user-event's async wrapper waits on a real setTimeout that
+    // These tests click with fireEvent: user-event's async wrapper waits on a setTimeout that
     // Vitest's fake timers never fire.
     beforeEach(() => {
         vi.useFakeTimers();
@@ -149,32 +148,6 @@ describe("Toast", () => {
         expect(() => render(<ToastButton tone="info" />)).toThrow(/ToastProvider/);
     });
 });
-
-function ToastHarness({ tone }: { tone: ToastTone }): JSX.Element {
-    return (
-        <ToastProvider>
-            <ToastButton tone={tone} />
-        </ToastProvider>
-    );
-}
-
-function ToastButton({ tone }: { tone: ToastTone }): JSX.Element {
-    const toast = useToast();
-
-    return (
-        <button
-            onClick={() => toast.show({ title: "Fluxo publicado", description: "Versão 3", tone })}
-        >
-            Avisar
-        </button>
-    );
-}
-
-function advanceTimersBy(durationMs: number): void {
-    act(() => {
-        vi.advanceTimersByTime(durationMs);
-    });
-}
 
 describe("Tabs", () => {
     it("moves to the next tab with the arrow keys and shows its panel", async () => {
@@ -266,6 +239,32 @@ describe("KeyValue", () => {
     });
 });
 
+function ToastHarness({ tone }: { tone: ToastTone }): JSX.Element {
+    return (
+        <ToastProvider>
+            <ToastButton tone={tone} />
+        </ToastProvider>
+    );
+}
+
+function ToastButton({ tone }: { tone: ToastTone }): JSX.Element {
+    const toast = useToast();
+
+    return (
+        <button
+            onClick={() => toast.show({ title: "Fluxo publicado", description: "Versão 3", tone })}
+        >
+            Avisar
+        </button>
+    );
+}
+
+function advanceTimersBy(durationMs: number): void {
+    act(() => {
+        vi.advanceTimersByTime(durationMs);
+    });
+}
+
 type NodeRunTab = "input" | "output" | "logs";
 
 function TabsHarness(): JSX.Element {
@@ -298,21 +297,17 @@ function OverlayHarness({ renderOverlay }: { renderOverlay: RenderOverlay }): JS
     );
 }
 
-function renderDialog(isOpen: boolean, onOpenChange: (open: boolean) => void): JSX.Element {
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange} title="Excluir fluxo">
-            <input aria-label="Confirmação" />
-        </Dialog>
-    );
-}
+const renderDialog: RenderOverlay = (isOpen, onOpenChange) => (
+    <Dialog open={isOpen} onOpenChange={onOpenChange} title="Excluir fluxo">
+        <input aria-label="Confirmação" />
+    </Dialog>
+);
 
-function renderRightDrawer(isOpen: boolean, onOpenChange: (open: boolean) => void): JSX.Element {
-    return (
-        <Drawer open={isOpen} onOpenChange={onOpenChange} side="right" title="Detalhes do nó">
-            <input aria-label="Nome" />
-        </Drawer>
-    );
-}
+const renderRightDrawer: RenderOverlay = (isOpen, onOpenChange) => (
+    <Drawer open={isOpen} onOpenChange={onOpenChange} side="right" title="Detalhes do nó">
+        <input aria-label="Nome" />
+    </Drawer>
+);
 
 async function pressTabTimes(user: UserEvent, times: number): Promise<void> {
     for (let i = 0; i < times; i++) {
