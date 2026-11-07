@@ -23,7 +23,13 @@ interface VisibleToast extends ToastMessage {
 const AUTO_DISMISS_MS = 5_000;
 const ICON_SIZE_PX = 16;
 
-const TONE_STYLES: Record<ToastTone, { icon: LucideIcon; colorVar: string; durationMs: number }> = {
+interface ToneStyle {
+    icon: LucideIcon;
+    colorVar: string;
+    durationMs: number;
+}
+
+const TONE_STYLES: Record<ToastTone, ToneStyle> = {
     info: { icon: Info, colorVar: "--color-steel", durationMs: AUTO_DISMISS_MS },
     success: { icon: CircleCheck, colorVar: "--status-succeeded", durationMs: AUTO_DISMISS_MS },
     error: { icon: CircleAlert, colorVar: "--status-failed", durationMs: Infinity },
