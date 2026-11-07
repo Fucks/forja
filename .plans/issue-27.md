@@ -26,4 +26,4 @@
 - [x] 6. Test+impl: publish valid graph → version last+1, emits `flow.published`; invalid → DomainValidationError with issues
 - [x] 7. Test+impl: getVersion, listVersions, draft edit doesn't change published version, restoreVersionToDraft
 - [x] 8. Routes in `flows_routes.ts` + `flows_routes.test.ts` (status codes, 409, 422 body)
-- [ ] 9. Self-review checklist and feedback loops
+- [x] 9. Self-review checklist and feedback loops

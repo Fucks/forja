@@ -50,7 +50,7 @@ export function createFlowService(deps: FlowServiceDeps): FlowService {
 
     return {
         create: (projectId, input) => resolveWith(() => createFlow(deps, projectId, input)),
-        list: (projectId, opts) => resolveWith(() => listFlows(repo, projectId, opts)),
+        list: (projectId, options) => resolveWith(() => listFlows(repo, projectId, options)),
         rename: (flowId, name) => resolveWith(() => renameFlow(repo, flowId, name)),
         setDefault: (flowId) =>
             resolveWith(() => repo.markAsDefault(findFlowOrThrow(repo, flowId))),
@@ -98,11 +98,11 @@ function createDefaultFlowGraph(): FlowGraph {
 function listFlows(
     repo: FlowRepository,
     projectId: string,
-    opts: { includeArchived?: boolean } = {},
+    options: { includeArchived?: boolean } = {},
 ): FlowSummary[] {
     assertProjectExists(repo, projectId);
 
-    return repo.listSummaries(projectId, { includeArchived: opts.includeArchived ?? false });
+    return repo.listSummaries(projectId, { includeArchived: options.includeArchived ?? false });
 }
 
 function renameFlow(repo: FlowRepository, flowId: string, name: string): FlowSummary {
@@ -154,12 +154,12 @@ async function publishDraft(
     const { projectId } = findFlowOrThrow(deps.repo, flowId);
     const context = await deps.validationContext(projectId);
 
-    return publishValidatedDraft(deps, { flowId, note, context });
+    return publishDraftAsNextVersion(deps, { flowId, note, context });
 }
 
 // Synchronous from reading the draft to inserting the version, so no other save or publish of the
 // same flow can interleave and two versions never get the same number.
-function publishValidatedDraft(
+function publishDraftAsNextVersion(
     deps: FlowServiceDeps,
     request: { flowId: string; note: string | undefined; context: ValidationContext },
 ): FlowVersion {
