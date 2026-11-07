@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { NODE_RUN_STATUS_NAMES, RUN_STATUS_NAMES } from "@/shared/events.js";
 import type { NodeRunStatusName, RunStatusName } from "@/shared/events.js";
 
 export type ExecutionStatus = NodeRunStatusName | RunStatusName;
@@ -63,3 +64,7 @@ export const EXECUTION_STATUS_STYLES: Record<ExecutionStatus, StatusStyle> = {
         animated: false,
     },
 };
+
+export const EXECUTION_STATUSES: ExecutionStatus[] = [
+    ...new Set([...NODE_RUN_STATUS_NAMES, ...RUN_STATUS_NAMES]),
+];

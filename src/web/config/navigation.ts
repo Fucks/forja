@@ -1,0 +1,55 @@
+import {
+    ClipboardCheck,
+    FolderKanban,
+    Gauge,
+    History,
+    KeyRound,
+    Settings,
+    SquareKanban,
+    Stethoscope,
+    Workflow,
+    Wrench,
+    Zap,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+export interface NavItem {
+    id: string;
+    label: string;
+    icon: LucideIcon;
+    path: (projectId: string) => string;
+}
+
+export interface GlobalNavItem {
+    id: string;
+    label: string;
+    icon: LucideIcon;
+    path: string;
+}
+
+export const PROJECTS_PATH = "/";
+
+export const PROJECT_NAV: NavItem[] = [
+    projectArea({ id: "flows", label: "Fluxos", icon: Workflow }),
+    projectArea({ id: "board", label: "Board", icon: SquareKanban }),
+    projectArea({ id: "runs", label: "Runs", icon: History }),
+    projectArea({ id: "usage", label: "Uso", icon: Gauge }),
+    projectArea({ id: "triggers", label: "Gatilhos", icon: Zap }),
+    projectArea({ id: "approvals", label: "Aprovações", icon: ClipboardCheck }),
+    projectArea({ id: "settings", label: "Configurações", icon: Settings }),
+];
+
+export const GLOBAL_NAV: GlobalNavItem[] = [
+    { id: "projects", label: "Projetos", icon: FolderKanban, path: PROJECTS_PATH },
+    { id: "credentials", label: "Credenciais", icon: KeyRound, path: "/settings/credentials" },
+    { id: "tool-profiles", label: "Ferramentas", icon: Wrench, path: "/settings/tool-profiles" },
+    { id: "diagnostics", label: "Diagnóstico", icon: Stethoscope, path: "/settings/diagnostics" },
+];
+
+export function projectPath(projectId: string): string {
+    return `/projects/${encodeURIComponent(projectId)}`;
+}
+
+function projectArea(area: Omit<NavItem, "path">): NavItem {
+    return { ...area, path: (projectId) => `${projectPath(projectId)}/${area.id}` };
+}
