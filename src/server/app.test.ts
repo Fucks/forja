@@ -4,6 +4,8 @@ import { loadEnv } from "@/lib/env.js";
 import { resolvePaths } from "@/lib/paths.js";
 import { buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
+import { createEventBus } from "@/server/runtime/event_bus.js";
+import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { createTestDb } from "@/test/test_db.js";
 
 describe("buildApp", () => {
@@ -18,6 +20,7 @@ describe("buildApp", () => {
             paths,
             options: { seedDemo: false },
             db: database.db,
+            events: createEventBus(new FakeClock()),
         });
     });
 
