@@ -8,8 +8,8 @@ interface FieldControlContextValue {
 }
 
 interface OwnControlAttributes {
-    id: string | undefined;
-    describedBy: string | undefined;
+    id?: string;
+    describedBy?: string;
     invalid: boolean;
 }
 

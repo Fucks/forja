@@ -8,7 +8,7 @@ import {
     buildControlClassName,
 } from "@/web/components/ui/control_styles.js";
 import { useFieldControlAttributes } from "@/web/components/ui/field.js";
-import { findOptionByValue } from "@/web/components/ui/find_option_by_value.js";
+import { createOptionChangeHandler } from "@/web/components/ui/create_option_change_handler.js";
 
 interface SelectOption<T extends string> {
     value: T;
@@ -31,17 +31,12 @@ export function Select<T extends string>({
     placeholder?: string;
     invalid?: boolean;
 }): JSX.Element {
-    const field = useFieldControlAttributes({ id: undefined, describedBy: undefined, invalid });
+    const field = useFieldControlAttributes({ invalid });
 
-    function selectOptionByValue(selectedValue: string): void {
-        const selectedOption = findOptionByValue(options, selectedValue);
-        if (selectedOption) {
-            onChange(selectedOption.value);
-        }
-    }
+    const changeToSelectedOption = createOptionChangeHandler(options, onChange);
 
     return (
-        <RadixSelect.Root value={value} onValueChange={selectOptionByValue}>
+        <RadixSelect.Root value={value} onValueChange={changeToSelectedOption}>
             <RadixSelect.Trigger
                 {...field.attributes}
                 className={cn(

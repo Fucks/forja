@@ -3,7 +3,7 @@ import type { JSX } from "react";
 
 import { cn } from "@/web/components/ui/cn.js";
 import { CONTROL_HEIGHT_CLASSES, FOCUS_RING_CLASSES } from "@/web/components/ui/control_styles.js";
-import { findOptionByValue } from "@/web/components/ui/find_option_by_value.js";
+import { createOptionChangeHandler } from "@/web/components/ui/create_option_change_handler.js";
 
 interface SegmentedControlOption<T extends string> {
     value: T;
@@ -21,18 +21,13 @@ export function SegmentedControl<T extends string>({
     options: SegmentedControlOption<T>[];
     label: string;
 }): JSX.Element {
-    function selectOptionByValue(selectedValue: string): void {
-        const selectedOption = findOptionByValue(options, selectedValue);
-        if (selectedOption) {
-            onChange(selectedOption.value);
-        }
-    }
+    const changeToSelectedOption = createOptionChangeHandler(options, onChange);
 
     return (
         <RadixToggleGroup.Root
             type="single"
             value={value}
-            onValueChange={selectOptionByValue}
+            onValueChange={changeToSelectedOption}
             aria-label={label}
             className={cn(
                 "inline-flex gap-0.5 rounded-sm border border-border bg-surface p-0.5",
