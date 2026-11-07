@@ -16,7 +16,7 @@
 
 ## Tasks
 
-- [ ] 1. Contract types and typed errors — `agent_runtime.ts`, `agent_errors.ts`
+- [x] 1. Contract types and typed errors — `agent_runtime.ts`, `agent_errors.ts`
 - [ ] 2. Test + implement: a run resolves only after the scripted duration with the default/scripted result
 - [ ] 3. Test + implement: step matching by nodeRunId/promptIncludes/workItemId and `times`
 - [ ] 4. Test + implement: scripted events reach `onEvent` in order with the fake clock's `at`
