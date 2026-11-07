@@ -1,0 +1,72 @@
+:root,
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-bg: #14161a;
+    --color-canvas: #101215;
+    --color-canvas-dot: #22262c;
+    --color-surface: #1c1f24;
+    --color-surface-raised: #252930;
+    --color-border: #2f343c;
+    --color-text: #e8e6e1;
+    --color-text-muted: #9aa0a8;
+    --color-accent: #e8833a;
+    --color-accent-strong: #ff9a4d;
+    --color-steel: #7c93a8;
+}
+
+:root[data-theme="light"] {
+    color-scheme: light;
+
+    --color-bg: #f6f4f0;
+    --color-canvas: #efece6;
+    --color-canvas-dot: #d9d4ca;
+    --color-surface: #ffffff;
+    --color-surface-raised: #faf8f5;
+    --color-border: #ddd8cf;
+    --color-text: #1f2125;
+    --color-text-muted: #5e646c;
+    --color-accent: #c2611f;
+    --color-accent-strong: #a9521a;
+    --color-steel: #4f6a82;
+}
+
+:root {
+    --status-pending: #5e646c;
+    --status-queued: #7c93a8;
+    --status-running: #e8833a;
+    --status-waiting-approval: #d9b44a;
+    --status-waiting-limit: #b48ee0;
+    --status-succeeded: #5fb37a;
+    --status-failed: #e2574c;
+    --status-canceled: #6b7078;
+    --status-interrupted: #c98a5b;
+
+    --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+    --font-condensed: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+    --text-xs: 12px;
+    --text-sm: 13px;
+    --text-md: 14px;
+    --text-lg: 16px;
+    --text-xl: 20px;
+    --text-2xl: 24px;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+
+    --shadow-float: 0 8px 24px rgb(0 0 0 / 0.35);
+
+    --duration-fast: 120ms;
+    --duration-base: 180ms;
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --duration-fast: 0ms;
+        --duration-base: 0ms;
+    }
+}

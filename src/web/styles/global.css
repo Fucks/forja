@@ -1,1 +1,73 @@
 @import "tailwindcss";
+@import "./tokens.css";
+
+/*
+ * The values live in tokens.css and change with data-theme; this block only exposes them as
+ * Tailwind utilities. "reference" stops Tailwind from re-declaring the same variables on :root.
+ */
+@theme inline reference {
+    --color-bg: var(--color-bg);
+    --color-canvas: var(--color-canvas);
+    --color-canvas-dot: var(--color-canvas-dot);
+    --color-surface: var(--color-surface);
+    --color-surface-raised: var(--color-surface-raised);
+    --color-border: var(--color-border);
+    --color-text: var(--color-text);
+    --color-muted: var(--color-text-muted);
+    --color-accent: var(--color-accent);
+    --color-accent-strong: var(--color-accent-strong);
+    --color-steel: var(--color-steel);
+
+    --color-status-pending: var(--status-pending);
+    --color-status-queued: var(--status-queued);
+    --color-status-running: var(--status-running);
+    --color-status-waiting-approval: var(--status-waiting-approval);
+    --color-status-waiting-limit: var(--status-waiting-limit);
+    --color-status-succeeded: var(--status-succeeded);
+    --color-status-failed: var(--status-failed);
+    --color-status-canceled: var(--status-canceled);
+    --color-status-interrupted: var(--status-interrupted);
+
+    --font-sans: var(--font-sans);
+    --font-condensed: var(--font-condensed);
+    --font-mono: var(--font-mono);
+
+    --text-xs: var(--text-xs);
+    --text-sm: var(--text-sm);
+    --text-md: var(--text-md);
+    --text-lg: var(--text-lg);
+    --text-xl: var(--text-xl);
+    --text-2xl: var(--text-2xl);
+
+    --radius-sm: var(--radius-sm);
+    --radius-md: var(--radius-md);
+    --radius-lg: var(--radius-lg);
+
+    --shadow-float: var(--shadow-float);
+
+    --ease-out: var(--ease-out);
+
+    --animate-ember: ember 2s var(--ease-out) infinite alternate;
+}
+
+@keyframes ember {
+    from {
+        box-shadow: 0 0 0 1px var(--status-running);
+    }
+
+    to {
+        box-shadow: 0 0 10px 2px color-mix(in srgb, var(--status-running) 55%, transparent);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-ember {
+        animation: none;
+    }
+}
+
+@layer base {
+    body {
+        @apply bg-bg text-text font-sans text-sm;
+    }
+}
