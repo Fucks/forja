@@ -3,7 +3,7 @@
 ## Decisions
 
 - Everything lives in `src/engine/prompt_template.ts` (pure, no I/O); tests in `src/engine/prompt_template.test.ts`.
-- Reuse the dotted-path lookup of `src/shared/conditions.ts` by exporting `lookUpPath`/`PathLookup` (minimal change).
+- Reuse the dotted-path lookup of `src/shared/conditions.ts` by exporting `lookUpPath` (minimal change).
 - `AgentNode = NodeOfType<"agent">` is exported from `prompt_template.ts` (kept out of `flow_graph.ts` to avoid
   conflicts with #25, which runs in parallel).
 - Tokens: `{{ path }}` → `var` with trimmed path; `\{{` → literal `{{` merged into the surrounding `text` token;
@@ -18,7 +18,7 @@
 - [x] 1. Test + implement `parsePromptTemplate`: text/var tokens with positions, spaces, escape — `src/engine/prompt_template.ts`
 - [x] 2. Test + implement `renderPrompt` value formatting per type — export `lookUpPath` in `src/shared/conditions.ts`
 - [x] 3. Test + implement `renderPrompt` errors (`PromptRenderError` for missing/undefined)
-- [ ] 4. Test + implement `availableVariables`: inputs, project, run, item via workItem port
-- [ ] 5. Test + implement `availableVariables` inside map (item.*) and loop (inputs.<carry>)
+- [x] 4. Test + implement `availableVariables`: inputs, project, run, item via workItem port
+- [x] 5. Test + implement `availableVariables` inside map (item.*) and loop (inputs.<carry>)
 - [ ] 6. Test + implement `checkPromptVariables` with `code: "unknown_variable"`
 - [ ] 7. Self-review checklist (section 5) and feedback loops (section 6)

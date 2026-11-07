@@ -1,4 +1,5 @@
 import { lookUpPath } from "@/shared/conditions.js";
+import type { FlowGraph, FlowGroup, FlowNode, Port } from "@/shared/flow_graph.js";
 
 export interface TemplateToken {
     kind: "text" | "var";
@@ -95,4 +96,93 @@ function formatVariableValue(value: unknown): string {
     }
 
     return JSON.stringify(value, null, JSON_INDENT_SPACES);
+}
+
+export interface VariableInfo {
+    path: string;
+    description: string;
+    type: string;
+}
+
+const ITEM_VARIABLES: VariableInfo[] = [
+    { path: "item.id", description: "Identificador do item de trabalho", type: "string" },
+    { path: "item.title", description: "Título do item", type: "string" },
+    { path: "item.body", description: "Descrição do item", type: "string" },
+    { path: "item.number", description: "Número da issue no GitHub", type: "number" },
+    { path: "item.url", description: "Endereço da issue no GitHub", type: "string" },
+    { path: "item.labels", description: "Labels do item", type: "string[]" },
+    { path: "item.branch", description: "Branch de trabalho do item", type: "string" },
+];
+
+const PROJECT_VARIABLES: VariableInfo[] = [
+    { path: "project.name", description: "Nome do projeto", type: "string" },
+    { path: "project.baseBranch", description: "Branch base do projeto", type: "string" },
+    { path: "project.githubRepo", description: "Repositório do GitHub", type: "string" },
+];
+
+const RUN_VARIABLES: VariableInfo[] = [
+    { path: "run.iteration", description: "Iteração atual do loop", type: "number" },
+    { path: "run.attempt", description: "Tentativa atual do nó", type: "number" },
+];
+
+const CARRIED_VALUE_TYPE = "any";
+
+export function availableVariables(node: FlowNode, graph: FlowGraph): VariableInfo[] {
+    const enclosingGroups = findEnclosingGroups(node, graph.groups);
+    const variables = [
+        ...node.inputs.map(toInputVariable),
+        ...carriedInputVariables(enclosingGroups),
+        ...itemVariables(node, enclosingGroups),
+        ...PROJECT_VARIABLES,
+        ...RUN_VARIABLES,
+    ];
+
+    return withoutRepeatedPaths(variables);
+}
+
+function findEnclosingGroups(node: FlowNode, groups: FlowGroup[]): FlowGroup[] {
+    const findGroup = (groupId: string | undefined) => groups.find((group) => group.id === groupId);
+    const enclosingGroups: FlowGroup[] = [];
+
+    let group = findGroup(node.parentGroupId);
+    while (group && !enclosingGroups.includes(group)) {
+        enclosingGroups.push(group);
+        group = findGroup(group.parentGroupId);
+    }
+
+    return enclosingGroups;
+}
+
+function toInputVariable(port: Port): VariableInfo {
+    return { path: `inputs.${port.name}`, description: `Entrada "${port.name}"`, type: port.type };
+}
+
+function carriedInputVariables(enclosingGroups: FlowGroup[]): VariableInfo[] {
+    return enclosingGroups.flatMap((group) => {
+        if (group.kind !== "loop") {
+            return [];
+        }
+
+        return group.config.carry.map((portName) => ({
+            path: `inputs.${portName}`,
+            description: `Valor de "${portName}" na iteração anterior de "${group.label}"`,
+            type: CARRIED_VALUE_TYPE,
+        }));
+    });
+}
+
+function itemVariables(node: FlowNode, enclosingGroups: FlowGroup[]): VariableInfo[] {
+    const hasItemPort = node.inputs.some((port) => port.type === "workItem");
+    const isInsideMap = enclosingGroups.some((group) => group.kind === "map");
+    if (!hasItemPort && !isInsideMap) {
+        return [];
+    }
+
+    return ITEM_VARIABLES;
+}
+
+function withoutRepeatedPaths(variables: VariableInfo[]): VariableInfo[] {
+    return variables.filter(
+        (variable, index) => variables.findIndex((other) => other.path === variable.path) === index,
+    );
 }

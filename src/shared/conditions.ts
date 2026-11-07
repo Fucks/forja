@@ -23,7 +23,7 @@ export const conditionSchema: z.ZodType<Condition> = z.lazy(() =>
     ]),
 );
 
-export type PathLookup = { isFound: true; value: unknown } | { isFound: false };
+type PathLookup = { isFound: true; value: unknown } | { isFound: false };
 
 const PATH_SEPARATOR = ".";
 

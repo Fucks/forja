@@ -1,9 +1,13 @@
 import {
+    availableVariables,
     parsePromptTemplate,
     type PromptContext,
     PromptRenderError,
     renderPrompt,
 } from "@/engine/prompt_template.js";
+import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
+import { createDefaultNode } from "@/shared/node_defaults.js";
+import { buildCanonicalFlow, buildLoopFlow } from "@/test/factories/flow_graph_factory.js";
 
 function buildPromptContext(inputs: Record<string, unknown> = {}): PromptContext {
     return {
@@ -123,3 +127,113 @@ describe("renderPrompt", () => {
         expect(render).toThrow(PromptRenderError);
     });
 });
+
+describe("availableVariables", () => {
+    it("lists an inputs variable for each input port of the node, typed by the port", () => {
+        const graph = buildCanonicalFlow();
+
+        const variables = availableVariables(findNode(graph, "dev"), graph);
+
+        expect(variables).toContainEqual(
+            expect.objectContaining({ path: "inputs.spec", type: "text" }),
+        );
+        expect(variables).toContainEqual(
+            expect.objectContaining({ path: "inputs.item", type: "workItem" }),
+        );
+    });
+
+    it("lists project and run variables for every node", () => {
+        const node = buildTopLevelAgentWithoutItemPort();
+
+        const paths = availablePaths(node, graphWith(node));
+
+        expect(paths).toEqual(
+            expect.arrayContaining([
+                "project.name",
+                "project.baseBranch",
+                "project.githubRepo",
+                "run.iteration",
+                "run.attempt",
+            ]),
+        );
+    });
+
+    it("omits item variables for a node outside a map without a workItem port", () => {
+        const node = buildTopLevelAgentWithoutItemPort();
+
+        const paths = availablePaths(node, graphWith(node));
+
+        expect(paths.filter((path) => path.startsWith("item."))).toEqual([]);
+    });
+
+    it("lists item variables for a node with a workItem port outside any map", () => {
+        const node = createDefaultNode("agent", "solo", { x: 0, y: 0 });
+
+        const paths = availablePaths(node, graphWith(node));
+
+        expect(paths).toEqual(expect.arrayContaining(["item.title", "item.number", "item.labels"]));
+    });
+
+    it("lists item variables for a node inside a map even without a workItem port", () => {
+        const graph = buildCanonicalFlow();
+        const reviewer = findNode(graph, "reviewer");
+        const reviewerWithoutItemPort = { ...reviewer, inputs: withoutItemPort(reviewer) };
+
+        const paths = availablePaths(reviewerWithoutItemPort, graph);
+
+        expect(paths).toEqual(expect.arrayContaining(["item.id", "item.title", "item.body"]));
+    });
+
+    it("lists the carried ports of an enclosing loop as inputs", () => {
+        const graph = buildLoopFlow();
+
+        const paths = availablePaths(findNode(graph, "review"), graph);
+
+        expect(paths).toContain("inputs.notes");
+    });
+
+    it("lists a carried port only once when the node also declares it", () => {
+        const graph = buildLoopFlow();
+
+        const paths = availablePaths(findNode(graph, "dev"), graph);
+
+        expect(paths.filter((path) => path === "inputs.notes")).toHaveLength(1);
+    });
+
+    it("lists item variables for a node in a loop nested inside a map", () => {
+        const graph = buildLoopFlow();
+        const tests = findNode(graph, "tests");
+        const testsWithoutItemPort = { ...tests, inputs: withoutItemPort(tests) };
+
+        const paths = availablePaths(testsWithoutItemPort, graph);
+
+        expect(paths).toContain("item.title");
+    });
+});
+
+function availablePaths(node: FlowNode, graph: FlowGraph): string[] {
+    return availableVariables(node, graph).map((variable) => variable.path);
+}
+
+function findNode(graph: FlowGraph, nodeId: string): FlowNode {
+    const node = graph.nodes.find((candidate) => candidate.id === nodeId);
+    if (!node) {
+        throw new Error(`Node ${nodeId} is not in the graph`);
+    }
+
+    return node;
+}
+
+function graphWith(node: FlowNode): FlowGraph {
+    return { schemaVersion: 1, nodes: [node], edges: [], groups: [] };
+}
+
+function buildTopLevelAgentWithoutItemPort(): FlowNode {
+    const node = createDefaultNode("agent", "solo", { x: 0, y: 0 });
+
+    return { ...node, inputs: withoutItemPort(node) };
+}
+
+function withoutItemPort(node: FlowNode): FlowNode["inputs"] {
+    return node.inputs.filter((port) => port.type !== "workItem");
+}
