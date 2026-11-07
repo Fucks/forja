@@ -16,8 +16,8 @@
 
 ## Tasks
 
-- [ ] 1. Status name constants and types — `src/shared/events.ts`
-- [ ] 2. Test + implement `InvalidTransitionError` message with from/to — `src/engine/invalid_transition_error.ts`
+- [x] 1. Status name constants and types — `src/shared/events.ts`
+- [x] 2. Test + implement `InvalidTransitionError` message with from/to — `src/engine/invalid_transition_error.ts`
 - [ ] 3. Test full (from, to) matrix for `canTransitionRun` + `RUN_TERMINAL` — `src/engine/run_state.ts`
 - [ ] 4. Test + implement `transitionRun`: rejects invalid pairs, timestamps, `extra`, clears pause — `src/engine/run_state.ts`
 - [ ] 5. Test full (from, to) matrix for `canTransitionNodeRun` + `NODE_RUN_TERMINAL` — `src/engine/node_run_state.ts`
