@@ -1,0 +1,299 @@
+import { FlowPlan } from "@/engine/flow_plan.js";
+import type { NodeRunError, NodeRunState } from "@/engine/node_run_state.js";
+import { NODE_RUN_TERMINAL } from "@/engine/node_run_state.js";
+import type { RunState } from "@/engine/run_state.js";
+import { createScheduler } from "@/engine/scheduler.js";
+import type {
+    Scheduler,
+    SchedulerCommand,
+    SchedulerEvent,
+    SchedulerOptions,
+    SchedulerSnapshot,
+} from "@/engine/scheduler_types.js";
+import type { CancelTimeout } from "@/lib/clock.js";
+import { assertNever } from "@/lib/assert_never.js";
+import { type Condition, evaluateCondition } from "@/shared/conditions.js";
+import type { FlowGraph } from "@/shared/flow_graph.js";
+import type { NodeRunStatusName } from "@/shared/events.js";
+import { buildRunState } from "@/test/factories/run_state_factory.js";
+import { FakeClock } from "@/test/fakes/fake_clock.js";
+
+export const DEFAULT_NODE_DURATION_MS = 1_000;
+const ENOUGH_TIME_TO_FINISH_MS = 24 * 60 * 60 * 1_000;
+
+export type NodeOutcome =
+    { kind: "succeed"; outputs: Record<string, unknown> } | { kind: "fail"; error: NodeRunError };
+
+export interface NodeBehavior {
+    durationMs: number;
+    outcome: NodeOutcome;
+}
+
+export interface StartedNodeRun {
+    nodeRun: NodeRunState;
+    inputs: Record<string, unknown>;
+}
+
+type StartNodeRunCommand = Extract<SchedulerCommand, { type: "start_node_run" }>;
+
+export type NodeScript = (started: StartedNodeRun) => Partial<NodeBehavior>;
+
+export interface SchedulerHarnessOptions {
+    graph: FlowGraph;
+    maxConcurrentAgents?: number;
+    minStartIntervalMs?: number;
+    scripts?: Record<string, NodeScript>;
+}
+
+export interface TimelineEntry {
+    elapsedMs: number;
+    nodeRunId: string;
+    nodeId: string;
+    workItemId?: string;
+    status: NodeRunStatusName;
+}
+
+const UNLIMITED_AGENTS = 100;
+
+// Minimal in-memory executor: runs every started NodeRun on a FakeClock timer following the node's
+// script, and records the NodeRun timeline that engine tests assert on.
+export class SchedulerHarness {
+    readonly clock: FakeClock;
+    readonly timeline: TimelineEntry[] = [];
+    readonly commands: SchedulerCommand[] = [];
+    private currentRun: RunState;
+    private scheduler: Scheduler;
+    private readonly plan: FlowPlan;
+    private readonly startedAtMs: number;
+    private readonly runningTimers = new Map<string, CancelTimeout>();
+    private nextNodeRunNumber = 1;
+
+    constructor(private readonly options: SchedulerHarnessOptions) {
+        this.clock = new FakeClock();
+        this.startedAtMs = this.clock.now().getTime();
+        this.plan = new FlowPlan(options.graph);
+        this.currentRun = buildRunState();
+        this.scheduler = this.createScheduler();
+    }
+
+    get run(): RunState {
+        return this.currentRun;
+    }
+
+    start(workItemIds: string[]): void {
+        const items = workItemIds.map((id) => ({ id }));
+        this.deliver({ type: "start", items, at: this.clock.now() });
+    }
+
+    requestCancel(): void {
+        this.deliver({ type: "cancel_requested", at: this.clock.now() });
+    }
+
+    advance(ms: number): void {
+        this.clock.advance(ms);
+    }
+
+    runToCompletion(): void {
+        this.clock.advance(ENOUGH_TIME_TO_FINISH_MS);
+    }
+
+    snapshot(): SchedulerSnapshot {
+        return this.scheduler.snapshot();
+    }
+
+    restartFromSnapshot(): void {
+        const snapshot = structuredClone(this.scheduler.snapshot());
+        this.scheduler = this.createScheduler(snapshot);
+    }
+
+    elapsedMsWhenRunFinished(): number | undefined {
+        if (!this.run.finishedAt) {
+            return undefined;
+        }
+
+        return this.run.finishedAt.getTime() - this.startedAtMs;
+    }
+
+    startCommandsOf(nodeId: string): StartNodeRunCommand[] {
+        return this.commands.filter(
+            (command): command is StartNodeRunCommand =>
+                command.type === "start_node_run" && command.nodeRun.nodeId === nodeId,
+        );
+    }
+
+    entriesOf(nodeId: string, workItemId?: string): TimelineEntry[] {
+        return this.timeline.filter(
+            (entry) => entry.nodeId === nodeId && entry.workItemId === workItemId,
+        );
+    }
+
+    elapsedMsWhen(
+        nodeId: string,
+        workItemId: string | undefined,
+        status: NodeRunStatusName,
+    ): number | undefined {
+        return this.entriesOf(nodeId, workItemId).find((entry) => entry.status === status)
+            ?.elapsedMs;
+    }
+
+    finalStatusOf(nodeId: string, workItemId?: string): NodeRunStatusName | undefined {
+        return this.entriesOf(nodeId, workItemId).at(-1)?.status;
+    }
+
+    agentStartsInOrder(): TimelineEntry[] {
+        return this.timeline.filter(
+            (entry) => entry.status === "RUNNING" && this.isAgentNode(entry.nodeId),
+        );
+    }
+
+    maxConcurrentRunningAgents(): number {
+        const runningNodeRunIds = new Set<string>();
+        let maxRunning = 0;
+        for (const entry of this.timeline.filter((candidate) =>
+            this.isAgentNode(candidate.nodeId),
+        )) {
+            if (entry.status === "RUNNING") {
+                runningNodeRunIds.add(entry.nodeRunId);
+            }
+            if (NODE_RUN_TERMINAL.has(entry.status)) {
+                runningNodeRunIds.delete(entry.nodeRunId);
+            }
+            maxRunning = Math.max(maxRunning, runningNodeRunIds.size);
+        }
+
+        return maxRunning;
+    }
+
+    private createScheduler(restore?: SchedulerSnapshot): Scheduler {
+        const schedulerOptions: SchedulerOptions = {
+            maxConcurrentAgents: this.options.maxConcurrentAgents ?? UNLIMITED_AGENTS,
+            minStartIntervalMs: this.options.minStartIntervalMs ?? 0,
+            newId: () => `nrn_${this.nextNodeRunNumber++}`,
+        };
+
+        return createScheduler(this.options.graph, this.run, schedulerOptions, restore);
+    }
+
+    private deliver(event: SchedulerEvent): void {
+        this.execute(this.scheduler.handle(event));
+    }
+
+    private execute(commands: SchedulerCommand[]): void {
+        for (const command of commands) {
+            this.commands.push(command);
+            this.executeCommand(command);
+        }
+    }
+
+    private executeCommand(command: SchedulerCommand): void {
+        switch (command.type) {
+            case "start_node_run":
+                this.startNodeRun({ nodeRun: command.nodeRun, inputs: command.inputs });
+                break;
+            case "cancel_node_run":
+                this.cancelNodeRun(command.nodeRunId);
+                break;
+            case "node_run_changed":
+                this.record(command.nodeRun);
+                break;
+            case "run_changed":
+                this.currentRun = command.run;
+                break;
+            case "schedule_wakeup":
+                this.clock.setTimeout(
+                    () => this.execute(this.scheduler.tick(this.clock.now())),
+                    command.at.getTime() - this.clock.now().getTime(),
+                );
+                break;
+            case "group_progress":
+                break;
+            default:
+                assertNever(command);
+        }
+    }
+
+    private startNodeRun(started: StartedNodeRun): void {
+        const behavior = this.behaviorOf(started);
+        const finish = () => {
+            this.runningTimers.delete(started.nodeRun.id);
+            this.deliver(finishingEvent(started.nodeRun.id, behavior.outcome, this.clock.now()));
+        };
+        this.runningTimers.set(
+            started.nodeRun.id,
+            this.clock.setTimeout(finish, behavior.durationMs),
+        );
+    }
+
+    private cancelNodeRun(nodeRunId: string): void {
+        this.runningTimers.get(nodeRunId)?.();
+        this.runningTimers.delete(nodeRunId);
+        const canceled: NodeOutcome = {
+            kind: "fail",
+            error: { kind: "canceled", message: "Cancelado pelo usuário" },
+        };
+        this.clock.setTimeout(() => {
+            this.deliver(finishingEvent(nodeRunId, canceled, this.clock.now()));
+        }, 0);
+    }
+
+    private behaviorOf(started: StartedNodeRun): NodeBehavior {
+        const scripted = this.options.scripts?.[started.nodeRun.nodeId]?.(started) ?? {};
+
+        return {
+            durationMs: scripted.durationMs ?? DEFAULT_NODE_DURATION_MS,
+            outcome: scripted.outcome ?? { kind: "succeed", outputs: this.defaultOutputs(started) },
+        };
+    }
+
+    private defaultOutputs(started: StartedNodeRun): Record<string, unknown> {
+        const node = this.plan.findNode(started.nodeRun.nodeId);
+        if (node?.type === "condition") {
+            return chooseConditionPort(node.config.condition, started.inputs);
+        }
+
+        const outputPorts = node?.outputs ?? [];
+        const description = `${started.nodeRun.nodeId}/${started.nodeRun.workItemId ?? "run"}`;
+
+        return Object.fromEntries(
+            outputPorts.map((port) => [port.name, `${description}.${port.name}`]),
+        );
+    }
+
+    private record(nodeRun: NodeRunState): void {
+        this.timeline.push({
+            elapsedMs: this.clock.now().getTime() - this.startedAtMs,
+            nodeRunId: nodeRun.id,
+            nodeId: nodeRun.nodeId,
+            workItemId: nodeRun.workItemId,
+            status: nodeRun.status,
+        });
+    }
+
+    private isAgentNode(nodeId: string): boolean {
+        return this.plan.isLimitedByConcurrency(nodeId);
+    }
+}
+
+export function createSchedulerHarness(options: SchedulerHarnessOptions): SchedulerHarness {
+    return new SchedulerHarness(options);
+}
+
+const CONDITION_INPUT_PORT = "value";
+
+function chooseConditionPort(
+    condition: Condition,
+    inputs: Record<string, unknown>,
+): Record<string, unknown> {
+    const value = inputs[CONDITION_INPUT_PORT];
+    const chosenPort = evaluateCondition(condition, value) ? "true" : "false";
+
+    return { [chosenPort]: value };
+}
+
+function finishingEvent(nodeRunId: string, outcome: NodeOutcome, at: Date): SchedulerEvent {
+    if (outcome.kind === "succeed") {
+        return { type: "node_run_succeeded", nodeRunId, outputs: outcome.outputs, at };
+    }
+
+    return { type: "node_run_failed", nodeRunId, error: outcome.error, at };
+}
