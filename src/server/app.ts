@@ -6,8 +6,14 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { Env } from "@/lib/env.js";
 import type { ForjaPaths } from "@/lib/paths.js";
 import { routeModules } from "@/server/route_modules.js";
+import { registerStaticRoutes } from "@/server/static/static_routes.js";
 
 const API_PREFIX = "/api";
+
+// The SPA is served from the root, so its module is the only one mounted outside the API prefix.
+const apiRouteModules = routeModules.filter(
+    (registerRoutes) => registerRoutes !== registerStaticRoutes,
+);
 
 export interface ServerOptions {
     seedDemo: boolean;
@@ -24,13 +30,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     app.setValidatorCompiler(validatorCompiler);
     app.setSerializerCompiler(serializerCompiler);
 
-    await registerRouteModules(app.withTypeProvider<ZodTypeProvider>(), deps);
+    const typedApp = app.withTypeProvider<ZodTypeProvider>();
+    await registerApiRouteModules(typedApp, deps);
+    await typedApp.register((scope) => registerStaticRoutes(scope, deps));
 
     return app;
 }
 
-async function registerRouteModules(app: FastifyInstance, deps: AppDeps): Promise<void> {
-    for (const registerRoutes of routeModules) {
+async function registerApiRouteModules(app: FastifyInstance, deps: AppDeps): Promise<void> {
+    for (const registerRoutes of apiRouteModules) {
         await app.register((scope) => registerRoutes(scope, deps), { prefix: API_PREFIX });
     }
 }

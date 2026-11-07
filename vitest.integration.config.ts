@@ -6,7 +6,16 @@ export default defineConfig({
     ...unitTestConfig,
     test: {
         ...unitTestConfig.test,
-        include: ["src/**/*.integration.test.ts"],
         exclude: ["e2e/**", ".sandcastle/**", "node_modules/**"],
+        projects: [
+            {
+                extends: true,
+                test: {
+                    name: "integration",
+                    environment: "node",
+                    include: ["src/**/*.integration.test.ts"],
+                },
+            },
+        ],
     },
 });
