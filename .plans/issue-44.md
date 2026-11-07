@@ -23,8 +23,8 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement map_group state: create, addItems, closeInput, itemsToStart, startItems — `map_group.ts`
-- [ ] 2. Test + implement onItemFinished (incl. failFast), isMapDone, mapProgress, succeededItemIds, empty list — `map_group.ts`
+- [x] 1. Test + implement map_group state: create, addItems, closeInput, itemsToStart, startItems — `map_group.ts`
+- [x] 2. Test + implement onItemFinished (incl. failFast), isMapDone, mapProgress, succeededItemIds, empty list — `map_group.ts`
 - [ ] 3. Plan map topology and item scope of map members — `flow_plan.ts`, `node_scopes.ts`
 - [ ] 4. Test: canonical flow, Dev map never runs more than 3 items, the rest start as slots open — `scheduler.test.ts`; implement lazy admission in `scheduler.ts`
 - [ ] 5. Test: chained maps stream per item, Reviewer one at a time, Dev gets the TL spec of the same item; implement correlation
