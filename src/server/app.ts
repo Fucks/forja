@@ -6,6 +6,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { Env } from "@/lib/env.js";
 import type { ForjaPaths } from "@/lib/paths.js";
 import type { ForjaDb } from "@/server/db/client.js";
+import { registerErrorHandler } from "@/server/errors.js";
 import { routeModules } from "@/server/route_modules.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import { registerStaticRoutes } from "@/server/static/static_routes.js";
@@ -33,6 +34,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     const app = Fastify({ logger: { level: deps.env.FORJA_LOG_LEVEL } });
     app.setValidatorCompiler(validatorCompiler);
     app.setSerializerCompiler(serializerCompiler);
+    registerErrorHandler(app);
 
     const typedApp = app.withTypeProvider<ZodTypeProvider>();
     await registerApiRouteModules(typedApp, deps);
