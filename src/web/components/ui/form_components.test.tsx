@@ -7,7 +7,18 @@ import { Button } from "@/web/components/ui/button.js";
 import { Field } from "@/web/components/ui/field.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { Input } from "@/web/components/ui/input.js";
+import { Select } from "@/web/components/ui/select.js";
 import { Textarea } from "@/web/components/ui/textarea.js";
+
+const MODEL_OPTIONS = [
+    { value: "sonnet", label: "Sonnet", hint: "equilibrado" },
+    { value: "opus", label: "Opus", hint: "mais capaz" },
+    { value: "haiku", label: "Haiku" },
+];
+
+beforeAll(() => {
+    installRadixPointerPolyfills();
+});
 
 describe("Button", () => {
     it("calls onClick when clicked", async () => {
@@ -145,3 +156,61 @@ describe("Textarea", () => {
         expect(ref.current).toHaveAttribute("aria-invalid", "true");
     });
 });
+
+describe("Select", () => {
+    it("changes the value with the keyboard", async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <Field label="Modelo" htmlFor="model">
+                <Select value="sonnet" onChange={onChange} options={MODEL_OPTIONS} />
+            </Field>,
+        );
+
+        await user.tab();
+        await user.keyboard("{Enter}");
+        await user.keyboard("{ArrowDown}");
+        await user.keyboard("{Enter}");
+
+        expect(screen.getByRole("combobox", { name: "Modelo" })).toHaveTextContent("Sonnet");
+        expect(onChange).toHaveBeenCalledWith("opus");
+    });
+
+    it("shows the hint of each option while open", async () => {
+        const user = userEvent.setup();
+        render(
+            <Field label="Modelo" htmlFor="model">
+                <Select value="sonnet" onChange={vi.fn()} options={MODEL_OPTIONS} />
+            </Field>,
+        );
+
+        await user.click(screen.getByRole("combobox", { name: "Modelo" }));
+
+        expect(screen.getByRole("option", { name: /Opus/ })).toHaveTextContent("mais capaz");
+    });
+
+    it("shows the placeholder and is invalid when asked", () => {
+        render(
+            <Field label="Modelo" htmlFor="model">
+                <Select
+                    value=""
+                    onChange={vi.fn()}
+                    options={MODEL_OPTIONS}
+                    placeholder="Escolha um modelo"
+                    invalid
+                />
+            </Field>,
+        );
+
+        const trigger = screen.getByRole("combobox", { name: "Modelo" });
+
+        expect(trigger).toHaveTextContent("Escolha um modelo");
+        expect(trigger).toHaveAttribute("aria-invalid", "true");
+    });
+});
+
+function installRadixPointerPolyfills(): void {
+    Element.prototype.hasPointerCapture = () => false;
+    Element.prototype.releasePointerCapture = () => undefined;
+    Element.prototype.scrollIntoView = () => undefined;
+}

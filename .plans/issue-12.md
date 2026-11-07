@@ -25,7 +25,7 @@
 - [x] 3. Test + implement IconButton (aria-label + title from label) — `icon_button.tsx`
 - [x] 4. Test + implement Field (label, hint, error linked by aria-describedby) + context hook — `field.tsx`
 - [x] 5. Test + implement Input and Textarea (forwardRef, invalid → aria-invalid, mono, Field integration) — `input.tsx`, `textarea.tsx`
-- [ ] 6. Test + implement Select (keyboard changes value, hints, placeholder, invalid) — `select.tsx`
+- [x] 6. Test + implement Select (keyboard changes value, hints, placeholder, invalid) — `select.tsx`
 - [ ] 7. Test + implement Switch (toggles by click and keyboard, accessible name) — `switch.tsx`
 - [ ] 8. Test + implement Slider (arrow keys change value, accessible name) — `slider.tsx`
 - [ ] 9. Test + implement SegmentedControl (arrows + selection) — `segmented_control.tsx`
