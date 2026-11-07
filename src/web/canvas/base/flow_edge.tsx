@@ -4,7 +4,10 @@ import type { JSX } from "react";
 
 import { cn } from "@/web/components/ui/cn.js";
 
-export type FlowEdgeProps = EdgeProps & { data?: { flowing?: boolean; invalid?: boolean } };
+// A type alias (not an interface) so it fits React Flow's Record<string, unknown> edge data.
+export type FlowEdgeData = { flowing?: boolean; invalid?: boolean };
+
+export type FlowEdgeProps = EdgeProps & { data?: FlowEdgeData };
 
 export function FlowEdge({
     id,

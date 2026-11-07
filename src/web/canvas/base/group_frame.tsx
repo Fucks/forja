@@ -19,6 +19,15 @@ const GROUP_KIND_ICONS: Record<GroupKind, LucideIcon> = {
     map: Split,
 };
 
+export interface GroupFrameProps {
+    kind: GroupKind;
+    label: string;
+    configLabel: string;
+    progress?: GroupProgress;
+    selected?: boolean;
+    invalid?: boolean;
+}
+
 const KIND_ICON_SIZE_PX = 14;
 const COUNTER_SEPARATOR = " · ";
 
@@ -29,14 +38,7 @@ export function GroupFrame({
     progress,
     selected,
     invalid,
-}: {
-    kind: GroupKind;
-    label: string;
-    configLabel: string;
-    progress?: GroupProgress;
-    selected?: boolean;
-    invalid?: boolean;
-}): JSX.Element {
+}: GroupFrameProps): JSX.Element {
     const KindIcon = GROUP_KIND_ICONS[kind];
 
     return (

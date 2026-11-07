@@ -1,13 +1,15 @@
 import { Controls, MiniMap, ReactFlow } from "@xyflow/react";
 import type { Edge, EdgeTypes, Node, NodeProps, NodeTypes } from "@xyflow/react";
-import type { ComponentProps, JSX } from "react";
+import type { JSX } from "react";
 
 import { StyleguideSection } from "@/web/app/styleguide/styleguide_section.js";
 import { BaseNode } from "@/web/canvas/base/base_node.js";
 import type { BaseNodeProps } from "@/web/canvas/base/base_node.js";
 import { CanvasBackground } from "@/web/canvas/base/canvas_background.js";
 import { FlowEdge } from "@/web/canvas/base/flow_edge.js";
+import type { FlowEdgeData } from "@/web/canvas/base/flow_edge.js";
 import { GroupFrame } from "@/web/canvas/base/group_frame.js";
+import type { GroupFrameProps } from "@/web/canvas/base/group_frame.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import {
     EXECUTION_STATUS_STYLES,
@@ -15,7 +17,7 @@ import {
 } from "@/web/components/ui/execution_status.js";
 
 type BaseNodeSample = Node<{ node: BaseNodeProps }, "baseNode">;
-type GroupFrameSample = Node<{ group: ComponentProps<typeof GroupFrame> }, "groupFrame">;
+type GroupFrameSample = Node<{ group: GroupFrameProps }, "groupFrame">;
 
 const SAMPLE_NODE_TYPES: NodeTypes = {
     baseNode: ({ data }: NodeProps<BaseNodeSample>) => <BaseNode {...data.node} />,
@@ -56,7 +58,7 @@ const NODE_STATE_SAMPLES: BaseNodeProps[] = [
     })),
 ];
 
-const GROUP_SAMPLES: ComponentProps<typeof GroupFrame>[] = [
+const GROUP_SAMPLES: GroupFrameProps[] = [
     {
         kind: "map",
         label: "Issues abertas",
@@ -68,7 +70,7 @@ const GROUP_SAMPLES: ComponentProps<typeof GroupFrame>[] = [
     { kind: "map", label: "Inválido", configLabel: "map ×3", invalid: true },
 ];
 
-const EDGE_SAMPLES: { label: string; data: { flowing?: boolean; invalid?: boolean } }[] = [
+const EDGE_SAMPLES: { label: string; data: FlowEdgeData }[] = [
     { label: "Aresta parada", data: {} },
     { label: "Dado fluindo", data: { flowing: true } },
     { label: "Conexão inválida", data: { invalid: true } },

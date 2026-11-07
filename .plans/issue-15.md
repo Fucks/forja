@@ -30,4 +30,4 @@
 - [x] 7. Test + `FlowEdge` bezier with flowing/invalid states — `flow_edge.tsx`, `flow_edge.test.tsx`
 - [x] 8. `canvas_theme.css`: dotted background, controls, minimap, handles, edge styles and animation
 - [x] 9. Test + `/styleguide/canvas` page with every state, route in `routes.tsx` — `styleguide_canvas_page.tsx`, `app_shell.test.tsx`
-- [ ] 10. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 10. Self-review checklist (section 5) and feedback loops (section 6)
