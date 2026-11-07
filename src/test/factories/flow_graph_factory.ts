@@ -229,7 +229,7 @@ function buildReviewLoopGroup(parentGroupId: string): FlowGroup {
         ...frameColumns(LOOP_COLUMNS, LOOP_GROUP_PADDING_PX),
         config: {
             maxIterations: 3,
-            until: { op: "eq", path: "review.approved", value: true },
+            until: { op: "eq", path: "revisar.approved", value: true },
             carry: ["notes"],
         },
     };

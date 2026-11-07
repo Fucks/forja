@@ -226,7 +226,7 @@ describe("loop_condition_unknown_port", () => {
         const graph = updateLoopCondition(buildLoopFlow(), "review_loop", {
             op: "and",
             conditions: [
-                { op: "eq", path: "review.approved", value: true },
+                { op: "eq", path: "revisar.approved", value: true },
                 { op: "exists", path: "tl.summary" },
             ],
         });
@@ -237,6 +237,26 @@ describe("loop_condition_unknown_port", () => {
                 target: { kind: "group", id: "review_loop" },
             }),
         ]);
+    });
+
+    it("accepts a condition that starts with the slug of a loop node label", () => {
+        const graph = updateLoopCondition(buildLoopFlow(), "review_loop", {
+            op: "eq",
+            path: "desenvolver.summary",
+            value: "ok",
+        });
+
+        expect(issuesWithCode(graph, "loop_condition_unknown_port")).toEqual([]);
+    });
+
+    it("warns when the condition starts with a node id instead of its slug", () => {
+        const graph = updateLoopCondition(buildLoopFlow(), "review_loop", {
+            op: "eq",
+            path: "review.approved",
+            value: true,
+        });
+
+        expect(issuesWithCode(graph, "loop_condition_unknown_port")).toHaveLength(1);
     });
 
     it("accepts a condition that starts with an output port of a loop node", () => {
