@@ -30,8 +30,10 @@ const GRID_COLUMNS = 4;
 const GRID_COLUMN_WIDTH_PX = 280;
 const GRID_ROW_HEIGHT_PX = 200;
 const GROUP_WIDTH_PX = 260;
-const EDGE_LENGTH_IN_COLUMNS = 2;
 const GROUP_HEIGHT_PX = 120;
+const EDGE_LENGTH_IN_COLUMNS = 2;
+const EDGE_SOURCE_PORT = "saída";
+const EDGE_TARGET_PORT = "entrada";
 
 const AGENT_NODE: BaseNodeProps = {
     typeIcon: NODE_TYPE_ICONS.agent,
@@ -112,10 +114,10 @@ export function FlowEdgeSamples(): JSX.Element {
     const edges: Edge[] = EDGE_SAMPLES.map(({ data }, row) => ({
         id: `edge-${row}`,
         type: "flow",
-        source: `edge-${row}-source`,
-        sourceHandle: "saída",
-        target: `edge-${row}-target`,
-        targetHandle: "entrada",
+        source: edgeSourceId(row),
+        sourceHandle: EDGE_SOURCE_PORT,
+        target: edgeTargetId(row),
+        targetHandle: EDGE_TARGET_PORT,
         data,
     }));
 
@@ -132,30 +134,38 @@ function createEdgeEndpoints(label: string, row: number): BaseNodeSample[] {
         typeLabel: "Script",
         label,
         inputs: [],
-        outputs: [{ name: "saída", type: "string" }],
+        outputs: [{ name: EDGE_SOURCE_PORT, type: "string" }],
     };
     const target: BaseNodeProps = {
         typeIcon: NODE_TYPE_ICONS.output,
         typeLabel: "Saída",
         label,
-        inputs: [{ name: "entrada", type: "string", required: true }],
+        inputs: [{ name: EDGE_TARGET_PORT, type: "string", required: true }],
         outputs: [],
     };
 
     return [
         {
-            id: `edge-${row}-source`,
+            id: edgeSourceId(row),
             type: "baseNode",
             position: gridPosition(row * GRID_COLUMNS),
             data: { node: source },
         },
         {
-            id: `edge-${row}-target`,
+            id: edgeTargetId(row),
             type: "baseNode",
             position: gridPosition(row * GRID_COLUMNS + EDGE_LENGTH_IN_COLUMNS),
             data: { node: target },
         },
     ];
+}
+
+function edgeSourceId(row: number): string {
+    return `edge-${row}-source`;
+}
+
+function edgeTargetId(row: number): string {
+    return `edge-${row}-target`;
 }
 
 function SampleCanvas({ nodes, edges = [] }: { nodes: Node[]; edges?: Edge[] }): JSX.Element {

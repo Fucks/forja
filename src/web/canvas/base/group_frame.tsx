@@ -14,11 +14,6 @@ interface GroupProgress {
     failed: number;
 }
 
-const GROUP_KIND_ICONS: Record<GroupKind, LucideIcon> = {
-    loop: Repeat,
-    map: Split,
-};
-
 export interface GroupFrameProps {
     kind: GroupKind;
     label: string;
@@ -27,6 +22,11 @@ export interface GroupFrameProps {
     selected?: boolean;
     invalid?: boolean;
 }
+
+const GROUP_KIND_ICONS: Record<GroupKind, LucideIcon> = {
+    loop: Repeat,
+    map: Split,
+};
 
 const KIND_ICON_SIZE_PX = 14;
 const COUNTER_SEPARATOR = " · ";

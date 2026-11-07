@@ -4,6 +4,7 @@ import type { JSX, ReactNode } from "react";
 import { InvalidMarker, outlineClasses } from "@/web/canvas/base/canvas_outline.js";
 import { PortHandle } from "@/web/canvas/base/port_handle.js";
 import { cn } from "@/web/components/ui/cn.js";
+import { EXECUTION_STATUS_STYLES } from "@/web/components/ui/execution_status.js";
 import type { ExecutionStatus } from "@/web/components/ui/execution_status.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 
@@ -37,6 +38,7 @@ export interface BaseNodeProps {
 
 export function BaseNode(props: BaseNodeProps): JSX.Element {
     const { label, status, selected, invalid, compact = false } = props;
+    const isGlowing = status !== undefined && EXECUTION_STATUS_STYLES[status].animated;
 
     return (
         <div
@@ -45,7 +47,7 @@ export function BaseNode(props: BaseNodeProps): JSX.Element {
             className={cn(
                 "w-60 rounded-md bg-surface text-text",
                 outlineClasses({ selected, invalid }),
-                status === "RUNNING" && "animate-ember",
+                isGlowing && "animate-ember",
             )}
         >
             <NodeHeader {...props} />
