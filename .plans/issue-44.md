@@ -20,19 +20,21 @@
 - `group_progress` is emitted on every map state change. Map states are part of the snapshot.
 - Touched beyond the issue's list (minimal): `run_state.ts` (failedItems), `flow_plan.ts`, `node_scopes.ts`,
   `node_inputs.ts`, `scheduler_types.ts`, `scheduler_snapshot.ts`, test factories/harness.
+- Map orchestration lives in `map_group_coordinator.ts` (+ `map_group_registry.ts`) so `scheduler.ts` keeps
+  only run-level policy (failedItems, failFast stop). Map output order = the run's item list order.
 
 ## Tasks
 
 - [x] 1. Test + implement map_group state: create, addItems, closeInput, itemsToStart, startItems — `map_group.ts`
 - [x] 2. Test + implement onItemFinished (incl. failFast), isMapDone, mapProgress, succeededItemIds, empty list — `map_group.ts`
-- [ ] 3. Plan map topology and item scope of map members — `flow_plan.ts`, `node_scopes.ts`
-- [ ] 4. Test: canonical flow, Dev map never runs more than 3 items, the rest start as slots open — `scheduler.test.ts`; implement lazy admission in `scheduler.ts`
-- [ ] 5. Test: chained maps stream per item, Reviewer one at a time, Dev gets the TL spec of the same item; implement correlation
-- [ ] 6. Test: global ceiling 2 with concurrency 3 runs at most 2 agents
-- [ ] 7. Test: map output list keeps input order; implement list collection in `node_inputs.ts`
-- [ ] 8. Test: barrier holds everything downstream until the map is done; implement
-- [ ] 9. Test: a failed item does not stop the others, does not reach the next map, run SUCCEEDED with failedItems; implement
-- [ ] 10. Test: failFast cancels the queue and the running items; implement
-- [ ] 11. Test: empty list concludes the maps and skips the list consumer
-- [ ] 12. Test: group_progress emitted per change; map states survive snapshot/restore
-- [ ] 13. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 3. Plan map topology and item scope of map members — `flow_plan.ts`, `node_scopes.ts`
+- [x] 4. Test: canonical flow, Dev map never runs more than 3 items, the rest start as slots open — `scheduler.test.ts`; implement lazy admission in `scheduler.ts`
+- [x] 5. Test: chained maps stream per item, Reviewer one at a time, Dev gets the TL spec of the same item; implement correlation
+- [x] 6. Test: global ceiling 2 with concurrency 3 runs at most 2 agents
+- [x] 7. Test: map output list keeps input order; implement list collection in `node_inputs.ts`
+- [x] 8. Test: barrier holds everything downstream until the map is done; implement
+- [x] 9. Test: a failed item does not stop the others, does not reach the next map, run SUCCEEDED with failedItems; implement
+- [x] 10. Test: failFast cancels the queue and the running items; implement
+- [x] 11. Test: empty list concludes the maps and skips the list consumer
+- [x] 12. Test: group_progress emitted per change; map states survive snapshot/restore
+- [x] 13. Self-review checklist and feedback loops (typecheck, lint, test)

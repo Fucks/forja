@@ -1,7 +1,22 @@
 import type { Condition } from "@/shared/conditions.js";
-import type { FlowGraph, FlowNode, NodeOfType, NodeType, Port } from "@/shared/flow_graph.js";
+import type {
+    FlowGraph,
+    FlowNode,
+    MapConfig,
+    NodeOfType,
+    NodeType,
+    Port,
+} from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
-import { connect } from "@/test/factories/flow_graph_factory.js";
+import { buildCanonicalFlow, connect } from "@/test/factories/flow_graph_factory.js";
+import {
+    addEdges,
+    addGroups,
+    addNodes,
+    buildMapGroup,
+    moveNode,
+    updateGroup,
+} from "@/test/factories/flow_graph_variations.js";
 
 const ORIGIN = { x: 0, y: 0 };
 
@@ -50,6 +65,40 @@ export function buildConditionFlow(condition: Condition): FlowGraph {
             connect(["check", "false"], ["rework", "rejected"]),
         ],
     );
+}
+
+// trigger → map(a) → b, where b runs per item outside the map
+export function buildMappedLinearFlow(): FlowGraph {
+    const graph = addGroups(buildLinearAgentFlow(), [buildMapGroup("map_a")]);
+
+    return moveNode(graph, "a", "map_a");
+}
+
+// The canonical flow with a "report" node after the maps that receives the reviews as one list.
+export function buildReportedCanonicalFlow(): FlowGraph {
+    const report = withInput(buildNode("agent", "report"), {
+        name: "reviews",
+        type: "workItemList",
+        required: true,
+    });
+
+    return addEdges(addNodes(buildCanonicalFlow(), [report]), [
+        connect(["reviewer", "summary"], ["report", "reviews"]),
+    ]);
+}
+
+export function withMapConfig(
+    graph: FlowGraph,
+    mapGroupId: string,
+    config: Partial<MapConfig>,
+): FlowGraph {
+    return updateGroup(graph, mapGroupId, (group) => {
+        if (group.kind !== "map") {
+            return group;
+        }
+
+        return { ...group, config: { ...group.config, ...config } };
+    });
 }
 
 function buildFlow(nodes: FlowNode[], edges: FlowGraph["edges"]): FlowGraph {

@@ -14,7 +14,7 @@ export interface MapGroupState {
     concurrency: number;
     barrier: boolean;
     failFast: boolean;
-    // In arrival order, which is also the order of the map's output list.
+    // In arrival order, which is the order items start in.
     items: MapGroupItem[];
     // True when no more items will arrive: the list was received, or the upstream map is done.
     inputClosed: boolean;
@@ -89,6 +89,34 @@ export function onItemFinished(
     return finished;
 }
 
+// For maps chained by item-correlated edges: an item arrives once it succeeded in every upstream map,
+// and the input closes when every upstream map is done. A list-fed map has no upstream maps.
+export function receiveItemsFromUpstream(
+    state: MapGroupState,
+    upstreamStates: MapGroupState[],
+): MapGroupState {
+    if (upstreamStates.length === 0) {
+        return state;
+    }
+
+    const knownItemIds = new Set(state.items.map((item) => item.itemId));
+    const arrivingItemIds = itemIdsReleasedByEvery(upstreamStates).filter(
+        (itemId) => !knownItemIds.has(itemId),
+    );
+    const shouldCloseInput = !state.inputClosed && upstreamStates.every(isMapDone);
+    if (arrivingItemIds.length === 0 && !shouldCloseInput) {
+        return state;
+    }
+
+    const received = addItems(state, arrivingItemIds);
+
+    return shouldCloseInput ? closeInput(received) : received;
+}
+
+export function cancelQueuedItems(state: MapGroupState): MapGroupState {
+    return withItemStatuses(state, (item) => (item.status === "queued" ? "canceled" : item.status));
+}
+
 export function isMapDone(state: MapGroupState): boolean {
     return (
         state.inputClosed && state.items.every((item) => FINISHED_ITEM_STATUSES.has(item.status))
@@ -108,8 +136,24 @@ export function itemIdsWithStatus(state: MapGroupState, status: MapItemStatus): 
     return state.items.filter((item) => item.status === status).map((item) => item.itemId);
 }
 
-function cancelQueuedItems(state: MapGroupState): MapGroupState {
-    return withItemStatuses(state, (item) => (item.status === "queued" ? "canceled" : item.status));
+function itemIdsReleasedByEvery(upstreamStates: MapGroupState[]): string[] {
+    const [firstUpstream, ...otherUpstreams] = upstreamStates;
+    if (!firstUpstream) {
+        return [];
+    }
+
+    return releasedItemIds(firstUpstream).filter((itemId) =>
+        otherUpstreams.every((upstream) => releasedItemIds(upstream).includes(itemId)),
+    );
+}
+
+// A barrier map releases its items downstream only when all of them finished.
+function releasedItemIds(upstream: MapGroupState): string[] {
+    if (upstream.barrier && !isMapDone(upstream)) {
+        return [];
+    }
+
+    return itemIdsWithStatus(upstream, "succeeded");
 }
 
 function withItemStatuses(

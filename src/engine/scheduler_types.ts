@@ -1,3 +1,4 @@
+import type { MapGroupState } from "@/engine/map_group.js";
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { RunState } from "@/engine/run_state.js";
 
@@ -55,6 +56,7 @@ export interface SchedulerSnapshot {
     run: JsonDates<RunState>;
     nodeRuns: JsonDates<NodeRunState>[];
     items?: WorkItemRef[];
+    mapGroups?: MapGroupState[];
     lastAgentStartAt?: string;
     stopOutcome?: StopOutcome;
 }
@@ -65,6 +67,7 @@ export interface SchedulerState {
     run: RunState;
     nodeRuns: NodeRunState[];
     items?: WorkItemRef[];
+    mapGroups?: MapGroupState[];
     lastAgentStartAt?: Date;
     stopOutcome?: StopOutcome;
 }

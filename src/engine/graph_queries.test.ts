@@ -2,6 +2,7 @@ import {
     areTypesCompatible,
     CycleOutsideLoopError,
     enclosingGroups,
+    enclosingMapGroup,
     groupBoundaryEdges,
     groupMembers,
     incomingEdges,
@@ -69,6 +70,16 @@ describe("enclosingGroups", () => {
         const graph = moveGroup(buildLoopFlow(), "items", { parentGroupId: "review_loop" });
 
         expect(groupIds(enclosingGroups(graph, "dev"))).toEqual(["review_loop", "items"]);
+    });
+});
+
+describe("enclosingMapGroup", () => {
+    it("finds the innermost map around a node, skipping loops", () => {
+        expect(enclosingMapGroup(buildLoopFlow(), "dev")?.id).toBe("items");
+    });
+
+    it("finds no map for a node outside every map", () => {
+        expect(enclosingMapGroup(buildCanonicalFlow(), "source")).toBeUndefined();
     });
 });
 
