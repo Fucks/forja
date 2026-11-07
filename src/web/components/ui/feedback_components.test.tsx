@@ -9,6 +9,7 @@ import { Drawer } from "@/web/components/ui/drawer.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 import { Tabs } from "@/web/components/ui/tabs.js";
 import { ToastProvider, useToast } from "@/web/components/ui/toast.js";
+import { Tooltip } from "@/web/components/ui/tooltip.js";
 import type { ToastTone } from "@/web/components/ui/toast.js";
 
 describe("StatusBadge", () => {
@@ -193,6 +194,21 @@ describe("Tabs", () => {
             "aria-selected",
             "true",
         );
+    });
+});
+
+describe("Tooltip", () => {
+    it("shows its content when the trigger gets the keyboard focus", async () => {
+        const user = userEvent.setup();
+        render(
+            <Tooltip content="Publicar versão">
+                <button>Publicar</button>
+            </Tooltip>,
+        );
+
+        await user.tab();
+
+        expect(await screen.findByRole("tooltip", { name: "Publicar versão" })).toBeInTheDocument();
     });
 });
 

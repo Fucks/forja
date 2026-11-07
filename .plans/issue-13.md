@@ -27,6 +27,6 @@
 - [x] 6. Test + implement `ToastProvider`/`useToast` (disappears after 5 s, error stays) — `toast.tsx`
 - [x] 7. Wrap the app with `ToastProvider` — `src/web/main.tsx`
 - [x] 8. Test + implement `Tabs` with keyboard navigation — `tabs.tsx`
-- [ ] 9. Implement `Tooltip` — `tooltip.tsx`
+- [x] 9. Implement `Tooltip` — `tooltip.tsx`
 - [ ] 10. Test + implement `Skeleton`, `EmptyState`, `KeyValue` — `skeleton.tsx`, `empty_state.tsx`, `key_value.tsx`
 - [ ] 11. Self-review checklist (section 5) and feedback loops (section 6)
