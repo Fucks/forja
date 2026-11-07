@@ -15,7 +15,7 @@
 
 ## Tasks
 
-- [ ] 1. Event catalog types (`ForjaEvent`, `ForjaEventType`, `EventEnvelope`) — `src/shared/events.ts`
+- [x] 1. Event catalog types (`ForjaEvent`, `ForjaEventType`, `EventEnvelope`) — `src/shared/events.ts`
 - [ ] 2. Test + implement: subscribers receive envelopes in order with increasing ids and `at` from the clock — `src/server/runtime/event_bus.ts`, `event_bus.test.ts`
 - [ ] 3. Test + implement: unsubscribe stops delivery — same files
 - [ ] 4. Test + implement: a throwing listener does not stop the others — same files
