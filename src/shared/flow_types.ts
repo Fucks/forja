@@ -52,6 +52,7 @@ export const saveFlowDraftInput = z.object({
     expectedRevision: z.number().int().positive(),
 });
 
+// Fastify hands the body schema `null` when the request has no body, and the note is optional.
 export const publishFlowInput = z
     .object({ note: z.string().trim().min(1).max(VERSION_NOTE_MAX_LENGTH).optional() })
-    .optional();
+    .nullish();

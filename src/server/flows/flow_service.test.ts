@@ -9,6 +9,7 @@ import { createEventBus } from "@/server/runtime/event_bus.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import { buildProject } from "@/test/factories/project_factory.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { createTestDb } from "@/test/test_db.js";
 
@@ -28,8 +29,9 @@ describe("FlowService", () => {
 
     beforeEach(() => {
         database = createTestDb();
-        insertProject(database, PROJECT_ID);
-        insertProject(database, OTHER_PROJECT_ID);
+        const projects = new ProjectRepository(database.db);
+        projects.insert(buildProject({ id: PROJECT_ID }));
+        projects.insert(buildProject({ id: OTHER_PROJECT_ID }));
         clock = new FakeClock(CREATED_AT);
         events = createEventBus(clock);
         validationContext = {};
@@ -388,18 +390,6 @@ describe("FlowService", () => {
         });
     });
 });
-
-function insertProject(database: DatabaseHandle, projectId: string): void {
-    new ProjectRepository(database.db).insert({
-        id: projectId,
-        name: projectId,
-        repoPath: `/repos/${projectId}`,
-        baseBranch: "main",
-        detected: { codegraph: false, codingStandards: false, sandcastle: false },
-        createdAt: CREATED_AT.toISOString(),
-        updatedAt: CREATED_AT.toISOString(),
-    });
-}
 
 function withTechLeadPrompt(graph: FlowGraph, prompt: string): FlowGraph {
     const nodes = graph.nodes.map((node) => {
