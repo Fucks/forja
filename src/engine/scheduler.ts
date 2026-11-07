@@ -158,7 +158,7 @@ class DagScheduler implements Scheduler {
         }
 
         this.stop("CANCELED", at);
-        this.requestCancelOfRunning(this.nodeRuns.all());
+        this.requestCancel(this.nodeRuns.withStatus("RUNNING"));
 
         this.advance(at);
     }
@@ -172,8 +172,8 @@ class DagScheduler implements Scheduler {
         this.mapGroups.cancelQueuedItems();
     }
 
-    private requestCancelOfRunning(nodeRuns: NodeRunState[]): void {
-        for (const nodeRun of nodeRuns.filter((candidate) => candidate.status === "RUNNING")) {
+    private requestCancel(runningNodeRuns: NodeRunState[]): void {
+        for (const nodeRun of runningNodeRuns) {
             this.outbox.push({ type: "cancel_node_run", nodeRunId: nodeRun.id });
         }
     }
@@ -227,7 +227,9 @@ class DagScheduler implements Scheduler {
             this.admitQueuedMapItems();
             this.queueReadyNodeRuns(at);
             const finishedItems = this.mapGroups.finishSettledItems();
-            finishedItems.forEach((finished) => this.applyFinishedItem(finished, at));
+            for (const finished of finishedItems) {
+                this.applyFinishedItem(finished, at);
+            }
             const hasReceivedItems = this.feedCorrelatedMaps();
             hasProgress = finishedItems.length > 0 || hasReceivedItems;
         }
@@ -267,7 +269,7 @@ class DagScheduler implements Scheduler {
         }
 
         this.stop("FAILED", at);
-        this.requestCancelOfRunning(this.mapGroups.runningNodeRunsOf(failFastMapGroup));
+        this.requestCancel(this.mapGroups.runningNodeRunsOf(failFastMapGroup));
     }
 
     // In DAG order, so a skip cascades to the downstream NodeRuns in the same pass.
