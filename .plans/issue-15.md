@@ -21,8 +21,8 @@
 
 ## Tasks
 
-- [ ] 1. `NODE_TYPE_ICONS` — `src/web/canvas/base/node_type_icons.ts`
-- [ ] 2. Test + `PortHandle` with name label, type tooltip, required/optional style — `port_handle.tsx`, `base_node.test.tsx`
+- [x] 1. `NODE_TYPE_ICONS` — `src/web/canvas/base/node_type_icons.ts`
+- [x] 2. Test + `PortHandle` with name label, type tooltip, required/optional style — `port_handle.tsx`, `base_node.test.tsx`
 - [ ] 3. Test + `BaseNode` header (icon, labels, status badge with accessible name, badge, invalid marker) — `base_node.tsx`, `canvas_outline.tsx`
 - [ ] 4. Test + `BaseNode` body (summary, port labels) and compact mode hiding the body — `base_node.tsx`
 - [ ] 5. Test + `BaseNode` RUNNING ember and selected/invalid outline — `base_node.tsx`
