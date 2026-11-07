@@ -1,6 +1,7 @@
 import type { NodeRunError } from "@/engine/node_run_state.js";
 import type { Condition } from "@/shared/conditions.js";
 import { buildLoopFlowWithExits } from "@/test/factories/flow_graph_factory.js";
+import { moveNode } from "@/test/factories/flow_graph_variations.js";
 import {
     buildConditionFlow,
     buildLoopBesideAgentFlow,
@@ -531,6 +532,23 @@ describe("scheduler: loop groups", () => {
         expect(iterationsOf(harness, "review", "1")).toEqual([1, 2, 3]);
         expect(harness.finalStatusOf("open_pr", "1")).toBe("SKIPPED");
         expect(harness.startCommandsOf("needs_human")[0]?.inputs.item).toEqual({ id: "1" });
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("skips an exhausted exit that is outside the items of the loop instead of waiting", () => {
+        const graph = moveNode(buildLoopFlowWithExits(), "needs_human", undefined);
+        const harness = createSchedulerHarness({
+            graph,
+            scripts: {
+                source: sourceReturning(["1"]),
+                review: reviewerApprovingOnIteration(NEVER),
+            },
+        });
+
+        harness.start([]);
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("needs_human")).toBe("SKIPPED");
         expect(harness.run.status).toBe("SUCCEEDED");
     });
 

@@ -145,11 +145,12 @@ function exhaustedLoopValue(
     target: InputTarget,
     upstream: UpstreamView,
 ): EdgeValue {
+    // A target outside the loop's items finds no instance of its own: it will never be exhausted.
     const loop = upstream.loops.find(edge.from.nodeId, target.workItemId);
-    if (!loop || loop.status === "running") {
+    if (loop?.status === "running") {
         return PENDING;
     }
-    if (loop.status !== "exhausted") {
+    if (loop?.status !== "exhausted") {
         return ABSENT;
     }
 

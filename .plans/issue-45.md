@@ -35,4 +35,4 @@
 - [x] 9. Test (scheduler): loop inside a map with 2 items keeps independent iterations per item
 - [x] 10. Test (scheduler): unrecoverable failure inside the loop fails the item
 - [x] 11. Test (scheduler): loop state survives snapshot/restore; cancel ends loop instances
-- [ ] 12. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 12. Self-review checklist and feedback loops (typecheck, lint, test)

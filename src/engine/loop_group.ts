@@ -13,7 +13,7 @@ export interface LoopInstanceState {
     carry: Record<string, unknown>;
 }
 
-export type LoopNextStep = "repeat" | "exit" | "exhausted";
+type LoopNextStep = "repeat" | "exit" | "exhausted";
 
 export interface LoopDecision {
     state: LoopInstanceState;
