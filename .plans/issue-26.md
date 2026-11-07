@@ -21,4 +21,4 @@
 - [x] 4. Test + implement `availableVariables`: inputs, project, run, item via workItem port
 - [x] 5. Test + implement `availableVariables` inside map (item.*) and loop (inputs.<carry>)
 - [x] 6. Test + implement `checkPromptVariables` with `code: "unknown_variable"`
-- [ ] 7. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 7. Self-review checklist (section 5) and feedback loops (section 6)
