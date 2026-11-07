@@ -11,6 +11,7 @@ import { RouterProvider } from "react-router/dom";
 
 import { queryClient } from "@/web/api/query_client.js";
 import { createAppRouter } from "@/web/app/routes.js";
+import { ToastProvider } from "@/web/components/ui/toast.js";
 import "@/web/styles/global.css";
 import { applyTheme, readStoredTheme } from "@/web/styles/theme.js";
 
@@ -26,7 +27,9 @@ if (!rootElement) {
 createRoot(rootElement).render(
     <StrictMode>
         <QueryClientProvider client={queryClient}>
-            <RouterProvider router={createAppRouter()} />
+            <ToastProvider>
+                <RouterProvider router={createAppRouter()} />
+            </ToastProvider>
         </QueryClientProvider>
     </StrictMode>,
 );
