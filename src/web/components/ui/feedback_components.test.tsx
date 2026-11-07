@@ -7,6 +7,7 @@ import type { JSX } from "react";
 import { Dialog } from "@/web/components/ui/dialog.js";
 import { Drawer } from "@/web/components/ui/drawer.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
+import { Tabs } from "@/web/components/ui/tabs.js";
 import { ToastProvider, useToast } from "@/web/components/ui/toast.js";
 import type { ToastTone } from "@/web/components/ui/toast.js";
 
@@ -167,6 +168,51 @@ function advanceTimersBy(durationMs: number): void {
     act(() => {
         vi.advanceTimersByTime(durationMs);
     });
+}
+
+describe("Tabs", () => {
+    it("moves to the next tab with the arrow keys and shows its panel", async () => {
+        const user = userEvent.setup();
+        render(<TabsHarness />);
+        await user.click(screen.getByRole("tab", { name: "Entrada" }));
+
+        await user.keyboard("{ArrowRight}");
+
+        expect(screen.getByRole("tab", { name: "Saída" })).toHaveFocus();
+        expect(screen.getByRole("tabpanel", { name: "Saída" })).toHaveTextContent("resultado");
+    });
+
+    it("wraps from the last tab to the first", async () => {
+        const user = userEvent.setup();
+        render(<TabsHarness />);
+        await user.click(screen.getByRole("tab", { name: "Logs" }));
+
+        await user.keyboard("{ArrowRight}");
+
+        expect(screen.getByRole("tab", { name: "Entrada" })).toHaveAttribute(
+            "aria-selected",
+            "true",
+        );
+    });
+});
+
+type NodeRunTab = "input" | "output" | "logs";
+
+function TabsHarness(): JSX.Element {
+    const [selectedTab, setSelectedTab] = useState<NodeRunTab>("input");
+
+    return (
+        <Tabs
+            label="Execução do nó"
+            value={selectedTab}
+            onValueChange={setSelectedTab}
+            tabs={[
+                { value: "input", label: "Entrada", content: "prompt" },
+                { value: "output", label: "Saída", content: "resultado" },
+                { value: "logs", label: "Logs", content: "linhas" },
+            ]}
+        />
+    );
 }
 
 type RenderOverlay = (isOpen: boolean, onOpenChange: (open: boolean) => void) => JSX.Element;
