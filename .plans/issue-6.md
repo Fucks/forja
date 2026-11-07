@@ -15,8 +15,8 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `loadMigrations` reads `*.sql` sorted by name — `src/server/db/migrate.ts`, `migrate.test.ts`
-- [ ] 2. Test + implement `applyMigrations` applies in lexical order and records ids — `migrate.ts`
+- [x] 1. Test + implement `loadMigrations` reads `*.sql` sorted by name — `src/server/db/migrate.ts`, `migrate.test.ts`
+- [x] 2. Test + implement `applyMigrations` applies in lexical order and records ids — `migrate.ts`
 - [ ] 3. Test + implement idempotency (skips applied ids; opening a file db twice applies once) — `migrate.ts`, `client.ts`
 - [ ] 4. Test + implement failure aborts with error citing the file and doesn't record the id — `migrate.ts`
 - [ ] 5. Test + implement pragmas: `foreign_keys` on, WAL on file db, busy_timeout — `client.ts`
