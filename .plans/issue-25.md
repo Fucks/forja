@@ -33,12 +33,12 @@
 - [x] 3. Queries: `groupBoundaryEdges` entering/leaving/back + test
 - [x] 4. Queries: `topologicalOrder` (deterministic, ignores loop back edges, throws on cycle) + test
 - [x] 5. Queries: `areTypesCompatible` and `isItemCorrelatedEdge` + test
-- [ ] 6. Validation: canonical and loop flows have no errors; `duplicate_id`, `no_trigger`, `many_triggers`
-- [ ] 7. Validation: `dangling_edge`, `group_overlap`
-- [ ] 8. Validation: `required_input_unconnected` (with map item exemption), `incompatible_ports`
-- [ ] 9. Validation: `cycle_outside_loop` (accepted inside loop), `loop_without_back_edge`
-- [ ] 10. Validation: `map_without_list_input`, `map_many_list_inputs`
-- [ ] 11. Validation: `loop_condition_unknown_port`
-- [ ] 12. Validation: `empty_prompt`, `unknown_tool_profile`, `unknown_credential`, `checkPrompt` injection
-- [ ] 13. Validation: issues are sorted with errors first
+- [x] 6. Validation: canonical and loop flows have no errors; `duplicate_id`, `no_trigger`, `many_triggers`
+- [x] 7. Validation: `dangling_edge`, `group_overlap`
+- [x] 8. Validation: `required_input_unconnected` (with map item exemption), `incompatible_ports`
+- [x] 9. Validation: `cycle_outside_loop` (accepted inside loop), `loop_without_back_edge`
+- [x] 10. Validation: `map_without_list_input`, `map_many_list_inputs`
+- [x] 11. Validation: `loop_condition_unknown_port`
+- [x] 12. Validation: `empty_prompt`, `unknown_tool_profile`, `unknown_credential`, `checkPrompt` injection
+- [x] 13. Validation: issues are sorted with errors first
 - [ ] 14. Self-review checklist and feedback loops (typecheck, lint, test)

@@ -36,6 +36,14 @@ export function addGroups(graph: FlowGraph, groups: FlowGroup[]): FlowGraph {
     return { ...graph, groups: [...graph.groups, ...groups] };
 }
 
+export function removeNodes(graph: FlowGraph, nodeIds: string[]): FlowGraph {
+    return { ...graph, nodes: graph.nodes.filter((node) => !nodeIds.includes(node.id)) };
+}
+
+export function removeGroups(graph: FlowGraph, groupIds: string[]): FlowGraph {
+    return { ...graph, groups: graph.groups.filter((group) => !groupIds.includes(group.id)) };
+}
+
 export function removeEdges(graph: FlowGraph, edgeIds: string[]): FlowGraph {
     return { ...graph, edges: graph.edges.filter((edge) => !edgeIds.includes(edge.id)) };
 }

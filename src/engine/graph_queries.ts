@@ -1,5 +1,8 @@
 import type { FlowEdge, FlowGraph, FlowGroup, FlowNode, PortType } from "@/shared/flow_graph.js";
 
+export type MapGroup = Extract<FlowGroup, { kind: "map" }>;
+export type LoopGroup = Extract<FlowGroup, { kind: "loop" }>;
+
 export interface GroupMembers {
     nodeIds: string[];
     childGroupIds: string[];
@@ -44,6 +47,10 @@ export function enclosingGroups(graph: FlowGraph, nodeId: string): FlowGroup[] {
     }
 
     return groupAncestry(graph, node.parentGroupId);
+}
+
+export function groupAncestors(graph: FlowGraph, groupId: string): FlowGroup[] {
+    return groupAncestry(graph, findGroup(graph, groupId)?.parentGroupId);
 }
 
 export function isNodeInsideGroup(graph: FlowGraph, nodeId: string, groupId: string): boolean {
@@ -94,8 +101,12 @@ export function isItemCorrelatedEdge(graph: FlowGraph, edge: FlowEdge): boolean 
     return !targetGroups.includes(sourceMap) && !sourceGroups.includes(targetMap);
 }
 
-export function isMapGroup(group: FlowGroup): boolean {
+export function isMapGroup(group: FlowGroup): group is MapGroup {
     return group.kind === "map";
+}
+
+export function isLoopGroup(group: FlowGroup): group is LoopGroup {
+    return group.kind === "loop";
 }
 
 function groupAncestry(graph: FlowGraph, innermostGroupId: string | undefined): FlowGroup[] {
@@ -114,7 +125,8 @@ function findGroup(graph: FlowGraph, groupId: string | undefined): FlowGroup | u
 }
 
 function findLoopBackEdges(graph: FlowGraph, groupId: string): FlowEdge[] {
-    if (findGroup(graph, groupId)?.kind !== "loop") {
+    const group = findGroup(graph, groupId);
+    if (!group || !isLoopGroup(group)) {
         return [];
     }
 
