@@ -17,11 +17,11 @@
 ## Tasks
 
 - [x] 1. Contract types and typed errors — `agent_runtime.ts`, `agent_errors.ts`
-- [ ] 2. Test + implement: a run resolves only after the scripted duration with the default/scripted result
-- [ ] 3. Test + implement: step matching by nodeRunId/promptIncludes/workItemId and `times`
-- [ ] 4. Test + implement: scripted events reach `onEvent` in order with the fake clock's `at`
-- [ ] 5. Test + implement: each scripted error type rejects with its error class
-- [ ] 6. Test + implement: aborting the signal rejects with `AgentCanceledError` and frees concurrency
-- [ ] 7. Test + implement: call log and `peakConcurrentRuns()` for overlapping runs
-- [ ] 8. Test + implement: workspaces (open/list/close, exec default and scripted, headless run)
-- [ ] 9. Self-review checklist and feedback loops
+- [x] 2. Test + implement: a run resolves only after the scripted duration with the default/scripted result
+- [x] 3. Test + implement: step matching by nodeRunId/promptIncludes/workItemId and `times`
+- [x] 4. Test + implement: scripted events reach `onEvent` in order with the fake clock's `at`
+- [x] 5. Test + implement: each scripted error type rejects with its error class
+- [x] 6. Test + implement: aborting the signal rejects with `AgentCanceledError` and frees concurrency
+- [x] 7. Test + implement: call log and `peakConcurrentRuns()` for overlapping runs
+- [x] 8. Test + implement: workspaces (open/list/close, exec default and scripted, headless run)
+- [x] 9. Self-review checklist and feedback loops
