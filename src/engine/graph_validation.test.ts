@@ -4,7 +4,12 @@ import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
-import { buildCanonicalFlow, buildLoopFlow, connect } from "@/test/factories/flow_graph_factory.js";
+import {
+    buildCanonicalFlow,
+    buildLoopFlow,
+    buildLoopFlowWithExits,
+    connect,
+} from "@/test/factories/flow_graph_factory.js";
 import {
     addEdges,
     addNodes,
@@ -24,6 +29,10 @@ describe("validateFlowGraph", () => {
 
     it("finds no issues in the loop flow", () => {
         expect(validateFlowGraph(buildLoopFlow())).toEqual([]);
+    });
+
+    it("finds no issues in the loop flow with its exhausted exit", () => {
+        expect(validateFlowGraph(buildLoopFlowWithExits())).toEqual([]);
     });
 
     it("lists errors before warnings", () => {
@@ -82,6 +91,26 @@ describe("dangling_edge", () => {
 
         expect(targetsOf(graph, "dangling_edge")).toEqual([
             { kind: "edge", id: "dev.missing->reviewer.context" },
+        ]);
+    });
+
+    it("points to an edge from a loop group port other than exhausted", () => {
+        const graph = addEdges(buildLoopFlowWithExits(), [
+            connect(["review_loop", "approved"], ["needs_human", "item"]),
+        ]);
+
+        expect(targetsOf(graph, "dangling_edge")).toEqual([
+            { kind: "edge", id: "review_loop.approved->needs_human.item" },
+        ]);
+    });
+
+    it("points to an edge from the exhausted port of a map group", () => {
+        const graph = addEdges(buildLoopFlowWithExits(), [
+            connect(["items", "exhausted"], ["needs_human", "item"]),
+        ]);
+
+        expect(targetsOf(graph, "dangling_edge")).toEqual([
+            { kind: "edge", id: "items.exhausted->needs_human.item" },
         ]);
     });
 });

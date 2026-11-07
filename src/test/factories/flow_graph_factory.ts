@@ -7,6 +7,7 @@ import type {
     NodeType,
     Position,
 } from "@/shared/flow_graph.js";
+import { LOOP_EXHAUSTED_PORT } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 
 const GRID_STEP_PX = 240;
@@ -99,6 +100,25 @@ export function buildLoopFlow(): FlowGraph {
     };
 }
 
+// The loop flow with its two ways out: approved reviews open a PR; an exhausted loop asks for a human.
+export function buildLoopFlowWithExits(): FlowGraph {
+    const loopFlow = buildLoopFlow();
+
+    return {
+        ...loopFlow,
+        nodes: [
+            ...loopFlow.nodes,
+            { ...buildOpenPullRequestNode(), parentGroupId: "items" },
+            { ...buildNeedsHumanOutputNode(), parentGroupId: "items" },
+        ],
+        edges: [
+            ...loopFlow.edges,
+            connect(["review", "summary"], ["open_pr", "body"]),
+            connect(["review_loop", LOOP_EXHAUSTED_PORT], ["needs_human", "item"]),
+        ],
+    };
+}
+
 export function connect(
     [fromNodeId, fromPort]: [string, string],
     [toNodeId, toPort]: [string, string],
@@ -183,6 +203,16 @@ function buildDoneOutputNode(): FlowNode {
     const output = createNodeOfType("output", "output", gridPosition(4, 2));
 
     return { ...output, config: { ...output.config, moveItemTo: "done" } };
+}
+
+function buildNeedsHumanOutputNode(): FlowNode {
+    const output = createNodeOfType("output", "needs_human", gridPosition(5, 1));
+
+    return {
+        ...output,
+        label: "Precisa de humano",
+        config: { ...output.config, moveItemTo: "needs_human" },
+    };
 }
 
 function buildLoopDeveloperNode(): FlowNode {
