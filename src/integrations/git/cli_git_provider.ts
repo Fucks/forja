@@ -44,7 +44,7 @@ export class CliGitProvider implements GitProvider {
     }
 
     private async findRepoRoot(path: string): Promise<string> {
-        const result = await this.git(path, ["rev-parse", "--show-toplevel"]);
+        const result = await this.runGit(path, ["rev-parse", "--show-toplevel"]);
         if (!succeeded(result)) {
             throw new NotARepoError(path);
         }
@@ -53,12 +53,12 @@ export class CliGitProvider implements GitProvider {
     }
 
     private async readCurrentBranch(root: string): Promise<string> {
-        const result = await this.git(root, ["branch", "--show-current"]);
+        const result = await this.runGit(root, ["branch", "--show-current"]);
         return result.stdout.trim();
     }
 
     private async readDefaultBranch(root: string): Promise<string> {
-        const result = await this.git(root, ["symbolic-ref", ORIGIN_HEAD_REF]);
+        const result = await this.runGit(root, ["symbolic-ref", ORIGIN_HEAD_REF]);
         const originHead = result.stdout.trim();
         if (!succeeded(result) || !originHead.startsWith(ORIGIN_BRANCH_PREFIX)) {
             return FALLBACK_DEFAULT_BRANCH;
@@ -68,7 +68,7 @@ export class CliGitProvider implements GitProvider {
     }
 
     private async readOriginUrl(root: string): Promise<string | undefined> {
-        const result = await this.git(root, ["remote", "get-url", "origin"]);
+        const result = await this.runGit(root, ["remote", "get-url", "origin"]);
         const remoteUrl = result.stdout.trim();
         if (!succeeded(result) || remoteUrl === "") {
             return undefined;
@@ -78,11 +78,11 @@ export class CliGitProvider implements GitProvider {
     }
 
     private async refExists(root: string, ref: string): Promise<boolean> {
-        const result = await this.git(root, ["show-ref", "--verify", "--quiet", ref]);
+        const result = await this.runGit(root, ["show-ref", "--verify", "--quiet", ref]);
         return succeeded(result);
     }
 
-    private git(cwd: string, args: string[]): Promise<CommandResult> {
+    private runGit(cwd: string, args: string[]): Promise<CommandResult> {
         return this.commands.run("git", args, { cwd, timeoutMs: GIT_TIMEOUT_MS });
     }
 }

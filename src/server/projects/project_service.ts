@@ -45,13 +45,14 @@ async function createProject(
     const repoInfo = await inspectRepoOrReject(deps.git, input.repoPath);
     assertRepoIsNotRegistered(deps.repo, repoInfo.root);
 
+    const baseBranch = input.baseBranch ?? (await chooseDefaultBaseBranch(deps.git, repoInfo));
     const createdAt = deps.clock.now().toISOString();
     const project: Project = {
         id: newId("prj"),
         name: input.name,
         repoPath: repoInfo.root,
         githubRepo: repoInfo.githubRepo,
-        baseBranch: input.baseBranch ?? (await chooseDefaultBaseBranch(deps.git, repoInfo)),
+        baseBranch,
         detected: detectRepoEntries(deps.fileExists, repoInfo.root),
         createdAt,
         updatedAt: createdAt,

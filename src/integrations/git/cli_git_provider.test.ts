@@ -39,9 +39,9 @@ describe("CliGitProvider.inspectRepo", () => {
         const commands = new FakeCommandRunner();
         scriptRepository(commands);
 
-        const info = await new CliGitProvider(commands).inspectRepo(SUBDIRECTORY);
+        const repoInfo = await new CliGitProvider(commands).inspectRepo(SUBDIRECTORY);
 
-        expect(info).toEqual({
+        expect(repoInfo).toEqual({
             root: REPO_ROOT,
             currentBranch: "feature/login",
             defaultBranch: "trunk",
@@ -68,9 +68,9 @@ describe("CliGitProvider.inspectRepo", () => {
         scriptRepository(commands);
         commands.when("git", ["symbolic-ref", "refs/remotes/origin/HEAD"]).returns({ exitCode: 1 });
 
-        const info = await new CliGitProvider(commands).inspectRepo(REPO_ROOT);
+        const repoInfo = await new CliGitProvider(commands).inspectRepo(REPO_ROOT);
 
-        expect(info.defaultBranch).toBe("main");
+        expect(repoInfo.defaultBranch).toBe("main");
     });
 
     it("leaves the remote empty when there is no origin", async () => {
@@ -78,10 +78,10 @@ describe("CliGitProvider.inspectRepo", () => {
         scriptRepository(commands);
         commands.when("git", ["remote", "get-url", "origin"]).returns({ exitCode: 2 });
 
-        const info = await new CliGitProvider(commands).inspectRepo(REPO_ROOT);
+        const repoInfo = await new CliGitProvider(commands).inspectRepo(REPO_ROOT);
 
-        expect(info.remoteUrl).toBeUndefined();
-        expect(info.githubRepo).toBeUndefined();
+        expect(repoInfo.remoteUrl).toBeUndefined();
+        expect(repoInfo.githubRepo).toBeUndefined();
     });
 
     it("rejects a path outside any git repository with NotARepoError", async () => {

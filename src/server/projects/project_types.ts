@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const PROJECT_NAME_MAX_LENGTH = 80;
+const PROJECT_NAME_MAX_LENGTH = 80;
 
 const projectNameSchema = z.string().trim().min(1).max(PROJECT_NAME_MAX_LENGTH);
 

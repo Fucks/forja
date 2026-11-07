@@ -7,7 +7,7 @@ export interface FakeRepoOptions {
 }
 
 interface FakeRepo {
-    info: RepoInfo;
+    repoInfo: RepoInfo;
     paths: string[];
     branches: string[];
 }
@@ -15,12 +15,12 @@ interface FakeRepo {
 export class FakeGitProvider implements GitProvider {
     private repos: FakeRepo[] = [];
 
-    addRepo(info: RepoInfo, options: FakeRepoOptions = {}): void {
+    addRepo(repoInfo: RepoInfo, options: FakeRepoOptions = {}): void {
         const { subdirectories = [], branches = [] } = options;
         const repo = {
-            info,
-            paths: [info.root, ...subdirectories],
-            branches: [info.currentBranch, info.defaultBranch, ...branches],
+            repoInfo,
+            paths: [repoInfo.root, ...subdirectories],
+            branches: [repoInfo.currentBranch, repoInfo.defaultBranch, ...branches],
         };
         this.repos = [...this.repos, repo];
     }
@@ -31,11 +31,11 @@ export class FakeGitProvider implements GitProvider {
             return Promise.reject(new NotARepoError(path));
         }
 
-        return Promise.resolve(repo.info);
+        return Promise.resolve(repo.repoInfo);
     }
 
     branchExists(root: string, branch: string): Promise<boolean> {
-        const repo = this.repos.find((candidate) => candidate.info.root === root);
+        const repo = this.repos.find((candidate) => candidate.repoInfo.root === root);
         return Promise.resolve(repo?.branches.includes(branch) ?? false);
     }
 }

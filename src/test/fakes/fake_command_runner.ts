@@ -41,7 +41,7 @@ export class FakeCommandRunner implements CommandRunner {
     }
 }
 
-export function buildCommandResult(overrides: Partial<CommandResult> = {}): CommandResult {
+function buildCommandResult(overrides: Partial<CommandResult> = {}): CommandResult {
     return { exitCode: 0, stdout: "", stderr: "", timedOut: false, ...overrides };
 }
 
