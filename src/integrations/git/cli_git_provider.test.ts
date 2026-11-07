@@ -1,0 +1,127 @@
+import { CliGitProvider, parseGithubRepo } from "@/integrations/git/cli_git_provider.js";
+import { NotARepoError } from "@/integrations/git/git_provider.js";
+import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
+
+const REPO_ROOT = "/repos/forja";
+const SUBDIRECTORY = `${REPO_ROOT}/src/server`;
+
+function scriptRepository(commands: FakeCommandRunner): void {
+    commands.when("git", ["rev-parse", "--show-toplevel"]).returns({ stdout: REPO_ROOT });
+    commands.when("git", ["branch", "--show-current"]).returns({ stdout: "feature/login" });
+    commands
+        .when("git", ["symbolic-ref", "refs/remotes/origin/HEAD"])
+        .returns({ stdout: "refs/remotes/origin/trunk" });
+    commands
+        .when("git", ["remote", "get-url", "origin"])
+        .returns({ stdout: "git@github.com:Fucks/forja.git" });
+}
+
+describe("parseGithubRepo", () => {
+    it.each([
+        "https://github.com/Fucks/forja",
+        "https://github.com/Fucks/forja.git",
+        "git@github.com:Fucks/forja",
+        "git@github.com:Fucks/forja.git",
+    ])("extracts owner/name from %s", (remoteUrl) => {
+        expect(parseGithubRepo(remoteUrl)).toBe("Fucks/forja");
+    });
+
+    it.each(["https://gitlab.com/Fucks/forja.git", "git@bitbucket.org:Fucks/forja.git"])(
+        "ignores the non-GitHub remote %s",
+        (remoteUrl) => {
+            expect(parseGithubRepo(remoteUrl)).toBeUndefined();
+        },
+    );
+});
+
+describe("CliGitProvider.inspectRepo", () => {
+    it("describes the repository that contains the path", async () => {
+        const commands = new FakeCommandRunner();
+        scriptRepository(commands);
+
+        const repoInfo = await new CliGitProvider(commands).inspectRepo(SUBDIRECTORY);
+
+        expect(repoInfo).toEqual({
+            root: REPO_ROOT,
+            currentBranch: "feature/login",
+            defaultBranch: "trunk",
+            remoteUrl: "git@github.com:Fucks/forja.git",
+            githubRepo: "Fucks/forja",
+        });
+    });
+
+    it("asks git for the top level from the given path", async () => {
+        const commands = new FakeCommandRunner();
+        scriptRepository(commands);
+
+        await new CliGitProvider(commands).inspectRepo(SUBDIRECTORY);
+
+        expect(commands.calls[0]).toMatchObject({
+            command: "git",
+            args: ["rev-parse", "--show-toplevel"],
+            options: { cwd: SUBDIRECTORY },
+        });
+    });
+
+    it("falls back to main when origin has no HEAD", async () => {
+        const commands = new FakeCommandRunner();
+        scriptRepository(commands);
+        commands.when("git", ["symbolic-ref", "refs/remotes/origin/HEAD"]).returns({ exitCode: 1 });
+
+        const repoInfo = await new CliGitProvider(commands).inspectRepo(REPO_ROOT);
+
+        expect(repoInfo.defaultBranch).toBe("main");
+    });
+
+    it("leaves the remote empty when there is no origin", async () => {
+        const commands = new FakeCommandRunner();
+        scriptRepository(commands);
+        commands.when("git", ["remote", "get-url", "origin"]).returns({ exitCode: 2 });
+
+        const repoInfo = await new CliGitProvider(commands).inspectRepo(REPO_ROOT);
+
+        expect(repoInfo.remoteUrl).toBeUndefined();
+        expect(repoInfo.githubRepo).toBeUndefined();
+    });
+
+    it("rejects a path outside any git repository with NotARepoError", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("git", ["rev-parse", "--show-toplevel"]).returns({ exitCode: 128 });
+
+        const inspecting = new CliGitProvider(commands).inspectRepo("/tmp/solto");
+
+        await expect(inspecting).rejects.toThrow(NotARepoError);
+    });
+});
+
+describe("CliGitProvider.branchExists", () => {
+    it("finds a local branch", async () => {
+        const commands = new FakeCommandRunner();
+        commands
+            .when("git", ["show-ref", "--verify", "--quiet", "refs/heads/development"])
+            .returns({ exitCode: 0 });
+
+        const exists = await new CliGitProvider(commands).branchExists(REPO_ROOT, "development");
+
+        expect(exists).toBe(true);
+    });
+
+    it("finds a branch that exists only on origin", async () => {
+        const commands = new FakeCommandRunner();
+        commands
+            .when("git", ["show-ref", "--verify", "--quiet", "refs/remotes/origin/development"])
+            .returns({ exitCode: 0 });
+
+        const exists = await new CliGitProvider(commands).branchExists(REPO_ROOT, "development");
+
+        expect(exists).toBe(true);
+    });
+
+    it("reports a branch missing locally and on origin", async () => {
+        const commands = new FakeCommandRunner();
+
+        const exists = await new CliGitProvider(commands).branchExists(REPO_ROOT, "development");
+
+        expect(exists).toBe(false);
+    });
+});
