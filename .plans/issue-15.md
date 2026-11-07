@@ -26,8 +26,8 @@
 - [x] 3. Test + `BaseNode` header (icon, labels, status badge with accessible name, badge, invalid marker) — `base_node.tsx`, `canvas_outline.tsx`
 - [x] 4. Test + `BaseNode` body (summary, port labels) and compact mode hiding the body — `base_node.tsx`
 - [x] 5. Test + `BaseNode` RUNNING ember and selected/invalid outline — `base_node.tsx`
-- [ ] 6. Test + `GroupFrame` with configLabel and progress counters — `group_frame.tsx`, `group_frame.test.tsx`
-- [ ] 7. Test + `FlowEdge` bezier with flowing/invalid states — `flow_edge.tsx`, `flow_edge.test.tsx`
+- [x] 6. Test + `GroupFrame` with configLabel and progress counters — `group_frame.tsx`, `group_frame.test.tsx`
+- [x] 7. Test + `FlowEdge` bezier with flowing/invalid states — `flow_edge.tsx`, `flow_edge.test.tsx`
 - [ ] 8. `canvas_theme.css`: dotted background, controls, minimap, handles, edge styles and animation
 - [ ] 9. Test + `/styleguide/canvas` page with every state, route in `routes.tsx` — `styleguide_canvas_page.tsx`, `app_shell.test.tsx`
 - [ ] 10. Self-review checklist (section 5) and feedback loops (section 6)
