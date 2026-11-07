@@ -6,6 +6,7 @@ export const RUN_STATUS_NAMES = [
     "FAILED",
     "CANCELED",
 ] as const;
+
 export const NODE_RUN_STATUS_NAMES = [
     "PENDING",
     "QUEUED",
@@ -18,5 +19,6 @@ export const NODE_RUN_STATUS_NAMES = [
     "WAITING_LIMIT",
     "INTERRUPTED",
 ] as const;
+
 export type RunStatusName = (typeof RUN_STATUS_NAMES)[number];
 export type NodeRunStatusName = (typeof NODE_RUN_STATUS_NAMES)[number];
