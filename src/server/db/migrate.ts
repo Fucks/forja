@@ -19,6 +19,14 @@ export interface Migration {
     sql: string;
 }
 
+export class MigrationFailedError extends Error {
+    constructor(migrationId: string, cause: unknown) {
+        const fileName = `${migrationId}${MIGRATION_EXTENSION}`;
+        super(`Falha ao aplicar a migração ${fileName}: ${describeCause(cause)}`, { cause });
+        this.name = "MigrationFailedError";
+    }
+}
+
 export function loadMigrations(dir: string): Migration[] {
     return listMigrationFileNames(dir).map((fileName) => ({
         id: path.basename(fileName, MIGRATION_EXTENSION),
@@ -32,12 +40,13 @@ export function applyMigrations(
     now: Date,
 ): string[] {
     sqlite.exec(CREATE_MIGRATIONS_TABLE_SQL);
+    const pendingMigrations = findPendingMigrations(sqlite, migrations);
 
-    for (const migration of migrations) {
-        applyMigration(sqlite, migration, now);
+    for (const migration of pendingMigrations) {
+        applyMigrationInTransaction(sqlite, migration, now);
     }
 
-    return migrations.map((migration) => migration.id);
+    return pendingMigrations.map((migration) => migration.id);
 }
 
 function listMigrationFileNames(dir: string): string[] {
@@ -46,9 +55,37 @@ function listMigrationFileNames(dir: string): string[] {
         .sort();
 }
 
-function applyMigration(sqlite: Database.Database, migration: Migration, now: Date): void {
-    sqlite.exec(migration.sql);
-    sqlite
-        .prepare("INSERT INTO _migrations (id, applied_at) VALUES (?, ?)")
-        .run(migration.id, now.toISOString());
+function findPendingMigrations(sqlite: Database.Database, migrations: Migration[]): Migration[] {
+    const appliedIds = new Set(
+        sqlite.prepare<[], string>("SELECT id FROM _migrations").pluck().all(),
+    );
+
+    return migrations.filter((migration) => !appliedIds.has(migration.id));
+}
+
+function applyMigrationInTransaction(
+    sqlite: Database.Database,
+    migration: Migration,
+    now: Date,
+): void {
+    const applyAndRecord = sqlite.transaction(() => {
+        sqlite.exec(migration.sql);
+        sqlite
+            .prepare("INSERT INTO _migrations (id, applied_at) VALUES (?, ?)")
+            .run(migration.id, now.toISOString());
+    });
+
+    try {
+        applyAndRecord();
+    } catch (error) {
+        throw new MigrationFailedError(migration.id, error);
+    }
+}
+
+function describeCause(cause: unknown): string {
+    if (cause instanceof Error) {
+        return cause.message;
+    }
+
+    return String(cause);
 }

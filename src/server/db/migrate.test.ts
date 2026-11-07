@@ -4,7 +4,7 @@ import path from "node:path";
 
 import Database from "better-sqlite3";
 
-import { applyMigrations, loadMigrations } from "@/server/db/migrate.js";
+import { applyMigrations, loadMigrations, MigrationFailedError } from "@/server/db/migrate.js";
 
 const APPLIED_AT = new Date("2026-11-07T12:00:00Z");
 
@@ -63,7 +63,42 @@ describe("applyMigrations", () => {
             { id: "0001_noop", applied_at: "2026-11-07T12:00:00.000Z" },
         ]);
     });
+
+    it("skips the migrations that were already applied", () => {
+        const createTable = { id: "0001_create", sql: "CREATE TABLE steps (name TEXT);" };
+        applyMigrations(sqlite, [createTable], APPLIED_AT);
+
+        const appliedIds = applyMigrations(
+            sqlite,
+            [createTable, { id: "0002_noop", sql: "SELECT 1;" }],
+            APPLIED_AT,
+        );
+
+        expect(appliedIds).toEqual(["0002_noop"]);
+    });
+
+    it("aborts with an error naming the file when a migration has invalid SQL", () => {
+        const brokenMigration = { id: "0002_broken", sql: "CREATE TABLE ok (id TEXT); NOT SQL;" };
+
+        const applyBroken = (): string[] => applyMigrations(sqlite, [brokenMigration], APPLIED_AT);
+
+        expect(applyBroken).toThrow(MigrationFailedError);
+        expect(applyBroken).toThrow(/0002_broken\.sql/);
+    });
+
+    it("rolls back a failed migration without recording its id", () => {
+        const brokenMigration = { id: "0002_broken", sql: "CREATE TABLE ok (id TEXT); NOT SQL;" };
+
+        expect(() => applyMigrations(sqlite, [brokenMigration], APPLIED_AT)).toThrow();
+
+        expect(sqlite.prepare("SELECT id FROM _migrations").all()).toEqual([]);
+        expect(listTableNames(sqlite)).not.toContain("ok");
+    });
 });
+
+function listTableNames(sqlite: Database.Database): unknown[] {
+    return sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").pluck().all();
+}
 
 function writeMigrationFile(directory: string, fileName: string, sql: string): void {
     writeFileSync(path.join(directory, fileName), sql);
