@@ -4,6 +4,7 @@ import { NotARepoError } from "@/integrations/git/git_provider.js";
 import type { GitProvider, RepoInfo } from "@/integrations/git/git_provider.js";
 import type { Clock } from "@/lib/clock.js";
 import { newId } from "@/lib/ids.js";
+import { resolveWith } from "@/lib/resolve_with.js";
 import { ConflictError, DomainValidationError, NotFoundError } from "@/server/errors.js";
 import type { ProjectRepository } from "@/server/projects/project_repository.js";
 import type {
@@ -120,10 +121,4 @@ function renameProject(deps: ProjectServiceDeps, id: string, name: string): Proj
 function removeProject(repo: ProjectRepository, id: string): void {
     findProjectOrThrow(repo, id);
     repo.delete(id);
-}
-
-// The repository is synchronous; running it inside the executor turns a thrown domain error into a
-// rejected promise instead of a synchronous throw.
-function resolveWith<T>(compute: () => T): Promise<T> {
-    return new Promise((resolve) => resolve(compute()));
 }

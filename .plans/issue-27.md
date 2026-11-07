@@ -19,11 +19,11 @@
 ## Tasks
 
 - [x] 1. Types, migration `0500_flows.sql`, schema `flows.ts`, repository skeleton
-- [ ] 2. Test+impl: create gives a draft with one trigger node and revision 1; unknown project → NotFound
-- [ ] 3. Test+impl: list (archived hidden unless includeArchived), rename, archive
-- [ ] 4. Test+impl: setDefault keeps a single default per project
-- [ ] 5. Test+impl: getDraft / saveDraft with optimistic revision (ConflictError) and shape validation
-- [ ] 6. Test+impl: publish valid graph → version last+1, emits `flow.published`; invalid → DomainValidationError with issues
-- [ ] 7. Test+impl: getVersion, listVersions, draft edit doesn't change published version, restoreVersionToDraft
+- [x] 2. Test+impl: create gives a draft with one trigger node and revision 1; unknown project → NotFound
+- [x] 3. Test+impl: list (archived hidden unless includeArchived), rename, archive
+- [x] 4. Test+impl: setDefault keeps a single default per project
+- [x] 5. Test+impl: getDraft / saveDraft with optimistic revision (ConflictError) and shape validation
+- [x] 6. Test+impl: publish valid graph → version last+1, emits `flow.published`; invalid → DomainValidationError with issues
+- [x] 7. Test+impl: getVersion, listVersions, draft edit doesn't change published version, restoreVersionToDraft
 - [ ] 8. Routes in `flows_routes.ts` + `flows_routes.test.ts` (status codes, 409, 422 body)
 - [ ] 9. Self-review checklist and feedback loops
