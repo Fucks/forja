@@ -3,6 +3,8 @@ import type { FastifyInstance } from "fastify";
 import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
+import type { GitProvider } from "@/integrations/git/git_provider.js";
+import type { CommandRunner } from "@/integrations/process/command_runner.js";
 import type { Env } from "@/lib/env.js";
 import type { ForjaPaths } from "@/lib/paths.js";
 import type { ForjaDb } from "@/server/db/client.js";
@@ -28,6 +30,8 @@ export interface AppDeps {
     options: ServerOptions;
     db: ForjaDb;
     events: EventBus;
+    commands: CommandRunner;
+    git: GitProvider;
 }
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {

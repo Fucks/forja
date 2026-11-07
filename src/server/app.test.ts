@@ -1,27 +1,17 @@
 import type { FastifyInstance } from "fastify";
 
-import { loadEnv } from "@/lib/env.js";
-import { resolvePaths } from "@/lib/paths.js";
 import { buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
-import { createEventBus } from "@/server/runtime/event_bus.js";
-import { FakeClock } from "@/test/fakes/fake_clock.js";
+import { createTestAppDeps, TEST_PATHS } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 
 describe("buildApp", () => {
-    const paths = resolvePaths("/srv/forja dados", "/home/ana");
     let database: DatabaseHandle;
     let app: FastifyInstance;
 
     beforeEach(async () => {
         database = createTestDb();
-        app = await buildApp({
-            env: loadEnv({ FORJA_LOG_LEVEL: "error" }),
-            paths,
-            options: { seedDemo: false },
-            db: database.db,
-            events: createEventBus(new FakeClock()),
-        });
+        app = await buildApp(createTestAppDeps(database.db));
     });
 
     afterEach(async () => {
@@ -36,7 +26,7 @@ describe("buildApp", () => {
         expect(response.json()).toEqual({
             status: "ok",
             version: expect.stringMatching(/^\d+\.\d+\.\d+/) as unknown,
-            dataDir: paths.root,
+            dataDir: TEST_PATHS.root,
         });
     });
 
