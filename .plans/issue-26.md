@@ -16,8 +16,8 @@
 ## Tasks
 
 - [x] 1. Test + implement `parsePromptTemplate`: text/var tokens with positions, spaces, escape — `src/engine/prompt_template.ts`
-- [ ] 2. Test + implement `renderPrompt` value formatting per type — export `lookUpPath` in `src/shared/conditions.ts`
-- [ ] 3. Test + implement `renderPrompt` errors (`PromptRenderError` for missing/undefined)
+- [x] 2. Test + implement `renderPrompt` value formatting per type — export `lookUpPath` in `src/shared/conditions.ts`
+- [x] 3. Test + implement `renderPrompt` errors (`PromptRenderError` for missing/undefined)
 - [ ] 4. Test + implement `availableVariables`: inputs, project, run, item via workItem port
 - [ ] 5. Test + implement `availableVariables` inside map (item.*) and loop (inputs.<carry>)
 - [ ] 6. Test + implement `checkPromptVariables` with `code: "unknown_variable"`
