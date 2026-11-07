@@ -20,6 +20,6 @@
 - [x] 2. Test + implement `InvalidTransitionError` message with from/to — `src/engine/invalid_transition_error.ts`
 - [x] 3. Test full (from, to) matrix for `canTransitionRun` + `RUN_TERMINAL` — `src/engine/run_state.ts`
 - [x] 4. Test + implement `transitionRun`: rejects invalid pairs, timestamps, `extra`, clears pause — `src/engine/run_state.ts`
-- [ ] 5. Test full (from, to) matrix for `canTransitionNodeRun` + `NODE_RUN_TERMINAL` — `src/engine/node_run_state.ts`
-- [ ] 6. Test + implement `transitionNodeRun`: rejects invalid pairs, timestamps, `extra` — `src/engine/node_run_state.ts`
+- [x] 5. Test full (from, to) matrix for `canTransitionNodeRun` + `NODE_RUN_TERMINAL` — `src/engine/node_run_state.ts`
+- [x] 6. Test + implement `transitionNodeRun`: rejects invalid pairs, timestamps, `extra` — `src/engine/node_run_state.ts`
 - [ ] 7. Self-review checklist (section 5) and feedback loops (section 6)
