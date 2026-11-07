@@ -25,10 +25,6 @@ const EFFORT_OPTIONS = [
     { value: "high", label: "Alto" },
 ];
 
-beforeAll(() => {
-    installRadixJsdomPolyfills();
-});
-
 describe("Button", () => {
     it("calls onClick when clicked", async () => {
         const user = userEvent.setup();
@@ -298,14 +294,3 @@ describe("SegmentedControl", () => {
         expect(onChange).not.toHaveBeenCalled();
     });
 });
-
-function installRadixJsdomPolyfills(): void {
-    Element.prototype.hasPointerCapture = () => false;
-    Element.prototype.releasePointerCapture = () => undefined;
-    Element.prototype.scrollIntoView = () => undefined;
-    globalThis.ResizeObserver = class {
-        observe(): void {}
-        unobserve(): void {}
-        disconnect(): void {}
-    };
-}

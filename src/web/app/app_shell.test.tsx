@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { createFakeMatchMedia } from "@/test/fakes/fake_match_media.js";
 import { APP_ROUTES } from "@/web/app/routes.js";
 import { Topbar } from "@/web/app/topbar.js";
+import { ToastProvider } from "@/web/components/ui/toast.js";
 import { THEME_STORAGE_KEY } from "@/web/styles/theme.js";
 
 const ROUTE_TITLES = [
@@ -184,5 +185,9 @@ describe("Topbar", () => {
 
 function renderAppAt(path: string): void {
     const router = createMemoryRouter(APP_ROUTES, { initialEntries: [path] });
-    render(<RouterProvider router={router} />);
+    render(
+        <ToastProvider>
+            <RouterProvider router={router} />
+        </ToastProvider>,
+    );
 }

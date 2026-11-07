@@ -1,10 +1,9 @@
 import "@testing-library/jest-dom/vitest";
 
-import { createFakeMatchMedia } from "@/test/fakes/fake_match_media.js";
+import { installJsdomPolyfills } from "@/test/fakes/jsdom_polyfills.js";
 
-// jsdom has no matchMedia; without it every component that reads a media query would crash.
 if (typeof window !== "undefined") {
-    window.matchMedia = createFakeMatchMedia([]);
+    installJsdomPolyfills();
 }
 
 afterEach(() => {
