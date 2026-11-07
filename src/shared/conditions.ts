@@ -70,7 +70,7 @@ function evaluateComparison(comparison: Comparison, lookup: PathLookup): boolean
     }
 }
 
-function lookUpPath(data: unknown, path: string): PathLookup {
+export function lookUpPath(data: unknown, path: string): PathLookup {
     const root: PathLookup = { isFound: true, value: data };
 
     return path.split(CONDITION_PATH_SEPARATOR).reduce(lookUpKey, root);
