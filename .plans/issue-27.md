@@ -18,7 +18,7 @@
 
 ## Tasks
 
-- [ ] 1. Types, migration `0500_flows.sql`, schema `flows.ts`, repository skeleton
+- [x] 1. Types, migration `0500_flows.sql`, schema `flows.ts`, repository skeleton
 - [ ] 2. Test+impl: create gives a draft with one trigger node and revision 1; unknown project → NotFound
 - [ ] 3. Test+impl: list (archived hidden unless includeArchived), rename, archive
 - [ ] 4. Test+impl: setDefault keeps a single default per project
