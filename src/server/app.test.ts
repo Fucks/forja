@@ -52,4 +52,13 @@ describe("buildApp", () => {
         expect(response.statusCode).toBe(404);
         expect(response.headers["content-type"]).toContain("application/json");
     });
+
+    it("answers invalid input on an /api route with 400 in the ApiErrorBody format", async () => {
+        const response = await app.inject({ method: "GET", url: "/api/events?projectId=" });
+
+        expect(response.statusCode).toBe(400);
+        expect(response.json()).toMatchObject({
+            error: { code: "validation_error", message: "Entrada inválida." },
+        });
+    });
 });
