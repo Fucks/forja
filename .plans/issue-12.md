@@ -29,4 +29,4 @@
 - [x] 7. Test + implement Switch (toggles by click and keyboard, accessible name) — `switch.tsx`
 - [x] 8. Test + implement Slider (arrow keys change value, accessible name) — `slider.tsx`
 - [x] 9. Test + implement SegmentedControl (arrows + selection) — `segmented_control.tsx`
-- [ ] 10. Self-review checklist and feedback loops (typecheck, lint, test, format)
+- [x] 10. Self-review checklist and feedback loops (typecheck, lint, test, format)

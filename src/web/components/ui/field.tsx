@@ -35,7 +35,7 @@ export function Field({
 }): JSX.Element {
     const hintId = `${htmlFor}-hint`;
     const errorId = `${htmlFor}-error`;
-    const descriptionIds = [hint && hintId, error && errorId].filter(isNonEmptyString);
+    const descriptionIds = listDescriptionIds({ hint, error, hintId, errorId });
 
     return (
         <div className="flex flex-col gap-1">
@@ -61,6 +61,23 @@ export function Field({
     );
 }
 
+function listDescriptionIds(field: {
+    hint: string | undefined;
+    error: string | undefined;
+    hintId: string;
+    errorId: string;
+}): string[] {
+    const descriptionIds: string[] = [];
+    if (field.hint) {
+        descriptionIds.push(field.hintId);
+    }
+    if (field.error) {
+        descriptionIds.push(field.errorId);
+    }
+
+    return descriptionIds;
+}
+
 export function useFieldControlAttributes(own: OwnControlAttributes): FieldControlAttributes {
     const field = use(FieldControlContext);
     const describedBy = [own.describedBy, ...(field?.descriptionIds ?? [])].filter(
@@ -78,6 +95,6 @@ export function useFieldControlAttributes(own: OwnControlAttributes): FieldContr
     };
 }
 
-function isNonEmptyString(candidate: string | undefined | false): candidate is string {
+function isNonEmptyString(candidate: string | undefined): candidate is string {
     return Boolean(candidate);
 }
