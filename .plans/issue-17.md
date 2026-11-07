@@ -22,8 +22,8 @@
 
 ## Tasks
 
-- [ ] 1. `CommandRunner` interface + `ExecaCommandRunner` — `src/integrations/process/*`
-- [ ] 2. `FakeCommandRunner` (scripted, records calls) + its test — `src/test/fakes/fake_command_runner*.ts`
+- [x] 1. `CommandRunner` interface + `ExecaCommandRunner` — `src/integrations/process/*`
+- [x] 2. `FakeCommandRunner` (scripted, records calls) + its test — `src/test/fakes/fake_command_runner*.ts`
 - [ ] 3. `GitProvider` interface + `NotARepoError` — `src/integrations/git/git_provider.ts`
 - [ ] 4. `parseGithubRepo` tests (HTTPS/SSH, with/without .git, non-GitHub) — `cli_git_provider.test.ts`
 - [ ] 5. `CliGitProvider` over `CommandRunner` + tests with `FakeCommandRunner` — `cli_git_provider.ts`
