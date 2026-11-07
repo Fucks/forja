@@ -78,9 +78,8 @@ interface EventStream {
 }
 
 function streamEvents(stream: EventStream): EndStream {
-    const { response, events, filter, lastEventId } = stream;
-    response.writeHead(HTTP_OK, EVENT_STREAM_HEADERS);
-    response.flushHeaders();
+    const { response, events, filter, lastEventId, heartbeatIntervalMs } = stream;
+    openEventStream(response);
 
     const sendIfMatching = (envelope: EventEnvelope): void => {
         if (matchesFilter(envelope.event, filter)) {
@@ -93,7 +92,7 @@ function streamEvents(stream: EventStream): EndStream {
         events.since(lastEventId).forEach(sendIfMatching);
     }
     const unsubscribe = events.subscribe(sendIfMatching);
-    const stopHeartbeat = startHeartbeat(response, stream.heartbeatIntervalMs);
+    const stopHeartbeat = startHeartbeat(response, heartbeatIntervalMs);
 
     const stopWriting = (): void => {
         stopHeartbeat();
@@ -105,6 +104,11 @@ function streamEvents(stream: EventStream): EndStream {
         stopWriting();
         response.end();
     };
+}
+
+function openEventStream(response: ServerResponse): void {
+    response.writeHead(HTTP_OK, EVENT_STREAM_HEADERS);
+    response.flushHeaders();
 }
 
 function parseLastEventId(header: string | string[] | undefined): number | undefined {

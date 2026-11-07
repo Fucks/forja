@@ -4,6 +4,7 @@ export const EVENT_BUFFER_CAPACITY = 5000;
 
 type EnvelopeListener = (envelope: EventEnvelope) => void;
 type Unsubscribe = () => void;
+type TimeSource = { now(): Date };
 
 export interface EventBus {
     publish(event: ForjaEvent): EventEnvelope;
@@ -11,7 +12,7 @@ export interface EventBus {
     since(lastId: number): EventEnvelope[];
 }
 
-export function createEventBus(clock: { now(): Date }): EventBus {
+export function createEventBus(clock: TimeSource): EventBus {
     return new InMemoryEventBus(clock);
 }
 
@@ -20,7 +21,7 @@ class InMemoryEventBus implements EventBus {
     private readonly recentEnvelopes: EventEnvelope[] = [];
     private lastPublishedId = 0;
 
-    constructor(private readonly clock: { now(): Date }) {}
+    constructor(private readonly clock: TimeSource) {}
 
     publish(event: ForjaEvent): EventEnvelope {
         this.lastPublishedId += 1;
