@@ -30,7 +30,7 @@
 - [x] 8. Test + implement: collapsing the sidebar keeps icons with tooltip and accessible name
 - [x] 9. Test + implement: sidebar collapses below 1024 px — `use_media_query.ts`, `src/test/setup.ts`
 - [x] 10. Test + implement: live indicator from `connected` and theme toggle — `topbar.tsx`, `use_theme.ts`
-- [ ] 11. Remove `home_page.tsx` and its test
+- [x] 11. Remove `home_page.tsx` and its test
 - [ ] 12. Test + implement `/styleguide` with every form, feedback and status component —
       `styleguide_page.tsx`, `src/web/app/styleguide/*`
 - [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)
