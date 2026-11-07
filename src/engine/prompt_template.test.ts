@@ -1,5 +1,7 @@
 import {
+    type AgentNode,
     availableVariables,
+    checkPromptVariables,
     parsePromptTemplate,
     type PromptContext,
     PromptRenderError,
@@ -128,6 +130,51 @@ describe("renderPrompt", () => {
     });
 });
 
+describe("checkPromptVariables", () => {
+    it("accepts a prompt that only uses available variables", () => {
+        const graph = buildCanonicalFlow();
+
+        const issues = checkPromptVariables(findAgentNode(graph, "dev"), graph);
+
+        expect(issues).toEqual([]);
+    });
+
+    it("reports an unknown variable as an error on the node", () => {
+        const graph = buildCanonicalFlow();
+        const developer = findAgentNode(graph, "dev");
+        const prompt = "Siga {{inputs.spec}} e {{inputs.plano}}";
+
+        const issues = checkPromptVariables(withPrompt(developer, prompt), graph);
+
+        expect(issues).toEqual([
+            {
+                level: "error",
+                code: "unknown_variable",
+                message: expect.stringContaining("inputs.plano"),
+                target: { kind: "node", id: "dev" },
+            },
+        ]);
+    });
+
+    it("reports item variables in a node that has no current item", () => {
+        const node = buildTopLevelAgentWithoutItemPort();
+        const agent = withPrompt(asAgentNode(node), "Resolva {{item.title}}");
+
+        const issues = checkPromptVariables(agent, graphWith(agent));
+
+        expect(issues.map((issue) => issue.code)).toEqual(["unknown_variable"]);
+    });
+
+    it("ignores escaped openings", () => {
+        const graph = buildCanonicalFlow();
+        const developer = withPrompt(findAgentNode(graph, "dev"), "Use \\{{inputs.plano}}");
+
+        const issues = checkPromptVariables(developer, graph);
+
+        expect(issues).toEqual([]);
+    });
+});
+
 describe("availableVariables", () => {
     it("lists an inputs variable for each input port of the node, typed by the port", () => {
         const graph = buildCanonicalFlow();
@@ -222,6 +269,22 @@ function findNode(graph: FlowGraph, nodeId: string): FlowNode {
     }
 
     return node;
+}
+
+function findAgentNode(graph: FlowGraph, nodeId: string): AgentNode {
+    return asAgentNode(findNode(graph, nodeId));
+}
+
+function asAgentNode(node: FlowNode): AgentNode {
+    if (node.type !== "agent") {
+        throw new Error(`Node ${node.id} is a ${node.type} node`);
+    }
+
+    return node;
+}
+
+function withPrompt(agent: AgentNode, prompt: string): AgentNode {
+    return { ...agent, config: { ...agent.config, prompt } };
 }
 
 function graphWith(node: FlowNode): FlowGraph {

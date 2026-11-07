@@ -20,5 +20,5 @@
 - [x] 3. Test + implement `renderPrompt` errors (`PromptRenderError` for missing/undefined)
 - [x] 4. Test + implement `availableVariables`: inputs, project, run, item via workItem port
 - [x] 5. Test + implement `availableVariables` inside map (item.*) and loop (inputs.<carry>)
-- [ ] 6. Test + implement `checkPromptVariables` with `code: "unknown_variable"`
+- [x] 6. Test + implement `checkPromptVariables` with `code: "unknown_variable"`
 - [ ] 7. Self-review checklist (section 5) and feedback loops (section 6)

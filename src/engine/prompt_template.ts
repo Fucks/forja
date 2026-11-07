@@ -1,5 +1,6 @@
 import { lookUpPath } from "@/shared/conditions.js";
-import type { FlowGraph, FlowGroup, FlowNode, Port } from "@/shared/flow_graph.js";
+import type { FlowGraph, FlowGroup, FlowNode, NodeOfType, Port } from "@/shared/flow_graph.js";
+import type { ValidationIssue } from "@/shared/validation_issue.js";
 
 export interface TemplateToken {
     kind: "text" | "var";
@@ -185,4 +186,23 @@ function withoutRepeatedPaths(variables: VariableInfo[]): VariableInfo[] {
     return variables.filter(
         (variable, index) => variables.findIndex((other) => other.path === variable.path) === index,
     );
+}
+
+export type AgentNode = NodeOfType<"agent">;
+
+export function checkPromptVariables(node: AgentNode, graph: FlowGraph): ValidationIssue[] {
+    const knownPaths = new Set(availableVariables(node, graph).map((variable) => variable.path));
+
+    return parsePromptTemplate(node.config.prompt)
+        .filter((token) => token.kind === "var" && !knownPaths.has(token.value))
+        .map((token) => buildUnknownVariableIssue(node, token.value));
+}
+
+function buildUnknownVariableIssue(node: AgentNode, variable: string): ValidationIssue {
+    return {
+        level: "error",
+        code: "unknown_variable",
+        message: `Variável desconhecida no prompt de "${node.label}": {{${variable}}}`,
+        target: { kind: "node", id: node.id },
+    };
 }
