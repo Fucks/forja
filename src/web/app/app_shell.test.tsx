@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { APP_ROUTES } from "@/web/app/routes.js";
@@ -83,6 +84,40 @@ describe("AppShell", () => {
             "href",
             "/",
         );
+    });
+
+    it("collapses the sidebar to icons that keep their accessible names", async () => {
+        const user = userEvent.setup();
+        renderAppAt("/projects/forja/runs");
+
+        await user.click(screen.getByRole("button", { name: "Recolher barra lateral" }));
+
+        expect(screen.getByRole("button", { name: "Expandir barra lateral" })).toHaveAttribute(
+            "aria-expanded",
+            "false",
+        );
+        expect(screen.getByRole("link", { name: "Runs" })).toHaveAttribute("aria-current", "page");
+        expect(screen.queryByText("Runs", { selector: "a span" })).not.toBeInTheDocument();
+    });
+
+    it("shows the item name in a tooltip when a collapsed sidebar link gets focus", async () => {
+        const user = userEvent.setup();
+        renderAppAt("/projects/forja/runs");
+        await user.click(screen.getByRole("button", { name: "Recolher barra lateral" }));
+
+        screen.getByRole("link", { name: "Gatilhos" }).focus();
+
+        expect(await screen.findByRole("tooltip", { name: "Gatilhos" })).toBeInTheDocument();
+    });
+
+    it("expands the collapsed sidebar again", async () => {
+        const user = userEvent.setup();
+        renderAppAt("/projects/forja/runs");
+        await user.click(screen.getByRole("button", { name: "Recolher barra lateral" }));
+
+        await user.click(screen.getByRole("button", { name: "Expandir barra lateral" }));
+
+        expect(screen.getByText("Runs", { selector: "a span" })).toBeVisible();
     });
 });
 
