@@ -16,14 +16,22 @@ const LOG_VIEW_OPTIONS: { value: LogView; label: string }[] = [
 const PARALLEL_AGENTS = { initial: 2, min: 1, max: 8 };
 
 export function SwitchSamples(): JSX.Element {
-    const [isEnabled, setIsEnabled] = useState(true);
-    const [isAutoMerge, setIsAutoMerge] = useState(false);
+    const [isTriggerEnabled, setIsTriggerEnabled] = useState(true);
+    const [isAutoMergeEnabled, setIsAutoMergeEnabled] = useState(false);
 
     return (
         <StyleguideSection title="Switch">
             <SampleRow label="Ligado e desligado">
-                <Switch checked={isEnabled} onChange={setIsEnabled} label="Gatilho ativo" />
-                <Switch checked={isAutoMerge} onChange={setIsAutoMerge} label="Merge automático" />
+                <Switch
+                    checked={isTriggerEnabled}
+                    onChange={setIsTriggerEnabled}
+                    label="Gatilho ativo"
+                />
+                <Switch
+                    checked={isAutoMergeEnabled}
+                    onChange={setIsAutoMergeEnabled}
+                    label="Merge automático"
+                />
             </SampleRow>
         </StyleguideSection>
     );

@@ -1,9 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
-import { NODE_RUN_STATUS_NAMES, RUN_STATUS_NAMES } from "@/shared/events.js";
 import { StyleguidePage } from "@/web/app/styleguide_page.js";
-import { EXECUTION_STATUS_STYLES } from "@/web/components/ui/execution_status.js";
+import {
+    EXECUTION_STATUS_STYLES,
+    EXECUTION_STATUSES,
+} from "@/web/components/ui/execution_status.js";
 import { ToastProvider } from "@/web/components/ui/toast.js";
 
 const COMPONENT_SECTIONS = [
@@ -25,9 +27,7 @@ const COMPONENT_SECTIONS = [
     "KeyValue",
 ];
 
-const ALL_STATUS_LABELS = [...new Set([...NODE_RUN_STATUS_NAMES, ...RUN_STATUS_NAMES])].map(
-    (status) => EXECUTION_STATUS_STYLES[status].label,
-);
+const ALL_STATUS_LABELS = EXECUTION_STATUSES.map((status) => EXECUTION_STATUS_STYLES[status].label);
 
 describe("StyleguidePage", () => {
     it.each(COMPONENT_SECTIONS)("has a section for %s", (sectionTitle) => {

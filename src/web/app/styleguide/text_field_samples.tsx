@@ -27,7 +27,7 @@ export function TextFieldSamples(): JSX.Element {
                     <Input placeholder="Revisão de PR" />
                 </Field>
                 <Field label="Branch base" error="Informe uma branch." htmlFor="sample-branch">
-                    <Input mono defaultValue="" />
+                    <Input mono />
                 </Field>
                 <Field label="Diretório" htmlFor="sample-directory">
                     <Input mono disabled defaultValue="/home/forja/projeto" />
