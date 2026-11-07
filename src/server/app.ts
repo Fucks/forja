@@ -7,6 +7,7 @@ import type { Env } from "@/lib/env.js";
 import type { ForjaPaths } from "@/lib/paths.js";
 import type { ForjaDb } from "@/server/db/client.js";
 import { routeModules } from "@/server/route_modules.js";
+import type { EventBus } from "@/server/runtime/event_bus.js";
 import { registerStaticRoutes } from "@/server/static/static_routes.js";
 
 const API_PREFIX = "/api";
@@ -25,6 +26,7 @@ export interface AppDeps {
     paths: ForjaPaths;
     options: ServerOptions;
     db: ForjaDb;
+    events: EventBus;
 }
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {

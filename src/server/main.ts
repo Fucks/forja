@@ -1,13 +1,15 @@
 import type { FastifyInstance } from "fastify";
 
+import { systemClock } from "@/lib/clock.js";
 import { buildApp } from "@/server/app.js";
 import type { AppDeps } from "@/server/app.js";
 import { openDatabase } from "@/server/db/client.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
+import { createEventBus } from "@/server/runtime/event_bus.js";
 
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 
-export type ServerDeps = Omit<AppDeps, "db">;
+export type ServerDeps = Omit<AppDeps, "db" | "events">;
 
 export async function startServer(deps: ServerDeps): Promise<FastifyInstance> {
     const database = openDatabase(deps.paths.database);
@@ -24,7 +26,11 @@ async function buildAppOwningDatabase(
     database: DatabaseHandle,
 ): Promise<FastifyInstance> {
     try {
-        const app = await buildApp({ ...deps, db: database.db });
+        const app = await buildApp({
+            ...deps,
+            db: database.db,
+            events: createEventBus(systemClock),
+        });
         app.addHook("onClose", (_closingApp, done) => {
             database.close();
             done();
