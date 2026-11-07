@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
+import { createFakeMatchMedia } from "@/test/fakes/fake_match_media.js";
 import { APP_ROUTES } from "@/web/app/routes.js";
 
 const ROUTE_TITLES = [
@@ -118,6 +119,20 @@ describe("AppShell", () => {
         await user.click(screen.getByRole("button", { name: "Expandir barra lateral" }));
 
         expect(screen.getByText("Runs", { selector: "a span" })).toBeVisible();
+    });
+
+    it("keeps the sidebar collapsed on viewports narrower than 1024 px", () => {
+        vi.spyOn(window, "matchMedia").mockImplementation(
+            createFakeMatchMedia(["(max-width: 1023px)"]),
+        );
+
+        renderAppAt("/projects/forja/runs");
+
+        expect(screen.getByRole("link", { name: "Runs" })).toBeInTheDocument();
+        expect(screen.queryByText("Runs", { selector: "a span" })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole("button", { name: "Expandir barra lateral" }),
+        ).not.toBeInTheDocument();
     });
 });
 

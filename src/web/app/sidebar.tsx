@@ -11,10 +11,12 @@ import type { GlobalNavItem } from "@/web/config/navigation.js";
 export function Sidebar({
     projectId,
     isCollapsed,
+    isCollapseLocked,
     onCollapsedChange,
 }: {
     projectId: string | undefined;
     isCollapsed: boolean;
+    isCollapseLocked: boolean;
     onCollapsedChange: (isCollapsed: boolean) => void;
 }): JSX.Element {
     return (
@@ -25,12 +27,14 @@ export function Sidebar({
             )}
         >
             <div className="flex h-11 items-center justify-end border-b border-border px-3">
-                <IconButton
-                    label={isCollapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
-                    icon={isCollapsed ? PanelLeftOpen : PanelLeftClose}
-                    aria-expanded={!isCollapsed}
-                    onClick={() => onCollapsedChange(!isCollapsed)}
-                />
+                {!isCollapseLocked && (
+                    <IconButton
+                        label={isCollapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
+                        icon={isCollapsed ? PanelLeftOpen : PanelLeftClose}
+                        aria-expanded={!isCollapsed}
+                        onClick={() => onCollapsedChange(!isCollapsed)}
+                    />
+                )}
             </div>
             <nav aria-label="Navegação principal" className="flex flex-col gap-4 py-3">
                 <SidebarLinkList links={GLOBAL_NAV} isCollapsed={isCollapsed} />
