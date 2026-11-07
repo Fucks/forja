@@ -5,8 +5,8 @@ import type Database from "better-sqlite3";
 
 const MIGRATION_EXTENSION = ".sql";
 
-// The migrator must know what was applied before the first migration runs, so it owns this table;
-// 0001_init.sql repeats it with IF NOT EXISTS to keep the schema readable in one place.
+// The migrator reads this table before any migration runs, so it cannot wait for 0001_init.sql to
+// create it; 0001_init.sql still declares it (IF NOT EXISTS) so every table appears in a migration.
 const CREATE_MIGRATIONS_TABLE_SQL = `
     CREATE TABLE IF NOT EXISTS _migrations (
         id TEXT PRIMARY KEY,

@@ -3,21 +3,27 @@ import type { FastifyInstance } from "fastify";
 import { loadEnv } from "@/lib/env.js";
 import { resolvePaths } from "@/lib/paths.js";
 import { buildApp } from "@/server/app.js";
+import type { DatabaseHandle } from "@/server/db/client.js";
+import { createTestDb } from "@/test/test_db.js";
 
 describe("buildApp", () => {
     const paths = resolvePaths("/srv/forja dados", "/home/ana");
+    let database: DatabaseHandle;
     let app: FastifyInstance;
 
     beforeEach(async () => {
+        database = createTestDb();
         app = await buildApp({
             env: loadEnv({ FORJA_LOG_LEVEL: "error" }),
             paths,
             options: { seedDemo: false },
+            db: database.db,
         });
     });
 
     afterEach(async () => {
         await app.close();
+        database.close();
     });
 
     it("answers GET /api/health with the status, the version and the data directory", async () => {
