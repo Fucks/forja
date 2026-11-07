@@ -24,7 +24,7 @@
 - [x] 3. Test + implement `StatusBadge` (icon + label; hidden label becomes aria-label) — `status_badge.tsx`
 - [x] 4. Test + implement `Dialog` (focus trapped, closes with Esc) — `dialog.tsx`, `overlay_parts.tsx`
 - [x] 5. Test + implement `Drawer` right/bottom with `size` (focus trapped, Esc) — `drawer.tsx`
-- [ ] 6. Test + implement `ToastProvider`/`useToast` (disappears after 5 s, error stays) — `toast.tsx`
+- [x] 6. Test + implement `ToastProvider`/`useToast` (disappears after 5 s, error stays) — `toast.tsx`
 - [ ] 7. Wrap the app with `ToastProvider` — `src/web/main.tsx`
 - [ ] 8. Test + implement `Tabs` with keyboard navigation — `tabs.tsx`
 - [ ] 9. Implement `Tooltip` — `tooltip.tsx`

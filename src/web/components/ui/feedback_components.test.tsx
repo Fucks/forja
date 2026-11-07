@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { UserEvent } from "@testing-library/user-event";
 import { useState } from "react";
@@ -7,6 +7,8 @@ import type { JSX } from "react";
 import { Dialog } from "@/web/components/ui/dialog.js";
 import { Drawer } from "@/web/components/ui/drawer.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
+import { ToastProvider, useToast } from "@/web/components/ui/toast.js";
+import type { ToastTone } from "@/web/components/ui/toast.js";
 
 describe("StatusBadge", () => {
     it("shows the status label next to its icon", () => {
@@ -96,6 +98,76 @@ describe("Drawer", () => {
         expect(screen.getByRole("dialog")).toHaveStyle({ height: "240px" });
     });
 });
+
+describe("Toast", () => {
+    const TOAST_DURATION_MS = 5_000;
+    const ONE_MINUTE_MS = 60_000;
+
+    // Fake timers with fireEvent: user-event's async wrapper waits on a real setTimeout that
+    // Vitest's fake timers never fire.
+    beforeEach(() => {
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("appears with its title and description and disappears after 5 seconds", () => {
+        render(<ToastHarness tone="success" />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Avisar" }));
+        expect(screen.getByText("Fluxo publicado")).toBeInTheDocument();
+        expect(screen.getByText("Versão 3")).toBeInTheDocument();
+
+        advanceTimersBy(TOAST_DURATION_MS);
+
+        expect(screen.queryByText("Fluxo publicado")).not.toBeInTheDocument();
+    });
+
+    it("keeps an error toast until it is closed", () => {
+        render(<ToastHarness tone="error" />);
+        fireEvent.click(screen.getByRole("button", { name: "Avisar" }));
+
+        advanceTimersBy(ONE_MINUTE_MS);
+        expect(screen.getByText("Fluxo publicado")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+        expect(screen.queryByText("Fluxo publicado")).not.toBeInTheDocument();
+    });
+
+    it("refuses to be used outside the ToastProvider", () => {
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+        expect(() => render(<ToastButton tone="info" />)).toThrow(/ToastProvider/);
+    });
+});
+
+function ToastHarness({ tone }: { tone: ToastTone }): JSX.Element {
+    return (
+        <ToastProvider>
+            <ToastButton tone={tone} />
+        </ToastProvider>
+    );
+}
+
+function ToastButton({ tone }: { tone: ToastTone }): JSX.Element {
+    const toast = useToast();
+
+    return (
+        <button
+            onClick={() => toast.show({ title: "Fluxo publicado", description: "Versão 3", tone })}
+        >
+            Avisar
+        </button>
+    );
+}
+
+function advanceTimersBy(durationMs: number): void {
+    act(() => {
+        vi.advanceTimersByTime(durationMs);
+    });
+}
 
 type RenderOverlay = (isOpen: boolean, onOpenChange: (open: boolean) => void) => JSX.Element;
 
