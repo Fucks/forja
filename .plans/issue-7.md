@@ -16,10 +16,10 @@
 ## Tasks
 
 - [x] 1. Event catalog types (`ForjaEvent`, `ForjaEventType`, `EventEnvelope`) — `src/shared/events.ts`
-- [ ] 2. Test + implement: subscribers receive envelopes in order with increasing ids and `at` from the clock — `src/server/runtime/event_bus.ts`, `event_bus.test.ts`
-- [ ] 3. Test + implement: unsubscribe stops delivery — same files
-- [ ] 4. Test + implement: a throwing listener does not stop the others — same files
-- [ ] 5. Test + implement: `since(lastId)` returns later envelopes; the 5001st discards the 1st — same files
+- [x] 2. Test + implement: subscribers receive envelopes in order with increasing ids and `at` from the clock — `src/server/runtime/event_bus.ts`, `event_bus.test.ts`
+- [x] 3. Test + implement: unsubscribe stops delivery — same files
+- [x] 4. Test + implement: a throwing listener does not stop the others — same files
+- [x] 5. Test + implement: `since(lastId)` returns later envelopes; the 5001st discards the 1st — same files
 - [ ] 6. `AppDeps` gains `events: EventBus`; `main.ts` creates the bus; update `app.test.ts` — `src/server/app.ts`, `src/server/main.ts`
 - [ ] 7. Test + implement: SSE stream sends `id`/`event`/`data` with `text/event-stream` — `src/server/events/events_routes.ts`, `events_routes.test.ts`
 - [ ] 8. Test + implement: replay by `Last-Event-ID` — same files
