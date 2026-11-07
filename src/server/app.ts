@@ -5,6 +5,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import type { Env } from "@/lib/env.js";
 import type { ForjaPaths } from "@/lib/paths.js";
+import type { ForjaDb } from "@/server/db/client.js";
 import { routeModules } from "@/server/route_modules.js";
 import { registerStaticRoutes } from "@/server/static/static_routes.js";
 
@@ -23,6 +24,7 @@ export interface AppDeps {
     env: Env;
     paths: ForjaPaths;
     options: ServerOptions;
+    db: ForjaDb;
 }
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
