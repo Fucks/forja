@@ -26,7 +26,7 @@
 - [x] 4. Test: renders a project route inside the shell with the active item marked — `app_shell.test.tsx`
 - [x] 5. Implement `AppShell`, `Sidebar`, `Topbar` and `APP_ROUTES` (all routes) — `src/web/app/*`
 - [x] 6. Test + implement: every listed route renders inside the shell
-- [ ] 7. Test + implement: unknown route shows the 404 — `not_found_page.tsx`
+- [x] 7. Test + implement: unknown route shows the 404 — `not_found_page.tsx`
 - [ ] 8. Test + implement: collapsing the sidebar keeps icons with tooltip and accessible name
 - [ ] 9. Test + implement: sidebar collapses below 1024 px — `use_media_query.ts`, `src/test/setup.ts`
 - [ ] 10. Test + implement: live indicator from `connected` and theme toggle — `topbar.tsx`, `use_theme.ts`

@@ -71,6 +71,19 @@ describe("AppShell", () => {
         );
         expect(screen.getByRole("heading", { level: 1, name: "Runs" })).toBeInTheDocument();
     });
+
+    it("shows the not found page inside the shell for an unknown route", () => {
+        renderAppAt("/nowhere/at/all");
+
+        expect(screen.getByRole("navigation", { name: "Navegação principal" })).toBeInTheDocument();
+        expect(
+            screen.getByRole("heading", { level: 1, name: "Página não encontrada" }),
+        ).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Voltar para os projetos" })).toHaveAttribute(
+            "href",
+            "/",
+        );
+    });
 });
 
 function renderAppAt(path: string): void {
