@@ -40,4 +40,4 @@
 - [x] 9. Test + impl: agent failure → run FAILED after the other RUNNING finish; queue canceled
 - [x] 10. Test + impl: cancel_requested cancels the queue, asks cancel of RUNNING, run CANCELED on confirm
 - [x] 11. Test + impl: `restore` from a JSON-safe `snapshot()` continues where it stopped — `scheduler_snapshot.ts`
-- [ ] 12. Refactor pass, self-review checklist (section 5) and feedback loops (section 6)
+- [x] 12. Refactor pass, self-review checklist (section 5) and feedback loops (section 6)

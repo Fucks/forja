@@ -76,11 +76,11 @@ function outputOf(nodeRun: NodeRunState | undefined, port: string): EdgeValue {
     if (!nodeRun || !NODE_RUN_TERMINAL.has(nodeRun.status)) {
         return PENDING;
     }
-    if (
-        nodeRun.status !== "SUCCEEDED" ||
-        !nodeRun.outputs ||
-        !Object.hasOwn(nodeRun.outputs, port)
-    ) {
+    if (nodeRun.status !== "SUCCEEDED" || !nodeRun.outputs) {
+        return ABSENT;
+    }
+    // A condition only fills the port of the branch it chose.
+    if (!Object.hasOwn(nodeRun.outputs, port)) {
         return ABSENT;
     }
 

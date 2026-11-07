@@ -1,3 +1,5 @@
+import type { NodeRunError } from "@/engine/node_run_state.js";
+import type { Condition } from "@/shared/conditions.js";
 import {
     buildConditionFlow,
     buildLinearAgentFlow,
@@ -9,7 +11,8 @@ import {
     DEFAULT_NODE_DURATION_MS,
 } from "@/test/factories/scheduler_harness.js";
 
-const APPROVED = { op: "eq", path: "approved", value: true } as const;
+const APPROVED: Condition = { op: "eq", path: "approved", value: true };
+const RUNTIME_ERROR: NodeRunError = { kind: "runtime", message: "boom" };
 
 describe("scheduler: DAG per item", () => {
     it("starts B for item 1 as soon as A for item 1 finishes, without waiting for item 2", () => {
@@ -194,8 +197,10 @@ describe("scheduler: failure", () => {
             scripts: {
                 a: ({ nodeRun }) => {
                     if (nodeRun.workItemId === "1") {
-                        const error = { kind: "runtime", message: "boom" } as const;
-                        return { durationMs: 1_000, outcome: { kind: "fail", error } };
+                        return {
+                            durationMs: 1_000,
+                            outcome: { kind: "fail", error: RUNTIME_ERROR },
+                        };
                     }
                     return { durationMs: 4_000 };
                 },
