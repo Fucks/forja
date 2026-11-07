@@ -2,6 +2,7 @@ import { InvalidTransitionError } from "@/engine/invalid_transition_error.js";
 import {
     canTransitionNodeRun,
     NODE_RUN_TERMINAL,
+    type NodeRunError,
     transitionNodeRun,
 } from "@/engine/node_run_state.js";
 import { NODE_RUN_STATUS_NAMES, type NodeRunStatusName } from "@/shared/events.js";
@@ -155,7 +156,7 @@ describe("transitionNodeRun", () => {
 
     it("applies the extra fields to the transitioned node run", () => {
         const nodeRun = buildNodeRunState({ status: "RUNNING", startedAt: EARLIER });
-        const error = { kind: "timeout_idle" as const, message: "sem saída por 10 minutos" };
+        const error: NodeRunError = { kind: "timeout_idle", message: "sem saída por 10 minutos" };
 
         const failed = transitionNodeRun(nodeRun, "FAILED", TRANSITION_AT, {
             error,
