@@ -26,8 +26,8 @@
 - [x] 2. Test + implement domain errors → 404/409/422 — `src/server/errors.ts`, `src/server/errors.test.ts`
 - [x] 3. Test + implement Zod validation → 400, malformed request → 4xx, unknown → 500 without stack — same files
 - [x] 4. Register the error handler in `buildApp`; app test: invalid query on `/api/events` → 400 `ApiErrorBody` — `src/server/app.ts`, `src/server/app.test.ts`
-- [ ] 5. Test + implement `apiClient` success (prefix, JSON body, schema) — `src/web/api/api_client.ts`, `api_client.test.ts`
-- [ ] 6. Test + implement `ApiError` for error with body, without body, and schema mismatch — same files
+- [x] 5. Test + implement `apiClient` success (prefix, JSON body, schema) — `src/web/api/api_client.ts`, `api_client.test.ts`
+- [x] 6. Test + implement `ApiError` for error with body, without body, and schema mismatch — same files
 - [ ] 7. `queryClient` and `QueryClientProvider` in `main.tsx` — `src/web/api/query_client.ts`, `src/web/main.tsx`
 - [ ] 8. Fake `EventSource` — `src/test/fakes/fake_event_source.ts`
 - [ ] 9. Test + implement `useEventStream` delivers events and marks `connected` — `src/web/api/use_event_stream.ts`, `use_event_stream.test.tsx`
