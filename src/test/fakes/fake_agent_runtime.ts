@@ -57,7 +57,7 @@ export class FakeAgentRuntime implements AgentRuntime {
     private readonly openWorkspaces = new Map<string, OpenWorkspaceSummary>();
     private openedWorkspaceCount = 0;
     private activeRunCount = 0;
-    private peakRunCount = 0;
+    private peakActiveRunCount = 0;
 
     constructor({
         clock,
@@ -80,7 +80,7 @@ export class FakeAgentRuntime implements AgentRuntime {
     }
 
     peakConcurrentRuns(): number {
-        return this.peakRunCount;
+        return this.peakActiveRunCount;
     }
 
     openWorkspace(
@@ -137,7 +137,7 @@ export class FakeAgentRuntime implements AgentRuntime {
         this.record({ kind, nodeRunId: target.request.nodeRunId, workItemId: target.workItemId });
         const step = this.takeMatchingStep(target);
 
-        await this.playCountingConcurrency(step, target);
+        await this.playTrackingConcurrentRuns(step, target);
         if (step?.error) {
             throw createScriptedError(step.error);
         }
@@ -145,12 +145,12 @@ export class FakeAgentRuntime implements AgentRuntime {
         return createScriptedResult(step?.result);
     }
 
-    private async playCountingConcurrency(
+    private async playTrackingConcurrentRuns(
         step: ScriptedStep | undefined,
         target: RunTarget,
     ): Promise<void> {
         this.activeRunCount += 1;
-        this.peakRunCount = Math.max(this.peakRunCount, this.activeRunCount);
+        this.peakActiveRunCount = Math.max(this.peakActiveRunCount, this.activeRunCount);
         try {
             await playScriptedRun({
                 clock: this.clock,

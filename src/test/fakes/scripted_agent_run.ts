@@ -52,6 +52,7 @@ interface ScriptedRunPlayback {
     target: RunTarget;
 }
 
+const DEFAULT_SUMMARY = "ok";
 const DEFAULT_INPUT_TOKENS = 1_000;
 const DEFAULT_OUTPUT_TOKENS = 200;
 
@@ -111,21 +112,6 @@ function scheduleEvents({
     );
 }
 
-export function createScriptedResult(scripted: Partial<AgentRunResult> = {}): AgentRunResult {
-    return {
-        summary: "ok",
-        commits: [],
-        usage: {
-            inputTokens: DEFAULT_INPUT_TOKENS,
-            outputTokens: DEFAULT_OUTPUT_TOKENS,
-            cacheReadInputTokens: 0,
-            cacheCreationInputTokens: 0,
-        },
-        iterations: 1,
-        ...scripted,
-    };
-}
-
 export function createScriptedError(error: ScriptedError): Error {
     switch (error.type) {
         case "usage_limit":
@@ -141,4 +127,19 @@ export function createScriptedError(error: ScriptedError): Error {
         default:
             return assertNever(error);
     }
+}
+
+export function createScriptedResult(scripted: Partial<AgentRunResult> = {}): AgentRunResult {
+    return {
+        summary: DEFAULT_SUMMARY,
+        commits: [],
+        usage: {
+            inputTokens: DEFAULT_INPUT_TOKENS,
+            outputTokens: DEFAULT_OUTPUT_TOKENS,
+            cacheReadInputTokens: 0,
+            cacheCreationInputTokens: 0,
+        },
+        iterations: 1,
+        ...scripted,
+    };
 }
