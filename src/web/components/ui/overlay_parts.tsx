@@ -8,6 +8,9 @@ export const OVERLAY_SURFACE_CLASSES =
     "fixed z-50 flex flex-col gap-3 border border-border bg-surface-raised text-text shadow-float " +
     "focus:outline-none";
 
+// Radix warns about a missing description unless aria-describedby is explicitly undefined.
+export const WITHOUT_DESCRIPTION = { "aria-describedby": undefined };
+
 export function OverlayBackdrop(): JSX.Element {
     return <RadixDialog.Overlay className="fixed inset-0 z-50 bg-black/50" />;
 }

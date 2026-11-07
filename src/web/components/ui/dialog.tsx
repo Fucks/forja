@@ -6,6 +6,7 @@ import {
     OVERLAY_SURFACE_CLASSES,
     OverlayBackdrop,
     OverlayHeader,
+    WITHOUT_DESCRIPTION,
 } from "@/web/components/ui/overlay_parts.js";
 
 export function Dialog({
@@ -21,15 +22,12 @@ export function Dialog({
     description?: string;
     children: ReactNode;
 }): JSX.Element {
-    // Radix warns about a missing description unless aria-describedby is explicitly undefined.
-    const describedBy = description ? {} : { "aria-describedby": undefined };
-
     return (
         <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
             <RadixDialog.Portal>
                 <OverlayBackdrop />
                 <RadixDialog.Content
-                    {...describedBy}
+                    {...(description ? {} : WITHOUT_DESCRIPTION)}
                     className={clsx(
                         OVERLAY_SURFACE_CLASSES,
                         "top-1/2 left-1/2 max-h-[85vh] w-[min(32rem,90vw)] -translate-x-1/2",

@@ -1,9 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import type { UserEvent } from "@testing-library/user-event";
 import { useState } from "react";
 import type { JSX } from "react";
 
 import { Dialog } from "@/web/components/ui/dialog.js";
+import { Drawer } from "@/web/components/ui/drawer.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 
 describe("StatusBadge", () => {
@@ -32,12 +34,10 @@ describe("StatusBadge", () => {
 describe("Dialog", () => {
     it("keeps the focus inside while it is open", async () => {
         const user = userEvent.setup();
-        render(<DialogHarness />);
+        render(<OverlayHarness renderOverlay={renderDialog} />);
         await user.click(screen.getByRole("button", { name: "Abrir" }));
 
-        await user.tab();
-        await user.tab();
-        await user.tab();
+        await pressTabTimes(user, 3);
 
         const dialog = screen.getByRole("dialog", { name: "Excluir fluxo" });
         expect(dialog.contains(document.activeElement)).toBe(true);
@@ -45,7 +45,7 @@ describe("Dialog", () => {
 
     it("closes with Esc", async () => {
         const user = userEvent.setup();
-        render(<DialogHarness />);
+        render(<OverlayHarness renderOverlay={renderDialog} />);
         await user.click(screen.getByRole("button", { name: "Abrir" }));
 
         await user.keyboard("{Escape}");
@@ -54,15 +54,80 @@ describe("Dialog", () => {
     });
 });
 
-function DialogHarness(): JSX.Element {
+describe("Drawer", () => {
+    it("keeps the focus inside while it is open", async () => {
+        const user = userEvent.setup();
+        render(<OverlayHarness renderOverlay={renderRightDrawer} />);
+        await user.click(screen.getByRole("button", { name: "Abrir" }));
+
+        await pressTabTimes(user, 3);
+
+        const drawer = screen.getByRole("dialog", { name: "Detalhes do nó" });
+        expect(drawer.contains(document.activeElement)).toBe(true);
+    });
+
+    it("closes with Esc", async () => {
+        const user = userEvent.setup();
+        render(<OverlayHarness renderOverlay={renderRightDrawer} />);
+        await user.click(screen.getByRole("button", { name: "Abrir" }));
+
+        await user.keyboard("{Escape}");
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("uses size as the width of a side drawer", () => {
+        render(
+            <Drawer open onOpenChange={vi.fn()} side="right" title="Logs" size={600}>
+                <p>Saída do agente</p>
+            </Drawer>,
+        );
+
+        expect(screen.getByRole("dialog")).toHaveStyle({ width: "600px" });
+    });
+
+    it("uses size as the height of a bottom drawer", () => {
+        render(
+            <Drawer open onOpenChange={vi.fn()} side="bottom" title="Logs" size={240}>
+                <p>Saída do agente</p>
+            </Drawer>,
+        );
+
+        expect(screen.getByRole("dialog")).toHaveStyle({ height: "240px" });
+    });
+});
+
+type RenderOverlay = (isOpen: boolean, onOpenChange: (open: boolean) => void) => JSX.Element;
+
+function OverlayHarness({ renderOverlay }: { renderOverlay: RenderOverlay }): JSX.Element {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
         <>
             <button onClick={() => setIsOpen(true)}>Abrir</button>
-            <Dialog open={isOpen} onOpenChange={setIsOpen} title="Excluir fluxo">
-                <input aria-label="Confirmação" />
-            </Dialog>
+            {renderOverlay(isOpen, setIsOpen)}
         </>
     );
+}
+
+function renderDialog(isOpen: boolean, onOpenChange: (open: boolean) => void): JSX.Element {
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange} title="Excluir fluxo">
+            <input aria-label="Confirmação" />
+        </Dialog>
+    );
+}
+
+function renderRightDrawer(isOpen: boolean, onOpenChange: (open: boolean) => void): JSX.Element {
+    return (
+        <Drawer open={isOpen} onOpenChange={onOpenChange} side="right" title="Detalhes do nó">
+            <input aria-label="Nome" />
+        </Drawer>
+    );
+}
+
+async function pressTabTimes(user: UserEvent, times: number): Promise<void> {
+    for (let i = 0; i < times; i++) {
+        await user.tab();
+    }
 }
