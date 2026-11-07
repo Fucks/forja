@@ -28,11 +28,11 @@
 
 ## Tasks
 
-- [ ] 1. Queries: `incomingEdges`, `outgoingEdges`, `groupMembers` — `src/engine/graph_queries.ts` + test
-- [ ] 2. Queries: `enclosingGroups` (inner → outer, robust to missing/cyclic parents) + test
-- [ ] 3. Queries: `groupBoundaryEdges` entering/leaving/back + test
-- [ ] 4. Queries: `topologicalOrder` (deterministic, ignores loop back edges, throws on cycle) + test
-- [ ] 5. Queries: `areTypesCompatible` and `isItemCorrelatedEdge` + test
+- [x] 1. Queries: `incomingEdges`, `outgoingEdges`, `groupMembers` — `src/engine/graph_queries.ts` + test
+- [x] 2. Queries: `enclosingGroups` (inner → outer, robust to missing/cyclic parents) + test
+- [x] 3. Queries: `groupBoundaryEdges` entering/leaving/back + test
+- [x] 4. Queries: `topologicalOrder` (deterministic, ignores loop back edges, throws on cycle) + test
+- [x] 5. Queries: `areTypesCompatible` and `isItemCorrelatedEdge` + test
 - [ ] 6. Validation: canonical and loop flows have no errors; `duplicate_id`, `no_trigger`, `many_triggers`
 - [ ] 7. Validation: `dangling_edge`, `group_overlap`
 - [ ] 8. Validation: `required_input_unconnected` (with map item exemption), `incompatible_ports`
