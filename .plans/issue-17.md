@@ -35,5 +35,5 @@
 - [x] 11. Service list/get (NotFound)/rename/remove (no repo touch) — test + impl
 - [x] 12. `AppDeps` gains `commands`/`git`; test helper; main.ts wiring — `app.ts`, `main.ts`, `app.test.ts`
 - [x] 13. Routes GET/POST /projects, GET/PATCH/DELETE /projects/:id + tests — `projects_routes*.ts`
-- [ ] 14. Integration test with real `git init` — `cli_git_provider.integration.test.ts`
+- [x] 14. Integration test with real `git init` — `cli_git_provider.integration.test.ts`
 - [ ] 15. Self-review checklist and feedback loops
