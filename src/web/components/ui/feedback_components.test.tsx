@@ -4,8 +4,13 @@ import type { UserEvent } from "@testing-library/user-event";
 import { useState } from "react";
 import type { JSX } from "react";
 
+import { Workflow } from "lucide-react";
+
 import { Dialog } from "@/web/components/ui/dialog.js";
 import { Drawer } from "@/web/components/ui/drawer.js";
+import { EmptyState } from "@/web/components/ui/empty_state.js";
+import { KeyValue } from "@/web/components/ui/key_value.js";
+import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 import { Tabs } from "@/web/components/ui/tabs.js";
 import { ToastProvider, useToast } from "@/web/components/ui/toast.js";
@@ -209,6 +214,55 @@ describe("Tooltip", () => {
         await user.tab();
 
         expect(await screen.findByRole("tooltip", { name: "Publicar versão" })).toBeInTheDocument();
+    });
+});
+
+describe("Skeleton", () => {
+    it("is hidden from assistive technology", () => {
+        const { container } = render(<Skeleton className="h-4 w-32" />);
+
+        expect(container.firstElementChild).toHaveAttribute("aria-hidden", "true");
+    });
+});
+
+describe("EmptyState", () => {
+    it("shows the title, the description and the action", () => {
+        render(
+            <EmptyState
+                icon={Workflow}
+                title="Nenhum fluxo ainda"
+                description="Crie um fluxo a partir de um template."
+                action={<button>Criar fluxo</button>}
+            />,
+        );
+
+        expect(screen.getByRole("heading", { name: "Nenhum fluxo ainda" })).toBeInTheDocument();
+        expect(screen.getByText("Crie um fluxo a partir de um template.")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Criar fluxo" })).toBeInTheDocument();
+    });
+});
+
+describe("KeyValue", () => {
+    it("pairs each label with its value and uses the mono font when asked", () => {
+        render(
+            <KeyValue
+                items={[
+                    { label: "Modelo", value: "claude-opus-5-5" },
+                    { label: "Branch", value: "forja/issue-13", mono: true },
+                ]}
+            />,
+        );
+
+        expect(screen.getAllByRole("term").map((term) => term.textContent)).toEqual([
+            "Modelo",
+            "Branch",
+        ]);
+        expect(screen.getAllByRole("definition").map((value) => value.textContent)).toEqual([
+            "claude-opus-5-5",
+            "forja/issue-13",
+        ]);
+        expect(screen.getByText("claude-opus-5-5")).not.toHaveClass("font-mono");
+        expect(screen.getByText("forja/issue-13")).toHaveClass("font-mono");
     });
 });
 
