@@ -2,8 +2,10 @@ import { clsx } from "clsx";
 import { Moon, Sun } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { JSX } from "react";
+import { Link } from "react-router";
 
 import { IconButton } from "@/web/components/ui/icon_button.js";
+import { projectPath } from "@/web/config/navigation.js";
 import type { ThemeName } from "@/web/styles/theme.js";
 import { useTheme } from "@/web/styles/use_theme.js";
 
@@ -27,7 +29,13 @@ export function Topbar({
 }): JSX.Element {
     return (
         <header className="flex h-11 shrink-0 items-center gap-4 border-b border-border px-4">
-            <span className="min-w-0 flex-1 truncate font-medium">{projectId}</span>
+            <div className="min-w-0 flex-1 truncate">
+                {projectId && (
+                    <Link to={projectPath(projectId)} className="font-medium hover:text-accent">
+                        {projectId}
+                    </Link>
+                )}
+            </div>
             <LiveIndicator connected={connected} />
             <ThemeToggle />
         </header>

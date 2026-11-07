@@ -33,4 +33,4 @@
 - [x] 11. Remove `home_page.tsx` and its test
 - [x] 12. Test + implement `/styleguide` with every form, feedback and status component —
       `styleguide_page.tsx`, `src/web/app/styleguide/*`
-- [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 13. Self-review checklist (section 5) and feedback loops (section 6)

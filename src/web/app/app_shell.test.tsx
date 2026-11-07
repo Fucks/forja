@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import type { ComponentProps } from "react";
+import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router";
 
 import { createFakeMatchMedia } from "@/test/fakes/fake_match_media.js";
 import { APP_ROUTES } from "@/web/app/routes.js";
@@ -141,7 +142,9 @@ describe("AppShell", () => {
     it("shows the active project in the topbar", () => {
         renderAppAt("/projects/forja/board");
 
-        expect(within(screen.getByRole("banner")).getByText("forja")).toBeInTheDocument();
+        expect(
+            within(screen.getByRole("banner")).getByRole("link", { name: "forja" }),
+        ).toHaveAttribute("href", "/projects/forja");
     });
 });
 
@@ -152,20 +155,20 @@ describe("Topbar", () => {
     });
 
     it("shows that the live connection is on", () => {
-        render(<Topbar projectId="forja" connected />);
+        renderTopbar({ projectId: "forja", connected: true });
 
         expect(screen.getByText("Ao vivo")).toBeInTheDocument();
     });
 
     it("shows that the live connection is off", () => {
-        render(<Topbar projectId="forja" connected={false} />);
+        renderTopbar({ projectId: "forja", connected: false });
 
         expect(screen.getByText("Desconectado")).toBeInTheDocument();
     });
 
     it("switches to the light theme and remembers it", async () => {
         const user = userEvent.setup();
-        render(<Topbar projectId={undefined} connected={false} />);
+        renderTopbar({ projectId: undefined, connected: false });
 
         await user.click(screen.getByRole("button", { name: "Usar tema claro" }));
 
@@ -177,7 +180,7 @@ describe("Topbar", () => {
     it("starts from the stored theme", () => {
         localStorage.setItem(THEME_STORAGE_KEY, "light");
 
-        render(<Topbar projectId={undefined} connected={false} />);
+        renderTopbar({ projectId: undefined, connected: false });
 
         expect(screen.getByRole("button", { name: "Usar tema escuro" })).toBeInTheDocument();
     });
@@ -189,5 +192,13 @@ function renderAppAt(path: string): void {
         <ToastProvider>
             <RouterProvider router={router} />
         </ToastProvider>,
+    );
+}
+
+function renderTopbar(props: ComponentProps<typeof Topbar>): void {
+    render(
+        <MemoryRouter>
+            <Topbar {...props} />
+        </MemoryRouter>,
     );
 }
