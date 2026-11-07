@@ -3,7 +3,11 @@ import { LoaderCircle } from "lucide-react";
 import type { ComponentProps, JSX } from "react";
 
 import { cn } from "@/web/components/ui/cn.js";
-import { CONTROL_HEIGHT_CLASSES, FOCUS_RING_CLASSES } from "@/web/components/ui/control_styles.js";
+import {
+    CONTROL_HEIGHT_CLASSES,
+    DISABLED_CLASSES,
+    FOCUS_RING_CLASSES,
+} from "@/web/components/ui/control_styles.js";
 import type { ControlSize } from "@/web/components/ui/control_styles.js";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -45,6 +49,7 @@ export function Button({
             className={cn(
                 BUTTON_BASE_CLASSES,
                 FOCUS_RING_CLASSES,
+                DISABLED_CLASSES,
                 CONTROL_HEIGHT_CLASSES[size],
                 BUTTON_VARIANT_CLASSES[variant],
                 className,

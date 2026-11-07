@@ -2,8 +2,9 @@ import { cn } from "@/web/components/ui/cn.js";
 
 export type ControlSize = "sm" | "md";
 
-export const FOCUS_RING_CLASSES =
-    "outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50";
+export const FOCUS_RING_CLASSES = "outline-none focus-visible:ring-2 focus-visible:ring-accent";
+
+export const DISABLED_CLASSES = "disabled:cursor-not-allowed disabled:opacity-50";
 
 export const CONTROL_HEIGHT_CLASSES: Record<ControlSize, string> = {
     sm: "h-7",
@@ -19,6 +20,7 @@ export function buildControlClassName(options: { isInvalid: boolean; isMono?: bo
     return cn(
         CONTROL_BOX_CLASSES,
         FOCUS_RING_CLASSES,
+        DISABLED_CLASSES,
         options.isInvalid && INVALID_CONTROL_CLASSES,
         options.isMono && "font-mono",
     );
