@@ -19,10 +19,12 @@ export class NodeRunRegistry {
     save(nodeRun: NodeRunState): void {
         const latest = this.find(nodeRun.nodeId, nodeRun.workItemId);
         this.nodeRunsById.set(nodeRun.id, nodeRun);
-        if (!latest || latest.iteration <= nodeRun.iteration) {
-            const key = nodeAndItemKey(nodeRun.nodeId, nodeRun.workItemId);
-            this.latestNodeRunIdsByNodeAndItem.set(key, nodeRun.id);
+        if (latest && latest.iteration > nodeRun.iteration) {
+            return;
         }
+
+        const key = nodeAndItemKey(nodeRun.nodeId, nodeRun.workItemId);
+        this.latestNodeRunIdsByNodeAndItem.set(key, nodeRun.id);
     }
 
     get(nodeRunId: string): NodeRunState {

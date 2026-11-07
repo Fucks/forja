@@ -52,7 +52,6 @@ export class LoopGroupCoordinator implements LoopView {
         return this.instancesByKey.get(instanceKey(groupId, itemId));
     }
 
-    // The instance of the innermost loop around the node.
     loopOf(nodeId: string, itemId: string | undefined): LoopInstanceState | undefined {
         const loopGroup = this.plan.loopGroupOf(nodeId);
 
@@ -89,10 +88,13 @@ export class LoopGroupCoordinator implements LoopView {
     }
 
     private isSettled(instance: LoopInstanceState): boolean {
+        if (instance.status !== "running") {
+            return false;
+        }
+
         const iterationNodeRuns = this.iterationNodeRunsOf(instance);
 
         return (
-            instance.status === "running" &&
             iterationNodeRuns.length > 0 &&
             iterationNodeRuns.every((nodeRun) => NODE_RUN_TERMINAL.has(nodeRun.status))
         );

@@ -676,7 +676,7 @@ function testsFailingOn(failingItemId: string, failingIteration: number): NodeSc
         const isFailing =
             nodeRun.workItemId === failingItemId && nodeRun.iteration === failingIteration;
 
-        return isFailing ? { outcome: { kind: "fail", error: RUNTIME_ERROR } } : {};
+        return isFailing ? { outcome: FAILED_FOR_GOOD } : {};
     };
 }
 

@@ -1,13 +1,13 @@
-import type {
-    FlowEdge,
-    FlowGraph,
-    FlowGroup,
-    FlowNode,
-    NodeOfType,
-    NodeType,
-    Position,
+import {
+    type FlowEdge,
+    type FlowGraph,
+    type FlowGroup,
+    type FlowNode,
+    LOOP_EXHAUSTED_PORT,
+    type NodeOfType,
+    type NodeType,
+    type Position,
 } from "@/shared/flow_graph.js";
-import { LOOP_EXHAUSTED_PORT } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 
 const GRID_STEP_PX = 240;

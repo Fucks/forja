@@ -1,8 +1,8 @@
 import { AgentStartPacer } from "@/engine/agent_start_pacer.js";
 import { FlowPlan } from "@/engine/flow_plan.js";
+import { LoopGroupCoordinator } from "@/engine/loop_group_coordinator.js";
 import type { MapGroupState } from "@/engine/map_group.js";
 import { type FinishedMapItem, MapGroupCoordinator } from "@/engine/map_group_coordinator.js";
-import { LoopGroupCoordinator } from "@/engine/loop_group_coordinator.js";
 import { type InputResolution, resolveInputs } from "@/engine/node_inputs.js";
 import { NodeRunRegistry } from "@/engine/node_run_registry.js";
 import {
