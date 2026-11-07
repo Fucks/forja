@@ -5,7 +5,7 @@ import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { runtimeAssetPath } from "@/lib/paths.js";
 import { applyMigrations, loadMigrations } from "@/server/db/migrate.js";
 
-const IN_MEMORY_DATABASE = ":memory:";
+export const IN_MEMORY_DATABASE = ":memory:";
 const BUSY_TIMEOUT_MS = 5000;
 
 export type ForjaDb = BetterSQLite3Database;

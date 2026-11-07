@@ -27,10 +27,10 @@ export class MigrationFailedError extends Error {
     }
 }
 
-export function loadMigrations(dir: string): Migration[] {
-    return listMigrationFileNames(dir).map((fileName) => ({
+export function loadMigrations(migrationsDir: string): Migration[] {
+    return listMigrationFileNames(migrationsDir).map((fileName) => ({
         id: path.basename(fileName, MIGRATION_EXTENSION),
-        sql: readFileSync(path.join(dir, fileName), "utf8"),
+        sql: readFileSync(path.join(migrationsDir, fileName), "utf8"),
     }));
 }
 
@@ -49,8 +49,8 @@ export function applyMigrations(
     return pendingMigrations.map((migration) => migration.id);
 }
 
-function listMigrationFileNames(dir: string): string[] {
-    return readdirSync(dir)
+function listMigrationFileNames(migrationsDir: string): string[] {
+    return readdirSync(migrationsDir)
         .filter((fileName) => fileName.endsWith(MIGRATION_EXTENSION))
         .sort();
 }
