@@ -40,14 +40,20 @@ export function parsePromptTemplate(template: string): TemplateToken[] {
     let textStart = 0;
 
     for (const match of template.matchAll(TEMPLATE_MARKUP_PATTERN)) {
-        const path = match.groups?.path;
-        if (path === undefined) {
+        const variablePath = match.groups?.path;
+        const isEscapedOpening = variablePath === undefined;
+        if (isEscapedOpening) {
             continue;
         }
 
         const variableEnd = match.index + match[0].length;
         tokens.push(...textTokensBetween(template, textStart, match.index));
-        tokens.push({ kind: "var", value: path.trim(), start: match.index, end: variableEnd });
+        tokens.push({
+            kind: "var",
+            value: variablePath.trim(),
+            start: match.index,
+            end: variableEnd,
+        });
         textStart = variableEnd;
     }
 
@@ -142,16 +148,19 @@ export function availableVariables(node: FlowNode, graph: FlowGraph): VariableIn
 }
 
 function findEnclosingGroups(node: FlowNode, groups: FlowGroup[]): FlowGroup[] {
-    const findGroup = (groupId: string | undefined) => groups.find((group) => group.id === groupId);
     const enclosingGroups: FlowGroup[] = [];
 
-    let group = findGroup(node.parentGroupId);
+    let group = findGroupById(groups, node.parentGroupId);
     while (group && !enclosingGroups.includes(group)) {
         enclosingGroups.push(group);
-        group = findGroup(group.parentGroupId);
+        group = findGroupById(groups, group.parentGroupId);
     }
 
     return enclosingGroups;
+}
+
+function findGroupById(groups: FlowGroup[], groupId: string | undefined): FlowGroup | undefined {
+    return groups.find((group) => group.id === groupId);
 }
 
 function toInputVariable(port: Port): VariableInfo {
