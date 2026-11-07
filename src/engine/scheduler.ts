@@ -22,6 +22,7 @@ import {
     type WorkItemRef,
 } from "@/engine/scheduler_types.js";
 import { assertNever } from "@/lib/assert_never.js";
+import type { NodeRunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 
 export function createScheduler(
@@ -206,13 +207,23 @@ class DagScheduler implements Scheduler {
             .withStatus("PENDING")
             .sort((a, b) => this.plan.dagPositionOf(a.nodeId) - this.plan.dagPositionOf(b.nodeId));
         for (const nodeRun of pendingInDagOrder) {
-            const resolution = this.resolveInputsOf(nodeRun);
-            if (resolution.kind === "skip") {
+            this.queueOrSkipByInputs(nodeRun, at);
+        }
+    }
+
+    private queueOrSkipByInputs(nodeRun: NodeRunState, at: Date): void {
+        const resolution = this.resolveInputsOf(nodeRun);
+        switch (resolution.kind) {
+            case "waiting":
+                break;
+            case "skip":
                 this.changeNodeRun(transitionNodeRun(nodeRun, "SKIPPED", at));
-            }
-            if (resolution.kind === "ready") {
+                break;
+            case "ready":
                 this.changeNodeRun(transitionNodeRun(nodeRun, "QUEUED", at));
-            }
+                break;
+            default:
+                assertNever(resolution);
         }
     }
 
@@ -221,15 +232,22 @@ class DagScheduler implements Scheduler {
             .withStatus("QUEUED")
             .sort((a, b) => compareQueueOrder(this.queuePositionOf(a), this.queuePositionOf(b)));
         for (const nodeRun of queueInStartOrder) {
-            if (!this.plan.isLimitedByConcurrency(nodeRun.nodeId)) {
+            if (this.plan.isLimitedByConcurrency(nodeRun.nodeId)) {
+                this.startAgentWhenAllowed(nodeRun, now);
+            } else {
                 this.startNodeRun(nodeRun, now);
-            } else if (
-                this.agentStarts.canStart(now, this.agentNodeRunsWithStatus("RUNNING").length)
-            ) {
-                this.startNodeRun(nodeRun, now);
-                this.agentStarts.recordStart(now);
             }
         }
+    }
+
+    private startAgentWhenAllowed(nodeRun: NodeRunState, now: Date): void {
+        const runningAgentCount = this.agentNodeRunsWithStatus("RUNNING").length;
+        if (!this.agentStarts.canStart(now, runningAgentCount)) {
+            return;
+        }
+
+        this.startNodeRun(nodeRun, now);
+        this.agentStarts.recordStart(now);
     }
 
     private startNodeRun(nodeRun: NodeRunState, now: Date): void {
@@ -241,11 +259,13 @@ class DagScheduler implements Scheduler {
     }
 
     private scheduleWakeupForWaitingAgents(now: Date): void {
-        const nextStartTime = this.agentStarts.findNextStartTime(now);
         const hasWaitingAgent = this.agentNodeRunsWithStatus("QUEUED").length > 0;
-        if (hasWaitingAgent && nextStartTime) {
-            this.outbox.push({ type: "schedule_wakeup", at: nextStartTime });
+        const nextStartTime = this.agentStarts.findNextStartTime(now);
+        if (!hasWaitingAgent || !nextStartTime) {
+            return;
         }
+
+        this.outbox.push({ type: "schedule_wakeup", at: nextStartTime });
     }
 
     private finishRunWhenSettled(at: Date): void {
@@ -279,7 +299,7 @@ class DagScheduler implements Scheduler {
         };
     }
 
-    private agentNodeRunsWithStatus(status: NodeRunState["status"]): NodeRunState[] {
+    private agentNodeRunsWithStatus(status: NodeRunStatusName): NodeRunState[] {
         return this.nodeRuns
             .withStatus(status)
             .filter((nodeRun) => this.plan.isLimitedByConcurrency(nodeRun.nodeId));

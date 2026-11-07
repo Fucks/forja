@@ -1,6 +1,9 @@
 import { FlowPlan } from "@/engine/flow_plan.js";
-import type { NodeRunError, NodeRunState } from "@/engine/node_run_state.js";
-import { NODE_RUN_TERMINAL } from "@/engine/node_run_state.js";
+import {
+    NODE_RUN_TERMINAL,
+    type NodeRunError,
+    type NodeRunState,
+} from "@/engine/node_run_state.js";
 import type { RunState } from "@/engine/run_state.js";
 import { createScheduler } from "@/engine/scheduler.js";
 import type {
@@ -20,6 +23,9 @@ import { FakeClock } from "@/test/fakes/fake_clock.js";
 
 export const DEFAULT_NODE_DURATION_MS = 1_000;
 const ENOUGH_TIME_TO_FINISH_MS = 24 * 60 * 60 * 1_000;
+const UNLIMITED_AGENTS = 100;
+const CONDITION_INPUT_PORT = "value";
+const CANCELED_BY_USER: NodeRunError = { kind: "canceled", message: "Cancelado pelo usuário" };
 
 export type NodeOutcome =
     { kind: "succeed"; outputs: Record<string, unknown> } | { kind: "fail"; error: NodeRunError };
@@ -53,7 +59,9 @@ export interface TimelineEntry {
     status: NodeRunStatusName;
 }
 
-const UNLIMITED_AGENTS = 100;
+export function createSchedulerHarness(options: SchedulerHarnessOptions): SchedulerHarness {
+    return new SchedulerHarness(options);
+}
 
 // Minimal in-memory executor: runs every started NodeRun on a FakeClock timer following the node's
 // script, and records the NodeRun timeline that engine tests assert on.
@@ -141,17 +149,13 @@ export class SchedulerHarness {
     }
 
     agentStartsInOrder(): TimelineEntry[] {
-        return this.timeline.filter(
-            (entry) => entry.status === "RUNNING" && this.isAgentNode(entry.nodeId),
-        );
+        return this.agentEntries().filter((entry) => entry.status === "RUNNING");
     }
 
     maxConcurrentRunningAgents(): number {
         const runningNodeRunIds = new Set<string>();
         let maxRunning = 0;
-        for (const entry of this.timeline.filter((candidate) =>
-            this.isAgentNode(candidate.nodeId),
-        )) {
+        for (const entry of this.agentEntries()) {
             if (entry.status === "RUNNING") {
                 runningNodeRunIds.add(entry.nodeRunId);
             }
@@ -162,6 +166,10 @@ export class SchedulerHarness {
         }
 
         return maxRunning;
+    }
+
+    private agentEntries(): TimelineEntry[] {
+        return this.timeline.filter((entry) => this.isAgentNode(entry.nodeId));
     }
 
     private createScheduler(restore?: SchedulerSnapshot): Scheduler {
@@ -200,10 +208,7 @@ export class SchedulerHarness {
                 this.currentRun = command.run;
                 break;
             case "schedule_wakeup":
-                this.clock.setTimeout(
-                    () => this.execute(this.scheduler.tick(this.clock.now())),
-                    command.at.getTime() - this.clock.now().getTime(),
-                );
+                this.scheduleWakeup(command.at);
                 break;
             case "group_progress":
                 break;
@@ -227,13 +232,15 @@ export class SchedulerHarness {
     private cancelNodeRun(nodeRunId: string): void {
         this.runningTimers.get(nodeRunId)?.();
         this.runningTimers.delete(nodeRunId);
-        const canceled: NodeOutcome = {
-            kind: "fail",
-            error: { kind: "canceled", message: "Cancelado pelo usuário" },
-        };
+        const canceled: NodeOutcome = { kind: "fail", error: CANCELED_BY_USER };
         this.clock.setTimeout(() => {
             this.deliver(finishingEvent(nodeRunId, canceled, this.clock.now()));
         }, 0);
+    }
+
+    private scheduleWakeup(at: Date): void {
+        const delayMs = at.getTime() - this.clock.now().getTime();
+        this.clock.setTimeout(() => this.execute(this.scheduler.tick(this.clock.now())), delayMs);
     }
 
     private behaviorOf(started: StartedNodeRun): NodeBehavior {
@@ -273,12 +280,6 @@ export class SchedulerHarness {
         return this.plan.isLimitedByConcurrency(nodeId);
     }
 }
-
-export function createSchedulerHarness(options: SchedulerHarnessOptions): SchedulerHarness {
-    return new SchedulerHarness(options);
-}
-
-const CONDITION_INPUT_PORT = "value";
 
 function chooseConditionPort(
     condition: Condition,
