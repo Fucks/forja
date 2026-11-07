@@ -28,11 +28,11 @@
 - [x] 4. `parseGithubRepo` tests (HTTPS/SSH, with/without .git, non-GitHub) — `cli_git_provider.test.ts`
 - [x] 5. `CliGitProvider` over `CommandRunner` + tests with `FakeCommandRunner` — `cli_git_provider.ts`
 - [x] 6. `FakeGitProvider` — `src/test/fakes/fake_git_provider.ts`
-- [ ] 7. Migration, Drizzle schema, `ProjectRepository` — `0100_projects.sql`, `schema/projects.ts`, `project_repository.ts`
-- [ ] 8. Types + `createProjectInput` — `src/server/projects/project_types.ts`
-- [ ] 9. Service create: normalizes to root, githubRepo, baseBranch default, detection — `project_service.ts` + test
-- [ ] 10. Service create: rejects non-repo (422) and duplicate (409) — test + impl
-- [ ] 11. Service list/get (NotFound)/rename/remove (no repo touch) — test + impl
+- [x] 7. Migration, Drizzle schema, `ProjectRepository` — `0100_projects.sql`, `schema/projects.ts`, `project_repository.ts`
+- [x] 8. Types + `createProjectInput` — `src/server/projects/project_types.ts`
+- [x] 9. Service create: normalizes to root, githubRepo, baseBranch default, detection — `project_service.ts` + test
+- [x] 10. Service create: rejects non-repo (422) and duplicate (409) — test + impl
+- [x] 11. Service list/get (NotFound)/rename/remove (no repo touch) — test + impl
 - [ ] 12. `AppDeps` gains `commands`/`git`; test helper; main.ts wiring — `app.ts`, `main.ts`, `app.test.ts`
 - [ ] 13. Routes GET/POST /projects, GET/PATCH/DELETE /projects/:id + tests — `projects_routes*.ts`
 - [ ] 14. Integration test with real `git init` — `cli_git_provider.integration.test.ts`
