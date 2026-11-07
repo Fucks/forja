@@ -1,6 +1,11 @@
 import { incomingEdges } from "@/engine/graph_queries.js";
+import { isMapDone, itemIdsWithStatus, type MapGroupState } from "@/engine/map_group.js";
 import { NODE_RUN_TERMINAL, type NodeRunState } from "@/engine/node_run_state.js";
-import { type NodeScope, splitsListIntoItems } from "@/engine/node_scopes.js";
+import {
+    collectsItemsIntoList,
+    type NodeScope,
+    splitsListIntoItems,
+} from "@/engine/node_scopes.js";
 import type { WorkItemRef } from "@/engine/scheduler_types.js";
 import type { FlowEdge, FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 
@@ -11,6 +16,8 @@ export interface UpstreamView {
     items: readonly WorkItemRef[] | undefined;
     scopeOf(nodeId: string): NodeScope;
     findNodeRun(nodeId: string, workItemId: string | undefined): NodeRunState | undefined;
+    // The innermost map around the node.
+    mapGroupOf(nodeId: string): MapGroupState | undefined;
 }
 
 export interface InputTarget {
@@ -19,6 +26,7 @@ export interface InputTarget {
 }
 
 type EdgeValue = { state: "pending" } | { state: "absent" } | { state: "present"; value: unknown };
+type PresentValue = Extract<EdgeValue, { state: "present" }>;
 
 const PENDING: EdgeValue = { state: "pending" };
 const ABSENT: EdgeValue = { state: "absent" };
@@ -53,6 +61,50 @@ function resolveEdgeValue(
     target: InputTarget,
     upstream: UpstreamView,
 ): EdgeValue {
+    const sourceMap = upstream.mapGroupOf(edge.from.nodeId);
+    const targetMapGroupId = upstream.mapGroupOf(target.node.id)?.groupId;
+    if (!sourceMap || sourceMap.groupId === targetMapGroupId) {
+        return resolveEdgeInsideScope(graph, edge, target, upstream);
+    }
+    if (collectsItemsIntoList(graph, edge)) {
+        return collectMapOutput(edge, upstream, sourceMap);
+    }
+    if (sourceMap.barrier && !isMapDone(sourceMap)) {
+        return PENDING;
+    }
+
+    return outputOf(upstream.findNodeRun(edge.from.nodeId, target.workItemId), edge.from.port);
+}
+
+// One value per item that succeeded in the map, in the order of the run's item list.
+function collectMapOutput(
+    edge: FlowEdge,
+    upstream: UpstreamView,
+    sourceMap: MapGroupState,
+): EdgeValue {
+    if (!isMapDone(sourceMap)) {
+        return PENDING;
+    }
+
+    const succeededItemIds = new Set(itemIdsWithStatus(sourceMap, "succeeded"));
+    const collectedValues = (upstream.items ?? [])
+        .filter((item) => succeededItemIds.has(item.id))
+        .map((item) => outputOf(upstream.findNodeRun(edge.from.nodeId, item.id), edge.from.port))
+        .filter(isPresent)
+        .map((present) => present.value);
+    if (collectedValues.length === 0) {
+        return ABSENT;
+    }
+
+    return { state: "present", value: collectedValues };
+}
+
+function resolveEdgeInsideScope(
+    graph: FlowGraph,
+    edge: FlowEdge,
+    target: InputTarget,
+    upstream: UpstreamView,
+): EdgeValue {
     const sourceNodeId = edge.from.nodeId;
     if (upstream.scopeOf(sourceNodeId) === "item") {
         return outputOf(upstream.findNodeRun(sourceNodeId, target.workItemId), edge.from.port);
@@ -70,6 +122,10 @@ function currentItemOf(target: InputTarget, upstream: UpstreamView): EdgeValue {
     const item = upstream.items?.find((candidate) => candidate.id === target.workItemId);
 
     return item ? { state: "present", value: item } : ABSENT;
+}
+
+function isPresent(value: EdgeValue): value is PresentValue {
+    return value.state === "present";
 }
 
 function outputOf(nodeRun: NodeRunState | undefined, port: string): EdgeValue {

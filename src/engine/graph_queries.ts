@@ -89,6 +89,10 @@ export function areTypesCompatible(from: PortType, to: PortType): boolean {
     return from === "any" || to === "any" || from === to;
 }
 
+export function enclosingMapGroup(graph: FlowGraph, nodeId: string): MapGroup | undefined {
+    return enclosingGroups(graph, nodeId).find(isMapGroup);
+}
+
 export function isItemCorrelatedEdge(graph: FlowGraph, edge: FlowEdge): boolean {
     const sourceGroups = enclosingGroups(graph, edge.from.nodeId);
     const targetGroups = enclosingGroups(graph, edge.to.nodeId);

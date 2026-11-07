@@ -1,5 +1,7 @@
 import { AgentStartPacer } from "@/engine/agent_start_pacer.js";
 import { FlowPlan } from "@/engine/flow_plan.js";
+import type { MapGroupState } from "@/engine/map_group.js";
+import { type FinishedMapItem, MapGroupCoordinator } from "@/engine/map_group_coordinator.js";
 import { type InputResolution, resolveInputs } from "@/engine/node_inputs.js";
 import { NodeRunRegistry } from "@/engine/node_run_registry.js";
 import {
@@ -38,6 +40,7 @@ export function createScheduler(
 
 class DagScheduler implements Scheduler {
     private readonly nodeRuns: NodeRunRegistry;
+    private readonly mapGroups: MapGroupCoordinator;
     private run: RunState;
     private items: WorkItemRef[] | undefined;
     private readonly agentStarts: AgentStartPacer;
@@ -50,6 +53,13 @@ class DagScheduler implements Scheduler {
         state: SchedulerState,
     ) {
         this.nodeRuns = new NodeRunRegistry(state.nodeRuns);
+        this.mapGroups = new MapGroupCoordinator({
+            plan,
+            nodeRuns: this.nodeRuns,
+            savedStates: state.mapGroups ?? [],
+            createPendingNodeRuns: (nodeIds, itemId) => this.createPendingNodeRuns(nodeIds, itemId),
+            emit: (command) => this.outbox.push(command),
+        });
         this.run = state.run;
         this.items = state.items;
         this.agentStarts = new AgentStartPacer(options, state.lastAgentStartAt);
@@ -88,6 +98,7 @@ class DagScheduler implements Scheduler {
             run: this.run,
             nodeRuns: this.nodeRuns.all(),
             items: this.items,
+            mapGroups: this.mapGroups.states(),
             lastAgentStartAt: this.agentStarts.lastAgentStartAt,
             stopOutcome: this.stopOutcome,
         });
@@ -129,7 +140,8 @@ class DagScheduler implements Scheduler {
         const nodeRun = this.nodeRuns.get(nodeRunId);
         const status = error?.kind === "canceled" ? "CANCELED" : "FAILED";
         this.changeNodeRun(transitionNodeRun(nodeRun, status, at, { error }));
-        if (!this.stopOutcome) {
+        // Inside a map the failure belongs to the item: applyFinishedItem decides what it stops.
+        if (!this.stopOutcome && !this.plan.mapGroupIdOf(nodeRun.nodeId)) {
             this.stop("FAILED", at);
         }
 
@@ -146,9 +158,7 @@ class DagScheduler implements Scheduler {
         }
 
         this.stop("CANCELED", at);
-        for (const nodeRun of this.nodeRuns.withStatus("RUNNING")) {
-            this.outbox.push({ type: "cancel_node_run", nodeRunId: nodeRun.id });
-        }
+        this.requestCancel(this.nodeRuns.withStatus("RUNNING"));
 
         this.advance(at);
     }
@@ -158,6 +168,13 @@ class DagScheduler implements Scheduler {
         this.stopOutcome = outcome;
         for (const nodeRun of this.nodeRuns.withStatus("PENDING", "QUEUED")) {
             this.changeNodeRun(transitionNodeRun(nodeRun, "CANCELED", at));
+        }
+        this.mapGroups.cancelQueuedItems();
+    }
+
+    private requestCancel(runningNodeRuns: NodeRunState[]): void {
+        for (const nodeRun of runningNodeRuns) {
+            this.outbox.push({ type: "cancel_node_run", nodeRunId: nodeRun.id });
         }
     }
 
@@ -171,8 +188,9 @@ class DagScheduler implements Scheduler {
         const listOutput = outputs[splittingEdge.from.port];
         this.items = Array.isArray(listOutput) ? listOutput.filter(isWorkItemRef) : [];
         for (const item of this.items) {
-            this.createPendingNodeRuns(this.plan.nodeIdsOfScope("item"), item.id);
+            this.createPendingNodeRuns(this.plan.itemNodeIdsOutsideMaps(), item.id);
         }
+        this.mapGroups.feedItemList(this.items.map((item) => item.id));
     }
 
     private createPendingNodeRuns(nodeIds: string[], workItemId: string | undefined): void {
@@ -195,10 +213,63 @@ class DagScheduler implements Scheduler {
             return;
         }
 
-        this.queueReadyNodeRuns(now);
+        this.moveItemsThroughMaps(now);
         this.startQueuedNodeRuns(now);
         this.scheduleWakeupForWaitingAgents(now);
         this.finishRunWhenSettled(now);
+    }
+
+    // Repeats until stable: a finished item frees a slot and may feed the next map, whose new
+    // NodeRuns may be skipped right away and finish their item too.
+    private moveItemsThroughMaps(at: Date): void {
+        let hasProgress = true;
+        while (hasProgress) {
+            this.admitQueuedMapItems();
+            this.queueReadyNodeRuns(at);
+            const finishedItems = this.mapGroups.finishSettledItems();
+            for (const finished of finishedItems) {
+                this.applyFinishedItem(finished, at);
+            }
+            const hasReceivedItems = this.feedCorrelatedMaps();
+            hasProgress = finishedItems.length > 0 || hasReceivedItems;
+        }
+    }
+
+    private admitQueuedMapItems(): void {
+        if (!this.stopOutcome) {
+            this.mapGroups.admitQueuedItems();
+        }
+    }
+
+    private feedCorrelatedMaps(): boolean {
+        if (this.stopOutcome) {
+            return false;
+        }
+
+        return this.mapGroups.feedCorrelatedMaps();
+    }
+
+    private applyFinishedItem(finished: FinishedMapItem, at: Date): void {
+        if (finished.hasFailedNodeRun) {
+            this.recordFailedItem(finished.itemId);
+        }
+        if (finished.result === "failed" && finished.mapGroup.failFast) {
+            this.stopOnFailedItem(finished.mapGroup, at);
+        }
+    }
+
+    private recordFailedItem(itemId: string): void {
+        this.changeRun({ ...this.run, failedItems: [...(this.run.failedItems ?? []), itemId] });
+    }
+
+    // Acts on the first failure only: the canceled items that follow also finish as failed.
+    private stopOnFailedItem(failFastMapGroup: MapGroupState, at: Date): void {
+        if (this.stopOutcome) {
+            return;
+        }
+
+        this.stop("FAILED", at);
+        this.requestCancel(this.mapGroups.runningNodeRunsOf(failFastMapGroup));
     }
 
     // In DAG order, so a skip cascades to the downstream NodeRuns in the same pass.
@@ -287,6 +358,7 @@ class DagScheduler implements Scheduler {
                 items: this.items,
                 scopeOf: (nodeId) => this.plan.scopeOf(nodeId),
                 findNodeRun: (nodeId, workItemId) => this.nodeRuns.find(nodeId, workItemId),
+                mapGroupOf: (nodeId) => this.mapGroups.mapGroupOf(nodeId),
             },
         );
     }

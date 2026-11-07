@@ -15,6 +15,8 @@ export interface RunState {
     startedAt?: Date;
     finishedAt?: Date;
     error?: string;
+    // Items that failed inside a map; the run can still succeed without them.
+    failedItems?: string[];
 }
 
 export const RUN_TERMINAL: ReadonlySet<RunStatusName> = new Set<RunStatusName>([

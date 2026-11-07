@@ -41,6 +41,7 @@ export interface StartedNodeRun {
 }
 
 type StartNodeRunCommand = Extract<SchedulerCommand, { type: "start_node_run" }>;
+type GroupProgressCommand = Extract<SchedulerCommand, { type: "group_progress" }>;
 
 export type NodeScript = (started: StartedNodeRun) => Partial<NodeBehavior>;
 
@@ -152,20 +153,19 @@ export class SchedulerHarness {
         return this.agentEntries().filter((entry) => entry.status === "RUNNING");
     }
 
-    maxConcurrentRunningAgents(): number {
-        const runningNodeRunIds = new Set<string>();
-        let maxRunning = 0;
-        for (const entry of this.agentEntries()) {
-            if (entry.status === "RUNNING") {
-                runningNodeRunIds.add(entry.nodeRunId);
-            }
-            if (NODE_RUN_TERMINAL.has(entry.status)) {
-                runningNodeRunIds.delete(entry.nodeRunId);
-            }
-            maxRunning = Math.max(maxRunning, runningNodeRunIds.size);
-        }
+    groupProgressOf(groupId: string): GroupProgressCommand[] {
+        return this.commands.filter(
+            (command): command is GroupProgressCommand =>
+                command.type === "group_progress" && command.groupId === groupId,
+        );
+    }
 
-        return maxRunning;
+    maxConcurrentRunningAgents(): number {
+        return peakRunningCount(this.agentEntries());
+    }
+
+    maxConcurrentRunningOf(nodeId: string): number {
+        return peakRunningCount(this.timeline.filter((entry) => entry.nodeId === nodeId));
     }
 
     private agentEntries(): TimelineEntry[] {
@@ -279,6 +279,22 @@ export class SchedulerHarness {
     private isAgentNode(nodeId: string): boolean {
         return this.plan.isLimitedByConcurrency(nodeId);
     }
+}
+
+function peakRunningCount(entries: TimelineEntry[]): number {
+    const runningNodeRunIds = new Set<string>();
+    let maxRunning = 0;
+    for (const entry of entries) {
+        if (entry.status === "RUNNING") {
+            runningNodeRunIds.add(entry.nodeRunId);
+        }
+        if (NODE_RUN_TERMINAL.has(entry.status)) {
+            runningNodeRunIds.delete(entry.nodeRunId);
+        }
+        maxRunning = Math.max(maxRunning, runningNodeRunIds.size);
+    }
+
+    return maxRunning;
 }
 
 function chooseConditionPort(
