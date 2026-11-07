@@ -99,6 +99,17 @@ export function buildLoopFlow(): FlowGraph {
     };
 }
 
+export function connect(
+    [fromNodeId, fromPort]: [string, string],
+    [toNodeId, toPort]: [string, string],
+): FlowEdge {
+    return {
+        id: `${fromNodeId}.${fromPort}->${toNodeId}.${toPort}`,
+        from: { nodeId: fromNodeId, port: fromPort },
+        to: { nodeId: toNodeId, port: toPort },
+    };
+}
+
 function buildTriggerNode(): FlowNode {
     return createDefaultNode("trigger", "trigger", gridPosition(0));
 }
@@ -274,17 +285,6 @@ function createNodeOfType<Type extends NodeType>(
 
 function isNodeOfType<Type extends NodeType>(node: FlowNode, type: Type): node is NodeOfType<Type> {
     return node.type === type;
-}
-
-function connect(
-    [fromNodeId, fromPort]: [string, string],
-    [toNodeId, toPort]: [string, string],
-): FlowEdge {
-    return {
-        id: `${fromNodeId}.${fromPort}->${toNodeId}.${toPort}`,
-        from: { nodeId: fromNodeId, port: fromPort },
-        to: { nodeId: toNodeId, port: toPort },
-    };
 }
 
 function gridPosition(column: number, row = 0): Position {

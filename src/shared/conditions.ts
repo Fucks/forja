@@ -25,7 +25,7 @@ export const conditionSchema: z.ZodType<Condition> = z.lazy(() =>
 
 type PathLookup = { isFound: true; value: unknown } | { isFound: false };
 
-const PATH_SEPARATOR = ".";
+export const CONDITION_PATH_SEPARATOR = ".";
 
 export function evaluateCondition(condition: Condition, data: unknown): boolean {
     switch (condition.op) {
@@ -73,7 +73,7 @@ function evaluateComparison(comparison: Comparison, lookup: PathLookup): boolean
 function lookUpPath(data: unknown, path: string): PathLookup {
     const root: PathLookup = { isFound: true, value: data };
 
-    return path.split(PATH_SEPARATOR).reduce(lookUpKey, root);
+    return path.split(CONDITION_PATH_SEPARATOR).reduce(lookUpKey, root);
 }
 
 function lookUpKey(parent: PathLookup, key: string): PathLookup {
