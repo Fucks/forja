@@ -25,4 +25,4 @@
 - [x] 8. Test + implement: replay by `Last-Event-ID` — same files
 - [x] 9. Test + implement: `runId` and `projectId` filters — same files
 - [x] 10. Test + implement: `: ping` heartbeat and listener removed on close — same files
-- [ ] 11. Self-review checklist and feedback loops
+- [x] 11. Self-review checklist and feedback loops

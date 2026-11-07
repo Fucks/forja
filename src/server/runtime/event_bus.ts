@@ -2,12 +2,12 @@ import type { ForjaEvent, EventEnvelope } from "@/shared/events.js";
 
 export const EVENT_BUFFER_CAPACITY = 5000;
 
-type EventListener = (envelope: EventEnvelope) => void;
+type EnvelopeListener = (envelope: EventEnvelope) => void;
 type Unsubscribe = () => void;
 
 export interface EventBus {
     publish(event: ForjaEvent): EventEnvelope;
-    subscribe(listener: EventListener): Unsubscribe;
+    subscribe(listener: EnvelopeListener): Unsubscribe;
     since(lastId: number): EventEnvelope[];
 }
 
@@ -16,7 +16,7 @@ export function createEventBus(clock: { now(): Date }): EventBus {
 }
 
 class InMemoryEventBus implements EventBus {
-    private readonly listeners = new Set<EventListener>();
+    private readonly listeners = new Set<EnvelopeListener>();
     private readonly recentEnvelopes: EventEnvelope[] = [];
     private lastPublishedId = 0;
 
@@ -30,7 +30,7 @@ class InMemoryEventBus implements EventBus {
         return envelope;
     }
 
-    subscribe(listener: EventListener): Unsubscribe {
+    subscribe(listener: EnvelopeListener): Unsubscribe {
         this.listeners.add(listener);
         return () => {
             this.listeners.delete(listener);
@@ -56,7 +56,7 @@ class InMemoryEventBus implements EventBus {
 }
 
 // One broken subscriber (e.g. a closed SSE socket) must not keep the others from seeing the event.
-function notifyListener(listener: EventListener, envelope: EventEnvelope): void {
+function notifyListener(listener: EnvelopeListener, envelope: EventEnvelope): void {
     try {
         listener(envelope);
     } catch (error) {
