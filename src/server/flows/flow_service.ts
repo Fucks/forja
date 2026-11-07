@@ -52,9 +52,8 @@ export function createFlowService(deps: FlowServiceDeps): FlowService {
         create: (projectId, input) => resolveWith(() => createFlow(deps, projectId, input)),
         list: (projectId, options) => resolveWith(() => listFlows(repo, projectId, options)),
         rename: (flowId, name) => resolveWith(() => renameFlow(repo, flowId, name)),
-        setDefault: (flowId) =>
-            resolveWith(() => repo.markAsDefault(findFlowOrThrow(repo, flowId))),
-        archive: (flowId) => resolveWith(() => repo.archive(findFlowOrThrow(repo, flowId).id)),
+        setDefault: (flowId) => resolveWith(() => setDefaultFlow(repo, flowId)),
+        archive: (flowId) => resolveWith(() => archiveFlow(repo, flowId)),
         getDraft: (flowId) => resolveWith(() => findDraftOrThrow(repo, flowId)),
         saveDraft: (flowId, graph, expectedRevision) =>
             resolveWith(() => saveDraft(deps, { flowId, graph, expectedRevision })),
@@ -110,6 +109,16 @@ function renameFlow(repo: FlowRepository, flowId: string, name: string): FlowSum
     repo.rename(flowId, name);
 
     return { ...flow, name };
+}
+
+function setDefaultFlow(repo: FlowRepository, flowId: string): void {
+    const flow = findFlowOrThrow(repo, flowId);
+    repo.markAsDefault(flow);
+}
+
+function archiveFlow(repo: FlowRepository, flowId: string): void {
+    findFlowOrThrow(repo, flowId);
+    repo.archive(flowId);
 }
 
 function saveDraft(
@@ -231,7 +240,7 @@ function assertProjectExists(repo: FlowRepository, projectId: string): void {
 function findFlowOrThrow(repo: FlowRepository, flowId: string): FlowSummary {
     const flow = repo.findSummary(flowId);
     if (!flow) {
-        throw new NotFoundError(`Fluxo ${flowId} não encontrado.`);
+        throw flowNotFoundError(flowId);
     }
 
     return flow;
@@ -240,10 +249,14 @@ function findFlowOrThrow(repo: FlowRepository, flowId: string): FlowSummary {
 function findDraftOrThrow(repo: FlowRepository, flowId: string): FlowDraft {
     const draft = repo.findDraft(flowId);
     if (!draft) {
-        throw new NotFoundError(`Fluxo ${flowId} não encontrado.`);
+        throw flowNotFoundError(flowId);
     }
 
     return draft;
+}
+
+function flowNotFoundError(flowId: string): NotFoundError {
+    return new NotFoundError(`Fluxo ${flowId} não encontrado.`);
 }
 
 function findVersionOrThrow(repo: FlowRepository, flowId: string, version: number): FlowVersion {
