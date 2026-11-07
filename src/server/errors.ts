@@ -57,39 +57,49 @@ export function registerErrorHandler(app: FastifyInstance): void {
 
 function toErrorResponse(error: FastifyError): ErrorResponse {
     if (error instanceof NotFoundError) {
-        return errorResponse(HTTP_NOT_FOUND, "not_found", error.message);
+        return buildErrorResponse(HTTP_NOT_FOUND, { code: "not_found", message: error.message });
     }
     if (error instanceof ConflictError) {
-        return errorResponse(HTTP_CONFLICT, "conflict", error.message);
+        return buildErrorResponse(HTTP_CONFLICT, { code: "conflict", message: error.message });
     }
     if (error instanceof DomainValidationError) {
-        return errorResponse(HTTP_UNPROCESSABLE_ENTITY, "invalid", error.message, error.details);
+        return buildErrorResponse(HTTP_UNPROCESSABLE_ENTITY, {
+            code: "invalid",
+            message: error.message,
+            details: error.details,
+        });
     }
     if (hasZodFastifySchemaValidationErrors(error)) {
-        return validationErrorResponse(error.validation.map(toSchemaInputIssue));
+        return buildValidationErrorResponse(error.validation.map(toSchemaInputIssue));
     }
     if (error instanceof ZodError) {
-        return validationErrorResponse(error.issues.map(toZodInputIssue));
+        return buildValidationErrorResponse(error.issues.map(toZodInputIssue));
     }
     if (isClientError(error)) {
-        return errorResponse(error.statusCode, "bad_request", BAD_REQUEST_MESSAGE);
+        return buildErrorResponse(error.statusCode, {
+            code: "bad_request",
+            message: BAD_REQUEST_MESSAGE,
+        });
     }
 
-    return errorResponse(HTTP_INTERNAL_SERVER_ERROR, "internal", INTERNAL_ERROR_MESSAGE);
+    return buildErrorResponse(HTTP_INTERNAL_SERVER_ERROR, {
+        code: "internal",
+        message: INTERNAL_ERROR_MESSAGE,
+    });
 }
 
-function errorResponse(
-    status: number,
-    code: string,
-    message: string,
-    details?: unknown,
-): ErrorResponse {
-    const error = details === undefined ? { code, message } : { code, message, details };
-    return { status, body: { error } };
+function buildErrorResponse(status: number, error: ApiErrorBody["error"]): ErrorResponse {
+    const { code, message, details } = error;
+    const errorFields = details === undefined ? { code, message } : { code, message, details };
+    return { status, body: { error: errorFields } };
 }
 
-function validationErrorResponse(issues: InputIssue[]): ErrorResponse {
-    return errorResponse(HTTP_BAD_REQUEST, "validation_error", VALIDATION_ERROR_MESSAGE, issues);
+function buildValidationErrorResponse(issues: InputIssue[]): ErrorResponse {
+    return buildErrorResponse(HTTP_BAD_REQUEST, {
+        code: "validation_error",
+        message: VALIDATION_ERROR_MESSAGE,
+        details: issues,
+    });
 }
 
 function toSchemaInputIssue(issue: ZodFastifySchemaValidationError): InputIssue {

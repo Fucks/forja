@@ -76,11 +76,15 @@ async function readApiError(response: Response): Promise<ApiError> {
     if (!errorBody.success) {
         return new ApiError({
             status: response.status,
-            message: `Falha na requisição (HTTP ${response.status}).`,
+            message: describeHttpFailure(response.status),
         });
     }
 
     return new ApiError({ status: response.status, ...errorBody.data.error });
+}
+
+function describeHttpFailure(status: number): string {
+    return `Falha na requisição (HTTP ${status}).`;
 }
 
 function parseJson(text: string): unknown {
