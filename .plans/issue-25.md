@@ -41,4 +41,4 @@
 - [x] 11. Validation: `loop_condition_unknown_port`
 - [x] 12. Validation: `empty_prompt`, `unknown_tool_profile`, `unknown_credential`, `checkPrompt` injection
 - [x] 13. Validation: issues are sorted with errors first
-- [ ] 14. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 14. Self-review checklist and feedback loops (typecheck, lint, test)

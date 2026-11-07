@@ -155,7 +155,7 @@ function findDepthFirstBackEdges(edges: FlowEdge[], startNodeIds: string[]): Flo
     const visit = (nodeId: string): void => {
         visitedNodeIds.add(nodeId);
         nodeIdsOnPath.add(nodeId);
-        for (const edge of edgesLeaving(edges, nodeId)) {
+        for (const edge of sortedEdgesLeaving(edges, nodeId)) {
             if (nodeIdsOnPath.has(edge.to.nodeId)) {
                 backEdges.push(edge);
             } else if (!visitedNodeIds.has(edge.to.nodeId)) {
@@ -174,7 +174,7 @@ function findDepthFirstBackEdges(edges: FlowEdge[], startNodeIds: string[]): Flo
     return backEdges;
 }
 
-function edgesLeaving(edges: FlowEdge[], nodeId: string): FlowEdge[] {
+function sortedEdgesLeaving(edges: FlowEdge[], nodeId: string): FlowEdge[] {
     return edges
         .filter((edge) => edge.from.nodeId === nodeId)
         .sort((a, b) => compareText(a.to.nodeId, b.to.nodeId) || compareText(a.id, b.id));
