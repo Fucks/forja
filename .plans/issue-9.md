@@ -12,7 +12,7 @@
 
 ## Tasks
 
-- [ ] 1. Add `.gitattributes` with LF normalization — `.gitattributes`
+- [x] 1. Add `.gitattributes` with LF normalization — `.gitattributes`
 - [ ] 2. Add the CI workflow — `.github/workflows/ci.yml`
 - [ ] 3. Confirm `npm ci` works with the versioned lock — `package-lock.json`
 - [ ] 4. Self-review checklist (section 5) and feedback loops (section 6)
