@@ -20,9 +20,9 @@
 
 ## Tasks
 
-- [ ] 1. `cn()` with clsx + tailwind-merge — `cn.ts`
-- [ ] 2. Test + implement Button (click, keyboard, variants/sizes, loading → disabled + aria-busy, asChild) — `button.tsx`, `control_styles.ts`
-- [ ] 3. Test + implement IconButton (aria-label + title from label) — `icon_button.tsx`
+- [x] 1. `cn()` with clsx + tailwind-merge — `cn.ts`
+- [x] 2. Test + implement Button (click, keyboard, variants/sizes, loading → disabled + aria-busy, asChild) — `button.tsx`, `control_styles.ts`
+- [x] 3. Test + implement IconButton (aria-label + title from label) — `icon_button.tsx`
 - [ ] 4. Test + implement Field (label, hint, error linked by aria-describedby) + context hook — `field.tsx`
 - [ ] 5. Test + implement Input and Textarea (forwardRef, invalid → aria-invalid, mono, Field integration) — `input.tsx`, `textarea.tsx`
 - [ ] 6. Test + implement Select (keyboard changes value, hints, placeholder, invalid) — `select.tsx`
