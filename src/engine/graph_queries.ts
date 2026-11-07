@@ -41,7 +41,7 @@ export function groupMembers(graph: FlowGraph, groupId: string): GroupMembers {
 }
 
 export function enclosingGroups(graph: FlowGraph, nodeId: string): FlowGroup[] {
-    const node = graph.nodes.find((candidate) => candidate.id === nodeId);
+    const node = findNode(graph, nodeId);
     if (!node) {
         return [];
     }
@@ -101,6 +101,14 @@ export function isItemCorrelatedEdge(graph: FlowGraph, edge: FlowEdge): boolean 
     return !targetGroups.includes(sourceMap) && !sourceGroups.includes(targetMap);
 }
 
+export function findNode(graph: FlowGraph, nodeId: string): FlowNode | undefined {
+    return graph.nodes.find((node) => node.id === nodeId);
+}
+
+export function findGroup(graph: FlowGraph, groupId: string | undefined): FlowGroup | undefined {
+    return graph.groups.find((group) => group.id === groupId);
+}
+
 export function isMapGroup(group: FlowGroup): group is MapGroup {
     return group.kind === "map";
 }
@@ -118,10 +126,6 @@ function groupAncestry(graph: FlowGraph, innermostGroupId: string | undefined): 
     }
 
     return ancestry;
-}
-
-function findGroup(graph: FlowGraph, groupId: string | undefined): FlowGroup | undefined {
-    return graph.groups.find((group) => group.id === groupId);
 }
 
 function findLoopBackEdges(graph: FlowGraph, groupId: string): FlowEdge[] {

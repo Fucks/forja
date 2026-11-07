@@ -1,4 +1,5 @@
 import {
+    findNode,
     groupBoundaryEdges,
     isLoopGroup,
     isNodeInsideGroup,
@@ -6,7 +7,6 @@ import {
     nodesInsideGroup,
     outgoingEdges,
 } from "@/engine/graph_queries.js";
-import { findNode } from "@/engine/validation_rules/graph_lookups.js";
 import {
     errorIssue,
     groupTarget,
@@ -54,12 +54,14 @@ export function findUnknownLoopConditionPaths(graph: FlowGraph): ValidationIssue
         .flatMap((loop) => findUnknownConditionPathsOfLoop(graph, loop));
 }
 
+type ReachabilityCheck = (fromNodeId: string, toNodeId: string) => boolean;
+
 function findCycles(graph: FlowGraph): CycleNodeIds[] {
     const reachableIdsByNodeId = new Map(
         graph.nodes.map((node) => [node.id, findReachableNodeIds(graph, node.id)]),
     );
-    const canReach = (fromId: string, toId: string) =>
-        reachableIdsByNodeId.get(fromId)?.has(toId) ?? false;
+    const canReach: ReachabilityCheck = (fromNodeId, toNodeId) =>
+        reachableIdsByNodeId.get(fromNodeId)?.has(toNodeId) ?? false;
     const nodeIdsOnCycles = [...reachableIdsByNodeId.keys()]
         .sort()
         .filter((nodeId) => canReach(nodeId, nodeId));
@@ -68,15 +70,23 @@ function findCycles(graph: FlowGraph): CycleNodeIds[] {
     for (const nodeId of nodeIdsOnCycles) {
         const isAlreadyInCycle = cycles.some((cycleNodeIds) => cycleNodeIds.includes(nodeId));
         if (!isAlreadyInCycle) {
-            const otherIdsInCycle = nodeIdsOnCycles.filter(
-                (otherId) =>
-                    otherId !== nodeId && canReach(nodeId, otherId) && canReach(otherId, nodeId),
-            );
-            cycles.push([nodeId, ...otherIdsInCycle]);
+            cycles.push(collectCycleOf(nodeId, nodeIdsOnCycles, canReach));
         }
     }
 
     return cycles;
+}
+
+function collectCycleOf(
+    nodeId: string,
+    nodeIdsOnCycles: string[],
+    canReach: ReachabilityCheck,
+): CycleNodeIds {
+    const otherIdsInCycle = nodeIdsOnCycles.filter(
+        (otherId) => otherId !== nodeId && canReach(nodeId, otherId) && canReach(otherId, nodeId),
+    );
+
+    return [nodeId, ...otherIdsInCycle];
 }
 
 function findReachableNodeIds(graph: FlowGraph, startNodeId: string): Set<string> {

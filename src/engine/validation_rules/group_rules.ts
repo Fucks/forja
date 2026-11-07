@@ -1,4 +1,5 @@
 import {
+    findGroup,
     groupAncestors,
     groupBoundaryEdges,
     isItemCorrelatedEdge,
@@ -59,7 +60,7 @@ function groupOverlapIssue(group: FlowGroup, problem: string): ValidationIssue {
 }
 
 function hasGroup(graph: FlowGraph, groupId: string): boolean {
-    return graph.groups.some((group) => group.id === groupId);
+    return findGroup(graph, groupId) !== undefined;
 }
 
 function checkMapListInput(graph: FlowGraph, map: MapGroup): ValidationIssue[] {

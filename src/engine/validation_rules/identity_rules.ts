@@ -15,12 +15,10 @@ interface IdentifiedElement {
 }
 
 export function findDuplicateIds(graph: FlowGraph): ValidationIssue[] {
-    const seenIds = new Set<string>();
-    const repeatedElements = identifiedElements(graph).filter((element) => {
-        const isRepeated = seenIds.has(element.id);
-        seenIds.add(element.id);
-        return isRepeated;
-    });
+    const elements = identifiedElements(graph);
+    const repeatedElements = elements.filter(
+        (element, index) => indexOfFirstWithId(elements, element.id) < index,
+    );
 
     return repeatedElements.map((element) =>
         errorIssue("duplicate_id", `O id "${element.id}" está repetido no fluxo.`, element.target),
@@ -47,4 +45,8 @@ function identifiedElements(graph: FlowGraph): IdentifiedElement[] {
         ...graph.edges.map((edge) => ({ id: edge.id, target: edgeTarget(edge.id) })),
         ...graph.groups.map((group) => ({ id: group.id, target: groupTarget(group.id) })),
     ];
+}
+
+function indexOfFirstWithId(elements: IdentifiedElement[], id: string): number {
+    return elements.findIndex((element) => element.id === id);
 }

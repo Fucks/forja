@@ -1,8 +1,5 @@
-import type { FlowEdge, FlowGraph, FlowNode, Port } from "@/shared/flow_graph.js";
-
-export function findNode(graph: FlowGraph, nodeId: string): FlowNode | undefined {
-    return graph.nodes.find((node) => node.id === nodeId);
-}
+import { findNode } from "@/engine/graph_queries.js";
+import type { FlowEdge, FlowGraph, Port } from "@/shared/flow_graph.js";
 
 export function findSourcePort(graph: FlowGraph, edge: FlowEdge): Port | undefined {
     const sourceNode = findNode(graph, edge.from.nodeId);
