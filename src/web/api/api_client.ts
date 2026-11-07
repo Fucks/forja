@@ -28,7 +28,7 @@ export class ApiError extends Error {
     }
 }
 
-export interface ApiClient {
+interface ApiClient {
     get<T>(path: string, schema?: z.ZodType<T>): Promise<T>;
     post<T>(path: string, body?: unknown, schema?: z.ZodType<T>): Promise<T>;
     put<T>(path: string, body?: unknown, schema?: z.ZodType<T>): Promise<T>;

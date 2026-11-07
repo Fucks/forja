@@ -32,4 +32,4 @@
 - [x] 8. Fake `EventSource` — `src/test/fakes/fake_event_source.ts`
 - [x] 9. Test + implement `useEventStream` delivers events and marks `connected` — `src/web/api/use_event_stream.ts`, `use_event_stream.test.tsx`
 - [x] 10. Test + implement reconnection with backoff (fake timers), cap 30 s, reset on open, close on unmount — same files
-- [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 11. Self-review checklist and feedback loops (typecheck, lint, test)
