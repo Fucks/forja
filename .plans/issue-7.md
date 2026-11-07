@@ -21,8 +21,8 @@
 - [x] 4. Test + implement: a throwing listener does not stop the others — same files
 - [x] 5. Test + implement: `since(lastId)` returns later envelopes; the 5001st discards the 1st — same files
 - [x] 6. `AppDeps` gains `events: EventBus`; `main.ts` creates the bus; update `app.test.ts` — `src/server/app.ts`, `src/server/main.ts`
-- [ ] 7. Test + implement: SSE stream sends `id`/`event`/`data` with `text/event-stream` — `src/server/events/events_routes.ts`, `events_routes.test.ts`
-- [ ] 8. Test + implement: replay by `Last-Event-ID` — same files
-- [ ] 9. Test + implement: `runId` and `projectId` filters — same files
-- [ ] 10. Test + implement: `: ping` heartbeat and listener removed on close — same files
+- [x] 7. Test + implement: SSE stream sends `id`/`event`/`data` with `text/event-stream` — `src/server/events/events_routes.ts`, `events_routes.test.ts`
+- [x] 8. Test + implement: replay by `Last-Event-ID` — same files
+- [x] 9. Test + implement: `runId` and `projectId` filters — same files
+- [x] 10. Test + implement: `: ping` heartbeat and listener removed on close — same files
 - [ ] 11. Self-review checklist and feedback loops
