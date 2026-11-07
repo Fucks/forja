@@ -4,6 +4,8 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { createFakeMatchMedia } from "@/test/fakes/fake_match_media.js";
 import { APP_ROUTES } from "@/web/app/routes.js";
+import { Topbar } from "@/web/app/topbar.js";
+import { THEME_STORAGE_KEY } from "@/web/styles/theme.js";
 
 const ROUTE_TITLES = [
     { path: "/", title: "Projetos" },
@@ -133,6 +135,50 @@ describe("AppShell", () => {
         expect(
             screen.queryByRole("button", { name: "Expandir barra lateral" }),
         ).not.toBeInTheDocument();
+    });
+
+    it("shows the active project in the topbar", () => {
+        renderAppAt("/projects/forja/board");
+
+        expect(within(screen.getByRole("banner")).getByText("forja")).toBeInTheDocument();
+    });
+});
+
+describe("Topbar", () => {
+    beforeEach(() => {
+        localStorage.clear();
+        delete document.documentElement.dataset.theme;
+    });
+
+    it("shows that the live connection is on", () => {
+        render(<Topbar projectId="forja" connected />);
+
+        expect(screen.getByText("Ao vivo")).toBeInTheDocument();
+    });
+
+    it("shows that the live connection is off", () => {
+        render(<Topbar projectId="forja" connected={false} />);
+
+        expect(screen.getByText("Desconectado")).toBeInTheDocument();
+    });
+
+    it("switches to the light theme and remembers it", async () => {
+        const user = userEvent.setup();
+        render(<Topbar projectId={undefined} connected={false} />);
+
+        await user.click(screen.getByRole("button", { name: "Usar tema claro" }));
+
+        expect(document.documentElement.dataset.theme).toBe("light");
+        expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
+        expect(screen.getByRole("button", { name: "Usar tema escuro" })).toBeInTheDocument();
+    });
+
+    it("starts from the stored theme", () => {
+        localStorage.setItem(THEME_STORAGE_KEY, "light");
+
+        render(<Topbar projectId={undefined} connected={false} />);
+
+        expect(screen.getByRole("button", { name: "Usar tema escuro" })).toBeInTheDocument();
     });
 });
 
