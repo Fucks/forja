@@ -8,6 +8,7 @@ import {
     buildControlClassName,
 } from "@/web/components/ui/control_styles.js";
 import { useFieldControlAttributes } from "@/web/components/ui/field.js";
+import { findOptionByValue } from "@/web/components/ui/find_option_by_value.js";
 
 interface SelectOption<T extends string> {
     value: T;
@@ -33,7 +34,7 @@ export function Select<T extends string>({
     const field = useFieldControlAttributes({ id: undefined, describedBy: undefined, invalid });
 
     function selectOptionByValue(selectedValue: string): void {
-        const selectedOption = options.find((option) => option.value === selectedValue);
+        const selectedOption = findOptionByValue(options, selectedValue);
         if (selectedOption) {
             onChange(selectedOption.value);
         }

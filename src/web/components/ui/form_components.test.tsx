@@ -7,7 +7,10 @@ import { Button } from "@/web/components/ui/button.js";
 import { Field } from "@/web/components/ui/field.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { Input } from "@/web/components/ui/input.js";
+import { SegmentedControl } from "@/web/components/ui/segmented_control.js";
 import { Select } from "@/web/components/ui/select.js";
+import { Slider } from "@/web/components/ui/slider.js";
+import { Switch } from "@/web/components/ui/switch.js";
 import { Textarea } from "@/web/components/ui/textarea.js";
 
 const MODEL_OPTIONS = [
@@ -16,8 +19,14 @@ const MODEL_OPTIONS = [
     { value: "haiku", label: "Haiku" },
 ];
 
+const EFFORT_OPTIONS = [
+    { value: "low", label: "Baixo" },
+    { value: "medium", label: "Médio" },
+    { value: "high", label: "Alto" },
+];
+
 beforeAll(() => {
-    installRadixPointerPolyfills();
+    installRadixJsdomPolyfills();
 });
 
 describe("Button", () => {
@@ -209,8 +218,94 @@ describe("Select", () => {
     });
 });
 
-function installRadixPointerPolyfills(): void {
+describe("Switch", () => {
+    it("turns on when clicked", async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(<Switch checked={false} onChange={onChange} label="Notificar" />);
+
+        await user.click(screen.getByRole("switch", { name: "Notificar" }));
+
+        expect(onChange).toHaveBeenCalledWith(true);
+    });
+
+    it("turns off with the keyboard", async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(<Switch checked onChange={onChange} label="Notificar" />);
+
+        await user.tab();
+        await user.keyboard(" ");
+
+        expect(screen.getByRole("switch", { name: "Notificar" })).toBeChecked();
+        expect(onChange).toHaveBeenCalledWith(false);
+    });
+});
+
+describe("Slider", () => {
+    it("moves by one step with the arrow keys", async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <Slider value={3} min={1} max={10} step={1} onChange={onChange} label="Paralelismo" />,
+        );
+
+        await user.tab();
+        await user.keyboard("{ArrowRight}");
+
+        expect(screen.getByRole("slider", { name: "Paralelismo" })).toHaveFocus();
+        expect(onChange).toHaveBeenCalledWith(4);
+    });
+});
+
+describe("SegmentedControl", () => {
+    it("moves between options with the arrow keys and selects with Space", async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <SegmentedControl
+                value="medium"
+                onChange={onChange}
+                options={EFFORT_OPTIONS}
+                label="Esforço"
+            />,
+        );
+
+        await user.tab();
+        await user.keyboard("{ArrowRight}");
+        await user.keyboard(" ");
+
+        expect(screen.getByRole("radiogroup", { name: "Esforço" })).toBeInTheDocument();
+        expect(screen.getByRole("radio", { name: "Alto" })).toHaveFocus();
+        expect(onChange).toHaveBeenCalledWith("high");
+    });
+
+    it("keeps the current option when it is clicked again", async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <SegmentedControl
+                value="medium"
+                onChange={onChange}
+                options={EFFORT_OPTIONS}
+                label="Esforço"
+            />,
+        );
+
+        await user.click(screen.getByRole("radio", { name: "Médio" }));
+
+        expect(screen.getByRole("radio", { name: "Médio" })).toBeChecked();
+        expect(onChange).not.toHaveBeenCalled();
+    });
+});
+
+function installRadixJsdomPolyfills(): void {
     Element.prototype.hasPointerCapture = () => false;
     Element.prototype.releasePointerCapture = () => undefined;
     Element.prototype.scrollIntoView = () => undefined;
+    globalThis.ResizeObserver = class {
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+    };
 }
