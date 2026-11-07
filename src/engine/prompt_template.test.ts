@@ -150,7 +150,7 @@ describe("checkPromptVariables", () => {
             {
                 level: "error",
                 code: "unknown_variable",
-                message: expect.stringContaining("inputs.plano"),
+                message: 'Variável desconhecida no prompt de "Dev": {{inputs.plano}}',
                 target: { kind: "node", id: "dev" },
             },
         ]);
