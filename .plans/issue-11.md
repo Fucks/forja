@@ -15,9 +15,9 @@
 
 - [x] 1. Color, status, typography, radius, shadow and motion tokens — `src/web/styles/tokens.css`
 - [x] 2. Tailwind `@theme` mapping, body base, `ember` keyframes and reduced motion — `src/web/styles/global.css`
-- [ ] 3. Test + implement: `readStoredTheme` defaults to `dark` — `src/web/styles/theme.ts`, `theme.test.ts`
-- [ ] 4. Test + implement: invalid stored value falls back to `dark`; stored `light` is read
-- [ ] 5. Test + implement: `applyTheme` sets `data-theme` and stores the theme
+- [x] 3. Test + implement: `readStoredTheme` defaults to `dark` — `src/web/styles/theme.ts`, `theme.test.ts`
+- [x] 4. Test + implement: invalid stored value falls back to `dark`; stored `light` is read
+- [x] 5. Test + implement: `applyTheme` sets `data-theme` and stores the theme
 - [ ] 6. Import fonts and apply the stored theme on boot — `src/web/main.tsx`
 - [ ] 7. Verify the build emits the token utilities and fonts locally; compute AA contrast values for the PR
 - [ ] 8. Self-review checklist and feedback loops (typecheck, lint, test)
