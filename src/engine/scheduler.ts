@@ -2,6 +2,7 @@ import { AgentStartPacer } from "@/engine/agent_start_pacer.js";
 import { FlowPlan } from "@/engine/flow_plan.js";
 import type { MapGroupState } from "@/engine/map_group.js";
 import { type FinishedMapItem, MapGroupCoordinator } from "@/engine/map_group_coordinator.js";
+import { LoopGroupCoordinator } from "@/engine/loop_group_coordinator.js";
 import { type InputResolution, resolveInputs } from "@/engine/node_inputs.js";
 import { NodeRunRegistry } from "@/engine/node_run_registry.js";
 import {
@@ -41,6 +42,7 @@ export function createScheduler(
 class DagScheduler implements Scheduler {
     private readonly nodeRuns: NodeRunRegistry;
     private readonly mapGroups: MapGroupCoordinator;
+    private readonly loops: LoopGroupCoordinator;
     private run: RunState;
     private items: WorkItemRef[] | undefined;
     private readonly agentStarts: AgentStartPacer;
@@ -59,6 +61,13 @@ class DagScheduler implements Scheduler {
             savedStates: state.mapGroups ?? [],
             createPendingNodeRuns: (nodeIds, itemId) => this.createPendingNodeRuns(nodeIds, itemId),
             emit: (command) => this.outbox.push(command),
+        });
+        this.loops = new LoopGroupCoordinator({
+            plan,
+            nodeRuns: this.nodeRuns,
+            savedStates: state.loopInstances ?? [],
+            createPendingNodeRuns: (nodeIds, itemId) => this.createPendingNodeRuns(nodeIds, itemId),
+            isRunStopping: () => this.stopOutcome !== undefined,
         });
         this.run = state.run;
         this.items = state.items;
@@ -99,6 +108,7 @@ class DagScheduler implements Scheduler {
             nodeRuns: this.nodeRuns.all(),
             items: this.items,
             mapGroups: this.mapGroups.states(),
+            loopInstances: this.loops.states(),
             lastAgentStartAt: this.agentStarts.lastAgentStartAt,
             stopOutcome: this.stopOutcome,
         });
@@ -194,13 +204,14 @@ class DagScheduler implements Scheduler {
     }
 
     private createPendingNodeRuns(nodeIds: string[], workItemId: string | undefined): void {
+        this.loops.startLoopsOf(nodeIds, workItemId);
         for (const nodeId of nodeIds) {
             this.changeNodeRun({
                 id: this.options.newId(),
                 runId: this.run.id,
                 nodeId,
                 workItemId,
-                iteration: 0,
+                iteration: this.loops.iterationOf(nodeId, workItemId),
                 attempt: 1,
                 groupPath: [],
                 status: "PENDING",
@@ -213,25 +224,27 @@ class DagScheduler implements Scheduler {
             return;
         }
 
-        this.moveItemsThroughMaps(now);
+        this.moveItemsThroughGroups(now);
         this.startQueuedNodeRuns(now);
         this.scheduleWakeupForWaitingAgents(now);
         this.finishRunWhenSettled(now);
     }
 
-    // Repeats until stable: a finished item frees a slot and may feed the next map, whose new
-    // NodeRuns may be skipped right away and finish their item too.
-    private moveItemsThroughMaps(at: Date): void {
+    // Repeats until stable: a finished loop iteration may start the next one or release the loop's
+    // exits; a finished item frees a slot and may feed the next map, whose new NodeRuns may be
+    // skipped right away and finish their item too.
+    private moveItemsThroughGroups(at: Date): void {
         let hasProgress = true;
         while (hasProgress) {
             this.admitQueuedMapItems();
             this.queueReadyNodeRuns(at);
+            const hasFinishedIterations = this.loops.finishSettledIterations();
             const finishedItems = this.mapGroups.finishSettledItems();
             for (const finished of finishedItems) {
                 this.applyFinishedItem(finished, at);
             }
             const hasReceivedItems = this.feedCorrelatedMaps();
-            hasProgress = finishedItems.length > 0 || hasReceivedItems;
+            hasProgress = hasFinishedIterations || finishedItems.length > 0 || hasReceivedItems;
         }
     }
 
@@ -359,6 +372,7 @@ class DagScheduler implements Scheduler {
                 scopeOf: (nodeId) => this.plan.scopeOf(nodeId),
                 findNodeRun: (nodeId, workItemId) => this.nodeRuns.find(nodeId, workItemId),
                 mapGroupOf: (nodeId) => this.mapGroups.mapGroupOf(nodeId),
+                loops: this.loops,
             },
         );
     }

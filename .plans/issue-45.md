@@ -29,10 +29,10 @@
 - [x] 3. Test + implement `decideAfterIteration` (exit, repeat with carry, exhausted) — `loop_group.ts`
 - [x] 4. Condition paths by slug: `buildLoopFlow` until `revisar.approved`, loop validation knows slugs — `flow_graph_factory.ts`, `loop_rules.ts`, tests
 - [x] 5. `exhausted` port: `LOOP_EXHAUSTED_PORT`, FlowEdge comment, validation virtual port — `flow_graph.ts`, `graph_lookups.ts`, `graph_validation.test.ts`
-- [ ] 6. Test (scheduler): approval on iteration 2 ends the loop with 2 iterations and goes to the PR — scheduler flow factory + loop coordinator + registry + inputs
-- [ ] 7. Test (scheduler): never approved with cap 3 → 3 iterations, item leaves through `exhausted`, PR skipped
-- [ ] 8. Test (scheduler): `inputs.notes` of iteration 2 holds the Reviewer notes of iteration 1
-- [ ] 9. Test (scheduler): loop inside a map with 2 items keeps independent iterations per item
-- [ ] 10. Test (scheduler): unrecoverable failure inside the loop fails the item
-- [ ] 11. Test (scheduler): loop state survives snapshot/restore; cancel ends loop instances
+- [x] 6. Test (scheduler): approval on iteration 2 ends the loop with 2 iterations and goes to the PR — scheduler flow factory + loop coordinator + registry + inputs
+- [x] 7. Test (scheduler): never approved with cap 3 → 3 iterations, item leaves through `exhausted`, PR skipped
+- [x] 8. Test (scheduler): `inputs.notes` of iteration 2 holds the Reviewer notes of iteration 1
+- [x] 9. Test (scheduler): loop inside a map with 2 items keeps independent iterations per item
+- [x] 10. Test (scheduler): unrecoverable failure inside the loop fails the item
+- [x] 11. Test (scheduler): loop state survives snapshot/restore; cancel ends loop instances
 - [ ] 12. Self-review checklist and feedback loops (typecheck, lint, test)

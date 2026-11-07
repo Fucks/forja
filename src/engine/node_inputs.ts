@@ -1,4 +1,5 @@
-import { incomingEdges } from "@/engine/graph_queries.js";
+import { incomingEdges, isLoopExhaustedEdge } from "@/engine/graph_queries.js";
+import type { LoopInstanceState } from "@/engine/loop_group.js";
 import { isMapDone, itemIdsWithStatus, type MapGroupState } from "@/engine/map_group.js";
 import { NODE_RUN_TERMINAL, type NodeRunState } from "@/engine/node_run_state.js";
 import {
@@ -18,6 +19,15 @@ export interface UpstreamView {
     findNodeRun(nodeId: string, workItemId: string | undefined): NodeRunState | undefined;
     // The innermost map around the node.
     mapGroupOf(nodeId: string): MapGroupState | undefined;
+    loops: LoopView;
+}
+
+export interface LoopView {
+    isBackEdge(edge: FlowEdge): boolean;
+    find(groupId: string, workItemId: string | undefined): LoopInstanceState | undefined;
+    // The instance of the innermost loop around the node.
+    loopOf(nodeId: string, workItemId: string | undefined): LoopInstanceState | undefined;
+    loopLeftBy(edge: FlowEdge, workItemId: string | undefined): LoopInstanceState | undefined;
 }
 
 export interface InputTarget {
@@ -36,7 +46,11 @@ export function resolveInputs(
     target: InputTarget,
     upstream: UpstreamView,
 ): InputResolution {
-    const edgeValues = incomingEdges(graph, target.node.id).map((edge) => ({
+    // A back edge only draws the cycle of a loop: values return through the carry ports.
+    const forwardEdges = incomingEdges(graph, target.node.id).filter(
+        (edge) => !upstream.loops.isBackEdge(edge),
+    );
+    const edgeValues = forwardEdges.map((edge) => ({
         port: edge.to.port,
         value: resolveEdgeValue(graph, edge, target, upstream),
     }));
@@ -44,7 +58,7 @@ export function resolveInputs(
         return { kind: "waiting" };
     }
 
-    const inputs: Record<string, unknown> = {};
+    const inputs: Record<string, unknown> = { ...carriedInputsOf(target, upstream) };
     for (const { port, value } of edgeValues) {
         if (value.state !== "present") {
             return { kind: "skip" };
@@ -61,6 +75,10 @@ function resolveEdgeValue(
     target: InputTarget,
     upstream: UpstreamView,
 ): EdgeValue {
+    if (isLoopExhaustedEdge(graph, edge)) {
+        return exhaustedLoopValue(edge, target, upstream);
+    }
+
     const sourceMap = upstream.mapGroupOf(edge.from.nodeId);
     const targetMapGroupId = upstream.mapGroupOf(target.node.id)?.groupId;
     if (!sourceMap || sourceMap.groupId === targetMapGroupId) {
@@ -73,7 +91,7 @@ function resolveEdgeValue(
         return PENDING;
     }
 
-    return outputOf(upstream.findNodeRun(edge.from.nodeId, target.workItemId), edge.from.port);
+    return sourceOutputOf(edge, target.workItemId, upstream);
 }
 
 // One value per item that succeeded in the map, in the order of the run's item list.
@@ -89,7 +107,7 @@ function collectMapOutput(
     const succeededItemIds = new Set(itemIdsWithStatus(sourceMap, "succeeded"));
     const collectedValues = (upstream.items ?? [])
         .filter((item) => succeededItemIds.has(item.id))
-        .map((item) => outputOf(upstream.findNodeRun(edge.from.nodeId, item.id), edge.from.port))
+        .map((item) => sourceOutputOf(edge, item.id, upstream))
         .filter(isPresent)
         .map((present) => present.value);
     if (collectedValues.length === 0) {
@@ -107,15 +125,52 @@ function resolveEdgeInsideScope(
 ): EdgeValue {
     const sourceNodeId = edge.from.nodeId;
     if (upstream.scopeOf(sourceNodeId) === "item") {
-        return outputOf(upstream.findNodeRun(sourceNodeId, target.workItemId), edge.from.port);
+        return sourceOutputOf(edge, target.workItemId, upstream);
     }
 
-    const sourceValue = outputOf(upstream.findNodeRun(sourceNodeId, undefined), edge.from.port);
+    const sourceValue = sourceOutputOf(edge, undefined, upstream);
     if (sourceValue.state !== "present" || !splitsListIntoItems(graph, edge)) {
         return sourceValue;
     }
 
     return currentItemOf(target, upstream);
+}
+
+function carriedInputsOf(target: InputTarget, upstream: UpstreamView): Record<string, unknown> {
+    return upstream.loops.loopOf(target.node.id, target.workItemId)?.carry ?? {};
+}
+
+function exhaustedLoopValue(
+    edge: FlowEdge,
+    target: InputTarget,
+    upstream: UpstreamView,
+): EdgeValue {
+    const loop = upstream.loops.find(edge.from.nodeId, target.workItemId);
+    if (!loop || loop.status === "running") {
+        return PENDING;
+    }
+    if (loop.status !== "exhausted") {
+        return ABSENT;
+    }
+
+    return currentItemOf(target, upstream);
+}
+
+// Values leave a loop only once it exits: an exhausted, failed or canceled loop sends nothing.
+function sourceOutputOf(
+    edge: FlowEdge,
+    workItemId: string | undefined,
+    upstream: UpstreamView,
+): EdgeValue {
+    const leftLoop = upstream.loops.loopLeftBy(edge, workItemId);
+    if (leftLoop?.status === "running") {
+        return PENDING;
+    }
+    if (leftLoop && leftLoop.status !== "succeeded") {
+        return ABSENT;
+    }
+
+    return outputOf(upstream.findNodeRun(edge.from.nodeId, workItemId), edge.from.port);
 }
 
 function currentItemOf(target: InputTarget, upstream: UpstreamView): EdgeValue {

@@ -1,7 +1,9 @@
 import type { NodeRunError } from "@/engine/node_run_state.js";
 import type { Condition } from "@/shared/conditions.js";
+import { buildLoopFlowWithExits } from "@/test/factories/flow_graph_factory.js";
 import {
     buildConditionFlow,
+    buildLoopBesideAgentFlow,
     buildLinearAgentFlow,
     buildMappedLinearFlow,
     buildReportedCanonicalFlow,
@@ -12,6 +14,8 @@ import {
 import {
     createSchedulerHarness,
     DEFAULT_NODE_DURATION_MS,
+    type NodeBehavior,
+    type NodeOutcome,
     type NodeScript,
     type SchedulerHarness,
     type SchedulerHarnessOptions,
@@ -19,6 +23,8 @@ import {
 
 const APPROVED: Condition = { op: "eq", path: "approved", value: true };
 const RUNTIME_ERROR: NodeRunError = { kind: "runtime", message: "boom" };
+const FAILED_FOR_GOOD: NodeOutcome = { kind: "fail", error: RUNTIME_ERROR };
+const NEVER = Number.POSITIVE_INFINITY;
 const FIVE_ITEMS = ["1", "2", "3", "4", "5"];
 const DEV_DURATIONS_MS: Record<string, number> = {
     "1": 30_000,
@@ -482,6 +488,186 @@ describe("scheduler: map groups", () => {
         expect(harness.run.status).toBe("SUCCEEDED");
     });
 });
+
+describe("scheduler: loop groups", () => {
+    it("ends the loop on the iteration the Reviewer approves and goes on to the PR", () => {
+        const harness = createLoopHarness({ review: reviewerApprovingOnIteration(2) });
+
+        harness.start([]);
+        harness.runToCompletion();
+
+        expect(iterationsOf(harness, "review", "1")).toEqual([1, 2]);
+        expect(harness.finalStatusOf("open_pr", "1")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("needs_human", "1")).toBe("SKIPPED");
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("runs every node of the loop once per iteration, in the same item", () => {
+        const harness = createLoopHarness({ review: reviewerApprovingOnIteration(2) });
+
+        harness.start([]);
+        harness.runToCompletion();
+
+        expect(iterationsOf(harness, "dev", "1")).toEqual([1, 2]);
+        expect(iterationsOf(harness, "tests", "1")).toEqual([1, 2]);
+        expect(iterationsOf(harness, "open_pr", "1")).toEqual([0]);
+    });
+
+    it("hands the PR the outputs of the last iteration", () => {
+        const harness = createLoopHarness({ review: reviewerApprovingOnIteration(2) });
+
+        harness.start([]);
+        harness.runToCompletion();
+
+        expect(harness.startCommandsOf("open_pr")[0]?.inputs.body).toBe("revisão 2");
+    });
+
+    it("stops at maxIterations without approval and sends the item to needs_human", () => {
+        const harness = createLoopHarness({ review: reviewerApprovingOnIteration(NEVER) });
+
+        harness.start([]);
+        harness.runToCompletion();
+
+        expect(iterationsOf(harness, "review", "1")).toEqual([1, 2, 3]);
+        expect(harness.finalStatusOf("open_pr", "1")).toBe("SKIPPED");
+        expect(harness.startCommandsOf("needs_human")[0]?.inputs.item).toEqual({ id: "1" });
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("gives the Developer of iteration 2 the notes the Reviewer wrote in iteration 1", () => {
+        const harness = createLoopHarness({ review: reviewerApprovingOnIteration(2) });
+
+        harness.start([]);
+        harness.runToCompletion();
+
+        const notesByIteration = harness
+            .startCommandsOf("dev")
+            .map((command) => [command.nodeRun.iteration, command.inputs.notes]);
+        expect(notesByIteration).toEqual([
+            [1, undefined],
+            [2, "notas da iteração 1"],
+        ]);
+    });
+
+    it("keeps the iterations of each item of the enclosing map independent", () => {
+        const harness = createLoopHarness({ review: reviewerApprovingByItem({ "1": 1, "2": 3 }) }, [
+            "1",
+            "2",
+        ]);
+
+        harness.start([]);
+        harness.runToCompletion();
+
+        expect(iterationsOf(harness, "review", "1")).toEqual([1]);
+        expect(iterationsOf(harness, "review", "2")).toEqual([1, 2, 3]);
+        expect(harness.finalStatusOf("open_pr", "1")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("open_pr", "2")).toBe("SUCCEEDED");
+    });
+
+    it("fails the item when a node inside the loop fails for good", () => {
+        const harness = createLoopHarness(
+            { review: reviewerApprovingOnIteration(NEVER), tests: testsFailingOn("1", 2) },
+            ["1", "2"],
+        );
+
+        harness.start([]);
+        harness.runToCompletion();
+
+        expect(iterationsOf(harness, "tests", "1")).toEqual([1, 2]);
+        expect(harness.finalStatusOf("review", "1")).toBe("SKIPPED");
+        expect(harness.finalStatusOf("needs_human", "1")).toBe("SKIPPED");
+        expect(harness.finalStatusOf("needs_human", "2")).toBe("SUCCEEDED");
+        expect(harness.run.failedItems).toEqual(["1"]);
+    });
+
+    it("continues the loop where it stopped when restored from a snapshot", () => {
+        const harness = createLoopHarness({ review: reviewerApprovingOnIteration(2) });
+
+        harness.start([]);
+        harness.advance(3_500);
+        harness.restartFromSnapshot();
+        harness.runToCompletion();
+
+        expect(iterationsOf(harness, "review", "1")).toEqual([1, 2]);
+        expect(harness.finalStatusOf("open_pr", "1")).toBe("SUCCEEDED");
+    });
+
+    it("starts no new iteration once the run is failing", () => {
+        const harness = createSchedulerHarness({
+            graph: buildLoopBesideAgentFlow(),
+            scripts: { c: () => ({ durationMs: 1_500, outcome: FAILED_FOR_GOOD }) },
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(iterationsOf(harness, "b", "1")).toEqual([1]);
+        expect(harness.finalStatusOf("b", "1")).toBe("SUCCEEDED");
+        expect(harness.snapshot().loopInstances?.map((loop) => loop.status)).toEqual(["canceled"]);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
+    it("cancels the loop together with the run", () => {
+        const harness = createLoopHarness({ review: reviewerApprovingOnIteration(NEVER) });
+
+        harness.start([]);
+        harness.advance(3_500);
+        harness.requestCancel();
+        harness.runToCompletion();
+
+        expect(iterationsOf(harness, "review", "1")).toEqual([1]);
+        expect(harness.snapshot().loopInstances?.map((loop) => loop.status)).toEqual(["canceled"]);
+        expect(harness.run.status).toBe("CANCELED");
+    });
+});
+
+function createLoopHarness(
+    scripts: Record<string, NodeScript>,
+    itemIds: string[] = ["1"],
+): SchedulerHarness {
+    return createSchedulerHarness({
+        graph: buildLoopFlowWithExits(),
+        scripts: { source: sourceReturning(itemIds), ...scripts },
+    });
+}
+
+function reviewerApprovingOnIteration(approvingIteration: number): NodeScript {
+    return ({ nodeRun }) => reviewOutcome(nodeRun.iteration, approvingIteration);
+}
+
+function reviewerApprovingByItem(approvingIterationByItem: Record<string, number>): NodeScript {
+    return ({ nodeRun }) =>
+        reviewOutcome(
+            nodeRun.iteration,
+            approvingIterationByItem[nodeRun.workItemId ?? ""] ?? NEVER,
+        );
+}
+
+function reviewOutcome(iteration: number, approvingIteration: number): Partial<NodeBehavior> {
+    const outputs = {
+        summary: `revisão ${iteration}`,
+        approved: iteration >= approvingIteration,
+        notes: `notas da iteração ${iteration}`,
+    };
+
+    return { outcome: { kind: "succeed", outputs } };
+}
+
+function testsFailingOn(failingItemId: string, failingIteration: number): NodeScript {
+    return ({ nodeRun }) => {
+        const isFailing =
+            nodeRun.workItemId === failingItemId && nodeRun.iteration === failingIteration;
+
+        return isFailing ? { outcome: { kind: "fail", error: RUNTIME_ERROR } } : {};
+    };
+}
+
+function iterationsOf(harness: SchedulerHarness, nodeId: string, itemId: string): number[] {
+    return harness
+        .startCommandsOf(nodeId)
+        .filter((command) => command.nodeRun.workItemId === itemId)
+        .map((command) => command.nodeRun.iteration);
+}
 
 function createCanonicalHarness(options: Partial<SchedulerHarnessOptions> = {}): SchedulerHarness {
     return createSchedulerHarness({
