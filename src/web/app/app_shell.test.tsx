@@ -26,6 +26,7 @@ const ROUTE_TITLES = [
     { path: "/settings/tool-profiles", title: "Perfis de ferramentas" },
     { path: "/settings/diagnostics", title: "Diagnóstico" },
     { path: "/styleguide", title: "Styleguide" },
+    { path: "/styleguide/canvas", title: "Styleguide do canvas" },
 ];
 
 describe("AppShell", () => {

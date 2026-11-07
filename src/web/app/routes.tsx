@@ -16,6 +16,7 @@ import { RunsPage } from "@/web/app/runs/runs_page.js";
 import { CredentialsPage } from "@/web/app/settings/credentials_page.js";
 import { DiagnosticsPage } from "@/web/app/settings/diagnostics_page.js";
 import { ToolProfilesPage } from "@/web/app/settings/tool_profiles_page.js";
+import { StyleguideCanvasPage } from "@/web/app/styleguide_canvas_page.js";
 import { StyleguidePage } from "@/web/app/styleguide_page.js";
 import { TriggersPage } from "@/web/app/triggers/triggers_page.js";
 import { UsagePage } from "@/web/app/usage/usage_page.js";
@@ -48,6 +49,7 @@ export const APP_ROUTES: RouteObject[] = [
             { path: "projects/:projectId", children: PROJECT_ROUTES },
             { path: "settings", children: GLOBAL_SETTINGS_ROUTES },
             { path: "styleguide", element: <StyleguidePage /> },
+            { path: "styleguide/canvas", element: <StyleguideCanvasPage /> },
             { path: "*", element: <NotFoundPage /> },
         ],
     },

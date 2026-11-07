@@ -48,11 +48,13 @@ export function GroupFrame({
                 outlineClasses({ selected, invalid }),
             )}
         >
-            <div className="flex items-center gap-2 px-3 py-2 text-xs">
-                <KindIcon size={KIND_ICON_SIZE_PX} aria-hidden="true" className="text-steel" />
-                <span className="font-medium text-text">{label}</span>
-                <span className="font-mono text-muted">{configLabel}</span>
-                {invalid && <InvalidMarker />}
+            <div className="flex flex-col gap-1 px-3 py-2 text-xs">
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                    <KindIcon size={KIND_ICON_SIZE_PX} aria-hidden="true" className="text-steel" />
+                    <span className="font-medium text-text">{label}</span>
+                    <span className="font-mono text-muted">{configLabel}</span>
+                    {invalid && <InvalidMarker />}
+                </div>
                 {progress && <span className="text-muted">{formatGroupProgress(progress)}</span>}
             </div>
         </div>

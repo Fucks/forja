@@ -28,6 +28,6 @@
 - [x] 5. Test + `BaseNode` RUNNING ember and selected/invalid outline — `base_node.tsx`
 - [x] 6. Test + `GroupFrame` with configLabel and progress counters — `group_frame.tsx`, `group_frame.test.tsx`
 - [x] 7. Test + `FlowEdge` bezier with flowing/invalid states — `flow_edge.tsx`, `flow_edge.test.tsx`
-- [ ] 8. `canvas_theme.css`: dotted background, controls, minimap, handles, edge styles and animation
-- [ ] 9. Test + `/styleguide/canvas` page with every state, route in `routes.tsx` — `styleguide_canvas_page.tsx`, `app_shell.test.tsx`
+- [x] 8. `canvas_theme.css`: dotted background, controls, minimap, handles, edge styles and animation
+- [x] 9. Test + `/styleguide/canvas` page with every state, route in `routes.tsx` — `styleguide_canvas_page.tsx`, `app_shell.test.tsx`
 - [ ] 10. Self-review checklist (section 5) and feedback loops (section 6)
