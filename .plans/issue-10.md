@@ -29,7 +29,7 @@
 - [x] 5. Test + implement `apiClient` success (prefix, JSON body, schema) — `src/web/api/api_client.ts`, `api_client.test.ts`
 - [x] 6. Test + implement `ApiError` for error with body, without body, and schema mismatch — same files
 - [x] 7. `queryClient` and `QueryClientProvider` in `main.tsx` — `src/web/api/query_client.ts`, `src/web/main.tsx`
-- [ ] 8. Fake `EventSource` — `src/test/fakes/fake_event_source.ts`
-- [ ] 9. Test + implement `useEventStream` delivers events and marks `connected` — `src/web/api/use_event_stream.ts`, `use_event_stream.test.tsx`
-- [ ] 10. Test + implement reconnection with backoff (fake timers), cap 30 s, reset on open, close on unmount — same files
+- [x] 8. Fake `EventSource` — `src/test/fakes/fake_event_source.ts`
+- [x] 9. Test + implement `useEventStream` delivers events and marks `connected` — `src/web/api/use_event_stream.ts`, `use_event_stream.test.tsx`
+- [x] 10. Test + implement reconnection with backoff (fake timers), cap 30 s, reset on open, close on unmount — same files
 - [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)
