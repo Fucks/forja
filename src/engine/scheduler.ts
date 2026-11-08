@@ -171,12 +171,7 @@ class DagScheduler implements Scheduler {
         const status = failureKind === "canceled" ? "CANCELED" : "FAILED";
         const failed = transitionNodeRun(nodeRun, status, at, { error: recordedError });
         this.changeNodeRun(failed);
-        const retryDelayMs = this.findRetryDelayMs(failed, failureKind);
-        if (retryDelayMs === undefined) {
-            this.giveUpOn(failed, at);
-        } else {
-            this.queueNextAttempt(failed, new Date(at.getTime() + retryDelayMs));
-        }
+        this.retryOrGiveUp(failed, failureKind, at);
 
         this.advance(at);
     }
@@ -191,6 +186,16 @@ class DagScheduler implements Scheduler {
         }
 
         return error;
+    }
+
+    private retryOrGiveUp(failed: NodeRunState, failureKind: FailureKind, at: Date): void {
+        const retryDelayMs = this.findRetryDelayMs(failed, failureKind);
+        if (retryDelayMs === undefined) {
+            this.giveUpOn(failed, at);
+            return;
+        }
+
+        this.queueNextAttempt(failed, new Date(at.getTime() + retryDelayMs));
     }
 
     // Undefined when the NodeRun fails for good.
@@ -274,16 +279,20 @@ class DagScheduler implements Scheduler {
         this.advance(at);
     }
 
-    // Only the latest attempt can be retried: older ones were already retried.
+    // The trigger has nothing to execute, so there is nothing to retry.
     private canRetry(nodeRun: NodeRunState): boolean {
-        const latest = this.nodeRuns.find(nodeRun.nodeId, nodeRun.workItemId);
-        if (latest?.id !== nodeRun.id || this.plan.isTrigger(nodeRun.nodeId)) {
+        if (!this.isLatestAttempt(nodeRun) || this.plan.isTrigger(nodeRun.nodeId)) {
             return false;
         }
 
         const isStopping = this.stopOutcome !== undefined;
 
         return canRetryOnRequest(nodeRun.status, { status: this.run.status, isStopping });
+    }
+
+    // Older attempts were already retried.
+    private isLatestAttempt(nodeRun: NodeRunState): boolean {
+        return this.nodeRuns.find(nodeRun.nodeId, nodeRun.workItemId)?.id === nodeRun.id;
     }
 
     private reopenRunIfFinished(at: Date): void {
@@ -546,7 +555,7 @@ class DagScheduler implements Scheduler {
 
     private queuePositionOf(nodeRun: NodeRunState): QueuePosition {
         return {
-            queuedAtMs: nodeRun.queuedAt?.getTime() ?? 0,
+            queuedAtMs: queuedAtMsOf(nodeRun),
             dagPosition: this.plan.dagPositionOf(nodeRun.nodeId),
             workItemId: nodeRun.workItemId,
         };
@@ -556,7 +565,7 @@ class DagScheduler implements Scheduler {
     private dueQueuedNodeRuns(now: Date): NodeRunState[] {
         return this.nodeRuns
             .withStatus("QUEUED")
-            .filter((nodeRun) => (nodeRun.queuedAt?.getTime() ?? 0) <= now.getTime());
+            .filter((nodeRun) => queuedAtMsOf(nodeRun) <= now.getTime());
     }
 
     private agentNodeRunsWithStatus(status: NodeRunStatusName): NodeRunState[] {
@@ -590,4 +599,8 @@ function isWorkItemRef(candidate: unknown): candidate is WorkItemRef {
         "id" in candidate &&
         typeof candidate.id === "string"
     );
+}
+
+function queuedAtMsOf(nodeRun: NodeRunState): number {
+    return nodeRun.queuedAt?.getTime() ?? 0;
 }

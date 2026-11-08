@@ -11,20 +11,21 @@ export interface RetryDecision {
     countsAsAttempt: boolean;
 }
 
+export interface RunRetryContext {
+    status: RunStatusName;
+    isStopping: boolean;
+}
+
+const MINUTE_MS = 60_000;
 const FIRST_BACKOFF_MS = 30_000;
-const MAX_BACKOFF_MS = 10 * 60_000;
-const WORKSPACE_RETRY_DELAY_MS = 2 * 60_000;
+const MAX_BACKOFF_MS = 10 * MINUTE_MS;
+const WORKSPACE_RETRY_DELAY_MS = 2 * MINUTE_MS;
 // A stopped Docker rarely comes back on its own, so the node's own retries do not apply.
 const MAX_WORKSPACE_RETRIES = 2;
 
 const GIVE_UP: RetryDecision = { retry: false, delayMs: 0, countsAsAttempt: true };
 // Usage limits pause the run (#48) and interruptions resume it (#52): neither is a failed attempt.
 const HANDLED_ELSEWHERE: RetryDecision = { retry: false, delayMs: 0, countsAsAttempt: false };
-
-export interface RunRetryContext {
-    status: RunStatusName;
-    isStopping: boolean;
-}
 
 const RETRYABLE_WHILE_RUN_GOES_ON: ReadonlySet<NodeRunStatusName> = new Set<NodeRunStatusName>([
     "FAILED",
