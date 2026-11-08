@@ -8,7 +8,11 @@ import { createWorkItemService } from "@/server/work_items/work_item_service.js"
 import type { WorkItemService } from "@/server/work_items/work_item_service.js";
 import type { LocalItemInput, WorkItem } from "@/shared/work_item_types.js";
 import { buildProject } from "@/test/factories/project_factory.js";
-import { buildLocalItemInput, buildWorkItem } from "@/test/factories/work_item_factory.js";
+import {
+    buildGithubIssue,
+    buildLocalItemInput,
+    buildWorkItem,
+} from "@/test/factories/work_item_factory.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { createTestDb } from "@/test/test_db.js";
 
@@ -351,6 +355,128 @@ describe("WorkItemService", () => {
             await expect(snapshots).rejects.toThrow(NotFoundError);
         });
     });
+
+    describe("upsertFromGithub", () => {
+        it("creates one item per issue on a forja/issue-<number> branch", async () => {
+            const issue = buildGithubIssue({ number: 12, title: "Checkout", labels: ["loja"] });
+
+            const counts = await service.upsertFromGithub(PROJECT_ID, [issue]);
+
+            const [item] = await service.list(PROJECT_ID);
+            expect(counts).toEqual({ created: 1, updated: 0 });
+            expect(item).toEqual({
+                id: expect.stringMatching(/^itm_/) as unknown,
+                projectId: PROJECT_ID,
+                source: "github",
+                number: 12,
+                url: issue.url,
+                title: "Checkout",
+                body: "",
+                labels: ["loja"],
+                state: "open",
+                blockedBy: [],
+                branch: "forja/issue-12",
+                archived: false,
+                createdAt: CREATED_AT.toISOString(),
+                updatedAt: CREATED_AT.toISOString(),
+                syncedAt: CREATED_AT.toISOString(),
+            });
+        });
+
+        it("resolves dependencies between issues of the same batch", async () => {
+            const blocked = buildGithubIssue({ number: 1, blockedByNumbers: [2] });
+            const blocker = buildGithubIssue({ number: 2 });
+
+            await service.upsertFromGithub(PROJECT_ID, [blocked, blocker]);
+
+            const blockerItem = await findItemByNumber(2);
+            await expect(findItemByNumber(1)).resolves.toMatchObject({
+                blockedBy: [blockerItem.id],
+            });
+        });
+
+        it("resolves dependencies on issues synced earlier and drops unknown numbers", async () => {
+            await service.upsertFromGithub(PROJECT_ID, [buildGithubIssue({ number: 2 })]);
+
+            await service.upsertFromGithub(PROJECT_ID, [
+                buildGithubIssue({ number: 1, blockedByNumbers: [2, 99] }),
+            ]);
+
+            const blocker = await findItemByNumber(2);
+            await expect(findItemByNumber(1)).resolves.toMatchObject({ blockedBy: [blocker.id] });
+        });
+
+        it("does not duplicate nor touch items when the same data is synced twice", async () => {
+            const issues = [
+                buildGithubIssue({ number: 1, blockedByNumbers: [2] }),
+                buildGithubIssue({ number: 2 }),
+            ];
+            await service.upsertFromGithub(PROJECT_ID, issues);
+            const firstSync = await service.list(PROJECT_ID);
+            clock.advance(ONE_MINUTE_MS);
+
+            const counts = await service.upsertFromGithub(PROJECT_ID, issues);
+
+            const secondSync = await service.list(PROJECT_ID);
+            expect(counts).toEqual({ created: 0, updated: 0 });
+            expect(secondSync).toEqual(
+                firstSync.map((item) => ({ ...item, syncedAt: minutesAfterCreation(1) })),
+            );
+        });
+
+        it("updates the issues that changed and keeps the Forja-only fields", async () => {
+            await service.upsertFromGithub(PROJECT_ID, [buildGithubIssue({ number: 1 })]);
+            const synced = await findItemByNumber(1);
+            await service.setManualColumn(synced.id, "needs_human");
+            clock.advance(ONE_MINUTE_MS);
+
+            const counts = await service.upsertFromGithub(PROJECT_ID, [
+                buildGithubIssue({ number: 1, title: "Renomeada", state: "closed" }),
+            ]);
+
+            expect(counts).toEqual({ created: 0, updated: 1 });
+            await expect(service.get(synced.id)).resolves.toMatchObject({
+                title: "Renomeada",
+                state: "closed",
+                branch: "forja/issue-1",
+                manualColumn: "needs_human",
+                updatedAt: minutesAfterCreation(1),
+            });
+        });
+
+        it("publishes work_item.created and work_item.updated only for what changed", async () => {
+            await service.upsertFromGithub(PROJECT_ID, [buildGithubIssue({ number: 1 })]);
+            const synced = await findItemByNumber(1);
+
+            await service.upsertFromGithub(PROJECT_ID, [
+                buildGithubIssue({ number: 1, title: "Renomeada" }),
+                buildGithubIssue({ number: 2 }),
+            ]);
+
+            const created = await findItemByNumber(2);
+            expect(publishedEvents()).toEqual([
+                { type: "work_item.created", projectId: PROJECT_ID, workItemId: synced.id },
+                { type: "work_item.created", projectId: PROJECT_ID, workItemId: created.id },
+                { type: "work_item.updated", projectId: PROJECT_ID, workItemId: synced.id },
+            ]);
+        });
+
+        it("rejects an unknown project", async () => {
+            const upsert = service.upsertFromGithub("prj_nenhum", [buildGithubIssue()]);
+
+            await expect(upsert).rejects.toThrow(NotFoundError);
+        });
+    });
+
+    async function findItemByNumber(number: number): Promise<WorkItem> {
+        const items = await service.list(PROJECT_ID);
+        const item = items.find((candidate) => candidate.number === number);
+        if (!item) {
+            throw new Error(`No work item for issue #${number}`);
+        }
+
+        return item;
+    }
 
     async function itemsById(): Promise<Map<string, WorkItem>> {
         const items = await service.list(PROJECT_ID);

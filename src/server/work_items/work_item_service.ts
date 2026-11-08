@@ -3,6 +3,7 @@ import { newId } from "@/lib/ids.js";
 import { resolveWith } from "@/lib/resolve_with.js";
 import { ConflictError, DomainValidationError, NotFoundError } from "@/server/errors.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import { planGithubUpsert } from "@/server/work_items/github_issue_upsert.js";
 import type { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
 import type {
     GithubIssueData,
@@ -54,7 +55,8 @@ export function createWorkItemService(deps: WorkItemServiceDeps): WorkItemServic
         get: (id) => resolveWith(() => findItemOrThrow(repo, id)),
         isBlocked: isBlockedByOpenItem,
         snapshots: (projectId, ids) => resolveWith(() => findSnapshots(repo, projectId, ids)),
-        upsertFromGithub: () => Promise.reject(new Error("not implemented")),
+        upsertFromGithub: (projectId, issues) =>
+            resolveWith(() => upsertGithubIssues(deps, projectId, issues)),
     };
 }
 
@@ -135,6 +137,40 @@ function saveChangedItem(deps: WorkItemServiceDeps, changedItem: WorkItem): Work
     });
 
     return item;
+}
+
+function upsertGithubIssues(
+    deps: WorkItemServiceDeps,
+    projectId: string,
+    issues: GithubIssueData[],
+): { created: number; updated: number } {
+    assertProjectExists(deps.repo, projectId);
+
+    const plan = planGithubUpsert({
+        projectId,
+        issues,
+        existingItems: deps.repo.listGithubItems(projectId),
+        syncedAt: deps.clock.now().toISOString(),
+        newItemId: () => newId("itm"),
+    });
+    deps.repo.saveSyncBatch({
+        inserts: plan.created,
+        updates: [...plan.changed, ...plan.unchanged],
+    });
+    publishItemEvents(deps.events, "work_item.created", plan.created);
+    publishItemEvents(deps.events, "work_item.updated", plan.changed);
+
+    return { created: plan.created.length, updated: plan.changed.length };
+}
+
+function publishItemEvents(
+    events: EventBus,
+    type: "work_item.created" | "work_item.updated",
+    items: WorkItem[],
+): void {
+    for (const item of items) {
+        events.publish({ type, projectId: item.projectId, workItemId: item.id });
+    }
 }
 
 function assertIsLocal(item: WorkItem): void {
