@@ -25,8 +25,8 @@ export type SchedulerEvent =
     | { type: "node_run_failed"; nodeRunId: string; error: NodeRunState["error"]; at: Date }
     | { type: "cancel_requested"; at: Date }
     | { type: "cancel_node_run_requested"; nodeRunId: string; at: Date }
-    // For a FAILED/CANCELED NodeRun of a run still going on, or any NodeRun of a FAILED/SUCCEEDED
-    // run, which reopens.
+    // For a FAILED/CANCELED NodeRun of a run still going on, or any finished NodeRun of a
+    // FAILED/SUCCEEDED run, which reopens.
     | { type: "retry_node_run_requested"; nodeRunId: string; at: Date };
 
 export type SchedulerCommand =
