@@ -13,6 +13,8 @@ const sourceSchema = z.enum(WORK_ITEM_SOURCES);
 const stateSchema = z.enum(WORK_ITEM_STATES);
 const manualColumnSchema = z.enum(MANUAL_COLUMNS);
 
+type WorkItemWriter = Pick<ForjaDb, "insert" | "update">;
+
 export interface SyncBatch {
     inserts: WorkItem[];
     updates: WorkItem[];
@@ -31,24 +33,20 @@ export class WorkItemRepository {
     }
 
     insert(item: WorkItem): void {
-        this.db.insert(workItems).values(toWorkItemRow(item)).run();
+        insertItem(this.db, item);
     }
 
     update(item: WorkItem): void {
-        this.db.update(workItems).set(toWorkItemRow(item)).where(eq(workItems.id, item.id)).run();
+        updateItem(this.db, item);
     }
 
     saveSyncBatch(batch: SyncBatch): void {
         this.db.transaction((transaction) => {
             for (const item of batch.inserts) {
-                transaction.insert(workItems).values(toWorkItemRow(item)).run();
+                insertItem(transaction, item);
             }
             for (const item of batch.updates) {
-                transaction
-                    .update(workItems)
-                    .set(toWorkItemRow(item))
-                    .where(eq(workItems.id, item.id))
-                    .run();
+                updateItem(transaction, item);
             }
         });
     }
@@ -76,6 +74,14 @@ export class WorkItemRepository {
             .all()
             .map(toWorkItem);
     }
+}
+
+function insertItem(writer: WorkItemWriter, item: WorkItem): void {
+    writer.insert(workItems).values(toWorkItemRow(item)).run();
+}
+
+function updateItem(writer: WorkItemWriter, item: WorkItem): void {
+    writer.update(workItems).set(toWorkItemRow(item)).where(eq(workItems.id, item.id)).run();
 }
 
 function toWorkItemRow(item: WorkItem): WorkItemRow {

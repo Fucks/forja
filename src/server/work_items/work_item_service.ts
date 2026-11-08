@@ -30,10 +30,12 @@ export interface WorkItemService {
     /** True while any item of `blockedBy` is still open. */
     isBlocked(item: WorkItem, all: Map<string, WorkItem>): boolean;
     snapshots(projectId: string, ids: string[]): Promise<WorkItemSnapshot[]>;
-    upsertFromGithub(
-        projectId: string,
-        issues: GithubIssueData[],
-    ): Promise<{ created: number; updated: number }>;
+    upsertFromGithub(projectId: string, issues: GithubIssueData[]): Promise<GithubUpsertCounts>;
+}
+
+export interface GithubUpsertCounts {
+    created: number;
+    updated: number;
 }
 
 export interface WorkItemServiceDeps {
@@ -69,21 +71,7 @@ function createLocalItem(
     const id = newId("itm");
     assertBlockersAreOtherItemsOfProject(deps.repo, { id, projectId }, input.blockedBy);
 
-    const createdAt = deps.clock.now().toISOString();
-    const item: WorkItem = {
-        id,
-        projectId,
-        source: "local",
-        title: input.title,
-        body: input.body,
-        labels: input.labels,
-        state: "open",
-        blockedBy: input.blockedBy,
-        branch: localItemBranch(id),
-        archived: false,
-        createdAt,
-        updatedAt: createdAt,
-    };
+    const item = buildLocalItem({ id, projectId, input, createdAt: deps.clock.now() });
     deps.repo.insert(item);
     deps.events.publish({ type: "work_item.created", projectId, workItemId: id });
 
@@ -105,6 +93,30 @@ function assertBlockersAreOtherItemsOfProject(
             { blockedBy: invalidBlockerIds },
         );
     }
+}
+
+function buildLocalItem(fields: {
+    id: string;
+    projectId: string;
+    input: LocalItemInput;
+    createdAt: Date;
+}): WorkItem {
+    const createdAt = fields.createdAt.toISOString();
+
+    return {
+        id: fields.id,
+        projectId: fields.projectId,
+        source: "local",
+        title: fields.input.title,
+        body: fields.input.body,
+        labels: fields.input.labels,
+        state: "open",
+        blockedBy: fields.input.blockedBy,
+        branch: localItemBranch(fields.id),
+        archived: false,
+        createdAt,
+        updatedAt: createdAt,
+    };
 }
 
 // The leading characters of a ULID encode its timestamp, so items created close together would share
@@ -168,7 +180,7 @@ function upsertGithubIssues(
     deps: WorkItemServiceDeps,
     projectId: string,
     issues: GithubIssueData[],
-): { created: number; updated: number } {
+): GithubUpsertCounts {
     assertProjectExists(deps.repo, projectId);
 
     const plan = planGithubUpsert({
@@ -216,8 +228,8 @@ function matchesListOptions(item: WorkItem, options: ListWorkItemsOptions): bool
     return isVisible && hasState && hasLabel;
 }
 
-function isBlockedByOpenItem(item: WorkItem, all: Map<string, WorkItem>): boolean {
-    return item.blockedBy.some((blockerId) => all.get(blockerId)?.state === "open");
+function isBlockedByOpenItem(item: WorkItem, itemsById: Map<string, WorkItem>): boolean {
+    return item.blockedBy.some((blockerId) => itemsById.get(blockerId)?.state === "open");
 }
 
 function findSnapshots(

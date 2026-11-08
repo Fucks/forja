@@ -26,6 +26,11 @@ interface IssueWithItem {
     item: WorkItem;
 }
 
+interface ResyncedItem {
+    item: WorkItem;
+    hasChanged: boolean;
+}
+
 type SyncedFields = Pick<
     WorkItem,
     "number" | "url" | "title" | "body" | "labels" | "state" | "blockedBy"
@@ -114,7 +119,7 @@ function resyncItem(
     request: GithubUpsertRequest,
     known: IssueWithItem,
     idByNumber: Map<number, string>,
-): { item: WorkItem; hasChanged: boolean } {
+): ResyncedItem {
     const syncedFields = toSyncedFields(known.issue, idByNumber);
     const syncedItem = { ...known.item, syncedAt: request.syncedAt };
     if (hasSameSyncedFields(known.item, syncedFields)) {

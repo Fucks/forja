@@ -1,5 +1,7 @@
 import type { GithubIssueData, LocalItemInput, WorkItem } from "@/shared/work_item_types.js";
 
+const CREATED_AT = "2026-05-04T09:00:00.000Z";
+
 export function buildLocalItemInput(overrides: Partial<LocalItemInput> = {}): LocalItemInput {
     return { title: "Tela de login", body: "", labels: [], blockedBy: [], ...overrides };
 }
@@ -18,8 +20,6 @@ export function buildGithubIssue(overrides: Partial<GithubIssueData> = {}): Gith
         ...overrides,
     };
 }
-
-const CREATED_AT = "2026-05-04T09:00:00.000Z";
 
 export function buildWorkItem(overrides: Partial<WorkItem> = {}): WorkItem {
     const id = overrides.id ?? "itm_github7";
