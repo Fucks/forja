@@ -1,4 +1,4 @@
-import type { Project } from "@/server/projects/project_types.js";
+import type { Project } from "@/shared/project_types.js";
 
 const CREATED_AT = "2026-05-04T09:00:00.000Z";
 
