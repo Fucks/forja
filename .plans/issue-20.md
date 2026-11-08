@@ -24,9 +24,9 @@
       `credential_repository.ts`
 - [x] 3. Test + implement `create` (sealed in DB, masked, env var by kind, redactor) —
       `credential_service.ts`, `credential_service.test.ts`, `src/test/test_secrets.ts`
-- [ ] 4. Test + implement `list`, `rename`, `replaceValue`, `remove` (NotFound) — service
-- [ ] 5. Test + implement `revealForRuntime` and `recordCheck` — service
-- [ ] 6. Test + implement `registerStoredCredentialValues` (boot) — service
+- [x] 4. Test + implement `list`, `rename`, `replaceValue`, `remove` (NotFound) — service
+- [x] 5. Test + implement `revealForRuntime` and `recordCheck` — service
+- [x] 6. Test + implement `registerStoredCredentialValues` (boot) — service
 - [ ] 7. `AppDeps` secrets/redactor, `main.ts` master key, test deps — `app.ts`, `main.ts`,
       `test_app_deps.ts`
 - [ ] 8. Test + implement routes (no value in responses, generic_env 400, PATCH, DELETE) —
