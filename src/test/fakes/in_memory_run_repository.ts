@@ -15,6 +15,7 @@ import type {
     RunTransition,
 } from "@/server/runs/run_repository.js";
 import { parseJsonText } from "@/server/runs/run_rows.js";
+import type { RunStatusName } from "@/shared/events.js";
 
 export class InMemoryRunRepository implements RunRepository {
     private readonly runs = new Map<string, RunRecord>();
@@ -28,18 +29,18 @@ export class InMemoryRunRepository implements RunRepository {
     }
 
     // Everything is prepared before the first write, so a failure leaves nothing partial.
-    saveTransition(change: RunTransition): Promise<void> {
+    saveTransition(transition: RunTransition): Promise<void> {
         return resolveWith(() => {
-            const runId = findTransitionRunId(change);
-            const updatedRun = this.buildUpdatedRun(runId, change.run);
+            const runId = findTransitionRunId(transition);
+            const updatedRun = this.buildUpdatedRun(runId, transition.run);
             const snapshotJson =
-                change.snapshot === undefined ? undefined : JSON.stringify(change.snapshot);
+                transition.snapshot === undefined ? undefined : JSON.stringify(transition.snapshot);
 
             this.runs.set(runId, structuredClone(updatedRun));
-            change.nodeRuns?.forEach((nodeRun) =>
+            transition.nodeRuns?.forEach((nodeRun) =>
                 this.nodeRuns.set(nodeRun.id, structuredClone(nodeRun)),
             );
-            this.artifacts.push(...structuredClone(change.artifacts ?? []));
+            this.artifacts.push(...structuredClone(transition.artifacts ?? []));
             if (snapshotJson !== undefined) {
                 this.snapshotJsonByRunId.set(runId, snapshotJson);
             }
@@ -50,15 +51,12 @@ export class InMemoryRunRepository implements RunRepository {
         return Promise.resolve(structuredClone(this.runs.get(id)));
     }
 
-    listRuns(projectId: string, opts: ListRunsOptions): Promise<RunRecord[]> {
-        const matchingRuns = runsAfterCursor(this.runsNewestFirst(), opts.before).filter(
-            (run) =>
-                run.projectId === projectId &&
-                (opts.flowId === undefined || run.flowId === opts.flowId) &&
-                hasAnyStatus(run, opts.status),
+    listRuns(projectId: string, options: ListRunsOptions): Promise<RunRecord[]> {
+        const matchingRuns = runsAfterCursor(this.runsNewestFirst(), options.before).filter((run) =>
+            matchesListRunsFilters(run, projectId, options),
         );
 
-        return Promise.resolve(structuredClone(matchingRuns.slice(0, opts.limit)));
+        return Promise.resolve(structuredClone(matchingRuns.slice(0, options.limit)));
     }
 
     listNodeRuns(runId: string): Promise<NodeRunState[]> {
@@ -158,6 +156,18 @@ function compareBinary(a: string, b: string): number {
     return a < b ? -1 : 1;
 }
 
+function matchesListRunsFilters(
+    run: RunRecord,
+    projectId: string,
+    options: ListRunsOptions,
+): boolean {
+    return (
+        run.projectId === projectId &&
+        (options.flowId === undefined || run.flowId === options.flowId) &&
+        hasAnyStatus(run, options.status)
+    );
+}
+
 // An unknown cursor matches nothing, as in the SQLite subquery.
 function runsAfterCursor(runsNewestFirst: RunRecord[], before: string | undefined): RunRecord[] {
     if (before === undefined) {
@@ -168,6 +178,6 @@ function runsAfterCursor(runsNewestFirst: RunRecord[], before: string | undefine
     return cursorIndex === -1 ? [] : runsNewestFirst.slice(cursorIndex + 1);
 }
 
-function hasAnyStatus(run: RunRecord, statuses: RunRecord["status"][] | undefined): boolean {
+function hasAnyStatus(run: RunRecord, statuses: RunStatusName[] | undefined): boolean {
     return statuses === undefined || statuses.length === 0 || statuses.includes(run.status);
 }

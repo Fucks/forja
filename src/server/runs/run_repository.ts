@@ -43,9 +43,9 @@ export interface ListRunsOptions {
 export interface RunRepository {
     createRun(run: RunRecord): Promise<void>;
     // Everything in the transition is saved in one transaction, or nothing is.
-    saveTransition(change: RunTransition): Promise<void>;
+    saveTransition(transition: RunTransition): Promise<void>;
     getRun(id: string): Promise<RunRecord | undefined>;
-    listRuns(projectId: string, opts: ListRunsOptions): Promise<RunRecord[]>;
+    listRuns(projectId: string, options: ListRunsOptions): Promise<RunRecord[]>;
     listNodeRuns(runId: string): Promise<NodeRunState[]>;
     getNodeRun(id: string): Promise<NodeRunState | undefined>;
     listArtifacts(nodeRunId: string): Promise<ArtifactRecord[]>;
@@ -71,8 +71,11 @@ export class TransitionWithoutRunError extends Error {
     }
 }
 
-export function findTransitionRunId(change: RunTransition): string {
-    const runId = change.run?.id ?? change.nodeRuns?.at(0)?.runId ?? change.artifacts?.at(0)?.runId;
+export function findTransitionRunId(transition: RunTransition): string {
+    const runId =
+        transition.run?.id ??
+        transition.nodeRuns?.at(0)?.runId ??
+        transition.artifacts?.at(0)?.runId;
     if (runId === undefined) {
         throw new TransitionWithoutRunError();
     }

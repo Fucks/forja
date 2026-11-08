@@ -46,10 +46,10 @@ export class SqliteRunRepository implements RunRepository {
         });
     }
 
-    saveTransition(change: RunTransition): Promise<void> {
+    saveTransition(transition: RunTransition): Promise<void> {
         return resolveWith(() => {
-            const runId = findTransitionRunId(change);
-            this.db.transaction(() => this.writeTransition(runId, change));
+            const runId = findTransitionRunId(transition);
+            this.db.transaction(() => this.writeTransition(runId, transition));
         });
     }
 
@@ -60,14 +60,14 @@ export class SqliteRunRepository implements RunRepository {
         });
     }
 
-    listRuns(projectId: string, opts: ListRunsOptions): Promise<RunRecord[]> {
+    listRuns(projectId: string, options: ListRunsOptions): Promise<RunRecord[]> {
         return resolveWith(() =>
             this.db
                 .select()
                 .from(runs)
-                .where(and(...listRunsConditions(projectId, opts)))
+                .where(and(...buildListRunsConditions(projectId, options)))
                 .orderBy(desc(runs.createdAt), desc(runs.id))
-                .limit(opts.limit)
+                .limit(options.limit)
                 .all()
                 .map(toRunRecord),
         );
@@ -144,15 +144,15 @@ export class SqliteRunRepository implements RunRepository {
         });
     }
 
-    private writeTransition(runId: string, change: RunTransition): void {
+    private writeTransition(runId: string, transition: RunTransition): void {
         this.assertRunExists(runId);
-        if (change.run) {
-            this.updateRunState(change.run);
+        if (transition.run) {
+            this.updateRunState(transition.run);
         }
-        change.nodeRuns?.forEach((nodeRun) => this.upsertNodeRun(nodeRun));
-        change.artifacts?.forEach((artifact) => this.insertArtifact(artifact));
-        if (change.snapshot !== undefined) {
-            this.saveSnapshot(runId, change.snapshot);
+        transition.nodeRuns?.forEach((nodeRun) => this.upsertNodeRun(nodeRun));
+        transition.artifacts?.forEach((artifact) => this.insertArtifact(artifact));
+        if (transition.snapshot !== undefined) {
+            this.saveSnapshot(runId, transition.snapshot);
         }
     }
 
@@ -202,16 +202,16 @@ export class SqliteRunRepository implements RunRepository {
     }
 }
 
-function listRunsConditions(projectId: string, opts: ListRunsOptions): SQL[] {
+function buildListRunsConditions(projectId: string, options: ListRunsOptions): SQL[] {
     const conditions = [eq(runs.projectId, projectId)];
-    if (opts.flowId !== undefined) {
-        conditions.push(eq(runs.flowId, opts.flowId));
+    if (options.flowId !== undefined) {
+        conditions.push(eq(runs.flowId, options.flowId));
     }
-    if (opts.status && opts.status.length > 0) {
-        conditions.push(inArray(runs.status, opts.status));
+    if (options.status && options.status.length > 0) {
+        conditions.push(inArray(runs.status, options.status));
     }
-    if (opts.before !== undefined) {
-        conditions.push(olderThanRun(opts.before));
+    if (options.before !== undefined) {
+        conditions.push(olderThanRun(options.before));
     }
 
     return conditions;
