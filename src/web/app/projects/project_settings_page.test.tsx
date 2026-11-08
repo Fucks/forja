@@ -12,7 +12,11 @@ const SETTINGS_PAGE_PATH = "/projects/prj_forja/settings";
 const PROJECT_SETTINGS_URL = "/api/projects/prj_forja/settings";
 const GLOBAL_SETTINGS_URL = "/api/settings";
 
-// Keeps what each PUT sends, so the reload after saving answers the saved values.
+const SAVED_PROJECT_CHANGES: Partial<ProjectSettings> = { defaultEffort: "max" };
+const SAVED_GLOBAL_CHANGES: Partial<GlobalSettings> = { logRetentionDays: 7 };
+
+// The fake routes can't read the request body, so each PUT applies the change the tests make,
+// and the reload after saving answers it.
 function fakeSettingsApi(): FakeRoutes {
     let projectSettings: ProjectSettings = DEFAULT_PROJECT_SETTINGS;
     let globalSettings: GlobalSettings = DEFAULT_GLOBAL_SETTINGS;
@@ -23,11 +27,11 @@ function fakeSettingsApi(): FakeRoutes {
         "GET /api/credentials": () => Response.json([]),
         "GET /api/tool-profiles": () => Response.json(TOOL_PROFILE_PRESETS),
         [`PUT ${PROJECT_SETTINGS_URL}`]: () => {
-            projectSettings = { ...projectSettings, defaultEffort: "max" };
+            projectSettings = { ...projectSettings, ...SAVED_PROJECT_CHANGES };
             return Response.json(projectSettings);
         },
         [`PUT ${GLOBAL_SETTINGS_URL}`]: () => {
-            globalSettings = { ...globalSettings, logRetentionDays: 7 };
+            globalSettings = { ...globalSettings, ...SAVED_GLOBAL_CHANGES };
             return Response.json(globalSettings);
         },
     };

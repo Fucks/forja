@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 
 import { EFFORTS } from "@/shared/agent_types.js";
+import type { Effort } from "@/shared/agent_types.js";
 import type { CredentialKind } from "@/shared/credential_types.js";
 import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
 import type { ProjectSettingsDraft } from "@/web/app/projects/settings_draft.js";
@@ -31,7 +32,6 @@ const GITHUB_CREDENTIAL_KINDS: CredentialKind[] = ["github_token"];
 const NO_CREDENTIAL = "none";
 const NO_DAILY_BUDGET_LABEL = "sem limite";
 const EFFORT_OPTIONS = EFFORTS.map((effort) => ({ value: effort, label: effort }));
-const DEFAULTS = DEFAULT_PROJECT_SETTINGS;
 
 export function ProjectSettingsForm({
     draft,
@@ -47,15 +47,7 @@ export function ProjectSettingsForm({
         <>
             <AgentsSection draft={draft} onFieldChange={changeField} />
             <ExecutionSection draft={draft} onFieldChange={changeField} />
-            <SettingsSection title="Container">
-                <SettingField
-                    label="Imagem Docker"
-                    mono
-                    fieldText={draft.agentImage}
-                    defaultLabel={DEFAULTS.agentImage}
-                    onChange={(fieldText) => changeField("agentImage", fieldText)}
-                />
-            </SettingsSection>
+            <ContainerSection draft={draft} onFieldChange={changeField} />
         </>
     );
 }
@@ -81,14 +73,17 @@ function AgentsSection({ draft, onFieldChange }: ProjectSectionProps): JSX.Eleme
                 label="Modelo"
                 mono
                 fieldText={draft.defaultModel}
-                defaultLabel={DEFAULTS.defaultModel}
+                defaultLabel={DEFAULT_PROJECT_SETTINGS.defaultModel}
                 onChange={(fieldText) => onFieldChange("defaultModel", fieldText)}
             />
             <ToolProfileField
                 toolProfileId={draft.defaultToolProfileId}
                 onChange={(toolProfileId) => onFieldChange("defaultToolProfileId", toolProfileId)}
             />
-            <EffortField draft={draft} onFieldChange={onFieldChange} />
+            <EffortField
+                effort={draft.defaultEffort}
+                onChange={(effort) => onFieldChange("defaultEffort", effort)}
+            />
             <Field
                 label="System prompt"
                 htmlFor="project-settings-system-prompt"
@@ -140,31 +135,41 @@ function ToolProfileField({
         label: profile.name,
     }));
     const defaultProfile = toolProfiles.find(
-        (profile) => profile.id === DEFAULTS.defaultToolProfileId,
+        (profile) => profile.id === DEFAULT_PROJECT_SETTINGS.defaultToolProfileId,
     );
 
     return (
         <Field
             label="Perfil de ferramentas"
             htmlFor="project-settings-tool-profile"
-            hint={describeDefault(defaultProfile?.name ?? DEFAULTS.defaultToolProfileId)}
+            hint={describeDefault(
+                defaultProfile?.name ?? DEFAULT_PROJECT_SETTINGS.defaultToolProfileId,
+            )}
         >
             <Select value={toolProfileId} options={toolProfileOptions} onChange={onChange} />
         </Field>
     );
 }
 
-function EffortField({ draft, onFieldChange }: ProjectSectionProps): JSX.Element {
+function EffortField({
+    effort,
+    onChange,
+}: {
+    effort: Effort;
+    onChange: (effort: Effort) => void;
+}): JSX.Element {
     return (
         <div className="flex flex-col gap-1">
             <span className="text-sm font-medium text-text">Effort</span>
             <SegmentedControl
                 label="Effort"
-                value={draft.defaultEffort}
+                value={effort}
                 options={EFFORT_OPTIONS}
-                onChange={(effort) => onFieldChange("defaultEffort", effort)}
+                onChange={onChange}
             />
-            <p className="text-xs text-muted">{describeDefault(DEFAULTS.defaultEffort)}</p>
+            <p className="text-xs text-muted">
+                {describeDefault(DEFAULT_PROJECT_SETTINGS.defaultEffort)}
+            </p>
         </div>
     );
 }
@@ -176,7 +181,7 @@ function ExecutionSection({ draft, onFieldChange }: ProjectSectionProps): JSX.El
                 label="Agentes em paralelo"
                 inputType="number"
                 fieldText={draft.maxConcurrentAgents}
-                defaultLabel={DEFAULTS.maxConcurrentAgents}
+                defaultLabel={DEFAULT_PROJECT_SETTINGS.maxConcurrentAgents}
                 onChange={(fieldText) => onFieldChange("maxConcurrentAgents", fieldText)}
             />
             <SettingField
@@ -190,8 +195,22 @@ function ExecutionSection({ draft, onFieldChange }: ProjectSectionProps): JSX.El
                 label="Fuso horário"
                 mono
                 fieldText={draft.timezone}
-                defaultLabel={DEFAULTS.timezone}
+                defaultLabel={DEFAULT_PROJECT_SETTINGS.timezone}
                 onChange={(fieldText) => onFieldChange("timezone", fieldText)}
+            />
+        </SettingsSection>
+    );
+}
+
+function ContainerSection({ draft, onFieldChange }: ProjectSectionProps): JSX.Element {
+    return (
+        <SettingsSection title="Container">
+            <SettingField
+                label="Imagem Docker"
+                mono
+                fieldText={draft.agentImage}
+                defaultLabel={DEFAULT_PROJECT_SETTINGS.agentImage}
+                onChange={(fieldText) => onFieldChange("agentImage", fieldText)}
             />
         </SettingsSection>
     );

@@ -43,7 +43,7 @@ export function toProjectSettingsDraft(settings: ProjectSettings): ProjectSettin
             settings.maxConcurrentAgents,
             defaults.maxConcurrentAgents,
         ),
-        dailyBudgetUsd: settings.dailyBudgetUsd === null ? BLANK : String(settings.dailyBudgetUsd),
+        dailyBudgetUsd: toOptionalFieldText(settings.dailyBudgetUsd),
         timezone: toFieldText(settings.timezone, defaults.timezone),
     };
 }
@@ -98,6 +98,10 @@ export function buildGlobalSettings(draft: GlobalSettingsDraft): GlobalSettings 
 
 function toFieldText(savedValue: string | number, defaultValue: string | number): string {
     return savedValue === defaultValue ? BLANK : String(savedValue);
+}
+
+function toOptionalFieldText(savedValue: number | null): string {
+    return savedValue === null ? BLANK : String(savedValue);
 }
 
 function readText(fieldText: string, defaultValue: string): string {

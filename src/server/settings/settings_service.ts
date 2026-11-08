@@ -69,13 +69,7 @@ function assertProjectExists(lookups: SettingsLookups, projectId: string): void 
 
 function assertReferencesExist(lookups: SettingsLookups, settings: ProjectSettings): void {
     CREDENTIAL_FIELDS.forEach((field) => assertCredentialExists(lookups, settings, field));
-
-    if (!lookups.toolProfileExists(settings.defaultToolProfileId)) {
-        throw new DomainValidationError(
-            `O perfil de ferramentas ${settings.defaultToolProfileId} não existe.`,
-            { field: "defaultToolProfileId" },
-        );
-    }
+    assertToolProfileExists(lookups, settings.defaultToolProfileId);
 }
 
 function assertCredentialExists(
@@ -89,4 +83,12 @@ function assertCredentialExists(
     }
 
     throw new DomainValidationError(`A credencial ${credentialId} não existe.`, { field });
+}
+
+function assertToolProfileExists(lookups: SettingsLookups, toolProfileId: string): void {
+    if (!lookups.toolProfileExists(toolProfileId)) {
+        throw new DomainValidationError(`O perfil de ferramentas ${toolProfileId} não existe.`, {
+            field: "defaultToolProfileId",
+        });
+    }
 }
