@@ -11,6 +11,7 @@ import {
     mapProgress,
     onItemFinished,
     receiveItemsFromUpstream,
+    reopenItem,
     startItems,
 } from "@/engine/map_group.js";
 import type { MapConfig } from "@/shared/flow_graph.js";
@@ -144,6 +145,24 @@ describe("onItemFinished", () => {
             { itemId: "4", status: "canceled" },
         ]);
         expect(itemsToStart(state)).toEqual([]);
+    });
+});
+
+describe("reopenItem", () => {
+    it.each(["succeeded", "failed"] as const)("runs a %s item again", (result) => {
+        const finished = onItemFinished(startAdmittedItems(mapWithItems(["1", "2"])), "1", result);
+
+        const reopened = reopenItem(finished, "1");
+
+        expect(itemIdsWithStatus(reopened, "running")).toEqual(["1", "2"]);
+    });
+
+    it("leaves a queued item in the queue", () => {
+        const state = mapWithItems(["1"], { concurrency: 1 });
+
+        const reopened = reopenItem(state, "1");
+
+        expect(itemIdsWithStatus(reopened, "queued")).toEqual(["1"]);
     });
 });
 

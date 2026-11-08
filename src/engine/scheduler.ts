@@ -28,8 +28,21 @@ import {
     type WorkItemRef,
 } from "@/engine/scheduler_types.js";
 import { assertNever } from "@/lib/assert_never.js";
-import type { NodeRunStatusName } from "@/shared/events.js";
+import type { NodeRunStatusName, RunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+
+const REOPENABLE_RUN_STATUSES: ReadonlySet<RunStatusName> = new Set<RunStatusName>([
+    "SUCCEEDED",
+    "FAILED",
+]);
+const NODE_RUN_STATUSES_TO_RETRY: ReadonlySet<NodeRunStatusName> = new Set<NodeRunStatusName>([
+    "FAILED",
+    "CANCELED",
+]);
+// CANCELED too: a failed run cancels the NodeRuns that had not started yet.
+const NODE_RUN_STATUSES_TO_RECALCULATE: ReadonlySet<NodeRunStatusName> = new Set<NodeRunStatusName>(
+    ["SKIPPED", "FAILED", "CANCELED"],
+);
 
 export function createScheduler(
     graph: FlowGraph,
@@ -96,6 +109,9 @@ class DagScheduler implements Scheduler {
                 break;
             case "cancel_node_run_requested":
                 this.cancelNodeRun(event.nodeRunId, event.at);
+                break;
+            case "retry_node_run_requested":
+                this.retryNodeRun(event.nodeRunId, event.at);
                 break;
             default:
                 assertNever(event);
@@ -255,6 +271,71 @@ class DagScheduler implements Scheduler {
         }
 
         this.advance(at);
+    }
+
+    // Reruns the NodeRun and whatever of its item it had kept from running, and nothing else.
+    private retryNodeRun(nodeRunId: string, at: Date): void {
+        const nodeRun = this.nodeRuns.get(nodeRunId);
+        if (!this.canRetry(nodeRun)) {
+            return;
+        }
+
+        this.reopenRunIfFinished(at);
+        this.rerun(nodeRun);
+        for (const blockedNodeRun of this.blockedDownstreamOf(nodeRun)) {
+            this.rerun(blockedNodeRun);
+        }
+        this.forgetFailedItem(nodeRun.workItemId);
+
+        this.advance(at);
+    }
+
+    // Only the latest attempt can be retried: older ones were already retried.
+    private canRetry(nodeRun: NodeRunState): boolean {
+        const latest = this.nodeRuns.find(nodeRun.nodeId, nodeRun.workItemId);
+        if (latest?.id !== nodeRun.id || this.plan.isTrigger(nodeRun.nodeId)) {
+            return false;
+        }
+        if (REOPENABLE_RUN_STATUSES.has(this.run.status)) {
+            return NODE_RUN_TERMINAL.has(nodeRun.status);
+        }
+
+        const isRunGoingOn = this.run.status === "RUNNING" && !this.stopOutcome;
+
+        return isRunGoingOn && NODE_RUN_STATUSES_TO_RETRY.has(nodeRun.status);
+    }
+
+    private reopenRunIfFinished(at: Date): void {
+        if (!REOPENABLE_RUN_STATUSES.has(this.run.status)) {
+            return;
+        }
+
+        this.stopOutcome = undefined;
+        this.changeRun(transitionRun(this.run, "RUNNING", at));
+    }
+
+    private rerun(previous: NodeRunState): void {
+        this.changeNodeRun(this.nextAttemptOf(previous));
+        this.mapGroups.reopenItemOf(previous);
+    }
+
+    // The NodeRuns of the same item that did not run because of the retried one.
+    private blockedDownstreamOf(nodeRun: NodeRunState): NodeRunState[] {
+        return this.plan
+            .downstreamNodeIdsOf(nodeRun.nodeId)
+            .map((nodeId) => this.nodeRuns.find(nodeId, nodeRun.workItemId))
+            .filter((downstream) => downstream !== undefined)
+            .filter((downstream) => NODE_RUN_STATUSES_TO_RECALCULATE.has(downstream.status));
+    }
+
+    private forgetFailedItem(itemId: string | undefined): void {
+        const failedItems = this.run.failedItems ?? [];
+        if (itemId === undefined || !failedItems.includes(itemId)) {
+            return;
+        }
+
+        const otherFailedItems = failedItems.filter((failedItem) => failedItem !== itemId);
+        this.changeRun({ ...this.run, failedItems: otherFailedItems });
     }
 
     // Nothing new starts once the run is stopping; RUNNING NodeRuns are left to finish.

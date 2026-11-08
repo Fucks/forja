@@ -8,6 +8,7 @@ import {
     isNodeInsideGroup,
     type LoopGroup,
     type MapGroup,
+    outgoingEdges,
     topologicalOrder,
 } from "@/engine/graph_queries.js";
 import { type NodeScope, planNodeScopes, splitsListIntoItems } from "@/engine/node_scopes.js";
@@ -108,6 +109,24 @@ export class FlowPlan {
         return sourceLoop;
     }
 
+    // Every node reachable from the node without going back through a loop, in DAG order.
+    downstreamNodeIdsOf(nodeId: string): string[] {
+        const reachedNodeIds = new Set<string>();
+        let frontier = [nodeId];
+        while (frontier.length > 0) {
+            frontier = frontier
+                .flatMap((frontierId) => this.forwardTargetsOf(frontierId))
+                .filter((targetId) => !reachedNodeIds.has(targetId));
+            frontier.forEach((targetId) => reachedNodeIds.add(targetId));
+        }
+
+        return this.nodeIdsInDagOrder.filter((candidate) => reachedNodeIds.has(candidate));
+    }
+
+    isTrigger(nodeId: string): boolean {
+        return this.findNode(nodeId)?.type === "trigger";
+    }
+
     triggerNodeIds(): string[] {
         return this.graph.nodes.filter((node) => node.type === "trigger").map((node) => node.id);
     }
@@ -143,6 +162,12 @@ export class FlowPlan {
         return this.graph.edges.find(
             (edge) => edge.from.nodeId === nodeId && splitsListIntoItems(this.graph, edge),
         );
+    }
+
+    private forwardTargetsOf(nodeId: string): string[] {
+        return outgoingEdges(this.graph, nodeId)
+            .filter((edge) => !this.isLoopBackEdge(edge))
+            .map((edge) => edge.to.nodeId);
     }
 }
 

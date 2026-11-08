@@ -302,7 +302,7 @@ describe("scheduler: retries", () => {
     it("continues the flow with the attempt that succeeds", () => {
         const harness = createSchedulerHarness({
             graph: buildLinearAgentFlow(),
-            scripts: { a: failingOnFirstAttemptWith(INVALID_OUTPUT) },
+            scripts: { a: failingOnFirstAttemptOf("1", INVALID_OUTPUT) },
         });
 
         harness.start(["1"]);
@@ -477,6 +477,82 @@ describe("scheduler: cancel", () => {
         harness.requestCancel();
 
         expect(harness.run.status).toBe("CANCELED");
+    });
+});
+
+describe("scheduler: retry requested by the user", () => {
+    it("reopens a finished run and reruns only the retried Reviewer of that item", () => {
+        const harness = createCanonicalHarness();
+        harness.start([]);
+        harness.runToCompletion();
+        const startCountBeforeRetry = harness.agentStartsInOrder().length;
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "reviewer", "1"));
+        harness.runToCompletion();
+
+        const startsAfterRetry = harness.agentStartsInOrder().slice(startCountBeforeRetry);
+        expect(startsAfterRetry.map(({ nodeId, workItemId }) => ({ nodeId, workItemId }))).toEqual([
+            { nodeId: "reviewer", workItemId: "1" },
+        ]);
+        expect(harness.attemptsOf("reviewer", "1").map((entry) => entry.attempt)).toEqual([1, 2]);
+        expect(runStatusesOf(harness).slice(-2)).toEqual(["RUNNING", "SUCCEEDED"]);
+    });
+
+    it("recalculates the nodes of the item that the failed Reviewer had skipped", () => {
+        const harness = createCanonicalHarness({
+            graph: withoutRetries(buildReportedCanonicalFlow()),
+            scripts: { reviewer: failingOnFirstAttemptOf("2", RUNTIME_ERROR) },
+        });
+        harness.start([]);
+        harness.runToCompletion();
+        expect(harness.finalStatusOf("open_pr", "2")).toBe("SKIPPED");
+        expect(harness.run.failedItems).toEqual(["2"]);
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "reviewer", "2"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("reviewer", "2")).toBe("SUCCEEDED");
+        expect(harness.attemptsOf("open_pr", "2").map((entry) => entry.status)).toEqual([
+            "SKIPPED",
+            "SUCCEEDED",
+        ]);
+        expect(harness.attemptsOf("open_pr", "1")).toHaveLength(1);
+        expect(harness.run.failedItems).toEqual([]);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("reopens a failed run and runs the NodeRuns its failure had canceled", () => {
+        const harness = createSchedulerHarness({
+            graph: withoutRetries(buildLinearAgentFlow()),
+            scripts: { a: failingOnFirstAttemptOf("1", RUNTIME_ERROR) },
+        });
+        harness.start(["1"]);
+        harness.runToCompletion();
+        expect(harness.run.status).toBe("FAILED");
+        const retriedAtMs = harness.clock.now().getTime();
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "a", "1"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("b", "1")).toBe("SUCCEEDED");
+        expect(harness.run.status).toBe("SUCCEEDED");
+        expect(harness.run.finishedAt?.getTime()).toBe(retriedAtMs + 2 * DEFAULT_NODE_DURATION_MS);
+    });
+
+    it("continues a failed item into the next map once the retried Developer succeeds", () => {
+        const harness = createCanonicalHarness({
+            graph: withoutRetries(buildReportedCanonicalFlow()),
+            scripts: { dev: failingOnFirstAttemptOf("2", RUNTIME_ERROR) },
+        });
+        harness.start([]);
+        harness.runToCompletion();
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("reviewer", "2")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("open_pr", "2")).toBe("SUCCEEDED");
+        expect(harness.run.status).toBe("SUCCEEDED");
     });
 });
 
@@ -851,10 +927,6 @@ function failingWith(error: NodeRunError): NodeScript {
     return () => ({ outcome: { kind: "fail", error } });
 }
 
-function failingOnFirstAttemptWith(error: NodeRunError): NodeScript {
-    return ({ nodeRun }) => (nodeRun.attempt === 1 ? { outcome: { kind: "fail", error } } : {});
-}
-
 function latestNodeRunIdOf(harness: SchedulerHarness, nodeId: string, itemId: string): string {
     return harness.attemptsOf(nodeId, itemId).at(-1)?.nodeRunId ?? "";
 }
@@ -870,6 +942,20 @@ function errorKindsOf(harness: SchedulerHarness, nodeId: string): (string | unde
         .snapshot()
         .nodeRuns.filter((nodeRun) => nodeRun.nodeId === nodeId)
         .map((nodeRun) => nodeRun.error?.kind);
+}
+
+function failingOnFirstAttemptOf(failingItemId: string, error: NodeRunError): NodeScript {
+    return ({ nodeRun }) => {
+        const isFailing = nodeRun.workItemId === failingItemId && nodeRun.attempt === 1;
+
+        return isFailing ? { outcome: { kind: "fail", error } } : {};
+    };
+}
+
+function runStatusesOf(harness: SchedulerHarness): string[] {
+    return harness.commands.flatMap((command) =>
+        command.type === "run_changed" ? [command.run.status] : [],
+    );
 }
 
 function startTimesMsOf(harness: SchedulerHarness, nodeId: string, itemId: string): number[] {
