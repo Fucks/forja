@@ -34,7 +34,7 @@ export interface FlowDraft {
     updatedAt: string;
 }
 
-const flowNameSchema = z.string().trim().min(1).max(FLOW_NAME_MAX_LENGTH);
+export const flowNameSchema = z.string().trim().min(1).max(FLOW_NAME_MAX_LENGTH);
 
 export const createFlowInput = z.object({
     name: flowNameSchema,
