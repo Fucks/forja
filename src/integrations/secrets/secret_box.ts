@@ -70,9 +70,8 @@ function decrypt(masterKey: Buffer, { iv, authTag, ciphertext }: SealedParts): s
     try {
         const decipher = createDecipheriv(CIPHER_ALGORITHM, masterKey, iv);
         decipher.setAuthTag(authTag);
-        return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString(
-            PLAINTEXT_ENCODING,
-        );
+        const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+        return plaintext.toString(PLAINTEXT_ENCODING);
     } catch {
         // Node reports tampering, a wrong key and malformed IV/tag with different errors;
         // callers only need to know the secret can't be trusted.

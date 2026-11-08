@@ -9,6 +9,7 @@ const MIN_MASKABLE_LENGTH = 12;
 const VISIBLE_SUFFIX_LENGTH = 4;
 const PREFIX_SEPARATOR = "-";
 const PREFIX_SEGMENT_COUNT = 3;
+// Shorter values (ports, PIDs, common words) would mask unrelated log text.
 const MIN_REDACTABLE_LENGTH = 8;
 
 export function maskSecret(value: string): string {

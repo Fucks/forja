@@ -22,4 +22,4 @@
 - [x] 5. Test + impl: chmod failure ignored on Windows, rethrown elsewhere — same files
 - [x] 6. Test + impl: `maskSecret` format — `secret_redactor.ts`, `secret_redactor.test.ts`
 - [x] 7. Test + impl: `createSecretRedactor` (all occurrences, several per line, < 8 chars ignored, overlapping longest first) — same files
-- [ ] 8. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 8. Self-review checklist and feedback loops (typecheck, lint, test)
