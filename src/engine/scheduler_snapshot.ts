@@ -11,6 +11,7 @@ export function takeSnapshot(state: SchedulerState): SchedulerSnapshot {
         loopInstances: state.loopInstances,
         lastAgentStartAt: state.lastAgentStartAt?.toISOString(),
         stopOutcome: state.stopOutcome,
+        timedOutNodeRunIds: state.timedOutNodeRunIds,
     };
 }
 
@@ -23,6 +24,7 @@ export function restoreSnapshot(snapshot: SchedulerSnapshot): SchedulerState {
         loopInstances: snapshot.loopInstances,
         lastAgentStartAt: optionalDate(snapshot.lastAgentStartAt),
         stopOutcome: snapshot.stopOutcome,
+        timedOutNodeRunIds: snapshot.timedOutNodeRunIds,
     };
 }
 

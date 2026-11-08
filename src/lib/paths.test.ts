@@ -19,6 +19,7 @@ describe("resolvePaths", () => {
             logs: path.join("/home/ana", ".forja", "logs"),
             masterKey: path.join("/home/ana", ".forja", "master.key"),
             tmp: path.join("/home/ana", ".forja", "tmp"),
+            worktrees: path.join("/home/ana", ".forja", "worktrees"),
         });
     });
 

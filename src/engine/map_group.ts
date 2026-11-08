@@ -89,6 +89,13 @@ export function onItemFinished(
     return finished;
 }
 
+// A retried NodeRun runs its finished item again.
+export function reopenItem(state: MapGroupState, itemId: string): MapGroupState {
+    return withItemStatuses(state, (item) =>
+        item.itemId === itemId && FINISHED_ITEM_STATUSES.has(item.status) ? "running" : item.status,
+    );
+}
+
 // For maps chained by item-correlated edges: an item arrives once it succeeded in every upstream map,
 // and the input closes when every upstream map is done. A list-fed map has no upstream maps.
 export function receiveItemsFromUpstream(

@@ -1,16 +1,19 @@
 import { InvalidTransitionError } from "@/engine/invalid_transition_error.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
 
-export type NodeRunErrorKind =
-    | "usage_limit"
-    | "timeout_total"
-    | "timeout_idle"
-    | "structured_output"
-    | "runtime"
-    | "workspace"
-    | "budget"
-    | "canceled"
-    | "interrupted";
+export const NODE_RUN_ERROR_KINDS = [
+    "usage_limit",
+    "timeout_total",
+    "timeout_idle",
+    "structured_output",
+    "runtime",
+    "workspace",
+    "budget",
+    "canceled",
+    "interrupted",
+] as const;
+
+export type NodeRunErrorKind = (typeof NODE_RUN_ERROR_KINDS)[number];
 
 export interface NodeRunError {
     kind: NodeRunErrorKind;
@@ -83,6 +86,20 @@ export function transitionNodeRun(
     }
 
     return { ...nodeRun, ...timestampsOnEntering(nodeRun, to, at), ...extra, status: to };
+}
+
+// The failed or retried NodeRun stays in the history; the new attempt starts over as PENDING.
+export function createNextAttempt(previous: NodeRunState, id: string): NodeRunState {
+    return {
+        id,
+        runId: previous.runId,
+        nodeId: previous.nodeId,
+        workItemId: previous.workItemId,
+        iteration: previous.iteration,
+        attempt: previous.attempt + 1,
+        groupPath: previous.groupPath,
+        status: "PENDING",
+    };
 }
 
 function timestampsOnEntering(
