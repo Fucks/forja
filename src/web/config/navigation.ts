@@ -12,6 +12,7 @@ import {
     Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { matchPath } from "react-router";
 
 export interface NavItem {
     id: string;
@@ -28,6 +29,8 @@ export interface GlobalNavItem {
 }
 
 export const PROJECTS_PATH = "/";
+
+const PROJECT_AREA_PATTERN = "/projects/:projectId/:areaId/*";
 
 export const PROJECT_NAV: NavItem[] = [
     projectArea({ id: "flows", label: "Fluxos", icon: Workflow }),
@@ -48,6 +51,20 @@ export const GLOBAL_NAV: GlobalNavItem[] = [
 
 export function projectPath(projectId: string): string {
     return `/projects/${encodeURIComponent(projectId)}`;
+}
+
+export function switchProjectPath(currentPathname: string, projectId: string): string {
+    const currentArea = findProjectArea(currentPathname);
+    if (!currentArea) {
+        return projectPath(projectId);
+    }
+
+    return currentArea.path(projectId);
+}
+
+function findProjectArea(pathname: string): NavItem | undefined {
+    const areaId = matchPath(PROJECT_AREA_PATTERN, pathname)?.params.areaId;
+    return PROJECT_NAV.find((area) => area.id === areaId);
 }
 
 function projectArea(area: Omit<NavItem, "path">): NavItem {

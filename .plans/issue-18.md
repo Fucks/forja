@@ -30,6 +30,6 @@
 - [x] 7. Test + impl: 422/409 error under the path field
 - [x] 8. Test + impl: `ProjectPage` overview (KeyValue, detection badges with next-step hint,
       shortcut cards to Fluxos/Board/Runs) — `project_page.tsx`
-- [ ] 9. Test + impl: `switchProjectPath` keeps the current area — `navigation.ts`
+- [x] 9. Test + impl: `switchProjectPath` keeps the current area — `navigation.ts`
 - [ ] 10. Test + impl: sidebar lists projects and switches project keeping the area — `sidebar.tsx`
 - [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)
