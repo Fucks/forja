@@ -36,6 +36,7 @@ const WORKSPACE_DOWN: NodeRunError = { kind: "workspace", message: "Docker parad
 const INVALID_OUTPUT: NodeRunError = { kind: "structured_output", message: "saída inválida" };
 const NEVER = Number.POSITIVE_INFINITY;
 const MINUTE_MS = 60_000;
+const DEV_WORK_MINUTES_BY_ITEM: Record<string, number> = { "1": 10, "2": 1, "3": 20 };
 const FIVE_ITEMS = ["1", "2", "3", "4", "5"];
 const DEV_DURATIONS_MS: Record<string, number> = {
     "1": 30_000,
@@ -1153,11 +1154,13 @@ describe("scheduler: usage limit", () => {
     const RESET_AT_15H = new Date("2026-01-01T15:00:00Z");
     const RESUME_AT_15H05 = new Date("2026-01-01T15:05:00Z");
     const FALLBACK_WAIT_MS = 30 * MINUTE_MS;
+    const RESET_AT_16H = new Date("2026-01-01T16:00:00Z");
+    const RESUME_AT_16H05 = new Date("2026-01-01T16:05:00Z");
 
     it("pauses the run until 5 minutes after the reset time and announces the limit", () => {
         const harness = createSchedulerHarness({
             graph: buildSingleAgentFlow(),
-            scripts: { a: hittingUsageLimitOnceOn("1", { resetAt: RESET_AT_15H }) },
+            scripts: { a: hittingUsageLimitOnceOn("1", RESET_AT_15H) },
         });
         harness.start(["1"]);
 
@@ -1192,7 +1195,7 @@ describe("scheduler: usage limit", () => {
     it("starts nothing during the pause while the Devs already running finish", () => {
         const harness = createSchedulerHarness({
             graph: withMapConfig(buildMappedLinearFlow(), "map_a", { concurrency: 3 }),
-            scripts: { a: devsWhereTheSecondHitsTheLimit(RESET_AT_15H) },
+            scripts: { a: devsHittingTheLimit({ "2": RESET_AT_15H }) },
         });
         harness.start(["1", "2", "3"]);
 
@@ -1208,7 +1211,7 @@ describe("scheduler: usage limit", () => {
     it("puts the waiting Dev back in the queue with the same attempt at 15:05", () => {
         const harness = createSchedulerHarness({
             graph: withMapConfig(buildMappedLinearFlow(), "map_a", { concurrency: 3 }),
-            scripts: { a: devsWhereTheSecondHitsTheLimit(RESET_AT_15H) },
+            scripts: { a: devsHittingTheLimit({ "2": RESET_AT_15H }) },
         });
         harness.start(["1", "2", "3"]);
 
@@ -1226,7 +1229,7 @@ describe("scheduler: usage limit", () => {
     it("finishes the run once the Dev that hit the limit succeeds after the reset", () => {
         const harness = createSchedulerHarness({
             graph: withMapConfig(buildMappedLinearFlow(), "map_a", { concurrency: 3 }),
-            scripts: { a: devsWhereTheSecondHitsTheLimit(RESET_AT_15H) },
+            scripts: { a: devsHittingTheLimit({ "2": RESET_AT_15H }) },
         });
         harness.start(["1", "2", "3"]);
 
@@ -1237,10 +1240,46 @@ describe("scheduler: usage limit", () => {
         expect(runStatusesOf(harness)).toEqual(["RUNNING", "PAUSED", "RUNNING", "SUCCEEDED"]);
     });
 
+    it("keeps one pause and waits for the later reset when another Dev hits the limit", () => {
+        const harness = createSchedulerHarness({
+            graph: withMapConfig(buildMappedLinearFlow(), "map_a", { concurrency: 3 }),
+            scripts: { a: devsHittingTheLimit({ "2": RESET_AT_15H, "3": RESET_AT_16H }) },
+        });
+        harness.start(["1", "2", "3"]);
+
+        harness.clock.set(RESUME_AT_15H05);
+
+        expect(harness.run).toMatchObject({ status: "PAUSED", resumeAt: RESUME_AT_16H05 });
+        expect(harness.finalStatusOf("a", "3")).toBe("WAITING_LIMIT");
+        expect(usageLimitCommandsOf(harness).map((command) => command.type)).toEqual([
+            "usage_limit_reached",
+        ]);
+
+        harness.clock.set(RESUME_AT_16H05);
+
+        expect(harness.run.status).toBe("RUNNING");
+        expect(harness.attemptsOf("a", "2")).toMatchObject([{ attempt: 1, status: "RUNNING" }]);
+        expect(harness.attemptsOf("a", "3")).toMatchObject([{ attempt: 1, status: "RUNNING" }]);
+    });
+
+    it("keeps the later resumeAt when another Dev hits a limit that resets sooner", () => {
+        const resetAt14h = new Date("2026-01-01T14:00:00Z");
+        const harness = createSchedulerHarness({
+            graph: withMapConfig(buildMappedLinearFlow(), "map_a", { concurrency: 3 }),
+            scripts: { a: devsHittingTheLimit({ "2": RESET_AT_15H, "3": resetAt14h }) },
+        });
+        harness.start(["1", "2", "3"]);
+
+        harness.advance(30 * MINUTE_MS);
+
+        expect(harness.finalStatusOf("a", "3")).toBe("WAITING_LIMIT");
+        expect(harness.run.resumeAt).toEqual(RESUME_AT_15H05);
+    });
+
     it("does not spend a retry when the agent hits the limit", () => {
         const harness = createSchedulerHarness({
             graph: withoutRetries(buildSingleAgentFlow()),
-            scripts: { a: hittingUsageLimitOnceOn("1", { resetAt: RESET_AT_15H }) },
+            scripts: { a: hittingUsageLimitOnceOn("1", RESET_AT_15H) },
         });
         harness.start(["1"]);
 
@@ -1386,35 +1425,35 @@ function reviewsReceivedByReport(harness: SchedulerHarness): unknown {
     return harness.startCommandsOf("report")[0]?.inputs.reviews;
 }
 
-function hittingUsageLimitOnceOn(
-    limitedItemId: string,
-    limit: { resetAt?: Date; afterMs?: number } = {},
-): NodeScript {
-    let hasHitTheLimit = false;
+function hittingUsageLimitOnceOn(limitedItemId: string, resetAt?: Date): NodeScript {
+    const limitedNodeRunIds = new Set<string>();
 
     return ({ nodeRun }) => {
-        if (hasHitTheLimit || nodeRun.workItemId !== limitedItemId) {
+        if (nodeRun.workItemId !== limitedItemId || limitedNodeRunIds.has(nodeRun.id)) {
             return {};
         }
 
-        hasHitTheLimit = true;
+        limitedNodeRunIds.add(nodeRun.id);
 
-        return {
-            durationMs: limit.afterMs ?? DEFAULT_NODE_DURATION_MS,
-            outcome: { kind: "hit_usage_limit", resetAt: limit.resetAt },
-        };
+        return { outcome: { kind: "hit_usage_limit", resetAt } };
     };
 }
 
-// Devs 1 and 3 take 10 and 20 minutes; Dev 2 hits the limit after 1 minute.
-function devsWhereTheSecondHitsTheLimit(resetAt: Date): NodeScript {
-    const durationsMsByItem: Record<string, number> = { "1": 10 * MINUTE_MS, "3": 20 * MINUTE_MS };
-    const secondDev = hittingUsageLimitOnceOn("2", { resetAt, afterMs: MINUTE_MS });
+// Devs 1, 2 and 3 work 10, 1 and 20 minutes; those in resetAtByItem hit the limit once instead.
+function devsHittingTheLimit(resetAtByItem: Record<string, Date>): NodeScript {
+    const limitScripts = Object.entries(resetAtByItem).map(([itemId, resetAt]) =>
+        hittingUsageLimitOnceOn(itemId, resetAt),
+    );
 
-    return (started) => ({
-        durationMs: durationsMsByItem[started.nodeRun.workItemId ?? ""],
-        ...secondDev(started),
-    });
+    return (started) => {
+        const workMinutes = DEV_WORK_MINUTES_BY_ITEM[started.nodeRun.workItemId ?? ""] ?? 1;
+        const working: Partial<NodeBehavior> = { durationMs: workMinutes * MINUTE_MS };
+
+        return limitScripts.reduce(
+            (behavior, limitScript) => ({ ...behavior, ...limitScript(started) }),
+            working,
+        );
+    };
 }
 
 function usageLimitCommandsOf(harness: SchedulerHarness): SchedulerCommand[] {

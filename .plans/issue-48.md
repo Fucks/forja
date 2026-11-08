@@ -29,7 +29,7 @@
 - [x] 6. Test: map of 3 Devs, 2nd hits the limit; nothing starts during the pause, the running ones finish — `scheduler.test.ts`
 - [x] 7. Test + implement: tick at resumeAt → `usage_limit_reset`, WAITING_LIMIT → QUEUED same attempt, run RUNNING, flow completes — `usage_pause.ts`, `scheduler.ts`, tests
 - [x] 8. Test: hitting the limit does not consume retries (retries 0 still succeeds after the reset) — `scheduler.test.ts`
-- [ ] 9. Test + implement: a second limit during the pause → WAITING_LIMIT, no new pause command, later resumeAt wins — `scheduler.ts`, test
+- [x] 9. Test + implement: a second limit during the pause → WAITING_LIMIT, no new pause command, later resumeAt wins — `scheduler.ts`, test
 - [ ] 10. Test + implement: run paused by the user keeps PAUSED/user at resumeAt — `scheduler.ts`, test
 - [ ] 11. Test + implement: a run that fails during the limit pause cancels its WAITING_LIMIT NodeRuns and finishes after the reset — `scheduler.ts`, test
 - [ ] 12. Test + implement: a limit while paused by the budget takes the pause over — `scheduler.ts`, test

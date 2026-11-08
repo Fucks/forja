@@ -208,7 +208,23 @@ class DagScheduler implements Scheduler {
         const nodeRun = this.nodeRuns.get(nodeRunId);
         this.changeNodeRun(transitionNodeRun(nodeRun, "WAITING_LIMIT", at, { error }));
         const resumeAt = computeResumeAt(at, resetAt, this.options.usageLimitMarginMinutes);
+        if (this.isPausedByUsageLimit()) {
+            this.postponeResume(resumeAt);
+            return;
+        }
+
         this.pauseForUsageLimit(resetAt, resumeAt, at);
+    }
+
+    // The later reset wins: resuming at the earlier one would only hit the limit again.
+    private postponeResume(resumeAt: Date): void {
+        const currentResumeAtMs = this.run.resumeAt?.getTime() ?? 0;
+        if (resumeAt.getTime() <= currentResumeAtMs) {
+            return;
+        }
+
+        this.changeRun({ ...this.run, resumeAt });
+        this.outbox.push({ type: "schedule_wakeup", at: resumeAt });
     }
 
     private pauseForUsageLimit(resetAt: Date | undefined, resumeAt: Date, at: Date): void {
