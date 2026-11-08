@@ -1,37 +1,11 @@
-import { z } from "zod";
+import type { CreateProjectInput, Project } from "@/shared/project_types.js";
 
-const PROJECT_NAME_MAX_LENGTH = 80;
-
-const projectNameSchema = z.string().trim().min(1).max(PROJECT_NAME_MAX_LENGTH);
-
-export const createProjectInput = z.object({
-    name: projectNameSchema,
-    repoPath: z.string().min(1),
-    baseBranch: z.string().optional(),
-});
-
-export type CreateProjectInput = z.infer<typeof createProjectInput>;
-
-export const renameProjectInput = z.object({ name: projectNameSchema });
-
-export const projectDetectionSchema = z.object({
-    codegraph: z.boolean(),
-    codingStandards: z.boolean(),
-    sandcastle: z.boolean(),
-});
-
-export type ProjectDetection = z.infer<typeof projectDetectionSchema>;
-
-export interface Project {
-    id: string;
-    name: string;
-    repoPath: string;
-    githubRepo?: string;
-    baseBranch: string;
-    detected: ProjectDetection;
-    createdAt: string;
-    updatedAt: string;
-}
+export {
+    createProjectInput,
+    projectDetectionSchema,
+    renameProjectInput,
+} from "@/shared/project_types.js";
+export type { CreateProjectInput, Project, ProjectDetection } from "@/shared/project_types.js";
 
 export interface ProjectService {
     create(input: CreateProjectInput): Promise<Project>;
