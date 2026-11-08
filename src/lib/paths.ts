@@ -11,6 +11,7 @@ export interface ForjaPaths {
     logs: string;
     masterKey: string;
     tmp: string;
+    worktrees: string;
 }
 
 export const RUNTIME_ASSET_KINDS = ["migrations", "prompts", "assets"] as const;
@@ -35,6 +36,7 @@ export function resolvePaths(dataDir: string | undefined, homeDir: string): Forj
         logs: path.join(root, "logs"),
         masterKey: path.join(root, "master.key"),
         tmp: path.join(root, "tmp"),
+        worktrees: path.join(root, "worktrees"),
     };
 }
 

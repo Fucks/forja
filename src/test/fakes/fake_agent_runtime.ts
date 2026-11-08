@@ -8,6 +8,7 @@ import type {
     HeadlessSpec,
     OpenWorkspaceSummary,
     Workspace,
+    WorkspaceFile,
     WorkspaceSpec,
 } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { FakeClock } from "@/test/fakes/fake_clock.js";
@@ -47,6 +48,7 @@ interface ScriptedStepUsage {
 const DEFAULT_DURATION_MS = 1_000;
 const WORKSPACE_READY_MESSAGE = "workspace pronto";
 const SUCCESSFUL_EXEC: ExecResult = { exitCode: 0, stdoutTail: "" };
+const FAKE_WORKTREES_DIR = "/fake/worktrees";
 
 export class FakeAgentRuntime implements AgentRuntime {
     readonly calls: RuntimeCall[] = [];
@@ -55,6 +57,7 @@ export class FakeAgentRuntime implements AgentRuntime {
     private readonly steps: ScriptedStepUsage[] = [];
     private readonly execResults = new Map<string, ExecResult>();
     private readonly openWorkspaces = new Map<string, OpenWorkspaceSummary>();
+    private readonly workspaceFiles = new Map<string, Map<string, string>>();
     private openedWorkspaceCount = 0;
     private activeRunCount = 0;
     private peakActiveRunCount = 0;
@@ -79,6 +82,10 @@ export class FakeAgentRuntime implements AgentRuntime {
         return this;
     }
 
+    filesOf(workspaceId: string): Record<string, string> {
+        return Object.fromEntries(this.workspaceFiles.get(workspaceId) ?? []);
+    }
+
     peakConcurrentRuns(): number {
         return this.peakActiveRunCount;
     }
@@ -96,6 +103,7 @@ export class FakeAgentRuntime implements AgentRuntime {
         this.openedWorkspaceCount += 1;
         const id = `workspace-${this.openedWorkspaceCount}`;
         this.openWorkspaces.set(id, { id, runId: spec.runId, workItemId: spec.workItemId });
+        this.storeFiles(id, spec.files);
         hooks.onEvent({ kind: "system", message: WORKSPACE_READY_MESSAGE, at: this.clock.now() });
 
         return Promise.resolve(this.createWorkspace(id, spec));
@@ -126,9 +134,14 @@ export class FakeAgentRuntime implements AgentRuntime {
         return {
             id,
             branch: spec.branch,
+            root: `${FAKE_WORKTREES_DIR}/${id}`,
             runAgent: (request, hooks) => this.runAgent("run", { request, hooks, workItemId }),
             exec: (command) => this.exec(command, workItemId),
             diff: () => Promise.resolve(""),
+            writeFiles: (files) => {
+                this.storeFiles(id, files);
+                return Promise.resolve();
+            },
             close: () => this.closeWorkspace(id),
         };
     }
@@ -179,6 +192,12 @@ export class FakeAgentRuntime implements AgentRuntime {
         this.record({ kind: "exec", workItemId });
 
         return Promise.resolve(this.execResults.get(command) ?? SUCCESSFUL_EXEC);
+    }
+
+    private storeFiles(workspaceId: string, files: WorkspaceFile[]): void {
+        const storedFiles = this.workspaceFiles.get(workspaceId) ?? new Map<string, string>();
+        files.forEach((file) => storedFiles.set(file.path, file.content));
+        this.workspaceFiles.set(workspaceId, storedFiles);
     }
 
     private record(call: Omit<RuntimeCall, "at">): void {

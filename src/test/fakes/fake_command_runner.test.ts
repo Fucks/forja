@@ -39,4 +39,29 @@ describe("FakeCommandRunner", () => {
 
         expect(commands.calls).toEqual([{ command: "git", args: ["status"], options: OPTIONS }]);
     });
+
+    it("replays the scripted output line by line to the listeners", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("npm", ["test"]).returns({ stdout: "first\nsecond", stderr: "warning" });
+        const stdoutLines: string[] = [];
+        const stderrLines: string[] = [];
+
+        await commands.run("npm", ["test"], {
+            ...OPTIONS,
+            onStdoutLine: (line) => stdoutLines.push(line),
+            onStderrLine: (line) => stderrLines.push(line),
+        });
+
+        expect(stdoutLines).toEqual(["first", "second"]);
+        expect(stderrLines).toEqual(["warning"]);
+    });
+
+    it("matches arguments with a predicate when given one", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("docker", (args) => args[0] === "exec").returns({ stdout: "done" });
+
+        const result = await commands.run("docker", ["exec", "c1", "ls"], OPTIONS);
+
+        expect(result.stdout).toBe("done");
+    });
 });

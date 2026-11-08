@@ -73,7 +73,7 @@ export interface AgentRunHooks {
 export interface ExecOptions {
     timeoutMs: number;
     signal: AbortSignal;
-    onOutput?(line: string): void;
+    onOutput?: (line: string) => void;
 }
 
 export interface ExecResult {
@@ -84,10 +84,14 @@ export interface ExecResult {
 export interface Workspace {
     id: string;
     branch: string;
+    /** Path of the item worktree on the host. */
+    root: string;
     runAgent(request: AgentRunRequest, hooks: AgentRunHooks): Promise<AgentRunResult>;
     exec(command: string, options: ExecOptions): Promise<ExecResult>;
     /** `git diff base...branch`, used by gates. */
     diff(baseBranch: string): Promise<string>;
+    /** Writes the files into the worktree; paths are relative to `root`. */
+    writeFiles(files: WorkspaceFile[]): Promise<void>;
     close(): Promise<void>;
 }
 
