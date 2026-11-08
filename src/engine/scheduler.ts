@@ -228,10 +228,19 @@ class DagScheduler implements Scheduler {
     }
 
     private pauseForUsageLimit(resetAt: Date | undefined, resumeAt: Date, at: Date): void {
-        const pause = { pauseReason: "usage_limit", resumeAt } as const;
-        this.changeRun(transitionRun(this.run, "PAUSED", at, pause));
+        this.changeRun(this.runPausedByUsageLimit(resumeAt, at));
         this.outbox.push({ type: "usage_limit_reached", resetAt, resumeAt });
         this.outbox.push({ type: "schedule_wakeup", at: resumeAt });
+    }
+
+    // The budget is checked again before each agent starts, so its pause can give way to the limit.
+    private runPausedByUsageLimit(resumeAt: Date, at: Date): RunState {
+        const usageLimitPause: Partial<RunState> = { pauseReason: "usage_limit", resumeAt };
+        if (this.isPausedByBudget()) {
+            return { ...this.run, ...usageLimitPause };
+        }
+
+        return transitionRun(this.run, "PAUSED", at, usageLimitPause);
     }
 
     private recordFailure(nodeRunId: string, error: NodeRunError | undefined, at: Date): void {

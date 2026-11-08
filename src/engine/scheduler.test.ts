@@ -1317,6 +1317,35 @@ describe("scheduler: usage limit", () => {
         expect(harness.run.status).toBe("FAILED");
     });
 
+    it("takes over a budget pause and lets the budget pause the run again after the reset", () => {
+        const limitOnItem2 = hittingUsageLimitOnceOn("2", RESET_AT_15H);
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            maxConcurrentAgents: 2,
+            budget: { run: { maxCostUsd: 1 }, onExceeded: "pause" },
+            scripts: {
+                a: (started) => ({
+                    durationMs: 5_000,
+                    usage: { costUsd: 1, tokens: 0 },
+                    ...limitOnItem2(started),
+                }),
+            },
+        });
+        harness.start(["1", "2", "3"]);
+
+        harness.advance(5_000);
+
+        expect(harness.run).toMatchObject({
+            pauseReason: "usage_limit",
+            resumeAt: RESUME_AT_15H05,
+        });
+
+        harness.clock.set(RESUME_AT_15H05);
+
+        expect(harness.run).toMatchObject({ status: "PAUSED", pauseReason: "budget" });
+        expect(harness.attemptsOf("a", "2")).toMatchObject([{ attempt: 1, status: "QUEUED" }]);
+    });
+
     it("does not spend a retry when the agent hits the limit", () => {
         const harness = createSchedulerHarness({
             graph: withoutRetries(buildSingleAgentFlow()),
