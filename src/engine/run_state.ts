@@ -29,8 +29,9 @@ const RUN_TRANSITIONS: Record<RunStatusName, readonly RunStatusName[]> = {
     QUEUED: ["RUNNING", "CANCELED"],
     RUNNING: ["PAUSED", "SUCCEEDED", "FAILED", "CANCELED"],
     PAUSED: ["RUNNING", "CANCELED"],
-    SUCCEEDED: [],
-    FAILED: [],
+    // A finished run reopens when the user retries one of its NodeRuns.
+    SUCCEEDED: ["RUNNING"],
+    FAILED: ["RUNNING"],
     CANCELED: [],
 };
 
@@ -49,7 +50,7 @@ export function transitionRun(
     }
 
     return {
-        ...clearPauseWhenLeavingPaused(run),
+        ...clearOutcomeWhenReopening(clearPauseWhenLeavingPaused(run)),
         ...timestampsOnEntering(run, to, at),
         ...extra,
         status: to,
@@ -66,6 +67,18 @@ function clearPauseWhenLeavingPaused(run: RunState): RunState {
     delete unpausedRun.resumeAt;
 
     return unpausedRun;
+}
+
+function clearOutcomeWhenReopening(run: RunState): RunState {
+    if (!RUN_TERMINAL.has(run.status)) {
+        return run;
+    }
+
+    const reopenedRun = { ...run };
+    delete reopenedRun.finishedAt;
+    delete reopenedRun.error;
+
+    return reopenedRun;
 }
 
 function timestampsOnEntering(
