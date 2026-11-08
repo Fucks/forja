@@ -26,7 +26,7 @@
 
 - [x] 1. Streaming lines in `CommandOptions`, `FakeCommandRunner` replay + test, `ExecaCommandRunner` generators
 - [x] 2. `ForjaPaths.worktrees` — `src/lib/paths.ts`, `paths.test.ts`
-- [ ] 3. `Workspace.root` + `Workspace.writeFiles` contract; in-memory `writeFiles` in `FakeAgentRuntime` + test
+- [x] 3. `Workspace.root` + `Workspace.writeFiles` contract; in-memory `writeFiles` in `FakeAgentRuntime` + test
 - [ ] 4. Test+impl: `WorktreeManager.ensure` creates from existing branch / new from origin base / fallback base / reuses registered path / throws `WorkspaceError` — `worktree_manager.ts`
 - [ ] 5. Test+impl: `WorktreeManager.remove` (remove --force + prune; idempotent)
 - [ ] 6. Test+impl: `ContainerManager.start` exact args (mounts ro, labels, user, network, workdir) and failure

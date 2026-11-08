@@ -443,6 +443,44 @@ describe("FakeAgentRuntime", () => {
             expect(tests).toEqual({ exitCode: 0, stdoutTail: "" });
             expect(lint).toEqual({ exitCode: 1, stdoutTail: "2 problems" });
         });
+
+        it("keeps the spec files and the written files in memory, the latest content winning", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock });
+            const workspace = await runtime.openWorkspace(
+                { ...workspaceSpec("issue-5"), files: [{ path: "CLAUDE.md", content: "regras" }] },
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+
+            await workspace.writeFiles([
+                { path: "CLAUDE.md", content: "regras novas" },
+                { path: ".forja/plan.md", content: "plano" },
+            ]);
+
+            expect(runtime.filesOf(workspace.id)).toEqual({
+                "CLAUDE.md": "regras novas",
+                ".forja/plan.md": "plano",
+            });
+        });
+
+        it("roots each workspace in its own directory", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock });
+
+            const first = await runtime.openWorkspace(
+                workspaceSpec("issue-6"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+            const second = await runtime.openWorkspace(
+                workspaceSpec("issue-7"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+
+            expect(first.root).not.toBe(second.root);
+        });
     });
 });
 
