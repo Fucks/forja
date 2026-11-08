@@ -23,10 +23,10 @@
 ## Tasks
 
 - [x] 1. Types/schemas, migration `0700_work_items.sql`, drizzle schema, repository (insert/find/list)
-- [ ] 2. Test+impl: `createLocal` stores the item with a stable `forja/item-` branch and publishes `work_item.created`; 404 unknown project
-- [ ] 3. Test+impl: `createLocal` rejects `blockedBy` ids outside the project (422)
-- [ ] 4. Test+impl: `get` returns the item; 404 for unknown id
-- [ ] 5. Test+impl: `updateLocal` edits fields, keeps branch, publishes `work_item.updated`; github item → ConflictError; self-block rejected
+- [x] 2. Test+impl: `createLocal` stores the item with a stable `forja/item-` branch and publishes `work_item.created`; 404 unknown project
+- [x] 3. Test+impl: `createLocal` rejects `blockedBy` ids outside the project (422)
+- [x] 4. Test+impl: `get` returns the item; 404 for unknown id
+- [x] 5. Test+impl: `updateLocal` edits fields, keeps branch, publishes `work_item.updated`; github item → ConflictError; self-block rejected
 - [ ] 6. Test+impl: `setManualColumn` sets and clears the column
 - [ ] 7. Test+impl: `archive` hides the item from `list` unless `includeArchived`
 - [ ] 8. Test+impl: `list` filters by state and label, ordered by creation
