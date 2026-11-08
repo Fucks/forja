@@ -29,10 +29,10 @@
 - [x] 3. `Workspace.root` + `Workspace.writeFiles` contract; in-memory `writeFiles` in `FakeAgentRuntime` + test
 - [x] 4. Test+impl: `WorktreeManager.ensure` creates from existing branch / new from origin base / fallback base / reuses registered path / throws `WorkspaceError` — `worktree_manager.ts`
 - [x] 5. Test+impl: `WorktreeManager.remove` (remove --force + prune; idempotent)
-- [ ] 6. Test+impl: `ContainerManager.start` exact args (mounts ro, labels, user, network, workdir) and failure
-- [ ] 7. Test+impl: `ContainerManager.exec` env names only in argv, values in env, stdin, streaming, tails
-- [ ] 8. Test+impl: `ContainerManager.exec` abort/timeout kills via pkill marker
-- [ ] 9. Test+impl: `ContainerManager.stop` idempotent, `list` by labels
+- [x] 6. Test+impl: `ContainerManager.start` exact args (mounts ro, labels, user, network, workdir) and failure
+- [x] 7. Test+impl: `ContainerManager.exec` env names only in argv, values in env, stdin, streaming, tails
+- [x] 8. Test+impl: `ContainerManager.exec` abort/timeout kills via pkill marker
+- [x] 9. Test+impl: `ContainerManager.stop` idempotent, `list` by labels
 - [ ] 10. Test+impl: `openWorkspace` worktree + container with documented mounts/labels/user — `docker_agent_runtime.ts`
 - [ ] 11. Test+impl: setup writes `spec.files`, runs setup commands emitting `system` events; failure removes container and throws `WorkspaceError`
 - [ ] 12. Test+impl: workspace `exec`, `diff` (truncated 200 KB), `writeFiles` (rejects escaping paths)

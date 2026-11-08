@@ -1,3 +1,5 @@
+import { commandSucceeded, type CommandResult } from "@/integrations/process/command_runner.js";
+
 export type AgentTimeoutKind = "total" | "idle";
 
 export class UsageLimitError extends Error {
@@ -38,6 +40,12 @@ export class WorkspaceError extends Error {
     constructor(message: string) {
         super(message);
         this.name = "WorkspaceError";
+    }
+}
+
+export function assertCommandSucceeded(result: CommandResult, failureMessage: string): void {
+    if (!commandSucceeded(result)) {
+        throw new WorkspaceError(`${failureMessage}: ${result.stderr.trim()}`);
     }
 }
 

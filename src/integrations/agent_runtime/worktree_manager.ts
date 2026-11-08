@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { WorkspaceError } from "@/integrations/agent_runtime/agent_errors.js";
+import { assertCommandSucceeded } from "@/integrations/agent_runtime/agent_errors.js";
 import { CliGitProvider } from "@/integrations/git/cli_git_provider.js";
 import { commandSucceeded } from "@/integrations/process/command_runner.js";
 import type { CommandResult, CommandRunner } from "@/integrations/process/command_runner.js";
@@ -37,7 +37,7 @@ export function createWorktreeManager(commands: CommandRunner): WorktreeManager 
 
     async function isRegistered(repoPath: string, worktreePath: string): Promise<boolean> {
         const result = await runGit(repoPath, ["worktree", "list", "--porcelain"]);
-        assertSucceeded(result, "Não foi possível listar os worktrees do repositório");
+        assertCommandSucceeded(result, "Não foi possível listar os worktrees do repositório");
 
         return parseRegisteredPaths(result.stdout).some((registeredPath) =>
             isSamePath(registeredPath, worktreePath),
@@ -54,7 +54,10 @@ export function createWorktreeManager(commands: CommandRunner): WorktreeManager 
             worktreePath,
             input.branch,
         ]);
-        assertSucceeded(result, `Não foi possível criar o worktree do branch ${input.branch}`);
+        assertCommandSucceeded(
+            result,
+            `Não foi possível criar o worktree do branch ${input.branch}`,
+        );
     }
 
     async function addOnNewBranch(input: EnsureWorktreeInput, worktreePath: string): Promise<void> {
@@ -67,7 +70,7 @@ export function createWorktreeManager(commands: CommandRunner): WorktreeManager 
         }
 
         const fromLocalBase = await runGit(repoPath, [...addArgs, baseBranch]);
-        assertSucceeded(
+        assertCommandSucceeded(
             fromLocalBase,
             `Não foi possível criar o branch ${branch} a partir de ${baseBranch}`,
         );
@@ -97,11 +100,14 @@ export function createWorktreeManager(commands: CommandRunner): WorktreeManager 
                     "--force",
                     worktreePath,
                 ]);
-                assertSucceeded(result, `Não foi possível remover o worktree ${worktreePath}`);
+                assertCommandSucceeded(
+                    result,
+                    `Não foi possível remover o worktree ${worktreePath}`,
+                );
             }
 
             const pruned = await runGit(repoPath, ["worktree", "prune"]);
-            assertSucceeded(pruned, "Não foi possível limpar a lista de worktrees");
+            assertCommandSucceeded(pruned, "Não foi possível limpar a lista de worktrees");
         },
     };
 }
@@ -120,10 +126,4 @@ function parseRegisteredPaths(porcelain: string): string[] {
 
 function isSamePath(first: string, second: string): boolean {
     return path.resolve(first) === path.resolve(second);
-}
-
-function assertSucceeded(result: CommandResult, failureMessage: string): void {
-    if (!commandSucceeded(result)) {
-        throw new WorkspaceError(`${failureMessage}: ${result.stderr.trim()}`);
-    }
 }
