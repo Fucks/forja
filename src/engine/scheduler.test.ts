@@ -20,6 +20,7 @@ import {
 import {
     createSchedulerHarness,
     DEFAULT_NODE_DURATION_MS,
+    DEFAULT_USAGE_LIMIT_MARGIN_MINUTES,
     type NodeBehavior,
     type NodeOutcome,
     type NodeScript,
@@ -370,7 +371,12 @@ describe("scheduler: total timeout", () => {
 
     it("still records the timeout when restored from a snapshot before the cancel confirms", () => {
         const graph = withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1 });
-        const options = { maxConcurrentAgents: 1, minStartIntervalMs: 0, newId: sequentialIds() };
+        const options = {
+            maxConcurrentAgents: 1,
+            minStartIntervalMs: 0,
+            newId: sequentialIds(),
+            usageLimitMarginMinutes: DEFAULT_USAGE_LIMIT_MARGIN_MINUTES,
+        };
         const startedAt = new Date("2026-01-01T00:00:00Z");
         const scheduler = createScheduler(graph, buildRunState(), options);
         scheduler.handle({ type: "start", items: [{ id: "1" }], at: startedAt });
