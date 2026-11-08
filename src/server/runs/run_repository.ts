@@ -78,3 +78,19 @@ export function findTransitionRunId(change: RunTransition): string {
 
     return runId;
 }
+
+export function keepNodeRunsOfLatestRunPerItem(
+    itemIds: string[],
+    nodeRunsOldestRunFirst: NodeRunState[],
+): Record<string, NodeRunState[]> {
+    const latestRunIdByItem = new Map(
+        nodeRunsOldestRunFirst.map((nodeRun) => [nodeRun.workItemId, nodeRun.runId]),
+    );
+    const nodeRunsOfLatestRun = (itemId: string): NodeRunState[] =>
+        nodeRunsOldestRunFirst.filter(
+            (nodeRun) =>
+                nodeRun.workItemId === itemId && nodeRun.runId === latestRunIdByItem.get(itemId),
+        );
+
+    return Object.fromEntries(itemIds.map((itemId) => [itemId, nodeRunsOfLatestRun(itemId)]));
+}

@@ -30,12 +30,12 @@
 
 - [x] 1. Migration `0600_runs.sql` and Drizzle schema `src/server/db/schema/runs.ts`
 - [x] 2. Contracts `RunRecord`, `ArtifactRecord`, `RunRepository`, `RunNotFoundError` — `src/server/runs/run_repository.ts`
-- [ ] 3. Test + implement `createRun`/`getRun` round-trip with Dates (both implementations) — repo, fake, rows, factory
-- [ ] 4. Test + implement `saveTransition` of run state (pause cleared, failed items) and unknown run rejection
-- [ ] 5. Test + implement NodeRun upsert, `listNodeRuns`, `getNodeRun`
-- [ ] 6. Test + implement artifacts (`listArtifacts`) and snapshot (`getSnapshot`)
-- [ ] 7. Test + implement atomicity: failure mid-transition leaves nothing partial
-- [ ] 8. Test + implement `listRuns` pagination by `created_at` desc and flow/status filters
-- [ ] 9. Test + implement `listActiveRuns` (QUEUED, RUNNING, PAUSED only)
-- [ ] 10. Test + implement `latestNodeRunsByItem`
+- [x] 3. Test + implement `createRun`/`getRun` round-trip with Dates (both implementations) — repo, fake, rows, factory
+- [x] 4. Test + implement `saveTransition` of run state (pause cleared, failed items) and unknown run rejection
+- [x] 5. Test + implement NodeRun upsert, `listNodeRuns`, `getNodeRun`
+- [x] 6. Test + implement artifacts (`listArtifacts`) and snapshot (`getSnapshot`)
+- [x] 7. Test + implement atomicity: failure mid-transition leaves nothing partial
+- [x] 8. Test + implement `listRuns` pagination by `created_at` desc and flow/status filters
+- [x] 9. Test + implement `listActiveRuns` (QUEUED, RUNNING, PAUSED only)
+- [x] 10. Test + implement `latestNodeRunsByItem`
 - [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)
