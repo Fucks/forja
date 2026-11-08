@@ -20,6 +20,6 @@
 - [x] 3. Test + impl: `createSecretBox` rejects a key that is not 32 bytes — same files, `master_key.ts`
 - [x] 4. Test + impl: `loadOrCreateMasterKey` creates a 32-byte key with 0o600 once and reuses it — `master_key.ts`, `master_key.test.ts`
 - [x] 5. Test + impl: chmod failure ignored on Windows, rethrown elsewhere — same files
-- [ ] 6. Test + impl: `maskSecret` format — `secret_redactor.ts`, `secret_redactor.test.ts`
-- [ ] 7. Test + impl: `createSecretRedactor` (all occurrences, several per line, < 8 chars ignored, overlapping longest first) — same files
+- [x] 6. Test + impl: `maskSecret` format — `secret_redactor.ts`, `secret_redactor.test.ts`
+- [x] 7. Test + impl: `createSecretRedactor` (all occurrences, several per line, < 8 chars ignored, overlapping longest first) — same files
 - [ ] 8. Self-review checklist and feedback loops (typecheck, lint, test)
