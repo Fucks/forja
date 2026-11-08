@@ -1,7 +1,7 @@
 import type { RunBudget } from "@/engine/budgets.js";
 import type { NodeRunError } from "@/engine/node_run_state.js";
 import { createScheduler } from "@/engine/scheduler.js";
-import type { SchedulerCommand } from "@/engine/scheduler_types.js";
+import type { SchedulerCommand, SchedulerOptions } from "@/engine/scheduler_types.js";
 import type { Condition } from "@/shared/conditions.js";
 import { buildLoopFlowWithExits } from "@/test/factories/flow_graph_factory.js";
 import { moveNode } from "@/test/factories/flow_graph_variations.js";
@@ -374,12 +374,7 @@ describe("scheduler: total timeout", () => {
 
     it("still records the timeout when restored from a snapshot before the cancel confirms", () => {
         const graph = withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1 });
-        const options = {
-            maxConcurrentAgents: 1,
-            minStartIntervalMs: 0,
-            newId: sequentialIds(),
-            usageLimitMarginMinutes: DEFAULT_USAGE_LIMIT_MARGIN_MINUTES,
-        };
+        const options = singleAgentSchedulerOptions();
         const startedAt = new Date("2026-01-01T00:00:00Z");
         const scheduler = createScheduler(graph, buildRunState(), options);
         scheduler.handle({ type: "start", items: [{ id: "1" }], at: startedAt });
@@ -1276,6 +1271,32 @@ describe("scheduler: usage limit", () => {
         expect(harness.run.resumeAt).toEqual(RESUME_AT_15H05);
     });
 
+    it("keeps the run paused when the user paused it during the limit pause", () => {
+        const graph = buildSingleAgentFlow();
+        const harness = createSchedulerHarness({
+            graph,
+            scripts: { a: hittingUsageLimitOnceOn("1", RESET_AT_15H) },
+        });
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+        const snapshot = harness.snapshot();
+        const pausedByUser = {
+            ...snapshot,
+            run: { ...snapshot.run, pauseReason: "user" as const },
+        };
+        const scheduler = createScheduler(
+            graph,
+            buildRunState(),
+            singleAgentSchedulerOptions(),
+            pausedByUser,
+        );
+
+        const commands = scheduler.tick(RESUME_AT_15H05);
+
+        expect(commands).toEqual([]);
+        expect(scheduler.snapshot().run).toMatchObject({ status: "PAUSED", pauseReason: "user" });
+    });
+
     it("does not spend a retry when the agent hits the limit", () => {
         const harness = createSchedulerHarness({
             graph: withoutRetries(buildSingleAgentFlow()),
@@ -1300,6 +1321,15 @@ function costing(costUsd: number): NodeScript {
 
 function latestNodeRunIdOf(harness: SchedulerHarness, nodeId: string, itemId: string): string {
     return harness.attemptsOf(nodeId, itemId).at(-1)?.nodeRunId ?? "";
+}
+
+function singleAgentSchedulerOptions(): SchedulerOptions {
+    return {
+        maxConcurrentAgents: 1,
+        minStartIntervalMs: 0,
+        newId: sequentialIds(),
+        usageLimitMarginMinutes: DEFAULT_USAGE_LIMIT_MARGIN_MINUTES,
+    };
 }
 
 function sequentialIds(): () => string {
