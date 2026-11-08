@@ -1,7 +1,9 @@
 import { InvalidTransitionError } from "@/engine/invalid_transition_error.js";
 import type { RunStatusName } from "@/shared/events.js";
 
-export type RunPauseReason = "user" | "usage_limit" | "budget";
+export const RUN_PAUSE_REASONS = ["user", "usage_limit", "budget"] as const;
+
+export type RunPauseReason = (typeof RUN_PAUSE_REASONS)[number];
 
 export interface RunState {
     id: string;
