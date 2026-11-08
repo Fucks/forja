@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 
-import { NODE_RUN_TERMINAL, type NodeRunState } from "@/engine/node_run_state.js";
+import type { NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL } from "@/engine/run_state.js";
 import { newId } from "@/lib/ids.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
@@ -238,10 +238,6 @@ export function peakOverlapOf(nodeRuns: NodeRunState[]): number {
     }
 
     return peak;
-}
-
-export function isTerminal(nodeRun: NodeRunState): boolean {
-    return NODE_RUN_TERMINAL.has(nodeRun.status);
 }
 
 function timeMsOf(date: Date | undefined): number {

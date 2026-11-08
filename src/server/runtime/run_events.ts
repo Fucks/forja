@@ -71,6 +71,26 @@ export function usageLimitReachedEvent(run: RunState, resetAt: Date | undefined)
     };
 }
 
+export function usageLimitResetEvent(run: RunState): ForjaEvent {
+    return { type: "usage.limit_reset", projectId: run.projectId };
+}
+
+export function usageRecordedEvent(
+    run: RunState,
+    nodeRunId: string,
+    usage: { inputTokens: number; outputTokens: number; costUsd: number },
+): ForjaEvent {
+    return {
+        type: "usage.recorded",
+        runId: run.id,
+        projectId: run.projectId,
+        nodeRunId,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        costUsd: usage.costUsd,
+    };
+}
+
 export function logAppendedEvent(run: RunState, nodeRunId: string, sequence: number): ForjaEvent {
     return {
         type: "log.appended",

@@ -8,7 +8,7 @@ import { CredentialRepository } from "@/server/credentials/credential_repository
 import type { ForjaDb } from "@/server/db/client.js";
 import { FlowRepository } from "@/server/flows/flow_repository.js";
 import { createFlowService } from "@/server/flows/flow_service.js";
-import { buildValidationContext } from "@/server/flows/flows_routes.js";
+import { buildValidationContext } from "@/server/flows/flow_validation_context.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { createProjectService } from "@/server/projects/project_service.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";

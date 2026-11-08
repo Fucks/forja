@@ -23,6 +23,7 @@ import {
     nodeRunUpdatedEvent,
     runChangedEvent,
     usageLimitReachedEvent,
+    usageLimitResetEvent,
 } from "@/server/runtime/run_events.js";
 import { createWorkspacePool, type WorkspacePool } from "@/server/runtime/workspace_pool.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
@@ -125,10 +126,7 @@ export class ActiveRun {
                 this.deps.events.publish(usageLimitReachedEvent(this.record, command.resetAt));
                 break;
             case "usage_limit_reset":
-                this.deps.events.publish({
-                    type: "usage.limit_reset",
-                    projectId: this.record.projectId,
-                });
+                this.deps.events.publish(usageLimitResetEvent(this.record));
                 break;
             default:
                 assertNever(command);

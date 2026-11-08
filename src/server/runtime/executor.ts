@@ -18,8 +18,6 @@ import type { Project } from "@/shared/project_types.js";
 import type { GlobalSettings, ProjectSettings } from "@/shared/settings_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
 
-export type { WorkItemSnapshot } from "@/shared/work_item_types.js";
-
 // In production, WorkItemService.snapshots.
 export interface ItemSource {
     getItems(projectId: string, ids: string[]): Promise<WorkItemSnapshot[]>;

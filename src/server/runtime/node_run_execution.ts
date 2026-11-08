@@ -14,6 +14,7 @@ import type {
     NodeExecutor,
     NodeExecutorRegistry,
 } from "@/server/runtime/node_executors.js";
+import { usageRecordedEvent } from "@/server/runtime/run_events.js";
 import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
 import type { WorkspacePool } from "@/server/runtime/workspace_pool.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
@@ -163,15 +164,7 @@ export class NodeRunExecution {
     private async recordUsage(usage: NodeUsage): Promise<void> {
         const { run, nodeRun, events, clock } = this.deps;
         const costUsd = usage.costUsd ?? 0;
-        events.publish({
-            type: "usage.recorded",
-            runId: run.id,
-            projectId: run.projectId,
-            nodeRunId: nodeRun.id,
-            inputTokens: usage.inputTokens,
-            outputTokens: usage.outputTokens,
-            costUsd,
-        });
+        events.publish(usageRecordedEvent(run, nodeRun.id, { ...usage, costUsd }));
 
         const tokens = usage.inputTokens + usage.outputTokens;
         await this.deps.deliver({
