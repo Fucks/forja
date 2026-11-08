@@ -22,7 +22,7 @@
 
 ## Tasks
 
-- [ ] 1. Types/schemas, migration `0700_work_items.sql`, drizzle schema, repository (insert/find/list)
+- [x] 1. Types/schemas, migration `0700_work_items.sql`, drizzle schema, repository (insert/find/list)
 - [ ] 2. Test+impl: `createLocal` stores the item with a stable `forja/item-` branch and publishes `work_item.created`; 404 unknown project
 - [ ] 3. Test+impl: `createLocal` rejects `blockedBy` ids outside the project (422)
 - [ ] 4. Test+impl: `get` returns the item; 404 for unknown id
