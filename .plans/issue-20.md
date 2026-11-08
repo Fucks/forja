@@ -27,7 +27,7 @@
 - [x] 4. Test + implement `list`, `rename`, `replaceValue`, `remove` (NotFound) — service
 - [x] 5. Test + implement `revealForRuntime` and `recordCheck` — service
 - [x] 6. Test + implement `registerStoredCredentialValues` (boot) — service
-- [ ] 7. `AppDeps` secrets/redactor, `main.ts` master key, test deps — `app.ts`, `main.ts`,
+- [x] 7. `AppDeps` secrets/redactor, `main.ts` master key, test deps — `app.ts`, `main.ts`,
       `test_app_deps.ts`
 - [ ] 8. Test + implement routes (no value in responses, generic_env 400, PATCH, DELETE) —
       `credentials_routes.ts`, `credentials_routes.test.ts`

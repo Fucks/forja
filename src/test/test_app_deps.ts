@@ -1,3 +1,4 @@
+import { createSecretRedactor } from "@/integrations/secrets/secret_redactor.js";
 import { loadEnv } from "@/lib/env.js";
 import { resolvePaths } from "@/lib/paths.js";
 import type { AppDeps } from "@/server/app.js";
@@ -6,6 +7,7 @@ import { createEventBus } from "@/server/runtime/event_bus.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
 import { FakeGitProvider } from "@/test/fakes/fake_git_provider.js";
+import { createTestSecretBox } from "@/test/test_secrets.js";
 
 export const TEST_PATHS = resolvePaths("/srv/forja dados", "/home/ana");
 
@@ -18,6 +20,8 @@ export function createTestAppDeps(db: ForjaDb, overrides: Partial<AppDeps> = {})
         events: createEventBus(new FakeClock()),
         commands: new FakeCommandRunner(),
         git: new FakeGitProvider(),
+        secrets: createTestSecretBox(),
+        redactor: createSecretRedactor(),
         ...overrides,
     };
 }
