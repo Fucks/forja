@@ -130,6 +130,13 @@ export function isMapDone(state: MapGroupState): boolean {
     );
 }
 
+// Waiting for a slot counts as in progress: the item still has work ahead in this map.
+export function isItemInProgress(state: MapGroupState, itemId: string): boolean {
+    return state.items.some(
+        (item) => item.itemId === itemId && !FINISHED_ITEM_STATUSES.has(item.status),
+    );
+}
+
 export function mapProgress(state: MapGroupState): MapProgress {
     return {
         queued: itemIdsWithStatus(state, "queued").length,

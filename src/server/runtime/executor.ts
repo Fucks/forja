@@ -178,13 +178,13 @@ class RunExecutor implements Executor {
     }
 
     // Only runs of this server are active; a finished run is no longer in memory (#52 reloads them).
-    private deliverTo(runId: string, event: SchedulerEvent): Promise<void> {
+    private async deliverTo(runId: string, event: SchedulerEvent): Promise<void> {
         const activeRun = this.activeRuns.get(runId);
         if (!activeRun) {
             throw new NotFoundError(`A run ${runId} não está em andamento.`);
         }
 
-        return activeRun.deliver(event);
+        await activeRun.deliver(event);
     }
 
     private async findRunIdOfNodeRun(nodeRunId: string): Promise<string> {

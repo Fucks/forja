@@ -1,6 +1,12 @@
 import { NODE_RUN_TERMINAL, type NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL, type RunState } from "@/engine/run_state.js";
-import type { Scheduler, SchedulerCommand, SchedulerEvent } from "@/engine/scheduler_types.js";
+import { isItemInProgress } from "@/engine/map_group.js";
+import type {
+    Scheduler,
+    SchedulerCommand,
+    SchedulerEvent,
+    SchedulerSnapshot,
+} from "@/engine/scheduler_types.js";
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { CancelTimeout, Clock } from "@/lib/clock.js";
@@ -42,7 +48,6 @@ export class ActiveRun {
     private record: RunRecord;
     private queue: Promise<void> = Promise.resolve();
     private readonly workspaces: WorkspacePool;
-    private readonly latestNodeRuns = new Map<string, NodeRunState>();
     private readonly runningExecutions = new Map<string, NodeRunExecution>();
     private readonly pendingWakeups = new Set<CancelTimeout>();
     private readonly logSequenceByNodeRun = new Map<string, number>();
@@ -161,7 +166,6 @@ export class ActiveRun {
     }
 
     private async saveNodeRun(nodeRun: NodeRunState): Promise<void> {
-        this.latestNodeRuns.set(nodeRun.id, nodeRun);
         await this.deps.runs.saveTransition({
             nodeRuns: [limitRecordedInputs(nodeRun)],
             snapshot: this.deps.scheduler.snapshot(),
@@ -212,17 +216,18 @@ export class ActiveRun {
 
     // The workspace closes as soon as the item has nothing left to run in the whole run.
     private async releaseWorkspacesOfFinishedItems(): Promise<void> {
-        const finishedItemIds = this.deps.items
+        const itemIdsWithWorkspace = this.deps.items
             .map((item) => item.id)
-            .filter((itemId) => this.workspaces.hasWorkspace(itemId))
-            .filter((itemId) => this.hasItemFinished(itemId));
-        await Promise.all(finishedItemIds.map((itemId) => this.workspaces.release(itemId)));
-    }
+            .filter((itemId) => this.workspaces.hasWorkspace(itemId));
+        if (itemIdsWithWorkspace.length === 0) {
+            return;
+        }
 
-    private hasItemFinished(itemId: string): boolean {
-        return [...this.latestNodeRuns.values()]
-            .filter((nodeRun) => nodeRun.workItemId === itemId)
-            .every((nodeRun) => NODE_RUN_TERMINAL.has(nodeRun.status));
+        const snapshot = this.deps.scheduler.snapshot();
+        const finishedItemIds = itemIdsWithWorkspace.filter((itemId) =>
+            hasItemFinished(snapshot, itemId),
+        );
+        await Promise.all(finishedItemIds.map((itemId) => this.workspaces.release(itemId)));
     }
 
     // Nobody awaits the NodeRun executions and the wakeups, so their failures are reported here.
@@ -238,4 +243,16 @@ export class ActiveRun {
         await this.workspaces.releaseAll();
         this.deps.onFinished(this.record.id);
     }
+}
+
+// An item queued for the next map has no NodeRun yet, so the maps are asked too.
+function hasItemFinished(snapshot: SchedulerSnapshot, itemId: string): boolean {
+    const hasNodeRunAhead = snapshot.nodeRuns.some(
+        (nodeRun) => nodeRun.workItemId === itemId && !NODE_RUN_TERMINAL.has(nodeRun.status),
+    );
+    const isInAnyMap = (snapshot.mapGroups ?? []).some((mapGroup) =>
+        isItemInProgress(mapGroup, itemId),
+    );
+
+    return !hasNodeRunAhead && !isInAnyMap;
 }

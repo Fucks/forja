@@ -127,6 +127,19 @@ export class ExecutorTestBed {
         return nodeRuns.filter((nodeRun) => nodeRun.nodeId === nodeId);
     }
 
+    async findNodeRun(
+        runId: string,
+        nodeId: string,
+        matches: (nodeRun: NodeRunState) => boolean = () => true,
+    ): Promise<NodeRunState> {
+        const nodeRun = (await this.nodeRunsOf(runId, nodeId)).find(matches);
+        if (!nodeRun) {
+            throw new Error(`No matching NodeRun of ${nodeId} in run ${runId}`);
+        }
+
+        return nodeRun;
+    }
+
     publishedEventsOf(type: ForjaEvent["type"]): ForjaEvent[] {
         return this.journal
             .filter((entry) => entry.kind === "published")
