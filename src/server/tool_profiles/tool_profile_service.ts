@@ -7,7 +7,10 @@ import {
     findPresetById,
 } from "@/server/tool_profiles/tool_profile_presets.js";
 import type { ToolProfileRepository } from "@/server/tool_profiles/tool_profile_repository.js";
-import { TOOL_PROFILE_NAME_MAX_LENGTH } from "@/shared/tool_profile_types.js";
+import {
+    TOOL_PROFILE_NAME_MAX_LENGTH,
+    extractToolProfileInput,
+} from "@/shared/tool_profile_types.js";
 import type { McpServer, ToolProfile, ToolProfileInput } from "@/shared/tool_profile_types.js";
 
 const COPY_NAME_SUFFIX = " (cópia)";
@@ -100,21 +103,9 @@ function removeToolProfile(repo: ToolProfileRepository, id: string): void {
 }
 
 function duplicateToolProfile(deps: ToolProfileServiceDeps, id: string): ToolProfile {
-    const original = toToolProfileInput(findToolProfileOrThrow(deps.repo, id));
+    const original = extractToolProfileInput(findToolProfileOrThrow(deps.repo, id));
 
     return insertNewToolProfile(deps, { ...original, name: buildCopyName(original.name) });
-}
-
-function toToolProfileInput(profile: ToolProfile): ToolProfileInput {
-    return {
-        name: profile.name,
-        description: profile.description,
-        mcpServers: profile.mcpServers,
-        allowedTools: profile.allowedTools,
-        disallowedTools: profile.disallowedTools,
-        permissionMode: profile.permissionMode,
-        indexCodegraphOnStart: profile.indexCodegraphOnStart,
-    };
 }
 
 function findEditableToolProfileOrThrow(repo: ToolProfileRepository, id: string): ToolProfile {

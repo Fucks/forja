@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { ComponentProps } from "react";
@@ -189,9 +190,11 @@ describe("Topbar", () => {
 function renderAppAt(path: string): void {
     const router = createMemoryRouter(APP_ROUTES, { initialEntries: [path] });
     render(
-        <ToastProvider>
-            <RouterProvider router={router} />
-        </ToastProvider>,
+        <QueryClientProvider client={new QueryClient()}>
+            <ToastProvider>
+                <RouterProvider router={router} />
+            </ToastProvider>
+        </QueryClientProvider>,
     );
 }
 

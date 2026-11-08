@@ -35,3 +35,15 @@ export interface ToolProfile extends ToolProfileInput {
     createdAt: string;
     updatedAt: string;
 }
+
+export function extractToolProfileInput(profile: ToolProfile): ToolProfileInput {
+    return {
+        name: profile.name,
+        description: profile.description,
+        mcpServers: profile.mcpServers,
+        allowedTools: profile.allowedTools,
+        disallowedTools: profile.disallowedTools,
+        permissionMode: profile.permissionMode,
+        indexCodegraphOnStart: profile.indexCodegraphOnStart,
+    };
+}
