@@ -116,6 +116,12 @@ class DagScheduler implements Scheduler {
             case "cancel_requested":
                 this.cancelRun(event.at);
                 break;
+            case "pause_requested":
+                this.pauseForUser(event.at);
+                break;
+            case "resume_requested":
+                this.resumeForUser(event.at);
+                break;
             case "cancel_node_run_requested":
                 this.cancelNodeRun(event.nodeRunId, event.at);
                 break;
@@ -405,6 +411,38 @@ class DagScheduler implements Scheduler {
         this.changeRun({ ...this.run, failedItems: otherFailedItems });
     }
 
+    // A user pause takes over the limit and budget pauses, so only the user resumes the run.
+    private pauseForUser(at: Date): void {
+        if (this.run.status === "RUNNING") {
+            this.changeRun(transitionRun(this.run, "PAUSED", at, { pauseReason: "user" }));
+            return;
+        }
+        if (this.run.status !== "PAUSED" || this.isPausedByUser()) {
+            return;
+        }
+
+        const pausedByUser: RunState = { ...this.run, pauseReason: "user" };
+        delete pausedByUser.resumeAt;
+        this.changeRun(pausedByUser);
+    }
+
+    // The budget is checked again as the NodeRuns start, so it may pause the run once more.
+    private resumeForUser(at: Date): void {
+        if (!this.isPausedByUser()) {
+            return;
+        }
+
+        this.requeueNodeRunsWaitingForLimit(at);
+        this.changeRun(transitionRun(this.run, "RUNNING", at));
+        this.advance(at);
+    }
+
+    private requeueNodeRunsWaitingForLimit(at: Date): void {
+        for (const waiting of this.nodeRuns.withStatus("WAITING_LIMIT")) {
+            this.changeNodeRun(requeueAfterUsageLimit(waiting, at));
+        }
+    }
+
     private recordUsage(nodeRunId: string, usage: UsageTotals): void {
         this.budget.recordUsage(this.nodeRuns.get(nodeRunId).nodeId, usage);
     }
@@ -415,9 +453,7 @@ class DagScheduler implements Scheduler {
         }
 
         this.outbox.push({ type: "usage_limit_reset" });
-        for (const waiting of this.nodeRuns.withStatus("WAITING_LIMIT")) {
-            this.changeNodeRun(requeueAfterUsageLimit(waiting, now));
-        }
+        this.requeueNodeRunsWaitingForLimit(now);
         this.changeRun(transitionRun(this.run, "RUNNING", now));
     }
 
@@ -743,6 +779,10 @@ class DagScheduler implements Scheduler {
 
     private isRunGoingOn(): boolean {
         return this.run.status === "RUNNING";
+    }
+
+    private isPausedByUser(): boolean {
+        return this.run.status === "PAUSED" && this.run.pauseReason === "user";
     }
 
     private isPausedByUsageLimit(): boolean {

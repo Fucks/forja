@@ -34,6 +34,9 @@ export type SchedulerEvent =
           resetAt?: Date;
       }
     | { type: "cancel_requested"; at: Date }
+    // The running NodeRuns finish; nothing new starts until resume_requested.
+    | { type: "pause_requested"; at: Date }
+    | { type: "resume_requested"; at: Date }
     | { type: "cancel_node_run_requested"; nodeRunId: string; at: Date }
     // For a FAILED/CANCELED NodeRun of a run still going on, or any finished NodeRun of a
     // FAILED/SUCCEEDED run, which reopens.

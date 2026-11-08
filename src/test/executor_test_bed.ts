@@ -1,0 +1,254 @@
+import { existsSync } from "node:fs";
+
+import type { NodeRunState } from "@/engine/node_run_state.js";
+import { RUN_TERMINAL } from "@/engine/run_state.js";
+import { newId } from "@/lib/ids.js";
+import type { DatabaseHandle } from "@/server/db/client.js";
+import { FlowRepository } from "@/server/flows/flow_repository.js";
+import { createFlowService, type FlowService } from "@/server/flows/flow_service.js";
+import { ProjectRepository } from "@/server/projects/project_repository.js";
+import { createProjectService } from "@/server/projects/project_service.js";
+import type { RunRecord, RunTransition } from "@/server/runs/run_repository.js";
+import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
+import { createEventBus, type EventBus } from "@/server/runtime/event_bus.js";
+import { createExecutor, type Executor, type ItemSource } from "@/server/runtime/executor.js";
+import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
+import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
+import { SettingsRepository } from "@/server/settings/settings_repository.js";
+import { createSettingsService, type SettingsService } from "@/server/settings/settings_service.js";
+import type { ForjaEvent } from "@/shared/events.js";
+import type { FlowGraph } from "@/shared/flow_graph.js";
+import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
+import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
+import { buildProject } from "@/test/factories/project_factory.js";
+import { FakeAgentRuntime } from "@/test/fakes/fake_agent_runtime.js";
+import { FakeClock } from "@/test/fakes/fake_clock.js";
+import { FakeGitProvider } from "@/test/fakes/fake_git_provider.js";
+import { createTestDb } from "@/test/test_db.js";
+
+export const TEST_PROJECT_ID = "prj_forja";
+export const PROJECT_SYSTEM_PROMPT = "Escreva testes antes do código.";
+
+const TIME_STEP_MS = 1_000;
+const MAX_DRIVEN_MS = 6 * 60 * 60 * 1_000;
+
+// The source, git and output nodes get their executors in #70, #79 and #54.
+const NOT_YET_IMPLEMENTED_EXECUTORS: NodeExecutorRegistry = {
+    source: (context) => Promise.resolve({ outputs: { items: context.inputs.trigger } }),
+    git: () => Promise.resolve({ outputs: { result: {} } }),
+    output: () => Promise.resolve({ outputs: {} }),
+};
+
+// What the run saved and what it published, in the order it happened.
+export type JournalEntry =
+    | { kind: "saved"; nodeRuns: NodeRunState[]; runStatus?: string }
+    | { kind: "published"; event: ForjaEvent };
+
+export class ExecutorTestBed {
+    readonly clock = new FakeClock();
+    readonly runtime = new FakeAgentRuntime({ clock: this.clock });
+    readonly events: EventBus = createEventBus(this.clock);
+    readonly journal: JournalEntry[] = [];
+    readonly runs: JournalingRunRepository;
+    readonly flows: FlowService;
+    readonly settings: SettingsService;
+    readonly executor: Executor;
+    private readonly database: DatabaseHandle = createTestDb();
+
+    constructor(private readonly items: WorkItemSnapshot[]) {
+        new ProjectRepository(this.database.db).insert(buildProject({ id: TEST_PROJECT_ID }));
+        this.runs = new JournalingRunRepository(this.database, this.clock, this.journal);
+        this.flows = this.createFlowService();
+        this.settings = this.createSettingsService();
+        this.events.subscribe((envelope) => {
+            this.journal.push({ kind: "published", event: envelope.event });
+        });
+        this.executor = this.createExecutor();
+    }
+
+    close(): void {
+        this.database.close();
+    }
+
+    async publishFlow(graph: FlowGraph): Promise<string> {
+        const flow = await this.flows.create(TEST_PROJECT_ID, { name: "Entrega", graph });
+        await this.flows.publish(flow.id);
+
+        return flow.id;
+    }
+
+    async useProjectSystemPrompt(systemPrompt: string): Promise<void> {
+        await this.settings.saveProjectSettings(TEST_PROJECT_ID, {
+            ...DEFAULT_PROJECT_SETTINGS,
+            systemPrompt,
+        });
+    }
+
+    startRun(flowId: string): Promise<RunRecord> {
+        const itemIds = this.items.map((item) => item.id);
+        return this.executor.startRun({ projectId: TEST_PROJECT_ID, flowId, itemIds });
+    }
+
+    async runUntilFinished(runId: string): Promise<RunRecord> {
+        await this.advanceUntil(async () => RUN_TERMINAL.has((await this.findRun(runId)).status));
+
+        return this.findRun(runId);
+    }
+
+    // Advances the fake clock one step at a time, letting the executor react between steps.
+    async advanceUntil(isDone: () => Promise<boolean>): Promise<void> {
+        for (let drivenMs = 0; drivenMs < MAX_DRIVEN_MS; drivenMs += TIME_STEP_MS) {
+            await settlePendingWork();
+            if (await isDone()) {
+                return;
+            }
+            this.clock.advance(TIME_STEP_MS);
+        }
+
+        throw new Error(`Nothing settled within ${MAX_DRIVEN_MS} ms of fake time`);
+    }
+
+    async advanceBy(ms: number): Promise<void> {
+        const until = this.clock.now().getTime() + ms;
+        await this.advanceUntil(() => Promise.resolve(this.clock.now().getTime() >= until));
+    }
+
+    async findRun(runId: string): Promise<RunRecord> {
+        const run = await this.runs.getRun(runId);
+        if (!run) {
+            throw new Error(`Run ${runId} was not saved`);
+        }
+
+        return run;
+    }
+
+    async nodeRunsOf(runId: string, nodeId: string): Promise<NodeRunState[]> {
+        const nodeRuns = await this.runs.listNodeRuns(runId);
+        return nodeRuns.filter((nodeRun) => nodeRun.nodeId === nodeId);
+    }
+
+    async findNodeRun(
+        runId: string,
+        nodeId: string,
+        matches: (nodeRun: NodeRunState) => boolean = () => true,
+    ): Promise<NodeRunState> {
+        const nodeRun = (await this.nodeRunsOf(runId, nodeId)).find(matches);
+        if (!nodeRun) {
+            throw new Error(`No matching NodeRun of ${nodeId} in run ${runId}`);
+        }
+
+        return nodeRun;
+    }
+
+    publishedEventsOf(type: ForjaEvent["type"]): ForjaEvent[] {
+        return this.journal
+            .filter((entry) => entry.kind === "published")
+            .map((entry) => entry.event)
+            .filter((event) => event.type === type);
+    }
+
+    private createFlowService(): FlowService {
+        return createFlowService({
+            repo: new FlowRepository(this.database.db),
+            events: this.events,
+            clock: this.clock,
+            validationContext: () => Promise.resolve({}),
+        });
+    }
+
+    private createSettingsService(): SettingsService {
+        return createSettingsService({
+            repo: new SettingsRepository(this.database.db),
+            lookups: createSettingsLookups(this.database.db),
+            clock: this.clock,
+        });
+    }
+
+    private createExecutor(): Executor {
+        const items: ItemSource = {
+            getItems: (_projectId, ids) =>
+                Promise.resolve(this.items.filter((item) => ids.includes(item.id))),
+        };
+
+        return createExecutor({
+            runs: this.runs,
+            flows: this.flows,
+            projects: createProjectService({
+                repo: new ProjectRepository(this.database.db),
+                git: new FakeGitProvider(),
+                fileExists: existsSync,
+                clock: this.clock,
+            }),
+            settings: this.settings,
+            items,
+            runtime: this.runtime,
+            events: this.events,
+            clock: this.clock,
+            newId,
+            nodeExecutors: { ...nodeExecutors, ...NOT_YET_IMPLEMENTED_EXECUTORS },
+        });
+    }
+}
+
+class JournalingRunRepository extends SqliteRunRepository {
+    constructor(
+        database: DatabaseHandle,
+        clock: FakeClock,
+        private readonly journal: JournalEntry[],
+    ) {
+        super(database.db, clock);
+    }
+
+    override async saveTransition(transition: RunTransition): Promise<void> {
+        await super.saveTransition(transition);
+        this.journal.push({
+            kind: "saved",
+            nodeRuns: transition.nodeRuns ?? [],
+            runStatus: transition.run?.status,
+        });
+    }
+}
+
+export function buildIssueSnapshot(number: number): WorkItemSnapshot {
+    return {
+        id: `itm_issue${number}`,
+        title: `Issue ${number}`,
+        body: `Corpo da issue ${number}`,
+        number,
+        url: `https://github.com/Fucks/forja/issues/${number}`,
+        labels: [],
+        branch: `forja/issue-${number}`,
+    };
+}
+
+// How many of the NodeRuns were RUNNING at the same time, at most.
+export function peakOverlapOf(nodeRuns: NodeRunState[]): number {
+    const boundaries = nodeRuns.flatMap((nodeRun) => [
+        { atMs: timeMsOf(nodeRun.startedAt), change: 1 },
+        { atMs: timeMsOf(nodeRun.finishedAt), change: -1 },
+    ]);
+    // A run that ends exactly when another starts does not overlap it.
+    boundaries.sort((a, b) => a.atMs - b.atMs || a.change - b.change);
+
+    let running = 0;
+    let peak = 0;
+    for (const boundary of boundaries) {
+        running += boundary.change;
+        peak = Math.max(peak, running);
+    }
+
+    return peak;
+}
+
+function timeMsOf(date: Date | undefined): number {
+    if (!date) {
+        throw new Error("NodeRun without startedAt or finishedAt");
+    }
+
+    return date.getTime();
+}
+
+// Lets every promise chain started by the executor run before the clock moves again.
+function settlePendingWork(): Promise<void> {
+    return new Promise((resolve) => setImmediate(resolve));
+}

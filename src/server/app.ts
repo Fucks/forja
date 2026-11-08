@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
+import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { GitProvider } from "@/integrations/git/git_provider.js";
 import type { CommandRunner } from "@/integrations/process/command_runner.js";
 import type { SecretBox } from "@/integrations/secrets/secret_box.js";
@@ -13,6 +14,7 @@ import type { ForjaDb } from "@/server/db/client.js";
 import { registerErrorHandler } from "@/server/errors.js";
 import { routeModules } from "@/server/route_modules.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import type { Executor } from "@/server/runtime/executor.js";
 import { registerStaticRoutes } from "@/server/static/static_routes.js";
 
 const API_PREFIX = "/api";
@@ -36,6 +38,8 @@ export interface AppDeps {
     git: GitProvider;
     secrets: SecretBox;
     redactor: SecretRedactor;
+    agentRuntime: AgentRuntime;
+    executor: Executor;
 }
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {

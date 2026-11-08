@@ -1149,6 +1149,87 @@ describe("scheduler: budget", () => {
     });
 });
 
+describe("scheduler: pause requested by the user", () => {
+    const RESET_AT_15H = new Date("2026-01-01T15:00:00Z");
+    const AFTER_THE_RESET_MS = 4 * 60 * MINUTE_MS;
+
+    it("pauses the run and starts nothing new while the running agent finishes", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            maxConcurrentAgents: 1,
+        });
+        harness.start(["1", "2"]);
+
+        harness.requestPause();
+        harness.runToCompletion();
+
+        expect(harness.run).toMatchObject({ status: "PAUSED", pauseReason: "user" });
+        expect(harness.finalStatusOf("a", "1")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("a", "2")).toBe("QUEUED");
+    });
+
+    it("continues a run paused by the user when it is resumed", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            maxConcurrentAgents: 1,
+        });
+        harness.start(["1", "2"]);
+        harness.requestPause();
+        harness.runToCompletion();
+
+        harness.requestResume();
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("a", "2")).toBe("SUCCEEDED");
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("keeps the run paused by the user after the usage limit resets", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            scripts: { a: hittingUsageLimitOnceOn("1", RESET_AT_15H) },
+        });
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        harness.requestPause();
+        harness.advance(AFTER_THE_RESET_MS);
+
+        expect(harness.run).toMatchObject({ status: "PAUSED", pauseReason: "user" });
+        expect(harness.run.resumeAt).toBeUndefined();
+        expect(harness.finalStatusOf("a", "1")).toBe("WAITING_LIMIT");
+    });
+
+    it("runs the NodeRun that waited for the limit once the user resumes", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            scripts: { a: hittingUsageLimitOnceOn("1", RESET_AT_15H) },
+        });
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+        harness.requestPause();
+
+        harness.requestResume();
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("a", "1")).toBe("SUCCEEDED");
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("ignores a resume of a run that the user did not pause", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            scripts: { a: hittingUsageLimitOnceOn("1", RESET_AT_15H) },
+        });
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        harness.requestResume();
+
+        expect(harness.run).toMatchObject({ status: "PAUSED", pauseReason: "usage_limit" });
+    });
+});
+
 describe("scheduler: usage limit", () => {
     const RESET_AT_15H = new Date("2026-01-01T15:00:00Z");
     const RESUME_AT_15H05 = new Date("2026-01-01T15:05:00Z");
