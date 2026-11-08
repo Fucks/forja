@@ -165,7 +165,7 @@ function registerYamlFileRoutes(app: FastifyInstance, flows: FlowService): void 
             const file = await flows.exportFlow(request.params.flowId, request.query.version);
             return reply
                 .type(YAML_CONTENT_TYPE)
-                .header("content-disposition", `attachment; filename="${flowFileName(file.name)}"`)
+                .header("content-disposition", describeAttachment(flowFileName(file.name)))
                 .send(flowToYaml(file));
         },
     );
@@ -186,4 +186,8 @@ function passTextBodyThrough(
     done: (error: null, body: string) => void,
 ): void {
     done(null, body);
+}
+
+function describeAttachment(fileName: string): string {
+    return `attachment; filename="${fileName}"`;
 }

@@ -3,7 +3,7 @@ import type { YAMLError } from "yaml";
 import { z } from "zod";
 
 import { DomainValidationError } from "@/server/errors.js";
-import { flowGraphSchema } from "@/shared/flow_graph.js";
+import { describeIssuePath, flowGraphSchema } from "@/shared/flow_graph.js";
 import type { FlowEdge, FlowGraph, FlowGroup, FlowNode, Position } from "@/shared/flow_graph.js";
 import { flowNameSchema } from "@/shared/flow_types.js";
 import { nodeSlug } from "@/shared/node_slug.js";
@@ -12,7 +12,6 @@ export const FLOW_FILE_FORMAT_VERSION = 1;
 const FLOW_FILE_EXTENSION = ".forja.yaml";
 const FALLBACK_FILE_SLUG = "fluxo";
 const UNSAFE_FILE_NAME_CHARACTERS = /[^a-z0-9_-]/g;
-const ROOT_PATH_LABEL = "(raiz)";
 const FORMAT_VERSION_PATH = "forja";
 
 const MISSING_FORMAT_VERSION_MESSAGE =
@@ -225,7 +224,5 @@ function parseFlowFile(document: unknown): FlowFile {
 }
 
 function toContentIssue(issue: z.core.$ZodIssue): FlowFileContentIssue {
-    const path = issue.path.map(String).join(".");
-
-    return { kind: "content", path: path || ROOT_PATH_LABEL, message: issue.message };
+    return { kind: "content", path: describeIssuePath(issue), message: issue.message };
 }
