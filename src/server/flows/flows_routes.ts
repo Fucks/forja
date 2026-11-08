@@ -58,7 +58,9 @@ export const registerFlowsRoutes: RouteModule = (app, deps) => {
 };
 
 // TODO(#23): add the ids of the existing tool profiles as knownToolProfileIds.
-function buildValidationContext(credentials: CredentialRepository): Promise<ValidationContext> {
+export function buildValidationContext(
+    credentials: CredentialRepository,
+): Promise<ValidationContext> {
     const knownCredentialIds = credentials.list().map((credential) => credential.id);
     return Promise.resolve({ knownCredentialIds });
 }

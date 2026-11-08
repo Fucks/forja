@@ -48,5 +48,5 @@
 - [x] 16. Test: usage limit pauses the run and resumes after `resumeAt`, publishing limit events
 - [x] 17. Test: cancel run aborts running agents, closes workspaces, ends CANCELED; cancelNodeRun
 - [x] 18. Test: startRun without published version → DomainValidationError; inputs truncated above 256 KB
-- [ ] 19. Wire `agentRuntime` and `executor` into `AppDeps` — `app.ts`, `main.ts`, `app_executor.ts`, `test_app_deps.ts`
+- [x] 19. Wire `agentRuntime` and `executor` into `AppDeps` — `app.ts`, `main.ts`, `app_executor.ts`, `test_app_deps.ts`
 - [ ] 20. Self-review checklist (section 5) and feedback loops (section 6)
