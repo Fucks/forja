@@ -24,11 +24,11 @@
 - [x] 1. Test + implement `computeResumeAt` (future resetAt + margin, past resetAt, missing resetAt, custom fallback) — `src/engine/usage_pause.ts`, `src/engine/usage_pause.test.ts`
 - [x] 2. Contracts: `usageLimitMarginMinutes`, `usage_limit_reached`/`usage_limit_reset` commands, `resetAt` on `node_run_failed` — `src/engine/scheduler_types.ts`, harness, scheduler.test options
 - [x] 3. Harness outcome `hit_usage_limit` — `src/test/factories/scheduler_harness.ts`
-- [ ] 4. Test + implement: limit with resetAt 15:00, margin 5 → NodeRun WAITING_LIMIT, run PAUSED usage_limit resumeAt 15:05, `usage_limit_reached`, wakeup — `scheduler.ts`, `scheduler.test.ts`
-- [ ] 5. Test: without resetAt the run resumes 30 min later — `scheduler.test.ts`
-- [ ] 6. Test: map of 3 Devs, 2nd hits the limit; nothing starts during the pause, the running ones finish — `scheduler.test.ts`
-- [ ] 7. Test + implement: tick at resumeAt → `usage_limit_reset`, WAITING_LIMIT → QUEUED same attempt, run RUNNING, flow completes — `usage_pause.ts`, `scheduler.ts`, tests
-- [ ] 8. Test: hitting the limit does not consume retries (retries 0 still succeeds after the reset) — `scheduler.test.ts`
+- [x] 4. Test + implement: limit with resetAt 15:00, margin 5 → NodeRun WAITING_LIMIT, run PAUSED usage_limit resumeAt 15:05, `usage_limit_reached`, wakeup — `scheduler.ts`, `scheduler.test.ts`
+- [x] 5. Test: without resetAt the run resumes 30 min later — `scheduler.test.ts`
+- [x] 6. Test: map of 3 Devs, 2nd hits the limit; nothing starts during the pause, the running ones finish — `scheduler.test.ts`
+- [x] 7. Test + implement: tick at resumeAt → `usage_limit_reset`, WAITING_LIMIT → QUEUED same attempt, run RUNNING, flow completes — `usage_pause.ts`, `scheduler.ts`, tests
+- [x] 8. Test: hitting the limit does not consume retries (retries 0 still succeeds after the reset) — `scheduler.test.ts`
 - [ ] 9. Test + implement: a second limit during the pause → WAITING_LIMIT, no new pause command, later resumeAt wins — `scheduler.ts`, test
 - [ ] 10. Test + implement: run paused by the user keeps PAUSED/user at resumeAt — `scheduler.ts`, test
 - [ ] 11. Test + implement: a run that fails during the limit pause cancels its WAITING_LIMIT NodeRuns and finishes after the reset — `scheduler.ts`, test
