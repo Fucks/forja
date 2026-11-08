@@ -29,7 +29,7 @@
 - [x] 6. Test + implement `registerStoredCredentialValues` (boot) — service
 - [x] 7. `AppDeps` secrets/redactor, `main.ts` master key, test deps — `app.ts`, `main.ts`,
       `test_app_deps.ts`
-- [ ] 8. Test + implement routes (no value in responses, generic_env 400, PATCH, DELETE) —
+- [x] 8. Test + implement routes (no value in responses, generic_env 400, PATCH, DELETE) —
       `credentials_routes.ts`, `credentials_routes.test.ts`
 - [ ] 9. Pass known credential ids to flow validation — `flows_routes.ts`
 - [ ] 10. `apiClient.patch` and `use_credentials.ts` hooks

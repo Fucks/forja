@@ -42,11 +42,11 @@ export const credentialInput = z
 
 export type CredentialInput = z.infer<typeof credentialInput>;
 
-export const updateCredentialInput = z
-    .object({ name: credentialName.optional(), value: credentialValue.optional() })
-    .refine((changes) => changes.name !== undefined || changes.value !== undefined, {
-        message: "Informe o novo nome ou o novo valor.",
-    });
+const renameCredentialInput = z.object({ name: credentialName, value: credentialValue.optional() });
+// Strict so an invalid name next to a value is rejected instead of silently dropped.
+const replaceCredentialValueInput = z.strictObject({ value: credentialValue });
+
+export const updateCredentialInput = z.union([renameCredentialInput, replaceCredentialValueInput]);
 
 export type UpdateCredentialInput = z.infer<typeof updateCredentialInput>;
 
