@@ -8,6 +8,7 @@ import {
     isNodeInsideGroup,
     type LoopGroup,
     type MapGroup,
+    outgoingEdges,
     topologicalOrder,
 } from "@/engine/graph_queries.js";
 import { type NodeScope, planNodeScopes, splitsListIntoItems } from "@/engine/node_scopes.js";
@@ -17,6 +18,9 @@ const NODE_TYPES_LIMITED_BY_CONCURRENCY: ReadonlySet<NodeType> = new Set<NodeTyp
     "agent",
     "script",
 ]);
+
+const NO_RETRIES = 0;
+const MINUTE_MS = 60_000;
 
 // Everything the scheduler asks about the graph, computed once per run.
 export class FlowPlan {
@@ -105,6 +109,24 @@ export class FlowPlan {
         return sourceLoop;
     }
 
+    // Every node reachable from the node without going back through a loop, in DAG order.
+    downstreamNodeIdsOf(nodeId: string): string[] {
+        const reachedNodeIds = new Set<string>();
+        let frontier = [nodeId];
+        while (frontier.length > 0) {
+            frontier = frontier
+                .flatMap((frontierId) => this.forwardTargetsOf(frontierId))
+                .filter((targetId) => !reachedNodeIds.has(targetId));
+            frontier.forEach((targetId) => reachedNodeIds.add(targetId));
+        }
+
+        return this.nodeIdsInDagOrder.filter((candidate) => reachedNodeIds.has(candidate));
+    }
+
+    isTrigger(nodeId: string): boolean {
+        return this.findNode(nodeId)?.type === "trigger";
+    }
+
     triggerNodeIds(): string[] {
         return this.graph.nodes.filter((node) => node.type === "trigger").map((node) => node.id);
     }
@@ -119,10 +141,33 @@ export class FlowPlan {
         return node !== undefined && NODE_TYPES_LIMITED_BY_CONCURRENCY.has(node.type);
     }
 
+    // Only agents have their own retries; the workspace retries of the policy apply to every node.
+    maxRetriesOf(nodeId: string): number {
+        const node = this.findNode(nodeId);
+
+        return node?.type === "agent" ? node.config.retries : NO_RETRIES;
+    }
+
+    // Undefined for nodes that run without a time limit.
+    timeoutMsOf(nodeId: string): number | undefined {
+        const node = this.findNode(nodeId);
+        if (node?.type !== "agent" && node?.type !== "script") {
+            return undefined;
+        }
+
+        return node.config.timeoutMinutes * MINUTE_MS;
+    }
+
     findEdgeSplittingListIntoItems(nodeId: string): FlowEdge | undefined {
         return this.graph.edges.find(
             (edge) => edge.from.nodeId === nodeId && splitsListIntoItems(this.graph, edge),
         );
+    }
+
+    private forwardTargetsOf(nodeId: string): string[] {
+        return outgoingEdges(this.graph, nodeId)
+            .filter((edge) => !this.isLoopBackEdge(edge))
+            .map((edge) => edge.to.nodeId);
     }
 }
 

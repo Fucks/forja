@@ -10,6 +10,7 @@ import {
     mapProgress,
     onItemFinished,
     receiveItemsFromUpstream,
+    reopenItem,
     startItems,
 } from "@/engine/map_group.js";
 import { MapGroupRegistry } from "@/engine/map_group_registry.js";
@@ -115,6 +116,15 @@ export class MapGroupCoordinator {
                 this.change(cancelQueuedItems(mapGroup));
             }
         }
+    }
+
+    reopenItemOf(nodeRun: NodeRunState): void {
+        const mapGroup = this.mapGroupOf(nodeRun.nodeId);
+        if (!mapGroup || nodeRun.workItemId === undefined) {
+            return;
+        }
+
+        this.change(reopenItem(mapGroup, nodeRun.workItemId));
     }
 
     runningNodeRunsOf(mapGroup: MapGroupState): NodeRunState[] {

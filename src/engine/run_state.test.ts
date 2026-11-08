@@ -1,5 +1,5 @@
 import { InvalidTransitionError } from "@/engine/invalid_transition_error.js";
-import { canTransitionRun, RUN_TERMINAL, transitionRun } from "@/engine/run_state.js";
+import { canReopenRun, canTransitionRun, RUN_TERMINAL, transitionRun } from "@/engine/run_state.js";
 import { RUN_STATUS_NAMES, type RunStatusName } from "@/shared/events.js";
 import { buildRunState } from "@/test/factories/run_state_factory.js";
 import { excludeStatusPairs, listAllStatusPairs, type StatusPair } from "@/test/status_pairs.js";
@@ -13,6 +13,8 @@ const VALID_RUN_TRANSITIONS: StatusPair<RunStatusName>[] = [
     ["RUNNING", "CANCELED"],
     ["PAUSED", "RUNNING"],
     ["PAUSED", "CANCELED"],
+    ["FAILED", "RUNNING"],
+    ["SUCCEEDED", "RUNNING"],
 ];
 
 const INVALID_RUN_TRANSITIONS = excludeStatusPairs(
@@ -38,10 +40,32 @@ describe("RUN_TERMINAL", () => {
         expect([...RUN_TERMINAL].sort()).toEqual(["CANCELED", "FAILED", "SUCCEEDED"]);
     });
 
-    it.each([...RUN_TERMINAL])("does not let %s move to any other status", (terminal) => {
-        const reachable = RUN_STATUS_NAMES.filter((to) => canTransitionRun(terminal, to));
+    it("does not let a canceled run move to any other status", () => {
+        const reachable = RUN_STATUS_NAMES.filter((to) => canTransitionRun("CANCELED", to));
 
         expect(reachable).toEqual([]);
+    });
+
+    it.each<RunStatusName>(["FAILED", "SUCCEEDED"])(
+        "only lets a %s run reopen to RUNNING",
+        (terminal) => {
+            const reachable = RUN_STATUS_NAMES.filter((to) => canTransitionRun(terminal, to));
+
+            expect(reachable).toEqual(["RUNNING"]);
+        },
+    );
+});
+
+describe("canReopenRun", () => {
+    it.each<[RunStatusName, boolean]>([
+        ["SUCCEEDED", true],
+        ["FAILED", true],
+        ["CANCELED", false],
+        ["RUNNING", false],
+        ["PAUSED", false],
+        ["QUEUED", false],
+    ])("answers %s → %s", (status, isReopenable) => {
+        expect(canReopenRun(status)).toBe(isReopenable);
     });
 });
 
@@ -96,6 +120,24 @@ describe("transitionRun", () => {
         expect(finished.finishedAt).toEqual(TRANSITION_AT);
         expect(finished.startedAt).toEqual(EARLIER);
     });
+
+    it.each<RunStatusName>(["FAILED", "SUCCEEDED"])(
+        "clears finishedAt and error when a %s run reopens",
+        (terminal) => {
+            const run = buildRunState({
+                status: terminal,
+                startedAt: EARLIER,
+                finishedAt: EARLIER,
+                error: "nó falhou",
+            });
+
+            const reopened = transitionRun(run, "RUNNING", TRANSITION_AT);
+
+            expect(reopened).not.toHaveProperty("finishedAt");
+            expect(reopened).not.toHaveProperty("error");
+            expect(reopened.startedAt).toEqual(EARLIER);
+        },
+    );
 
     it("does not set finishedAt when the run pauses", () => {
         const run = buildRunState({ status: "RUNNING", startedAt: EARLIER });

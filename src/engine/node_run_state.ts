@@ -85,6 +85,20 @@ export function transitionNodeRun(
     return { ...nodeRun, ...timestampsOnEntering(nodeRun, to, at), ...extra, status: to };
 }
 
+// The failed or retried NodeRun stays in the history; the new attempt starts over as PENDING.
+export function createNextAttempt(previous: NodeRunState, id: string): NodeRunState {
+    return {
+        id,
+        runId: previous.runId,
+        nodeId: previous.nodeId,
+        workItemId: previous.workItemId,
+        iteration: previous.iteration,
+        attempt: previous.attempt + 1,
+        groupPath: previous.groupPath,
+        status: "PENDING",
+    };
+}
+
 function timestampsOnEntering(
     nodeRun: NodeRunState,
     to: NodeRunStatusName,

@@ -1,4 +1,5 @@
 import type { Condition } from "@/shared/conditions.js";
+import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
 import type {
     FlowGraph,
     FlowGroup,
@@ -17,6 +18,7 @@ import {
     buildMapGroup,
     moveNode,
     updateGroup,
+    updateNode,
 } from "@/test/factories/flow_graph_variations.js";
 
 const ORIGIN = { x: 0, y: 0 };
@@ -133,6 +135,27 @@ export function withMapConfig(
 
         return { ...group, config: { ...group.config, ...config } };
     });
+}
+
+export function withAgentConfig(
+    graph: FlowGraph,
+    agentNodeId: string,
+    config: Partial<AgentConfig>,
+): FlowGraph {
+    return updateNode(graph, agentNodeId, (node) => configureAgent(node, config));
+}
+
+// Agents retry once by default; tests about a definitive failure turn that off.
+export function withoutRetries(graph: FlowGraph): FlowGraph {
+    return { ...graph, nodes: graph.nodes.map((node) => configureAgent(node, { retries: 0 })) };
+}
+
+function configureAgent(node: FlowNode, config: Partial<AgentConfig>): FlowNode {
+    if (node.type !== "agent") {
+        return node;
+    }
+
+    return { ...node, config: { ...node.config, ...config } };
 }
 
 function buildFlow(nodes: FlowNode[], edges: FlowGraph["edges"]): FlowGraph {

@@ -1,7 +1,9 @@
 import type { NodeRunError } from "@/engine/node_run_state.js";
+import { createScheduler } from "@/engine/scheduler.js";
 import type { Condition } from "@/shared/conditions.js";
 import { buildLoopFlowWithExits } from "@/test/factories/flow_graph_factory.js";
 import { moveNode } from "@/test/factories/flow_graph_variations.js";
+import { buildRunState } from "@/test/factories/run_state_factory.js";
 import {
     buildConditionFlow,
     buildLoopBesideAgentFlow,
@@ -10,7 +12,9 @@ import {
     buildReportedCanonicalFlow,
     buildSingleAgentFlow,
     buildSourceFlow,
+    withAgentConfig,
     withMapConfig,
+    withoutRetries,
 } from "@/test/factories/scheduler_flows.js";
 import {
     createSchedulerHarness,
@@ -25,6 +29,8 @@ import {
 const APPROVED: Condition = { op: "eq", path: "approved", value: true };
 const RUNTIME_ERROR: NodeRunError = { kind: "runtime", message: "boom" };
 const FAILED_FOR_GOOD: NodeOutcome = { kind: "fail", error: RUNTIME_ERROR };
+const WORKSPACE_DOWN: NodeRunError = { kind: "workspace", message: "Docker parado" };
+const INVALID_OUTPUT: NodeRunError = { kind: "structured_output", message: "saída inválida" };
 const NEVER = Number.POSITIVE_INFINITY;
 const FIVE_ITEMS = ["1", "2", "3", "4", "5"];
 const DEV_DURATIONS_MS: Record<string, number> = {
@@ -214,7 +220,7 @@ describe("scheduler: condition branches", () => {
 describe("scheduler: failure", () => {
     it("fails the run only after the other running agents finish", () => {
         const harness = createSchedulerHarness({
-            graph: buildLinearAgentFlow(),
+            graph: withoutRetries(buildLinearAgentFlow()),
             scripts: {
                 a: ({ nodeRun }) => {
                     if (nodeRun.workItemId === "1") {
@@ -244,6 +250,146 @@ describe("scheduler: failure", () => {
     });
 });
 
+describe("scheduler: retries", () => {
+    it("retries an invalid structured output once with retries 1, 30 s after it failed", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { retries: 1 }),
+            scripts: { a: failingWith(INVALID_OUTPUT) },
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        const attempts = harness.attemptsOf("a", "1");
+        expect(attempts.map(({ attempt, status }) => ({ attempt, status }))).toEqual([
+            { attempt: 1, status: "FAILED" },
+            { attempt: 2, status: "FAILED" },
+        ]);
+        expect(startTimesMsOf(harness, "a", "1")).toEqual([0, DEFAULT_NODE_DURATION_MS + 30_000]);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
+    it("queues the next attempt as soon as the previous one fails", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { retries: 1 }),
+            scripts: { a: failingWith(INVALID_OUTPUT) },
+        });
+
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        expect(harness.attemptsOf("a", "1").at(-1)).toMatchObject({
+            attempt: 2,
+            status: "QUEUED",
+        });
+        expect(harness.run.status).toBe("RUNNING");
+    });
+
+    it("retries a workspace error twice, 2 min apart, even with retries 0", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { retries: 0 }),
+            scripts: { a: failingWith(WORKSPACE_DOWN) },
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(harness.attemptsOf("a", "1").map((entry) => entry.attempt)).toEqual([1, 2, 3]);
+        expect(startTimesMsOf(harness, "a", "1")).toEqual([0, 121_000, 242_000]);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
+    it("continues the flow with the attempt that succeeds", () => {
+        const harness = createSchedulerHarness({
+            graph: buildLinearAgentFlow(),
+            scripts: { a: failingOnFirstAttemptOf("1", INVALID_OUTPUT) },
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("a", "1")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("b", "1")).toBe("SUCCEEDED");
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+});
+
+describe("scheduler: total timeout", () => {
+    const ONE_MINUTE_MS = 60_000;
+
+    it("cancels an agent that exceeds timeoutMinutes and records it as timeout_total", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1, retries: 0 }),
+            scripts: { a: () => ({ durationMs: 5 * ONE_MINUTE_MS }) },
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(harness.commands).toContainEqual({
+            type: "cancel_node_run",
+            nodeRunId: harness.attemptsOf("a", "1")[0]?.nodeRunId,
+        });
+        expect(harness.elapsedMsWhen("a", "1", "FAILED")).toBe(ONE_MINUTE_MS);
+        expect(errorKindsOf(harness, "a")).toEqual(["timeout_total"]);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
+    it("retries an agent that timed out like any other retryable failure", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1, retries: 1 }),
+            scripts: {
+                a: ({ nodeRun }) => ({
+                    durationMs:
+                        nodeRun.attempt === 1 ? 5 * ONE_MINUTE_MS : DEFAULT_NODE_DURATION_MS,
+                }),
+            },
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(errorKindsOf(harness, "a")).toEqual(["timeout_total", undefined]);
+        expect(harness.finalStatusOf("a", "1")).toBe("SUCCEEDED");
+    });
+
+    it("leaves alone an agent that finishes within its timeout", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1 }),
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(harness.commands.filter((command) => command.type === "cancel_node_run")).toEqual(
+            [],
+        );
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("still records the timeout when restored from a snapshot before the cancel confirms", () => {
+        const graph = withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1 });
+        const options = { maxConcurrentAgents: 1, minStartIntervalMs: 0, newId: sequentialIds() };
+        const startedAt = new Date("2026-01-01T00:00:00Z");
+        const scheduler = createScheduler(graph, buildRunState(), options);
+        scheduler.handle({ type: "start", items: [{ id: "1" }], at: startedAt });
+        const cancel = scheduler
+            .tick(new Date(startedAt.getTime() + ONE_MINUTE_MS))
+            .find((command) => command.type === "cancel_node_run");
+
+        const restored = createScheduler(graph, buildRunState(), options, scheduler.snapshot());
+        const commands = restored.handle({
+            type: "node_run_failed",
+            nodeRunId: cancel?.nodeRunId ?? "",
+            error: { kind: "canceled", message: "Cancelado" },
+            at: new Date(startedAt.getTime() + ONE_MINUTE_MS),
+        });
+
+        const changedNodeRun = commands.find((command) => command.type === "node_run_changed");
+        expect(changedNodeRun?.nodeRun.error?.kind).toBe("timeout_total");
+    });
+});
+
 describe("scheduler: cancel", () => {
     it("cancels the queue, asks the executor to cancel the running agents and ends CANCELED", () => {
         const harness = createSchedulerHarness({
@@ -268,11 +414,201 @@ describe("scheduler: cancel", () => {
         expect(harness.run.status).toBe("CANCELED");
     });
 
+    it("fails only the item whose NodeRun is canceled inside a map", () => {
+        const harness = createCanonicalHarness();
+        harness.start([]);
+        harness.advance(5_000);
+
+        harness.requestNodeRunCancel(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("dev", "2")).toBe("CANCELED");
+        expect(harness.entriesOf("reviewer", "2")).toEqual([]);
+        expect(harness.finalStatusOf("reviewer", "5")).toBe("SUCCEEDED");
+        expect(harness.run.failedItems).toEqual(["2"]);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("never retries a NodeRun the user canceled", () => {
+        const harness = createCanonicalHarness();
+        harness.start([]);
+        harness.advance(5_000);
+
+        harness.requestNodeRunCancel(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.runToCompletion();
+
+        expect(harness.attemptsOf("dev", "2")).toHaveLength(1);
+    });
+
+    it("cancels a queued NodeRun without asking the executor", () => {
+        const harness = createSchedulerHarness({
+            graph: withMapConfig(buildMappedLinearFlow(), "map_a", { concurrency: 2 }),
+            maxConcurrentAgents: 1,
+        });
+        harness.start(["1", "2"]);
+        const queuedNodeRunId = latestNodeRunIdOf(harness, "a", "2");
+
+        harness.requestNodeRunCancel(queuedNodeRunId);
+
+        expect(harness.finalStatusOf("a", "2")).toBe("CANCELED");
+        expect(harness.commands).not.toContainEqual({
+            type: "cancel_node_run",
+            nodeRunId: queuedNodeRunId,
+        });
+        harness.runToCompletion();
+        expect(harness.finalStatusOf("b", "1")).toBe("SUCCEEDED");
+        expect(harness.run.failedItems).toEqual(["2"]);
+    });
+
+    it("cancels the whole run when the canceled NodeRun is outside groups", () => {
+        const harness = createSchedulerHarness({ graph: buildLinearAgentFlow() });
+        harness.start(["1", "2"]);
+
+        harness.requestNodeRunCancel(latestNodeRunIdOf(harness, "a", "1"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("a", "2")).toBe("CANCELED");
+        expect(harness.run.status).toBe("CANCELED");
+    });
+
     it("cancels a run that has not started yet right away", () => {
         const harness = createSchedulerHarness({ graph: buildLinearAgentFlow() });
 
         harness.requestCancel();
 
+        expect(harness.run.status).toBe("CANCELED");
+    });
+});
+
+describe("scheduler: retry requested by the user", () => {
+    it("reopens a finished run and reruns only the retried Reviewer of that item", () => {
+        const harness = createCanonicalHarness();
+        harness.start([]);
+        harness.runToCompletion();
+        const startCountBeforeRetry = harness.agentStartsInOrder().length;
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "reviewer", "1"));
+        harness.runToCompletion();
+
+        const startsAfterRetry = harness.agentStartsInOrder().slice(startCountBeforeRetry);
+        expect(startsAfterRetry.map(({ nodeId, workItemId }) => ({ nodeId, workItemId }))).toEqual([
+            { nodeId: "reviewer", workItemId: "1" },
+        ]);
+        expect(harness.attemptsOf("reviewer", "1").map((entry) => entry.attempt)).toEqual([1, 2]);
+        expect(runStatusesOf(harness).slice(-2)).toEqual(["RUNNING", "SUCCEEDED"]);
+    });
+
+    it("recalculates the nodes of the item that the failed Reviewer had skipped", () => {
+        const harness = createCanonicalHarness({
+            graph: withoutRetries(buildReportedCanonicalFlow()),
+            scripts: { reviewer: failingOnFirstAttemptOf("2", RUNTIME_ERROR) },
+        });
+        harness.start([]);
+        harness.runToCompletion();
+        expect(harness.finalStatusOf("open_pr", "2")).toBe("SKIPPED");
+        expect(harness.run.failedItems).toEqual(["2"]);
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "reviewer", "2"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("reviewer", "2")).toBe("SUCCEEDED");
+        expect(harness.attemptsOf("open_pr", "2").map((entry) => entry.status)).toEqual([
+            "SKIPPED",
+            "SUCCEEDED",
+        ]);
+        expect(harness.attemptsOf("open_pr", "1")).toHaveLength(1);
+        expect(harness.run.failedItems).toEqual([]);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("reopens a failed run and runs the NodeRuns its failure had canceled", () => {
+        const harness = createSchedulerHarness({
+            graph: withoutRetries(buildLinearAgentFlow()),
+            scripts: { a: failingOnFirstAttemptOf("1", RUNTIME_ERROR) },
+        });
+        harness.start(["1"]);
+        harness.runToCompletion();
+        expect(harness.run.status).toBe("FAILED");
+        const retriedAtMs = harness.clock.now().getTime();
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "a", "1"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("b", "1")).toBe("SUCCEEDED");
+        expect(harness.run.status).toBe("SUCCEEDED");
+        expect(harness.run.finishedAt?.getTime()).toBe(retriedAtMs + 2 * DEFAULT_NODE_DURATION_MS);
+    });
+
+    it("continues a failed item into the next map once the retried Developer succeeds", () => {
+        const harness = createCanonicalHarness({
+            graph: withoutRetries(buildReportedCanonicalFlow()),
+            scripts: { dev: failingOnFirstAttemptOf("2", RUNTIME_ERROR) },
+        });
+        harness.start([]);
+        harness.runToCompletion();
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("reviewer", "2")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("open_pr", "2")).toBe("SUCCEEDED");
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+});
+
+describe("scheduler: retry requested while the run goes on", () => {
+    it("reruns a canceled NodeRun of a map item and lets the item go on", () => {
+        const harness = createCanonicalHarness();
+        harness.start([]);
+        harness.advance(5_000);
+        harness.requestNodeRunCancel(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.advance(1_000);
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.runToCompletion();
+
+        expect(harness.attemptsOf("dev", "2").map((entry) => entry.status)).toEqual([
+            "CANCELED",
+            "SUCCEEDED",
+        ]);
+        expect(harness.finalStatusOf("reviewer", "2")).toBe("SUCCEEDED");
+        expect(harness.run.failedItems).toEqual([]);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("ignores a retry of a NodeRun that is still running", () => {
+        const harness = createSchedulerHarness({ graph: buildSingleAgentFlow() });
+        harness.start(["1"]);
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "a", "1"));
+        harness.runToCompletion();
+
+        expect(harness.attemptsOf("a", "1")).toHaveLength(1);
+    });
+
+    it("ignores a retry of an attempt that was already retried", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            scripts: { a: failingOnFirstAttemptOf("1", INVALID_OUTPUT) },
+        });
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        harness.requestNodeRunRetry(harness.attemptsOf("a", "1")[0]?.nodeRunId ?? "");
+
+        expect(harness.attemptsOf("a", "1")).toHaveLength(2);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("does not reopen a canceled run", () => {
+        const harness = createSchedulerHarness({ graph: buildSingleAgentFlow() });
+        harness.start(["1"]);
+        harness.requestCancel();
+        harness.runToCompletion();
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "a", "1"));
+
+        expect(harness.attemptsOf("a", "1")).toHaveLength(1);
         expect(harness.run.status).toBe("CANCELED");
     });
 });
@@ -410,7 +746,10 @@ describe("scheduler: map groups", () => {
     });
 
     it("keeps the other items going when one fails and does not pass it to the next map", () => {
-        const harness = createCanonicalHarness({ scripts: { dev: developerFailingItem("2") } });
+        const harness = createCanonicalHarness({
+            graph: withoutRetries(buildReportedCanonicalFlow()),
+            scripts: { dev: developerFailingItem("2") },
+        });
 
         harness.start([]);
         harness.runToCompletion();
@@ -425,7 +764,9 @@ describe("scheduler: map groups", () => {
 
     it("cancels the queue and the running items of a failFast map when an item fails", () => {
         const harness = createCanonicalHarness({
-            graph: withMapConfig(buildReportedCanonicalFlow(), "develop", { failFast: true }),
+            graph: withMapConfig(withoutRetries(buildReportedCanonicalFlow()), "develop", {
+                failFast: true,
+            }),
             scripts: { dev: developerFailingItem("2") },
         });
 
@@ -612,7 +953,7 @@ describe("scheduler: loop groups", () => {
 
     it("starts no new iteration once the run is failing", () => {
         const harness = createSchedulerHarness({
-            graph: buildLoopBesideAgentFlow(),
+            graph: withoutRetries(buildLoopBesideAgentFlow()),
             scripts: { c: () => ({ durationMs: 1_500, outcome: FAILED_FOR_GOOD }) },
         });
 
@@ -638,6 +979,48 @@ describe("scheduler: loop groups", () => {
         expect(harness.run.status).toBe("CANCELED");
     });
 });
+
+function failingWith(error: NodeRunError): NodeScript {
+    return () => ({ outcome: { kind: "fail", error } });
+}
+
+function latestNodeRunIdOf(harness: SchedulerHarness, nodeId: string, itemId: string): string {
+    return harness.attemptsOf(nodeId, itemId).at(-1)?.nodeRunId ?? "";
+}
+
+function sequentialIds(): () => string {
+    let nextNumber = 1;
+
+    return () => `nrn_${nextNumber++}`;
+}
+
+function errorKindsOf(harness: SchedulerHarness, nodeId: string): (string | undefined)[] {
+    return harness
+        .snapshot()
+        .nodeRuns.filter((nodeRun) => nodeRun.nodeId === nodeId)
+        .map((nodeRun) => nodeRun.error?.kind);
+}
+
+function failingOnFirstAttemptOf(failingItemId: string, error: NodeRunError): NodeScript {
+    return ({ nodeRun }) => {
+        const isFailing = nodeRun.workItemId === failingItemId && nodeRun.attempt === 1;
+
+        return isFailing ? { outcome: { kind: "fail", error } } : {};
+    };
+}
+
+function runStatusesOf(harness: SchedulerHarness): string[] {
+    return harness.commands.flatMap((command) =>
+        command.type === "run_changed" ? [command.run.status] : [],
+    );
+}
+
+function startTimesMsOf(harness: SchedulerHarness, nodeId: string, itemId: string): number[] {
+    return harness
+        .entriesOf(nodeId, itemId)
+        .filter((entry) => entry.status === "RUNNING")
+        .map((entry) => entry.elapsedMs);
+}
 
 function createLoopHarness(
     scripts: Record<string, NodeScript>,

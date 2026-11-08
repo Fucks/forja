@@ -1,6 +1,7 @@
 import { InvalidTransitionError } from "@/engine/invalid_transition_error.js";
 import {
     canTransitionNodeRun,
+    createNextAttempt,
     NODE_RUN_TERMINAL,
     type NodeRunError,
     transitionNodeRun,
@@ -172,5 +173,25 @@ describe("transitionNodeRun", () => {
         const queued = transitionNodeRun(nodeRun, "QUEUED", TRANSITION_AT, { status: "RUNNING" });
 
         expect(queued.status).toBe("QUEUED");
+    });
+});
+
+describe("createNextAttempt", () => {
+    it("starts a new PENDING NodeRun of the same node, item and iteration", () => {
+        const failed = buildNodeRunState({
+            workItemId: "7",
+            iteration: 2,
+            attempt: 1,
+            status: "FAILED",
+            startedAt: EARLIER,
+            finishedAt: TRANSITION_AT,
+            error: { kind: "runtime", message: "boom" },
+        });
+
+        const nextAttempt = createNextAttempt(failed, "node-run-2");
+
+        expect(nextAttempt).toEqual(
+            buildNodeRunState({ id: "node-run-2", workItemId: "7", iteration: 2, attempt: 2 }),
+        );
     });
 });
