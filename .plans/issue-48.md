@@ -33,4 +33,4 @@
 - [x] 10. Test + implement: run paused by the user keeps PAUSED/user at resumeAt — `scheduler.ts`, test
 - [x] 11. Test + implement: a run that fails during the limit pause cancels its WAITING_LIMIT NodeRuns and finishes after the reset — `scheduler.ts`, test
 - [x] 12. Test + implement: a limit while paused by the budget takes the pause over — `scheduler.ts`, test
-- [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 13. Self-review checklist (section 5) and feedback loops (section 6)

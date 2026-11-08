@@ -61,7 +61,6 @@ export interface SchedulerHarnessOptions {
     minStartIntervalMs?: number;
     scripts?: Record<string, NodeScript>;
     budget?: RunBudget;
-    usageLimitMarginMinutes?: number;
 }
 
 export interface TimelineEntry {
@@ -213,8 +212,7 @@ export class SchedulerHarness {
             minStartIntervalMs: this.options.minStartIntervalMs ?? 0,
             newId: () => `nrn_${this.nextNodeRunNumber++}`,
             budget: this.options.budget,
-            usageLimitMarginMinutes:
-                this.options.usageLimitMarginMinutes ?? DEFAULT_USAGE_LIMIT_MARGIN_MINUTES,
+            usageLimitMarginMinutes: DEFAULT_USAGE_LIMIT_MARGIN_MINUTES,
         };
 
         return createScheduler(this.options.graph, this.run, schedulerOptions, restore);

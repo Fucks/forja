@@ -1,7 +1,11 @@
 import type { RunBudget } from "@/engine/budgets.js";
 import type { NodeRunError } from "@/engine/node_run_state.js";
 import { createScheduler } from "@/engine/scheduler.js";
-import type { SchedulerCommand, SchedulerOptions } from "@/engine/scheduler_types.js";
+import type {
+    SchedulerCommand,
+    SchedulerOptions,
+    SchedulerSnapshot,
+} from "@/engine/scheduler_types.js";
 import type { Condition } from "@/shared/conditions.js";
 import { buildLoopFlowWithExits } from "@/test/factories/flow_graph_factory.js";
 import { moveNode } from "@/test/factories/flow_graph_variations.js";
@@ -1280,9 +1284,9 @@ describe("scheduler: usage limit", () => {
         harness.start(["1"]);
         harness.advance(DEFAULT_NODE_DURATION_MS);
         const snapshot = harness.snapshot();
-        const pausedByUser = {
+        const pausedByUser: SchedulerSnapshot = {
             ...snapshot,
-            run: { ...snapshot.run, pauseReason: "user" as const },
+            run: { ...snapshot.run, pauseReason: "user" },
         };
         const scheduler = createScheduler(
             graph,
