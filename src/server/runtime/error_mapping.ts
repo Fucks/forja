@@ -9,18 +9,12 @@ import {
     UsageLimitError,
     WorkspaceError,
 } from "@/integrations/agent_runtime/agent_errors.js";
+import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
 
 const UNEXPECTED_FAILURE: NodeRunError = {
     kind: "runtime",
     message: "Falha inesperada ao executar o nó",
 };
-
-export class UnsupportedNodeTypeError extends Error {
-    constructor(readonly nodeType: string) {
-        super(`Nós do tipo ${nodeType} ainda não podem ser executados`);
-        this.name = "UnsupportedNodeTypeError";
-    }
-}
 
 // Their messages are written for the user; anything else may carry internal details.
 const RUNTIME_ERRORS_SHOWN_TO_USERS = [

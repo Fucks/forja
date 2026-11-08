@@ -35,9 +35,9 @@
 - [x] 3. `buildPromptContext` — `src/server/runtime/run_context.ts`
 - [x] 4. Test: concurrent acquire opens once; release closes; failed open retried — `workspace_pool.test.ts`
 - [x] 5. Implement `createWorkspacePool` — `src/server/runtime/workspace_pool.ts`
-- [ ] 6. Node executor contracts + registry — `src/server/runtime/node_executors.ts`
-- [ ] 7. Agent executor (defaults, prompt + conventions, item/none workspace, outputs) — `executors/agent_executor.ts`
-- [ ] 8. `UnavailableAgentRuntime` — `src/integrations/agent_runtime/unavailable_agent_runtime.ts`
+- [x] 6. Node executor contracts + registry — `src/server/runtime/node_executors.ts`
+- [x] 7. Agent executor (defaults, prompt + conventions, item/none workspace, outputs) — `executors/agent_executor.ts`
+- [x] 8. `UnavailableAgentRuntime` — `src/integrations/agent_runtime/unavailable_agent_runtime.ts`
 - [ ] 9. Test bed for the executor — `src/test/executor_test_bed.ts`
 - [ ] 10. Test: canonical flow with 4 items succeeds, peak 3 Devs / 1 Reviewer — `executor.test.ts`
 - [ ] 11. Implement `createExecutor` + `ActiveRun` + `run_events` + `recorded_inputs` until 10 passes
