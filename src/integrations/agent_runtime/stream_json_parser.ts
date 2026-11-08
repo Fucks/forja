@@ -44,11 +44,11 @@ const TOOL_RESULT_MAX_CHARS = 500;
 const TRUNCATION_MARK = "…";
 const UNKNOWN_TOOL_NAME = "ferramenta desconhecida";
 
-export function createStreamJsonParser(opts: StreamJsonParserOptions): StreamJsonParser {
+export function createStreamJsonParser(options: StreamJsonParserOptions): StreamJsonParser {
     const toolNamesById = new Map<string, string>();
     let initInfo: InitInfo | undefined;
     let claudeResult: ClaudeResult | undefined;
-    let lastText = "";
+    let lastAssistantText = "";
 
     function push(line: string): AgentEvent[] {
         if (line.trim() === "") {
@@ -91,7 +91,7 @@ export function createStreamJsonParser(opts: StreamJsonParserOptions): StreamJso
 
     function consumeAssistantBlock(block: AssistantBlock): AgentEvent {
         if (block.type === "text") {
-            lastText = block.text;
+            lastAssistantText = block.text;
             return { kind: "text", text: block.text, ...stamp() };
         }
 
@@ -123,7 +123,7 @@ export function createStreamJsonParser(opts: StreamJsonParserOptions): StreamJso
     }
 
     function stamp(): { at: Date; iteration: number } {
-        return { at: opts.now(), iteration: opts.iteration };
+        return { at: options.now(), iteration: options.iteration };
     }
 
     function rawEvent(line: string): AgentEvent {
@@ -131,20 +131,21 @@ export function createStreamJsonParser(opts: StreamJsonParserOptions): StreamJso
     }
 
     function systemEvent(message: string): AgentEvent {
-        return { kind: "system", message, at: opts.now() };
+        return { kind: "system", message, at: options.now() };
     }
 
     return {
         push,
         init: () => initInfo,
         result: () => claudeResult,
-        lastAssistantText: () => lastText,
+        lastAssistantText: () => lastAssistantText,
     };
 }
 
 function parseJson(line: string): unknown {
     try {
-        return JSON.parse(line) as unknown;
+        const parsed: unknown = JSON.parse(line);
+        return parsed;
     } catch {
         return undefined;
     }
