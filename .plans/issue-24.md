@@ -18,10 +18,10 @@
 
 ## Tasks
 
-- [ ] 1. Shared schemas/types `src/shared/settings_types.ts`, migration `0400_settings.sql`, drizzle schema `src/server/db/schema/settings.ts`
-- [ ] 2. Test + implement: project without settings returns the defaults; global without row returns defaults — `settings_service.test.ts`, `settings_repository.ts`, `settings_service.ts`
-- [ ] 3. Test + implement: saving project and global settings and reading them back
-- [ ] 4. Test + implement: unknown project → NotFoundError; unknown credential (default/github) or tool profile → DomainValidationError
+- [x] 1. Shared schemas/types `src/shared/settings_types.ts`, migration `0400_settings.sql`, drizzle schema `src/server/db/schema/settings.ts`
+- [x] 2. Test + implement: project without settings returns the defaults; global without row returns defaults — `settings_service.test.ts`, `settings_repository.ts`, `settings_service.ts`
+- [x] 3. Test + implement: saving project and global settings and reading them back
+- [x] 4. Test + implement: unknown project → NotFoundError; unknown credential (default/github) or tool profile → DomainValidationError
 - [ ] 5. Routes `settings_routes.ts` (GET/PUT both levels, 404/422) with a routes test `settings_routes.test.ts`
 - [ ] 6. Test + implement `resolveAgentDefaults` override combinations — `resolve_agent_defaults.ts`
 - [ ] 7. Web hooks `use_settings.ts` and draft helpers `settings_draft.ts` (blank ↔ default)
