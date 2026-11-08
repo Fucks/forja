@@ -20,15 +20,15 @@
 
 - [x] 1. Test + implement `checkBudget` for run scope (cost and tokens, missing limits) — `src/engine/budgets.ts`, `budgets.test.ts`
 - [x] 2. Test + implement node scope and daily scope (already spent + run totals) — `budgets.ts`, `budgets.test.ts`
-- [ ] 3. Contracts in scheduler types: `budget?` option, `usage_recorded`, `budget_raised`, `usageByNode` snapshot — `scheduler_types.ts`, `scheduler_snapshot.ts`
-- [ ] 4. `RunBudgetGuard` (records usage per node, raises budget, finds exceeded scope) — `src/engine/run_budget_guard.ts`
-- [ ] 5. Harness: budget option, usage per script, `raiseBudget` — `src/test/factories/scheduler_harness.ts`
-- [ ] 6. Test: with run.maxCostUsd 1 and agents costing 0.40, the 4th agent does not start and the run pauses with `budget` — `scheduler.test.ts`, `scheduler.ts`
-- [ ] 7. Test: running NodeRuns at the moment of the block finish normally — `scheduler.test.ts`
-- [ ] 8. Test: per-node limit blocks only that node — `scheduler.test.ts`
-- [ ] 9. Test: usage recorded before the success event still counts — `scheduler.test.ts`
-- [ ] 10. Allow `QUEUED → FAILED` — `node_run_state.ts`, `node_run_state.test.ts`
-- [ ] 11. Test + implement `onExceeded: "fail"` fails the NodeRun with kind `budget` without retry — `scheduler.test.ts`, `scheduler.ts`
-- [ ] 12. Test + implement `budget_raised` resumes the paused run — `scheduler.test.ts`, `scheduler.ts`
-- [ ] 13. Test: usage survives snapshot/restore — `scheduler.test.ts`
+- [x] 3. Contracts in scheduler types: `budget?` option, `usage_recorded`, `budget_raised`, `usageByNode` snapshot — `scheduler_types.ts`, `scheduler_snapshot.ts`
+- [x] 4. `RunBudgetGuard` (records usage per node, raises budget, finds exceeded scope) — `src/engine/run_budget_guard.ts`
+- [x] 5. Harness: budget option, usage per script, `raiseBudget` — `src/test/factories/scheduler_harness.ts`
+- [x] 6. Test: with run.maxCostUsd 1 and agents costing 0.40, the 4th agent does not start and the run pauses with `budget` — `scheduler.test.ts`, `scheduler.ts`
+- [x] 7. Test: running NodeRuns at the moment of the block finish normally — `scheduler.test.ts`
+- [x] 8. Test: per-node limit blocks only that node — `scheduler.test.ts`
+- [x] 9. Test: usage recorded before the success event still counts — `scheduler.test.ts`
+- [x] 10. Allow `QUEUED → FAILED` — `node_run_state.ts`, `node_run_state.test.ts`
+- [x] 11. Test + implement `onExceeded: "fail"` fails the NodeRun with kind `budget` without retry — `scheduler.test.ts`, `scheduler.ts`
+- [x] 12. Test + implement `budget_raised` resumes the paused run — `scheduler.test.ts`, `scheduler.ts`
+- [x] 13. Test: usage survives snapshot/restore — `scheduler.test.ts`
 - [ ] 14. Self-review checklist (section 5) and feedback loops (section 6)

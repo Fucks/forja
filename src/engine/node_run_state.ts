@@ -53,7 +53,8 @@ export const NODE_RUN_TERMINAL: ReadonlySet<NodeRunStatusName> = new Set<NodeRun
 
 const NODE_RUN_TRANSITIONS: Record<NodeRunStatusName, readonly NodeRunStatusName[]> = {
     PENDING: ["QUEUED", "SKIPPED", "CANCELED"],
-    QUEUED: ["RUNNING", "CANCELED", "SKIPPED"],
+    // FAILED when the budget refuses the start.
+    QUEUED: ["RUNNING", "CANCELED", "SKIPPED", "FAILED"],
     RUNNING: [
         "SUCCEEDED",
         "FAILED",

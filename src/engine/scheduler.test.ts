@@ -1,3 +1,4 @@
+import type { RunBudget } from "@/engine/budgets.js";
 import type { NodeRunError } from "@/engine/node_run_state.js";
 import { createScheduler } from "@/engine/scheduler.js";
 import type { Condition } from "@/shared/conditions.js";
@@ -980,8 +981,172 @@ describe("scheduler: loop groups", () => {
     });
 });
 
+describe("scheduler: budget", () => {
+    const ONE_DOLLAR_PER_RUN: RunBudget = { run: { maxCostUsd: 1 }, onExceeded: "pause" };
+
+    it("pauses the run with budget before the 4th agent when each agent costs 0.40 of 1", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            maxConcurrentAgents: 1,
+            budget: ONE_DOLLAR_PER_RUN,
+            scripts: { a: costing(0.4) },
+        });
+
+        harness.start(FIVE_ITEMS);
+        harness.runToCompletion();
+
+        expect(harness.agentStartsInOrder()).toHaveLength(3);
+        expect(harness.finalStatusOf("a", "4")).toBe("QUEUED");
+        expect(harness.run.status).toBe("PAUSED");
+        expect(harness.run.pauseReason).toBe("budget");
+    });
+
+    it("lets the agents already running finish normally when the budget blocks", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            maxConcurrentAgents: 2,
+            budget: ONE_DOLLAR_PER_RUN,
+            scripts: {
+                a: ({ nodeRun }) => ({
+                    durationMs: nodeRun.workItemId === "1" ? 1_000 : 5_000,
+                    usage: { costUsd: 1, tokens: 0 },
+                }),
+            },
+        });
+        harness.start(["1", "2", "3"]);
+
+        harness.advance(1_000);
+
+        expect(harness.run.status).toBe("PAUSED");
+        expect(harness.finalStatusOf("a", "2")).toBe("RUNNING");
+
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("a", "2")).toBe("SUCCEEDED");
+        expect(harness.entriesOf("a", "3").map((entry) => entry.status)).not.toContain("RUNNING");
+    });
+
+    it("counts only the spending of the node against its per-node limit", () => {
+        const harness = createSchedulerHarness({
+            graph: buildLinearAgentFlow(),
+            maxConcurrentAgents: 1,
+            budget: { perNode: { b: { maxCostUsd: 0.5 } }, onExceeded: "pause" },
+            scripts: { a: costing(1), b: costing(0.1) },
+        });
+
+        harness.start(["1", "2"]);
+        harness.runToCompletion();
+
+        expect(harness.agentStartsInOrder()).toHaveLength(4);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("fails the NodeRun with budget and gives up on it when the budget says fail", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { retries: 2 }),
+            maxConcurrentAgents: 1,
+            budget: { run: { maxCostUsd: 1 }, onExceeded: "fail" },
+            scripts: { a: costing(1) },
+        });
+
+        harness.start(["1", "2"]);
+        harness.runToCompletion();
+
+        expect(harness.attemptsOf("a", "2").map(({ status }) => status)).toEqual(["FAILED"]);
+        expect(errorKindsOf(harness, "a")).toEqual([undefined, "budget"]);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
+    it("blocks only the node over its limit while the other nodes go on", () => {
+        const harness = createSchedulerHarness({
+            graph: buildMappedLinearFlow(),
+            budget: { perNode: { a: { maxCostUsd: 0.4 } }, onExceeded: "fail" },
+            scripts: { a: costing(0.4) },
+        });
+
+        harness.start(["1", "2"]);
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("a", "2")).toBe("FAILED");
+        expect(harness.finalStatusOf("b", "1")).toBe("SUCCEEDED");
+        expect(harness.run.failedItems).toEqual(["2"]);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("resumes the run paused by the budget when the budget is raised", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            maxConcurrentAgents: 1,
+            budget: ONE_DOLLAR_PER_RUN,
+            scripts: { a: costing(0.4) },
+        });
+        harness.start(FIVE_ITEMS);
+        harness.runToCompletion();
+
+        harness.raiseBudget({ run: { maxCostUsd: 10 }, onExceeded: "pause" });
+        harness.runToCompletion();
+
+        expect(harness.agentStartsInOrder()).toHaveLength(5);
+        expect(harness.run.status).toBe("SUCCEEDED");
+        expect(harness.run.pauseReason).toBeUndefined();
+    });
+
+    it("pauses again when the raised budget is still below the spending", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            maxConcurrentAgents: 1,
+            budget: ONE_DOLLAR_PER_RUN,
+            scripts: { a: costing(0.4) },
+        });
+        harness.start(FIVE_ITEMS);
+        harness.runToCompletion();
+
+        harness.raiseBudget({ run: { maxCostUsd: 1.5 }, onExceeded: "pause" });
+        harness.runToCompletion();
+
+        expect(harness.agentStartsInOrder()).toHaveLength(4);
+        expect(harness.run.pauseReason).toBe("budget");
+    });
+
+    it("remembers the spending after a restore from a snapshot", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            maxConcurrentAgents: 1,
+            budget: ONE_DOLLAR_PER_RUN,
+            scripts: { a: costing(0.4) },
+        });
+        harness.start(FIVE_ITEMS);
+        harness.advance(2 * DEFAULT_NODE_DURATION_MS);
+
+        harness.restartFromSnapshot();
+        harness.runToCompletion();
+
+        expect(harness.agentStartsInOrder()).toHaveLength(3);
+        expect(harness.run.pauseReason).toBe("budget");
+    });
+
+    it("counts usage reported before the NodeRun succeeds", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            maxConcurrentAgents: 1,
+            budget: { run: { maxTokens: 1_000 }, onExceeded: "pause" },
+            scripts: { a: () => ({ usage: { costUsd: 0, tokens: 1_000 } }) },
+        });
+
+        harness.start(["1", "2"]);
+        harness.runToCompletion();
+
+        expect(harness.agentStartsInOrder()).toHaveLength(1);
+        expect(harness.run.pauseReason).toBe("budget");
+    });
+});
+
 function failingWith(error: NodeRunError): NodeScript {
     return () => ({ outcome: { kind: "fail", error } });
+}
+
+function costing(costUsd: number): NodeScript {
+    return () => ({ usage: { costUsd, tokens: 0 } });
 }
 
 function latestNodeRunIdOf(harness: SchedulerHarness, nodeId: string, itemId: string): string {

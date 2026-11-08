@@ -17,6 +17,7 @@ const VALID_NODE_RUN_TRANSITIONS: StatusPair<NodeRunStatusName>[] = [
     ["QUEUED", "RUNNING"],
     ["QUEUED", "CANCELED"],
     ["QUEUED", "SKIPPED"],
+    ["QUEUED", "FAILED"],
     ["RUNNING", "SUCCEEDED"],
     ["RUNNING", "FAILED"],
     ["RUNNING", "CANCELED"],

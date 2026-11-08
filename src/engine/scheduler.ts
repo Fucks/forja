@@ -1,4 +1,5 @@
 import { AgentStartPacer } from "@/engine/agent_start_pacer.js";
+import type { RunBudget, UsageTotals } from "@/engine/budgets.js";
 import { FlowPlan } from "@/engine/flow_plan.js";
 import { LoopGroupCoordinator } from "@/engine/loop_group_coordinator.js";
 import type { MapGroupState } from "@/engine/map_group.js";
@@ -19,6 +20,11 @@ import {
     type FailureKind,
     shouldRecalculateAfterRetry,
 } from "@/engine/retry_policy.js";
+import {
+    type BudgetBreach,
+    budgetExceededError,
+    RunBudgetGuard,
+} from "@/engine/run_budget_guard.js";
 import { canReopenRun, RUN_TERMINAL, type RunState, transitionRun } from "@/engine/run_state.js";
 import { compareQueueOrder, type QueuePosition } from "@/engine/scheduler_queue.js";
 import { restoreSnapshot, takeSnapshot } from "@/engine/scheduler_snapshot.js";
@@ -36,6 +42,11 @@ import {
 import { assertNever } from "@/lib/assert_never.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+
+interface QueuedAgentOverBudget {
+    nodeRun: NodeRunState;
+    breach: BudgetBreach;
+}
 
 export function createScheduler(
     graph: FlowGraph,
@@ -56,6 +67,7 @@ class DagScheduler implements Scheduler {
     private items: WorkItemRef[] | undefined;
     private readonly agentStarts: AgentStartPacer;
     private readonly timeouts: NodeRunTimeouts;
+    private readonly budget: RunBudgetGuard;
     private stopOutcome: StopOutcome | undefined;
     private outbox: SchedulerCommand[] = [];
 
@@ -83,6 +95,7 @@ class DagScheduler implements Scheduler {
         this.items = state.items;
         this.agentStarts = new AgentStartPacer(options, state.lastAgentStartAt);
         this.timeouts = new NodeRunTimeouts(plan, state.timedOutNodeRunIds ?? []);
+        this.budget = new RunBudgetGuard(options.budget, state.usageByNode ?? {});
         this.stopOutcome = state.stopOutcome;
     }
 
@@ -105,6 +118,12 @@ class DagScheduler implements Scheduler {
                 break;
             case "retry_node_run_requested":
                 this.retryNodeRun(event.nodeRunId, event.at);
+                break;
+            case "usage_recorded":
+                this.recordUsage(event.nodeRunId, { costUsd: event.costUsd, tokens: event.tokens });
+                break;
+            case "budget_raised":
+                this.raiseBudget(event.budget, event.at);
                 break;
             default:
                 assertNever(event);
@@ -129,6 +148,7 @@ class DagScheduler implements Scheduler {
             lastAgentStartAt: this.agentStarts.lastAgentStartAt,
             stopOutcome: this.stopOutcome,
             timedOutNodeRunIds: this.timeouts.timedOutIds(),
+            usageByNode: this.budget.spentByNode(),
         });
     }
 
@@ -328,6 +348,20 @@ class DagScheduler implements Scheduler {
         this.changeRun({ ...this.run, failedItems: otherFailedItems });
     }
 
+    private recordUsage(nodeRunId: string, usage: UsageTotals): void {
+        this.budget.recordUsage(this.nodeRuns.get(nodeRunId).nodeId, usage);
+    }
+
+    private raiseBudget(budget: RunBudget, at: Date): void {
+        this.budget.replaceBudget(budget);
+        if (!this.isPausedByBudget()) {
+            return;
+        }
+
+        this.changeRun(transitionRun(this.run, "RUNNING", at));
+        this.advance(at);
+    }
+
     // Nothing new starts once the run is stopping; RUNNING NodeRuns are left to finish.
     private stop(outcome: StopOutcome, at: Date): void {
         this.stopOutcome = outcome;
@@ -375,12 +409,17 @@ class DagScheduler implements Scheduler {
     }
 
     private advance(now: Date): void {
-        if (this.run.status !== "RUNNING") {
+        if (!this.isRunGoingOn()) {
             return;
         }
 
         this.cancelOverdueNodeRuns(now);
         this.moveItemsThroughGroups(now);
+        // The budget may have paused the run while the NodeRuns were being queued.
+        if (!this.isRunGoingOn()) {
+            return;
+        }
+
         this.startQueuedNodeRuns(now);
         this.scheduleWakeupForWaitingAgents(now);
         this.finishRunWhenSettled(now);
@@ -398,6 +437,7 @@ class DagScheduler implements Scheduler {
         while (hasProgress) {
             this.admitQueuedMapItems();
             this.queueReadyNodeRuns(at);
+            this.enforceBudgetOnQueuedAgents(at);
             const hasFinishedIterations = this.loops.finishSettledIterations();
             const finishedItems = this.mapGroups.finishSettledItems();
             for (const finished of finishedItems) {
@@ -477,6 +517,50 @@ class DagScheduler implements Scheduler {
         }
     }
 
+    // Called while moving items through groups so that a budget failure inside a map settles its
+    // item in the same pass.
+    private enforceBudgetOnQueuedAgents(now: Date): void {
+        let overBudget = this.findQueuedAgentOverBudget(now);
+        while (overBudget) {
+            this.applyBudgetBreach(overBudget.nodeRun, overBudget.breach, now);
+            overBudget = this.findQueuedAgentOverBudget(now);
+        }
+    }
+
+    private findQueuedAgentOverBudget(now: Date): QueuedAgentOverBudget | undefined {
+        if (!this.isRunGoingOn()) {
+            return undefined;
+        }
+
+        for (const nodeRun of this.dueQueuedAgents(now)) {
+            const breach = this.budget.findBreachFor(nodeRun.nodeId);
+            if (breach) {
+                return { nodeRun, breach };
+            }
+        }
+
+        return undefined;
+    }
+
+    private applyBudgetBreach(nodeRun: NodeRunState, breach: BudgetBreach, at: Date): void {
+        switch (breach.onExceeded) {
+            case "pause":
+                this.changeRun(transitionRun(this.run, "PAUSED", at, { pauseReason: "budget" }));
+                break;
+            case "fail":
+                this.failBeforeStart(nodeRun, budgetExceededError(breach.scope), at);
+                break;
+            default:
+                assertNever(breach.onExceeded);
+        }
+    }
+
+    private failBeforeStart(queued: NodeRunState, error: NodeRunError, at: Date): void {
+        const failed = transitionNodeRun(queued, "FAILED", at, { error });
+        this.changeNodeRun(failed);
+        this.retryOrGiveUp(failed, error.kind, at);
+    }
+
     private startQueuedNodeRuns(now: Date): void {
         const queueInStartOrder = this.dueQueuedNodeRuns(now).sort((a, b) =>
             compareQueueOrder(this.queuePositionOf(a), this.queuePositionOf(b)),
@@ -517,9 +601,7 @@ class DagScheduler implements Scheduler {
     }
 
     private scheduleWakeupForWaitingAgents(now: Date): void {
-        const hasWaitingAgent = this.dueQueuedNodeRuns(now).some((nodeRun) =>
-            this.plan.isLimitedByConcurrency(nodeRun.nodeId),
-        );
+        const hasWaitingAgent = this.dueQueuedAgents(now).length > 0;
         const nextStartTime = this.agentStarts.findNextStartTime(now);
         if (!hasWaitingAgent || !nextStartTime) {
             return;
@@ -568,10 +650,24 @@ class DagScheduler implements Scheduler {
             .filter((nodeRun) => queuedAtMsOf(nodeRun) <= now.getTime());
     }
 
+    private dueQueuedAgents(now: Date): NodeRunState[] {
+        return this.dueQueuedNodeRuns(now).filter((nodeRun) =>
+            this.plan.isLimitedByConcurrency(nodeRun.nodeId),
+        );
+    }
+
     private agentNodeRunsWithStatus(status: NodeRunStatusName): NodeRunState[] {
         return this.nodeRuns
             .withStatus(status)
             .filter((nodeRun) => this.plan.isLimitedByConcurrency(nodeRun.nodeId));
+    }
+
+    private isRunGoingOn(): boolean {
+        return this.run.status === "RUNNING";
+    }
+
+    private isPausedByBudget(): boolean {
+        return this.run.status === "PAUSED" && this.run.pauseReason === "budget";
     }
 
     private changeNodeRun(nodeRun: NodeRunState): void {
