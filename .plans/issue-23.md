@@ -26,7 +26,7 @@
 - [x] 6. Test + impl: update a profile; updating a preset → ConflictError
 - [x] 7. Test + impl: remove a profile; removing a preset → ConflictError
 - [x] 8. Test + impl: duplicate a preset and a custom profile
-- [ ] 9. Routes + `tool_profiles_routes.test.ts` (201/204, 422 duplicate MCP, 400 invalid mode, 409 preset)
+- [x] 9. Routes + `tool_profiles_routes.test.ts` (201/204, 422 duplicate MCP, 400 invalid mode, 409 preset)
 - [ ] 10. Web: `use_tool_profiles.ts` query/mutation hooks
 - [ ] 11. Test + impl: page lists profiles, presets marked "embutido" without edit/remove
 - [ ] 12. Test + impl: form creates a profile with one MCP and two tools — `tool_profile_form.tsx`
