@@ -21,7 +21,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `computeResumeAt` (future resetAt + margin, past resetAt, missing resetAt, custom fallback) — `src/engine/usage_pause.ts`, `src/engine/usage_pause.test.ts`
+- [x] 1. Test + implement `computeResumeAt` (future resetAt + margin, past resetAt, missing resetAt, custom fallback) — `src/engine/usage_pause.ts`, `src/engine/usage_pause.test.ts`
 - [ ] 2. Contracts: `usageLimitMarginMinutes`, `usage_limit_reached`/`usage_limit_reset` commands, `resetAt` on `node_run_failed` — `src/engine/scheduler_types.ts`, harness, scheduler.test options
 - [ ] 3. Harness outcome `hit_usage_limit` — `src/test/factories/scheduler_harness.ts`
 - [ ] 4. Test + implement: limit with resetAt 15:00, margin 5 → NodeRun WAITING_LIMIT, run PAUSED usage_limit resumeAt 15:05, `usage_limit_reached`, wakeup — `scheduler.ts`, `scheduler.test.ts`
