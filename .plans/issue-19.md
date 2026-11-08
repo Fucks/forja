@@ -15,9 +15,9 @@
 
 ## Tasks
 
-- [ ] 1. Test + impl: `open(seal(x)) === x` and two seals differ — `secret_box.ts`, `secret_box.test.ts`
-- [ ] 2. Test + impl: tampered text, malformed text and wrong key throw `InvalidSecretError` — same files
-- [ ] 3. Test + impl: `createSecretBox` rejects a key that is not 32 bytes — same files, `master_key.ts`
+- [x] 1. Test + impl: `open(seal(x)) === x` and two seals differ — `secret_box.ts`, `secret_box.test.ts`
+- [x] 2. Test + impl: tampered text, malformed text and wrong key throw `InvalidSecretError` — same files
+- [x] 3. Test + impl: `createSecretBox` rejects a key that is not 32 bytes — same files, `master_key.ts`
 - [ ] 4. Test + impl: `loadOrCreateMasterKey` creates a 32-byte key with 0o600 once and reuses it — `master_key.ts`, `master_key.test.ts`
 - [ ] 5. Test + impl: chmod failure ignored on Windows, rethrown elsewhere — same files
 - [ ] 6. Test + impl: `maskSecret` format — `secret_redactor.ts`, `secret_redactor.test.ts`
