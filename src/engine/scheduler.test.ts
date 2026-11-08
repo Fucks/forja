@@ -27,6 +27,7 @@ import {
 const APPROVED: Condition = { op: "eq", path: "approved", value: true };
 const RUNTIME_ERROR: NodeRunError = { kind: "runtime", message: "boom" };
 const FAILED_FOR_GOOD: NodeOutcome = { kind: "fail", error: RUNTIME_ERROR };
+const WORKSPACE_DOWN: NodeRunError = { kind: "workspace", message: "Docker parado" };
 const INVALID_OUTPUT: NodeRunError = { kind: "structured_output", message: "saída inválida" };
 const NEVER = Number.POSITIVE_INFINITY;
 const FIVE_ITEMS = ["1", "2", "3", "4", "5"];
@@ -280,6 +281,20 @@ describe("scheduler: retries", () => {
             status: "QUEUED",
         });
         expect(harness.run.status).toBe("RUNNING");
+    });
+
+    it("retries a workspace error twice, 2 min apart, even with retries 0", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { retries: 0 }),
+            scripts: { a: failingWith(WORKSPACE_DOWN) },
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(harness.attemptsOf("a", "1").map((entry) => entry.attempt)).toEqual([1, 2, 3]);
+        expect(startTimesMsOf(harness, "a", "1")).toEqual([0, 121_000, 242_000]);
+        expect(harness.run.status).toBe("FAILED");
     });
 
     it("continues the flow with the attempt that succeeds", () => {
