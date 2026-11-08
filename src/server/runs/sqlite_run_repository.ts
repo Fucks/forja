@@ -218,5 +218,6 @@ function listRunsConditions(projectId: string, opts: ListRunsOptions): SQL[] {
 }
 
 function olderThanRun(runId: string): SQL {
-    return sql`(${runs.createdAt}, ${runs.id}) < (SELECT created_at, id FROM runs WHERE id = ${runId})`;
+    const cursor = sql`(SELECT created_at, id FROM runs WHERE id = ${runId})`;
+    return sql`(${runs.createdAt}, ${runs.id}) < ${cursor}`;
 }

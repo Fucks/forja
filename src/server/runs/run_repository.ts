@@ -25,7 +25,7 @@ export interface ArtifactRecord {
 }
 
 export interface RunTransition {
-    // The engine reports map failures as failedItems; when set, they replace the record's failedItemIds.
+    // The engine reports map failures as failedItems; when set, they replace failedItemIds.
     run?: RunState;
     nodeRuns?: NodeRunState[];
     artifacts?: ArtifactRecord[];

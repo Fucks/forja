@@ -27,7 +27,7 @@ export class InMemoryRunRepository implements RunRepository {
         return Promise.resolve();
     }
 
-    // Everything is prepared before the first write, so a failure leaves the stored state untouched.
+    // Everything is prepared before the first write, so a failure leaves nothing partial.
     saveTransition(change: RunTransition): Promise<void> {
         return resolveWith(() => {
             const runId = findTransitionRunId(change);
