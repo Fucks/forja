@@ -1,16 +1,19 @@
 import { InvalidTransitionError } from "@/engine/invalid_transition_error.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
 
-export type NodeRunErrorKind =
-    | "usage_limit"
-    | "timeout_total"
-    | "timeout_idle"
-    | "structured_output"
-    | "runtime"
-    | "workspace"
-    | "budget"
-    | "canceled"
-    | "interrupted";
+export const NODE_RUN_ERROR_KINDS = [
+    "usage_limit",
+    "timeout_total",
+    "timeout_idle",
+    "structured_output",
+    "runtime",
+    "workspace",
+    "budget",
+    "canceled",
+    "interrupted",
+] as const;
+
+export type NodeRunErrorKind = (typeof NODE_RUN_ERROR_KINDS)[number];
 
 export interface NodeRunError {
     kind: NodeRunErrorKind;

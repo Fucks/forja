@@ -28,8 +28,8 @@
 
 ## Tasks
 
-- [ ] 1. Migration `0600_runs.sql` and Drizzle schema `src/server/db/schema/runs.ts`
-- [ ] 2. Contracts `RunRecord`, `ArtifactRecord`, `RunRepository`, `RunNotFoundError` — `src/server/runs/run_repository.ts`
+- [x] 1. Migration `0600_runs.sql` and Drizzle schema `src/server/db/schema/runs.ts`
+- [x] 2. Contracts `RunRecord`, `ArtifactRecord`, `RunRepository`, `RunNotFoundError` — `src/server/runs/run_repository.ts`
 - [ ] 3. Test + implement `createRun`/`getRun` round-trip with Dates (both implementations) — repo, fake, rows, factory
 - [ ] 4. Test + implement `saveTransition` of run state (pause cleared, failed items) and unknown run rejection
 - [ ] 5. Test + implement NodeRun upsert, `listNodeRuns`, `getNodeRun`
