@@ -3,6 +3,7 @@ import { userEvent } from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { MemoryRouter } from "react-router";
 
+import { buildProject } from "@/test/factories/project_factory.js";
 import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import { createFakeMatchMedia } from "@/test/fakes/fake_match_media.js";
 import { renderAppAt } from "@/test/render_app_at.js";
@@ -141,6 +142,23 @@ describe("AppShell", () => {
         expect(
             screen.queryByRole("button", { name: "Expandir barra lateral" }),
         ).not.toBeInTheDocument();
+    });
+
+    it("switches project from the sidebar keeping the current area", async () => {
+        const user = userEvent.setup();
+        stubFetchRoutes({
+            "GET /api/projects": () =>
+                Response.json([
+                    buildProject({ id: "prj_forja", name: "Forja" }),
+                    buildProject({ id: "prj_outro", name: "Outro" }),
+                ]),
+        });
+        const router = renderAppAt("/projects/prj_forja/runs");
+
+        await user.click(await screen.findByRole("combobox", { name: "Projeto" }));
+        await user.click(await screen.findByRole("option", { name: "Outro" }));
+
+        expect(router.state.location.pathname).toBe("/projects/prj_outro/runs");
     });
 
     it("shows the active project in the topbar", () => {

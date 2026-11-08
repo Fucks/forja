@@ -1,11 +1,19 @@
 import { clsx } from "clsx";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import type { JSX } from "react";
-import { NavLink } from "react-router";
+import { NavLink, useLocation, useNavigate } from "react-router";
 
+import { useProjects } from "@/web/app/projects/use_projects.js";
+import { Field } from "@/web/components/ui/field.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
+import { Select } from "@/web/components/ui/select.js";
 import { Tooltip } from "@/web/components/ui/tooltip.js";
-import { GLOBAL_NAV, PROJECT_NAV, PROJECTS_PATH } from "@/web/config/navigation.js";
+import {
+    GLOBAL_NAV,
+    PROJECT_NAV,
+    PROJECTS_PATH,
+    switchProjectPath,
+} from "@/web/config/navigation.js";
 import type { GlobalNavItem } from "@/web/config/navigation.js";
 
 export function Sidebar({
@@ -36,6 +44,7 @@ export function Sidebar({
                     />
                 )}
             </div>
+            {!isCollapsed && <ProjectSwitcher projectId={projectId} />}
             <nav aria-label="Navegação principal" className="flex flex-col gap-4 py-3">
                 <SidebarLinkList links={GLOBAL_NAV} isCollapsed={isCollapsed} />
                 {projectId && (
@@ -47,6 +56,37 @@ export function Sidebar({
                 )}
             </nav>
         </aside>
+    );
+}
+
+function ProjectSwitcher({ projectId }: { projectId: string | undefined }): JSX.Element | null {
+    const projectsQuery = useProjects();
+    const { pathname } = useLocation();
+    const navigate = useNavigate();
+
+    if (!projectsQuery.data || projectsQuery.data.length === 0) {
+        return null;
+    }
+
+    const projectOptions = projectsQuery.data.map((project) => ({
+        value: project.id,
+        label: project.name,
+    }));
+    const openProject = (nextProjectId: string): void => {
+        void navigate(switchProjectPath(pathname, nextProjectId));
+    };
+
+    return (
+        <div className="border-b border-border px-3 py-3">
+            <Field label="Projeto" htmlFor="sidebar-project-switcher">
+                <Select
+                    value={projectId ?? ""}
+                    onChange={openProject}
+                    options={projectOptions}
+                    placeholder="Selecionar projeto"
+                />
+            </Field>
+        </div>
     );
 }
 
