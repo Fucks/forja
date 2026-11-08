@@ -33,8 +33,8 @@
       `credentials_routes.ts`, `credentials_routes.test.ts`
 - [x] 9. Pass known credential ids to flow validation — `flows_routes.ts`
 - [x] 10. `apiClient.patch` and `use_credentials.ts` hooks
-- [ ] 11. Page test + implement list and create flow — `credentials_page.tsx`,
+- [x] 11. Page test + implement list and create flow — `credentials_page.tsx`,
       `credential_form_dialog.tsx`, `credentials_page.test.tsx`
-- [ ] 12. Page test + implement rename/replace value — page, dialog
-- [ ] 13. Page test + implement remove with confirmation dialog — page
+- [x] 12. Page test + implement rename/replace value — page, dialog
+- [x] 13. Page test + implement remove with confirmation dialog — page
 - [ ] 14. Self-review checklist and feedback loops

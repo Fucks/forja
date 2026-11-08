@@ -1,4 +1,10 @@
-import { formatDuration, formatRelativeOffset, formatTokens, formatUsd } from "@/lib/format.js";
+import {
+    formatDateTime,
+    formatDuration,
+    formatRelativeOffset,
+    formatTokens,
+    formatUsd,
+} from "@/lib/format.js";
 
 describe("formatDuration", () => {
     it.each([
@@ -74,5 +80,13 @@ describe("formatRelativeOffset", () => {
 
     it.each([-1, Number.NaN])("rejects %d ms", (ms) => {
         expect(() => formatRelativeOffset(ms)).toThrow(RangeError);
+    });
+});
+
+describe("formatDateTime", () => {
+    it("shows the local date and time in Brazilian format", () => {
+        const at = new Date(2026, 5, 2, 15, 30);
+
+        expect(formatDateTime(at)).toBe("02/06/2026, 15:30");
     });
 });

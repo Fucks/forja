@@ -9,7 +9,7 @@ export const CREDENTIAL_KINDS = [
 
 export type CredentialKind = (typeof CREDENTIAL_KINDS)[number];
 
-export type FixedEnvVarCredentialKind = Exclude<CredentialKind, "generic_env">;
+type FixedEnvVarCredentialKind = Exclude<CredentialKind, "generic_env">;
 
 export const ENV_VAR_BY_KIND: Record<FixedEnvVarCredentialKind, string> = {
     anthropic_api_key: "ANTHROPIC_API_KEY",
@@ -18,7 +18,7 @@ export const ENV_VAR_BY_KIND: Record<FixedEnvVarCredentialKind, string> = {
 };
 
 export const CREDENTIAL_NAME_MAX_LENGTH = 60;
-export const ENV_VAR_PATTERN = /^[A-Z_][A-Z0-9_]*$/;
+const ENV_VAR_PATTERN = /^[A-Z_][A-Z0-9_]*$/;
 
 const credentialName = z.string().trim().min(1).max(CREDENTIAL_NAME_MAX_LENGTH);
 const credentialValue = z.string().min(1);
