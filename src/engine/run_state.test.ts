@@ -1,5 +1,5 @@
 import { InvalidTransitionError } from "@/engine/invalid_transition_error.js";
-import { canTransitionRun, RUN_TERMINAL, transitionRun } from "@/engine/run_state.js";
+import { canReopenRun, canTransitionRun, RUN_TERMINAL, transitionRun } from "@/engine/run_state.js";
 import { RUN_STATUS_NAMES, type RunStatusName } from "@/shared/events.js";
 import { buildRunState } from "@/test/factories/run_state_factory.js";
 import { excludeStatusPairs, listAllStatusPairs, type StatusPair } from "@/test/status_pairs.js";
@@ -54,6 +54,19 @@ describe("RUN_TERMINAL", () => {
             expect(reachable).toEqual(["RUNNING"]);
         },
     );
+});
+
+describe("canReopenRun", () => {
+    it.each<[RunStatusName, boolean]>([
+        ["SUCCEEDED", true],
+        ["FAILED", true],
+        ["CANCELED", false],
+        ["RUNNING", false],
+        ["PAUSED", false],
+        ["QUEUED", false],
+    ])("answers %s → %s", (status, isReopenable) => {
+        expect(canReopenRun(status)).toBe(isReopenable);
+    });
 });
 
 describe("transitionRun", () => {

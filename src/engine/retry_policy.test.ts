@@ -1,4 +1,10 @@
-import { decideRetry, type FailureKind } from "@/engine/retry_policy.js";
+import {
+    canRetryOnRequest,
+    decideRetry,
+    type FailureKind,
+    shouldRecalculateAfterRetry,
+} from "@/engine/retry_policy.js";
+import type { NodeRunStatusName, RunStatusName } from "@/shared/events.js";
 
 const SECOND_MS = 1_000;
 const MINUTE_MS = 60 * SECOND_MS;
@@ -72,4 +78,59 @@ describe("decideRetry", () => {
             expect(decision).toEqual({ retry: false, delayMs: 0, countsAsAttempt: false });
         },
     );
+});
+
+describe("canRetryOnRequest", () => {
+    it.each<NodeRunStatusName>(["FAILED", "CANCELED"])(
+        "retries a %s NodeRun of a run that goes on",
+        (nodeRunStatus) => {
+            expect(canRetryOnRequest(nodeRunStatus, { status: "RUNNING", isStopping: false })).toBe(
+                true,
+            );
+        },
+    );
+
+    it.each<NodeRunStatusName>(["SUCCEEDED", "SKIPPED", "RUNNING", "QUEUED"])(
+        "does not retry a %s NodeRun of a run that goes on",
+        (nodeRunStatus) => {
+            expect(canRetryOnRequest(nodeRunStatus, { status: "RUNNING", isStopping: false })).toBe(
+                false,
+            );
+        },
+    );
+
+    it("does not retry while the run is stopping", () => {
+        expect(canRetryOnRequest("FAILED", { status: "RUNNING", isStopping: true })).toBe(false);
+    });
+
+    it.each<[RunStatusName, NodeRunStatusName]>([
+        ["SUCCEEDED", "SUCCEEDED"],
+        ["SUCCEEDED", "SKIPPED"],
+        ["FAILED", "FAILED"],
+        ["FAILED", "CANCELED"],
+    ])("retries any finished NodeRun of a %s run, which reopens (%s)", (runStatus, status) => {
+        expect(canRetryOnRequest(status, { status: runStatus, isStopping: false })).toBe(true);
+    });
+
+    it.each<RunStatusName>(["CANCELED", "PAUSED", "QUEUED"])(
+        "does not retry in a %s run",
+        (runStatus) => {
+            expect(canRetryOnRequest("FAILED", { status: runStatus, isStopping: false })).toBe(
+                false,
+            );
+        },
+    );
+});
+
+describe("shouldRecalculateAfterRetry", () => {
+    it.each<[NodeRunStatusName, boolean]>([
+        ["SKIPPED", true],
+        ["FAILED", true],
+        ["CANCELED", true],
+        ["SUCCEEDED", false],
+        ["PENDING", false],
+        ["RUNNING", false],
+    ])("answers %s → %s for a NodeRun downstream of the retried one", (status, expected) => {
+        expect(shouldRecalculateAfterRetry(status)).toBe(expected);
+    });
 });

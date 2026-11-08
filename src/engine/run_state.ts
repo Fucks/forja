@@ -39,6 +39,10 @@ export function canTransitionRun(from: RunStatusName, to: RunStatusName): boolea
     return RUN_TRANSITIONS[from].includes(to);
 }
 
+export function canReopenRun(status: RunStatusName): boolean {
+    return RUN_TERMINAL.has(status) && canTransitionRun(status, "RUNNING");
+}
+
 export function transitionRun(
     run: RunState,
     to: RunStatusName,

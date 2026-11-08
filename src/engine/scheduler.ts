@@ -6,14 +6,20 @@ import { type FinishedMapItem, MapGroupCoordinator } from "@/engine/map_group_co
 import { type InputResolution, resolveInputs } from "@/engine/node_inputs.js";
 import { NodeRunRegistry } from "@/engine/node_run_registry.js";
 import {
+    createNextAttempt,
     NODE_RUN_TERMINAL,
     type NodeRunError,
     type NodeRunState,
     transitionNodeRun,
 } from "@/engine/node_run_state.js";
 import { NodeRunTimeouts, TIMEOUT_TOTAL_ERROR } from "@/engine/node_run_timeouts.js";
-import { decideRetry, type FailureKind } from "@/engine/retry_policy.js";
-import { RUN_TERMINAL, type RunState, transitionRun } from "@/engine/run_state.js";
+import {
+    canRetryOnRequest,
+    decideRetry,
+    type FailureKind,
+    shouldRecalculateAfterRetry,
+} from "@/engine/retry_policy.js";
+import { canReopenRun, RUN_TERMINAL, type RunState, transitionRun } from "@/engine/run_state.js";
 import { compareQueueOrder, type QueuePosition } from "@/engine/scheduler_queue.js";
 import { restoreSnapshot, takeSnapshot } from "@/engine/scheduler_snapshot.js";
 import {
@@ -28,21 +34,8 @@ import {
     type WorkItemRef,
 } from "@/engine/scheduler_types.js";
 import { assertNever } from "@/lib/assert_never.js";
-import type { NodeRunStatusName, RunStatusName } from "@/shared/events.js";
+import type { NodeRunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
-
-const REOPENABLE_RUN_STATUSES: ReadonlySet<RunStatusName> = new Set<RunStatusName>([
-    "SUCCEEDED",
-    "FAILED",
-]);
-const NODE_RUN_STATUSES_TO_RETRY: ReadonlySet<NodeRunStatusName> = new Set<NodeRunStatusName>([
-    "FAILED",
-    "CANCELED",
-]);
-// CANCELED too: a failed run cancels the NodeRuns that had not started yet.
-const NODE_RUN_STATUSES_TO_RECALCULATE: ReadonlySet<NodeRunStatusName> = new Set<NodeRunStatusName>(
-    ["SKIPPED", "FAILED", "CANCELED"],
-);
 
 export function createScheduler(
     graph: FlowGraph,
@@ -226,16 +219,7 @@ class DagScheduler implements Scheduler {
     }
 
     private nextAttemptOf(previous: NodeRunState): NodeRunState {
-        return {
-            id: this.options.newId(),
-            runId: previous.runId,
-            nodeId: previous.nodeId,
-            workItemId: previous.workItemId,
-            iteration: previous.iteration,
-            attempt: previous.attempt + 1,
-            groupPath: previous.groupPath,
-            status: "PENDING",
-        };
+        return createNextAttempt(previous, this.options.newId());
     }
 
     private cancelRun(at: Date): void {
@@ -296,17 +280,14 @@ class DagScheduler implements Scheduler {
         if (latest?.id !== nodeRun.id || this.plan.isTrigger(nodeRun.nodeId)) {
             return false;
         }
-        if (REOPENABLE_RUN_STATUSES.has(this.run.status)) {
-            return NODE_RUN_TERMINAL.has(nodeRun.status);
-        }
 
-        const isRunGoingOn = this.run.status === "RUNNING" && !this.stopOutcome;
+        const isStopping = this.stopOutcome !== undefined;
 
-        return isRunGoingOn && NODE_RUN_STATUSES_TO_RETRY.has(nodeRun.status);
+        return canRetryOnRequest(nodeRun.status, { status: this.run.status, isStopping });
     }
 
     private reopenRunIfFinished(at: Date): void {
-        if (!REOPENABLE_RUN_STATUSES.has(this.run.status)) {
+        if (!canReopenRun(this.run.status)) {
             return;
         }
 
@@ -325,7 +306,7 @@ class DagScheduler implements Scheduler {
             .downstreamNodeIdsOf(nodeRun.nodeId)
             .map((nodeId) => this.nodeRuns.find(nodeId, nodeRun.workItemId))
             .filter((downstream) => downstream !== undefined)
-            .filter((downstream) => NODE_RUN_STATUSES_TO_RECALCULATE.has(downstream.status));
+            .filter((downstream) => shouldRecalculateAfterRetry(downstream.status));
     }
 
     private forgetFailedItem(itemId: string | undefined): void {

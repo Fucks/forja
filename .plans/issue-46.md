@@ -39,5 +39,5 @@
 - [x] 7. Test + implement `cancel_node_run_requested` (map item fails alone; outside groups cancels the run; QUEUED → CANCELED) — `scheduler_types.ts`, `scheduler.ts`, harness, `scheduler.test.ts`
 - [x] 8. Test + implement `retry_node_run_requested` reopening a finished run for one item — `scheduler.ts`, `map_group.ts`, `map_group_coordinator.ts`, `scheduler.test.ts`
 - [x] 9. Test + implement `retry_node_run_requested` on a running run (failed NodeRun) and ignored cases — `scheduler.test.ts`
-- [ ] 10. Refactor pass on scheduler readability/size
+- [x] 10. Refactor pass on scheduler readability/size
 - [ ] 11. Self-review checklist (section 5) and feedback loops (section 6)
