@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { Link, useParams } from "react-router";
 
 import type { Project } from "@/shared/project_types.js";
@@ -31,22 +31,29 @@ export function ProjectPage(): JSX.Element {
 
     if (projectQuery.isPending) {
         return (
-            <div className="flex flex-col gap-4">
-                <PageTitle>{PROJECT_TITLE_FALLBACK}</PageTitle>
+            <ProjectPageWithoutProject>
                 <Skeleton className="h-24" />
-            </div>
+            </ProjectPageWithoutProject>
         );
     }
     if (projectQuery.isError) {
         return (
-            <div className="flex flex-col gap-4">
-                <PageTitle>{PROJECT_TITLE_FALLBACK}</PageTitle>
+            <ProjectPageWithoutProject>
                 <p role="alert">Não foi possível carregar o projeto.</p>
-            </div>
+            </ProjectPageWithoutProject>
         );
     }
 
     return <ProjectOverview project={projectQuery.data} />;
+}
+
+function ProjectPageWithoutProject({ children }: { children: ReactNode }): JSX.Element {
+    return (
+        <div className="flex flex-col gap-4">
+            <PageTitle>{PROJECT_TITLE_FALLBACK}</PageTitle>
+            {children}
+        </div>
+    );
 }
 
 function ProjectOverview({ project }: { project: Project }): JSX.Element {

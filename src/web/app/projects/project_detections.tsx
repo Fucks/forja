@@ -21,7 +21,8 @@ const DETECTIONS: Record<keyof ProjectDetection, DetectionDescription> = {
     },
     sandcastle: {
         label: "Sandcastle",
-        nextStepWhenMissing: "Sem Sandcastle: os fluxos da Forja cuidam da execução das issues.",
+        nextStepWhenMissing:
+            "Sem pipeline Sandcastle: crie um fluxo em Fluxos para automatizar as issues.",
     },
 };
 

@@ -32,4 +32,4 @@
       shortcut cards to Fluxos/Board/Runs) — `project_page.tsx`
 - [x] 9. Test + impl: `switchProjectPath` keeps the current area — `navigation.ts`
 - [x] 10. Test + impl: sidebar lists projects and switches project keeping the area — `sidebar.tsx`
-- [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 11. Self-review checklist and feedback loops (typecheck, lint, test)
