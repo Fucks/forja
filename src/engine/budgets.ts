@@ -57,8 +57,8 @@ export function checkBudget(budget: RunBudget, totals: BudgetTotals, nodeId: str
     return { allowed: false, scope: reached.scope, limit: reached.limit };
 }
 
-export function addUsage(a: UsageTotals, b: UsageTotals): UsageTotals {
-    return { costUsd: a.costUsd + b.costUsd, tokens: a.tokens + b.tokens };
+export function addUsage(first: UsageTotals, second: UsageTotals): UsageTotals {
+    return { costUsd: first.costUsd + second.costUsd, tokens: first.tokens + second.tokens };
 }
 
 // In the order the scopes are reported: run, node, daily.

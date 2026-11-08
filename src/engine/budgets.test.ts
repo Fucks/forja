@@ -1,6 +1,10 @@
-import { checkBudget, type RunBudget, type UsageTotals } from "@/engine/budgets.js";
-
-const NOTHING_SPENT: UsageTotals = { costUsd: 0, tokens: 0 };
+import {
+    type BudgetTotals,
+    checkBudget,
+    NO_USAGE,
+    type RunBudget,
+    type UsageTotals,
+} from "@/engine/budgets.js";
 
 interface SpendingSoFar {
     run?: UsageTotals;
@@ -8,11 +12,11 @@ interface SpendingSoFar {
     today?: UsageTotals;
 }
 
-function totalsOf(spending: SpendingSoFar) {
+function totalsOf(spending: SpendingSoFar): BudgetTotals {
     return {
-        run: spending.run ?? NOTHING_SPENT,
+        run: spending.run ?? NO_USAGE,
         byNode: spending.byNode ?? {},
-        today: spending.today ?? NOTHING_SPENT,
+        today: spending.today ?? NO_USAGE,
     };
 }
 

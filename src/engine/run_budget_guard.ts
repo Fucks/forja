@@ -23,7 +23,6 @@ const BUDGET_SCOPE_LABELS: Record<BudgetScope, string> = {
     daily: "diário",
 };
 
-// Adds up what the agents of the run spent and tells whether a node may still start.
 export class RunBudgetGuard {
     private readonly usageByNode: Map<string, UsageTotals>;
 
