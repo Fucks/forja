@@ -1,7 +1,12 @@
+import * as fs from "node:fs";
+
 import type { FastifyInstance } from "fastify";
 
 import { CliGitProvider } from "@/integrations/git/cli_git_provider.js";
 import { ExecaCommandRunner } from "@/integrations/process/execa_command_runner.js";
+import { loadOrCreateMasterKey } from "@/integrations/secrets/master_key.js";
+import { createSecretBox } from "@/integrations/secrets/secret_box.js";
+import { createSecretRedactor } from "@/integrations/secrets/secret_redactor.js";
 import { systemClock } from "@/lib/clock.js";
 import { buildApp } from "@/server/app.js";
 import type { AppDeps } from "@/server/app.js";
@@ -11,7 +16,10 @@ import { createEventBus } from "@/server/runtime/event_bus.js";
 
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 
-export type ServerDeps = Omit<AppDeps, "db" | "events" | "commands" | "git">;
+export type ServerDeps = Omit<
+    AppDeps,
+    "db" | "events" | "commands" | "git" | "secrets" | "redactor"
+>;
 
 export async function startServer(deps: ServerDeps): Promise<FastifyInstance> {
     const database = openDatabase(deps.paths.database);
@@ -35,6 +43,8 @@ async function buildAppOwningDatabase(
             events: createEventBus(systemClock),
             commands,
             git: new CliGitProvider(commands),
+            secrets: createSecretBox(loadOrCreateMasterKey(deps.paths.masterKey, fs)),
+            redactor: createSecretRedactor(),
         });
         app.addHook("onClose", (_closingApp, done) => {
             database.close();

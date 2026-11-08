@@ -7,6 +7,7 @@ import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { FlowDraft, FlowSummary, FlowVersion } from "@/shared/flow_types.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import { updateNode } from "@/test/factories/flow_graph_variations.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 
@@ -256,6 +257,23 @@ describe("flows routes", () => {
                         },
                     ],
                 },
+            });
+        });
+
+        it("rejects an agent that uses a credential that does not exist", async () => {
+            const flow = await createFlow();
+            const graph = updateNode(buildCanonicalFlow(), "dev", (node) =>
+                node.type === "agent"
+                    ? { ...node, config: { ...node.config, credentialId: "cred_inexistente" } }
+                    : node,
+            );
+            await saveDraft(flow.id, graph, 1);
+
+            const response = await publish(flow.id);
+
+            expect(response.statusCode).toBe(422);
+            expect(response.json()).toMatchObject({
+                error: { details: [{ code: "unknown_credential" }] },
             });
         });
     });

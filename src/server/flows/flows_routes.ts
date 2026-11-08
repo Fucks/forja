@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import type { ValidationContext } from "@/engine/graph_validation.js";
 import { systemClock } from "@/lib/clock.js";
+import { CredentialRepository } from "@/server/credentials/credential_repository.js";
 import { FlowRepository } from "@/server/flows/flow_repository.js";
 import { createFlowService } from "@/server/flows/flow_service.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
@@ -35,11 +36,12 @@ const versionParamsSchema = flowParamsSchema.extend({
 });
 
 export const registerFlowsRoutes: RouteModule = (app, deps) => {
+    const credentials = new CredentialRepository(deps.db);
     const flows = createFlowService({
         repo: new FlowRepository(deps.db),
         events: deps.events,
         clock: systemClock,
-        validationContext: buildValidationContext,
+        validationContext: () => buildValidationContext(credentials),
     });
 
     registerProjectFlowsRoutes(app, flows);
@@ -48,10 +50,10 @@ export const registerFlowsRoutes: RouteModule = (app, deps) => {
     registerVersionRoutes(app, flows);
 };
 
-// TODO(#20): add the ids of the existing credentials as knownCredentialIds.
 // TODO(#23): add the ids of the existing tool profiles as knownToolProfileIds.
-function buildValidationContext(): Promise<ValidationContext> {
-    return Promise.resolve({});
+function buildValidationContext(credentials: CredentialRepository): Promise<ValidationContext> {
+    const knownCredentialIds = credentials.list().map((credential) => credential.id);
+    return Promise.resolve({ knownCredentialIds });
 }
 
 function registerProjectFlowsRoutes(app: FastifyInstance, flows: FlowService): void {
