@@ -41,5 +41,5 @@
 - [x] 12. Test+impl: workspace `exec`, `diff` (truncated 200 KB), `writeFiles` (rejects escaping paths)
 - [x] 13. Test+impl: `close` / `closeWorkspace` (keeps branch, idempotent, orphans by label), `listOpenWorkspaces` from Docker
 - [x] 14. Test+impl: `runHeadless` ephemeral read-only container, removed at the end
-- [ ] 15. Integration test `docker_agent_runtime.integration.test.ts` (skipIf !FORJA_IT_DOCKER)
+- [x] 15. Integration test `docker_agent_runtime.integration.test.ts` (skipIf !FORJA_IT_DOCKER)
 - [ ] 16. Self-review checklist and feedback loops
