@@ -33,9 +33,7 @@ type SyncedFields = Pick<
 
 export function planGithubUpsert(request: GithubUpsertRequest): GithubUpsertPlan {
     const existingByNumber = indexByNumber(request.existingItems);
-    const newIssues = request.issues
-        .filter((issue) => !existingByNumber.has(issue.number))
-        .map((issue) => ({ issue, id: request.newItemId() }));
+    const newIssues = assignIdsToNewIssues(request, existingByNumber);
     const knownIssues = pairWithExistingItems(request.issues, existingByNumber);
     const idByNumber = indexIdsByNumber(existingByNumber, newIssues);
 
@@ -58,6 +56,15 @@ function indexByNumber(items: WorkItem[]): Map<number, WorkItem> {
     }
 
     return itemsByNumber;
+}
+
+function assignIdsToNewIssues(
+    request: GithubUpsertRequest,
+    existingByNumber: Map<number, WorkItem>,
+): IssueWithId[] {
+    return request.issues
+        .filter((issue) => !existingByNumber.has(issue.number))
+        .map((issue) => ({ issue, id: request.newItemId() }));
 }
 
 function pairWithExistingItems(

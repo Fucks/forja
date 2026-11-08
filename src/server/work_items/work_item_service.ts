@@ -90,6 +90,23 @@ function createLocalItem(
     return item;
 }
 
+function assertBlockersAreOtherItemsOfProject(
+    repo: WorkItemRepository,
+    item: Pick<WorkItem, "id" | "projectId">,
+    blockerIds: string[],
+): void {
+    const isOtherItemOfProject = (blockerId: string): boolean =>
+        blockerId !== item.id && repo.findById(blockerId)?.projectId === item.projectId;
+
+    const invalidBlockerIds = blockerIds.filter((blockerId) => !isOtherItemOfProject(blockerId));
+    if (invalidBlockerIds.length > 0) {
+        throw new DomainValidationError(
+            "Um item só pode ser bloqueado por outros itens do mesmo projeto.",
+            { blockedBy: invalidBlockerIds },
+        );
+    }
+}
+
 // The leading characters of a ULID encode its timestamp, so items created close together would share
 // them; the random trailing characters keep each item on its own branch.
 function localItemBranch(id: string): string {
@@ -108,6 +125,14 @@ function updateLocalItem(
     }
 
     return saveChangedItem(deps, { ...item, ...input });
+}
+
+function assertIsLocal(item: WorkItem): void {
+    if (item.source === "github") {
+        throw new ConflictError(
+            `O item ${item.id} vem da issue #${item.number} do GitHub e só muda por lá.`,
+        );
+    }
 }
 
 function setManualColumn(
@@ -170,31 +195,6 @@ function publishItemEvents(
 ): void {
     for (const item of items) {
         events.publish({ type, projectId: item.projectId, workItemId: item.id });
-    }
-}
-
-function assertIsLocal(item: WorkItem): void {
-    if (item.source === "github") {
-        throw new ConflictError(
-            `O item ${item.id} vem do GitHub; edite a issue #${item.number} no GitHub.`,
-        );
-    }
-}
-
-function assertBlockersAreOtherItemsOfProject(
-    repo: WorkItemRepository,
-    item: Pick<WorkItem, "id" | "projectId">,
-    blockerIds: string[],
-): void {
-    const isOtherItemOfProject = (blockerId: string): boolean =>
-        blockerId !== item.id && repo.findById(blockerId)?.projectId === item.projectId;
-
-    const invalidBlockerIds = blockerIds.filter((blockerId) => !isOtherItemOfProject(blockerId));
-    if (invalidBlockerIds.length > 0) {
-        throw new DomainValidationError(
-            "Um item só pode ser bloqueado por outros itens do mesmo projeto.",
-            { blockedBy: invalidBlockerIds },
-        );
     }
 }
 
