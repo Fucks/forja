@@ -38,9 +38,9 @@
 - [x] 6. Node executor contracts + registry — `src/server/runtime/node_executors.ts`
 - [x] 7. Agent executor (defaults, prompt + conventions, item/none workspace, outputs) — `executors/agent_executor.ts`
 - [x] 8. `UnavailableAgentRuntime` — `src/integrations/agent_runtime/unavailable_agent_runtime.ts`
-- [ ] 9. Test bed for the executor — `src/test/executor_test_bed.ts`
-- [ ] 10. Test: canonical flow with 4 items succeeds, peak 3 Devs / 1 Reviewer — `executor.test.ts`
-- [ ] 11. Implement `createExecutor` + `ActiveRun` + `run_events` + `recorded_inputs` until 10 passes
+- [x] 9. Test bed for the executor — `src/test/executor_test_bed.ts`
+- [x] 10. Test: canonical flow with 4 items succeeds, peak 3 Devs / 1 Reviewer — `executor.test.ts`
+- [x] 11. Implement `createExecutor` + `ActiveRun` + `run_events` + `recorded_inputs` until 10 passes
 - [ ] 12. Test: one workspace per item opened once and closed; `none` nodes use `runHeadless`
 - [ ] 13. Test: prompt has rendered variables and project system prompt
 - [ ] 14. Test: every transition is saved before its event is published
