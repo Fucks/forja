@@ -1,0 +1,4 @@
+{"_fixture":"sintética"}
+{"type":"system","subtype":"init","session_id":"sess-mcp","model":"claude-sonnet-5-5","tools":["Bash","Read"],"mcp_servers":[{"name":"codegraph","status":"connected"},{"name":"github","status":"failed"}]}
+{"type":"assistant","message":{"content":[{"type":"text","text":"O MCP do GitHub não está disponível; sigo sem ele."}]},"session_id":"sess-mcp"}
+{"type":"result","subtype":"success","is_error":false,"duration_ms":3000,"num_turns":1,"result":"O MCP do GitHub não está disponível; sigo sem ele.","session_id":"sess-mcp","total_cost_usd":0.02,"usage":{"input_tokens":50,"output_tokens":15,"cache_read_input_tokens":0,"cache_creation_input_tokens":0},"permission_denials":[]}

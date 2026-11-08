@@ -15,7 +15,7 @@
 
 ## Tasks
 
-- [ ] 1. Fixtures: the five synthetic `.ndjson` files — `src/test/fixtures/stream_json/`
+- [x] 1. Fixtures: the five synthetic `.ndjson` files — `src/test/fixtures/stream_json/`
 - [ ] 2. Test + impl: non-JSON and truncated lines become `raw`; blank lines and unknown types are ignored — `stream_json_parser.ts`
 - [ ] 3. Test + impl: `assistant` text → `text` events and `lastAssistantText()`
 - [ ] 4. Test + impl: `tool_use` → `tool_call` with compact args truncated at 4 KB

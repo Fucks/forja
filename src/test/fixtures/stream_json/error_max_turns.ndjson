@@ -1,0 +1,5 @@
+{"_fixture":"sintética"}
+{"type":"system","subtype":"init","session_id":"sess-turns","model":"claude-sonnet-5-5","tools":["Bash"],"mcp_servers":[]}
+{"type":"assistant","message":{"content":[{"type":"text","text":"Ainda investigando a falha."},{"type":"tool_use","id":"toolu_5","name":"Bash","input":{"command":"rm -rf dist"}}]},"session_id":"sess-turns"}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_5","content":"Permissão negada para Bash","is_error":true}]},"session_id":"sess-turns"}
+{"type":"result","subtype":"error_max_turns","is_error":true,"duration_ms":60000,"num_turns":5,"session_id":"sess-turns","total_cost_usd":0.4,"usage":{"input_tokens":900,"output_tokens":300,"cache_read_input_tokens":100,"cache_creation_input_tokens":0},"permission_denials":[{"tool_name":"Bash","tool_use_id":"toolu_5","tool_input":{"command":"rm -rf dist"}}],"errors":["Reached maximum number of turns (5)"]}
