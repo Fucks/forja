@@ -22,7 +22,7 @@
 - [x] 1. Shared types and schemas — `src/shared/credential_types.ts`
 - [x] 2. Migration, Drizzle schema and repository — `0200_credentials.sql`, `schema/credentials.ts`,
       `credential_repository.ts`
-- [ ] 3. Test + implement `create` (sealed in DB, masked, env var by kind, redactor) —
+- [x] 3. Test + implement `create` (sealed in DB, masked, env var by kind, redactor) —
       `credential_service.ts`, `credential_service.test.ts`, `src/test/test_secrets.ts`
 - [ ] 4. Test + implement `list`, `rename`, `replaceValue`, `remove` (NotFound) — service
 - [ ] 5. Test + implement `revealForRuntime` and `recordCheck` — service
