@@ -38,4 +38,4 @@
 - [x] 8. Test + implement `listRuns` pagination by `created_at` desc and flow/status filters
 - [x] 9. Test + implement `listActiveRuns` (QUEUED, RUNNING, PAUSED only)
 - [x] 10. Test + implement `latestNodeRunsByItem`
-- [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 11. Self-review checklist and feedback loops (typecheck, lint, test)
