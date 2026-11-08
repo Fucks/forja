@@ -1,12 +1,15 @@
 import { randomBytes } from "node:crypto";
 
-import { InvalidMasterKeyError } from "@/integrations/secrets/master_key.js";
-import { createSecretBox, InvalidSecretError } from "@/integrations/secrets/secret_box.js";
+import { InvalidMasterKeyError, MASTER_KEY_BYTES } from "@/integrations/secrets/master_key.js";
+import {
+    createSecretBox,
+    InvalidSecretError,
+    type SecretBox,
+} from "@/integrations/secrets/secret_box.js";
 
-const MASTER_KEY_BYTES = 32;
 const API_KEY = "sk-ant-api03-abcdefghijklmnopqrstuvwxyz-a1b2";
 
-function createBoxWithRandomKey(): ReturnType<typeof createSecretBox> {
+function createBoxWithRandomKey(): SecretBox {
     return createSecretBox(randomBytes(MASTER_KEY_BYTES));
 }
 
