@@ -28,7 +28,7 @@ const DETECTIONS: Record<keyof ProjectDetection, DetectionDescription> = {
 
 export function DetectedList({ detection }: { detection: ProjectDetection }): JSX.Element {
     const detectedLabels = listDetections(detection, { isPresent: true }).map(
-        (detected) => detected.label,
+        (description) => description.label,
     );
 
     return (
@@ -68,6 +68,6 @@ function listDetections(
 ): DetectionDescription[] {
     return projectDetectionSchema
         .keyof()
-        .options.filter((entry) => detection[entry] === isPresent)
-        .map((entry) => DETECTIONS[entry]);
+        .options.filter((detectionKey) => detection[detectionKey] === isPresent)
+        .map((detectionKey) => DETECTIONS[detectionKey]);
 }

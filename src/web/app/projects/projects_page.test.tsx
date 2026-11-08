@@ -3,7 +3,6 @@ import { userEvent } from "@testing-library/user-event";
 import type { UserEvent } from "@testing-library/user-event";
 
 import type { Project } from "@/shared/project_types.js";
-
 import { buildProject } from "@/test/factories/project_factory.js";
 import { respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
@@ -121,17 +120,6 @@ describe("ProjectsPage", () => {
     });
 });
 
-async function submitNewProject(
-    user: UserEvent,
-    input: { name: string; repoPath: string },
-): Promise<void> {
-    await user.click(await screen.findByRole("button", { name: "Novo projeto" }));
-    const dialog = screen.getByRole("dialog", { name: "Novo projeto" });
-    await user.type(within(dialog).getByLabelText("Nome"), input.name);
-    await user.type(within(dialog).getByLabelText("Caminho do repositório"), input.repoPath);
-    await user.click(within(dialog).getByRole("button", { name: "Criar projeto" }));
-}
-
 describe("ProjectPage", () => {
     it("shows the repository path, base branch and GitHub repository", async () => {
         stubFetchRoutes({ "GET /api/projects/prj_forja": () => Response.json(FORJA) });
@@ -190,3 +178,14 @@ describe("ProjectPage", () => {
         expect(screen.getByRole("heading", { level: 1, name: "Projeto" })).toBeInTheDocument();
     });
 });
+
+async function submitNewProject(
+    user: UserEvent,
+    input: { name: string; repoPath: string },
+): Promise<void> {
+    await user.click(await screen.findByRole("button", { name: "Novo projeto" }));
+    const dialog = screen.getByRole("dialog", { name: "Novo projeto" });
+    await user.type(within(dialog).getByLabelText("Nome"), input.name);
+    await user.type(within(dialog).getByLabelText("Caminho do repositório"), input.repoPath);
+    await user.click(within(dialog).getByRole("button", { name: "Criar projeto" }));
+}
