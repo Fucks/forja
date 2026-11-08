@@ -1,6 +1,6 @@
+import { isItemInProgress } from "@/engine/map_group.js";
 import { NODE_RUN_TERMINAL, type NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL, type RunState } from "@/engine/run_state.js";
-import { isItemInProgress } from "@/engine/map_group.js";
 import type {
     Scheduler,
     SchedulerCommand,
@@ -17,7 +17,13 @@ import { NodeRunExecution } from "@/server/runtime/node_run_execution.js";
 import type { NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
 import { limitRecordedInputs } from "@/server/runtime/recorded_inputs.js";
 import { buildWorkspaceSpec } from "@/server/runtime/run_context.js";
-import { nodeRunUpdatedEvent, runChangedEvent } from "@/server/runtime/run_events.js";
+import {
+    groupProgressEvent,
+    logAppendedEvent,
+    nodeRunUpdatedEvent,
+    runChangedEvent,
+    usageLimitReachedEvent,
+} from "@/server/runtime/run_events.js";
 import { createWorkspacePool, type WorkspacePool } from "@/server/runtime/workspace_pool.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
@@ -56,7 +62,11 @@ export class ActiveRun {
         this.record = deps.record;
         this.workspaces = createWorkspacePool({
             runtime: deps.runtime,
-            specOf: (item) => buildWorkspaceSpec({ ...deps, run: this.record }, item),
+            specOf: (item) =>
+                buildWorkspaceSpec(
+                    { run: this.record, project: deps.project, settings: deps.settings },
+                    item,
+                ),
         });
     }
 
@@ -106,13 +116,13 @@ export class ActiveRun {
                 await this.saveRun(command.run);
                 break;
             case "group_progress":
-                this.publishGroupProgress(command);
+                this.deps.events.publish(groupProgressEvent(this.record, command));
                 break;
             case "schedule_wakeup":
                 this.scheduleWakeup(command.at);
                 break;
             case "usage_limit_reached":
-                this.publishUsageLimitReached(command.resetAt);
+                this.deps.events.publish(usageLimitReachedEvent(this.record, command.resetAt));
                 break;
             case "usage_limit_reset":
                 this.deps.events.publish({
@@ -155,14 +165,7 @@ export class ActiveRun {
     private announceLogLine(nodeRunId: string): void {
         const sequence = (this.logSequenceByNodeRun.get(nodeRunId) ?? 0) + 1;
         this.logSequenceByNodeRun.set(nodeRunId, sequence);
-        this.deps.events.publish({
-            type: "log.appended",
-            runId: this.record.id,
-            projectId: this.record.projectId,
-            nodeRunId,
-            fromSeq: sequence,
-            toSeq: sequence,
-        });
+        this.deps.events.publish(logAppendedEvent(this.record, nodeRunId, sequence));
     }
 
     private async saveNodeRun(nodeRun: NodeRunState): Promise<void> {
@@ -182,27 +185,6 @@ export class ActiveRun {
         if (event) {
             this.deps.events.publish(event);
         }
-    }
-
-    private publishGroupProgress(
-        progress: Extract<SchedulerCommand, { type: "group_progress" }>,
-    ): void {
-        const { groupId, queued, running, succeeded, failed } = progress;
-        this.deps.events.publish({
-            type: "group.progress",
-            runId: this.record.id,
-            projectId: this.record.projectId,
-            ...{ groupId, queued, running, succeeded, failed },
-        });
-    }
-
-    private publishUsageLimitReached(resetAt: Date | undefined): void {
-        this.deps.events.publish({
-            type: "usage.limit_reached",
-            projectId: this.record.projectId,
-            runId: this.record.id,
-            resetAt: resetAt?.toISOString(),
-        });
     }
 
     private scheduleWakeup(at: Date): void {

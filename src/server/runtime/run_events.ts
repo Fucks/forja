@@ -1,6 +1,9 @@
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL, type RunState } from "@/engine/run_state.js";
+import type { SchedulerCommand } from "@/engine/scheduler_types.js";
 import type { ForjaEvent } from "@/shared/events.js";
+
+type GroupProgressCommand = Extract<SchedulerCommand, { type: "group_progress" }>;
 
 type RunLifecycleEventType = "run.created" | "run.started" | "run.finished";
 
@@ -43,6 +46,39 @@ export function nodeRunUpdatedEvent(run: RunState, nodeRun: NodeRunState): Forja
         status: nodeRun.status,
         attempt: nodeRun.attempt,
         iteration: nodeRun.iteration,
+    };
+}
+
+export function groupProgressEvent(run: RunState, progress: GroupProgressCommand): ForjaEvent {
+    return {
+        type: "group.progress",
+        runId: run.id,
+        projectId: run.projectId,
+        groupId: progress.groupId,
+        queued: progress.queued,
+        running: progress.running,
+        succeeded: progress.succeeded,
+        failed: progress.failed,
+    };
+}
+
+export function usageLimitReachedEvent(run: RunState, resetAt: Date | undefined): ForjaEvent {
+    return {
+        type: "usage.limit_reached",
+        projectId: run.projectId,
+        runId: run.id,
+        resetAt: resetAt?.toISOString(),
+    };
+}
+
+export function logAppendedEvent(run: RunState, nodeRunId: string, sequence: number): ForjaEvent {
+    return {
+        type: "log.appended",
+        runId: run.id,
+        projectId: run.projectId,
+        nodeRunId,
+        fromSeq: sequence,
+        toSeq: sequence,
     };
 }
 

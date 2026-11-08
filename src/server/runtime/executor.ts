@@ -14,6 +14,7 @@ import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_
 import { runLifecycleEvent } from "@/server/runtime/run_events.js";
 import type { SettingsService } from "@/server/settings/settings_service.js";
 import type { FlowVersion } from "@/shared/flow_types.js";
+import type { Project } from "@/shared/project_types.js";
 import type { GlobalSettings, ProjectSettings } from "@/shared/settings_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
 
@@ -57,6 +58,15 @@ export interface ExecutorDeps {
     nodeExecutors?: NodeExecutorRegistry;
 }
 
+// Everything a run needs, loaded before it is created.
+interface RunSetup {
+    version: FlowVersion;
+    project: Project;
+    projectSettings: ProjectSettings;
+    globalSettings: GlobalSettings;
+    items: WorkItemSnapshot[];
+}
+
 export function createExecutor(deps: ExecutorDeps): Executor {
     return new RunExecutor(deps);
 }
@@ -67,37 +77,12 @@ class RunExecutor implements Executor {
     constructor(private readonly deps: ExecutorDeps) {}
 
     async startRun(input: StartRunInput): Promise<RunRecord> {
-        const { deps } = this;
-        const [version, project, projectSettings, globalSettings, items] = await Promise.all([
-            this.findPublishedVersion(input.flowId, input.version),
-            deps.projects.get(input.projectId),
-            deps.settings.getProjectSettings(input.projectId),
-            deps.settings.getGlobalSettings(),
-            deps.items.getItems(input.projectId, input.itemIds),
-        ]);
-        const record = await this.createQueuedRun(input, version.version);
+        const setup = await this.loadRunSetup(input);
+        const record = await this.createQueuedRun(input, setup.version.version);
+        const activeRun = this.activate(record, setup);
 
-        const activeRun = new ActiveRun({
-            ...deps,
-            record,
-            graph: version.graph,
-            project,
-            settings: projectSettings,
-            items,
-            scheduler: createScheduler(
-                version.graph,
-                record,
-                this.schedulerOptionsOf(projectSettings, globalSettings),
-            ),
-            nodeExecutors: deps.nodeExecutors ?? nodeExecutors,
-            onFinished: (runId) => this.activeRuns.delete(runId),
-        });
-        this.activeRuns.set(record.id, activeRun);
-        await activeRun.deliver({
-            type: "start",
-            items: items.map(({ id }) => ({ id })),
-            at: this.now(),
-        });
+        const items = setup.items.map(({ id }) => ({ id }));
+        await activeRun.deliver({ type: "start", items, at: this.now() });
 
         return activeRun.current;
     }
@@ -136,6 +121,19 @@ class RunExecutor implements Executor {
         return [...this.activeRuns.keys()];
     }
 
+    private async loadRunSetup(input: StartRunInput): Promise<RunSetup> {
+        const { deps } = this;
+        const [version, project, projectSettings, globalSettings, items] = await Promise.all([
+            this.findPublishedVersion(input.flowId, input.version),
+            deps.projects.get(input.projectId),
+            deps.settings.getProjectSettings(input.projectId),
+            deps.settings.getGlobalSettings(),
+            deps.items.getItems(input.projectId, input.itemIds),
+        ]);
+
+        return { version, project, projectSettings, globalSettings, items };
+    }
+
     private async findPublishedVersion(flowId: string, version?: number): Promise<FlowVersion> {
         if (version !== undefined) {
             return this.deps.flows.getVersion(flowId, version);
@@ -165,6 +163,33 @@ class RunExecutor implements Executor {
         this.deps.events.publish(runLifecycleEvent("run.created", record));
 
         return record;
+    }
+
+    private activate(record: RunRecord, setup: RunSetup): ActiveRun {
+        const { deps } = this;
+        const { version, projectSettings, globalSettings } = setup;
+        const activeRun = new ActiveRun({
+            runs: deps.runs,
+            events: deps.events,
+            runtime: deps.runtime,
+            clock: deps.clock,
+            newId: (prefix) => deps.newId(prefix),
+            record,
+            graph: version.graph,
+            project: setup.project,
+            settings: projectSettings,
+            items: setup.items,
+            scheduler: createScheduler(
+                version.graph,
+                record,
+                this.schedulerOptionsOf(projectSettings, globalSettings),
+            ),
+            nodeExecutors: deps.nodeExecutors ?? nodeExecutors,
+            onFinished: (runId) => this.activeRuns.delete(runId),
+        });
+        this.activeRuns.set(record.id, activeRun);
+
+        return activeRun;
     }
 
     private schedulerOptionsOf(project: ProjectSettings, global: GlobalSettings): SchedulerOptions {
