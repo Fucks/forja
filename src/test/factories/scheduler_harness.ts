@@ -118,6 +118,14 @@ export class SchedulerHarness {
         this.deliver({ type: "retry_node_run_requested", nodeRunId, at: this.clock.now() });
     }
 
+    requestPause(): void {
+        this.deliver({ type: "pause_requested", at: this.clock.now() });
+    }
+
+    requestResume(): void {
+        this.deliver({ type: "resume_requested", at: this.clock.now() });
+    }
+
     raiseBudget(budget: RunBudget): void {
         this.deliver({ type: "budget_raised", budget, at: this.clock.now() });
     }
