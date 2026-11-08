@@ -1,5 +1,6 @@
 import { NotARepoError } from "@/integrations/git/git_provider.js";
 import type { GitProvider, RepoInfo } from "@/integrations/git/git_provider.js";
+import { commandSucceeded } from "@/integrations/process/command_runner.js";
 import type { CommandResult, CommandRunner } from "@/integrations/process/command_runner.js";
 
 const GIT_TIMEOUT_MS = 10_000;
@@ -45,7 +46,7 @@ export class CliGitProvider implements GitProvider {
 
     private async findRepoRoot(path: string): Promise<string> {
         const result = await this.runGit(path, ["rev-parse", "--show-toplevel"]);
-        if (!succeeded(result)) {
+        if (!commandSucceeded(result)) {
             throw new NotARepoError(path);
         }
 
@@ -60,7 +61,7 @@ export class CliGitProvider implements GitProvider {
     private async readDefaultBranch(root: string): Promise<string> {
         const result = await this.runGit(root, ["symbolic-ref", ORIGIN_HEAD_REF]);
         const originHead = result.stdout.trim();
-        if (!succeeded(result) || !originHead.startsWith(ORIGIN_BRANCH_PREFIX)) {
+        if (!commandSucceeded(result) || !originHead.startsWith(ORIGIN_BRANCH_PREFIX)) {
             return FALLBACK_DEFAULT_BRANCH;
         }
 
@@ -70,7 +71,7 @@ export class CliGitProvider implements GitProvider {
     private async readOriginUrl(root: string): Promise<string | undefined> {
         const result = await this.runGit(root, ["remote", "get-url", "origin"]);
         const remoteUrl = result.stdout.trim();
-        if (!succeeded(result) || remoteUrl === "") {
+        if (!commandSucceeded(result) || remoteUrl === "") {
             return undefined;
         }
 
@@ -79,7 +80,7 @@ export class CliGitProvider implements GitProvider {
 
     private async refExists(root: string, ref: string): Promise<boolean> {
         const result = await this.runGit(root, ["show-ref", "--verify", "--quiet", ref]);
-        return succeeded(result);
+        return commandSucceeded(result);
     }
 
     private runGit(cwd: string, args: string[]): Promise<CommandResult> {
@@ -95,8 +96,4 @@ export function parseGithubRepo(remoteUrl: string): string | undefined {
 
     const [, owner, name] = match;
     return `${owner}/${name}`;
-}
-
-function succeeded(result: CommandResult): boolean {
-    return result.exitCode === 0 && !result.timedOut;
 }

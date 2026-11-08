@@ -20,3 +20,7 @@ export interface CommandOptions {
 export interface CommandRunner {
     run(command: string, args: string[], options: CommandOptions): Promise<CommandResult>;
 }
+
+export function commandSucceeded(result: CommandResult): boolean {
+    return result.exitCode === 0 && !result.timedOut;
+}
