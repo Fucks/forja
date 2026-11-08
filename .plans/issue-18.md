@@ -28,7 +28,7 @@
 - [x] 6. Test + impl: creating a project closes the dialog, refreshes the list and opens the overview
       — `new_project_dialog.tsx`
 - [x] 7. Test + impl: 422/409 error under the path field
-- [ ] 8. Test + impl: `ProjectPage` overview (KeyValue, detection badges with next-step hint,
+- [x] 8. Test + impl: `ProjectPage` overview (KeyValue, detection badges with next-step hint,
       shortcut cards to Fluxos/Board/Runs) — `project_page.tsx`
 - [ ] 9. Test + impl: `switchProjectPath` keeps the current area — `navigation.ts`
 - [ ] 10. Test + impl: sidebar lists projects and switches project keeping the area — `sidebar.tsx`

@@ -131,3 +131,62 @@ async function submitNewProject(
     await user.type(within(dialog).getByLabelText("Caminho do repositório"), input.repoPath);
     await user.click(within(dialog).getByRole("button", { name: "Criar projeto" }));
 }
+
+describe("ProjectPage", () => {
+    it("shows the repository path, base branch and GitHub repository", async () => {
+        stubFetchRoutes({ "GET /api/projects/prj_forja": () => Response.json(FORJA) });
+
+        renderAppAt("/projects/prj_forja");
+
+        expect(await screen.findByText("/repos/forja")).toBeInTheDocument();
+        expect(screen.getByText("development")).toBeInTheDocument();
+        expect(screen.getByText("Fucks/forja")).toBeInTheDocument();
+    });
+
+    it("marks what was detected and suggests the next step for what is missing", async () => {
+        const project = buildProject({
+            id: "prj_forja",
+            detected: { codegraph: true, codingStandards: false, sandcastle: true },
+        });
+        stubFetchRoutes({ "GET /api/projects/prj_forja": () => Response.json(project) });
+
+        renderAppAt("/projects/prj_forja");
+
+        const detectedList = await screen.findByRole("list", { name: "Detectado" });
+        expect(within(detectedList).getByText("CodeGraph")).toBeInTheDocument();
+        expect(within(detectedList).getByText("Sandcastle")).toBeInTheDocument();
+        expect(within(detectedList).queryByText("CODING_STANDARDS.md")).not.toBeInTheDocument();
+        expect(screen.getByText(/Adicione um CODING_STANDARDS.md/)).toBeInTheDocument();
+    });
+
+    it("links to the flows, board and runs of the project", async () => {
+        stubFetchRoutes({ "GET /api/projects/prj_forja": () => Response.json(FORJA) });
+
+        renderAppAt("/projects/prj_forja");
+
+        const shortcuts = await screen.findByRole("navigation", { name: "Atalhos do projeto" });
+        expect(within(shortcuts).getByRole("link", { name: /Fluxos/ })).toHaveAttribute(
+            "href",
+            "/projects/prj_forja/flows",
+        );
+        expect(within(shortcuts).getByRole("link", { name: /Board/ })).toHaveAttribute(
+            "href",
+            "/projects/prj_forja/board",
+        );
+        expect(within(shortcuts).getByRole("link", { name: /Runs/ })).toHaveAttribute(
+            "href",
+            "/projects/prj_forja/runs",
+        );
+    });
+
+    it("explains when the project cannot be loaded", async () => {
+        stubFetchRoutes({});
+
+        renderAppAt("/projects/prj_gone");
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "Não foi possível carregar o projeto.",
+        );
+        expect(screen.getByRole("heading", { level: 1, name: "Projeto" })).toBeInTheDocument();
+    });
+});
