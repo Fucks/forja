@@ -35,7 +35,7 @@
 - [x] 3. Add `withoutRetries` to flows used by failing-for-good scheduler tests — `src/test/factories/scheduler_flows.ts`, `scheduler.test.ts`
 - [x] 4. Test + implement automatic retry with delay (structured_output, retries 1 → 2 NodeRuns, 30 s apart) — `scheduler.ts`, `flow_plan.ts`, `scheduler.test.ts`
 - [x] 5. Test + implement `workspace` retried after 2 min up to 2 times with retries 0 — `scheduler.test.ts`
-- [ ] 6. Test + implement total timeout cancel recorded as `timeout_total` — `scheduler.ts`, `scheduler_types.ts`, `scheduler_snapshot.ts`, `scheduler.test.ts`
+- [x] 6. Test + implement total timeout cancel recorded as `timeout_total` — `scheduler.ts`, `scheduler_types.ts`, `scheduler_snapshot.ts`, `scheduler.test.ts`
 - [ ] 7. Test + implement `cancel_node_run_requested` (map item fails alone; outside groups cancels the run; QUEUED → CANCELED) — `scheduler_types.ts`, `scheduler.ts`, harness, `scheduler.test.ts`
 - [ ] 8. Test + implement `retry_node_run_requested` reopening a finished run for one item — `scheduler.ts`, `map_group.ts`, `map_group_coordinator.ts`, `scheduler.test.ts`
 - [ ] 9. Test + implement `retry_node_run_requested` on a running run (failed NodeRun) and ignored cases — `scheduler.test.ts`

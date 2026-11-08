@@ -1,7 +1,9 @@
 import type { NodeRunError } from "@/engine/node_run_state.js";
+import { createScheduler } from "@/engine/scheduler.js";
 import type { Condition } from "@/shared/conditions.js";
 import { buildLoopFlowWithExits } from "@/test/factories/flow_graph_factory.js";
 import { moveNode } from "@/test/factories/flow_graph_variations.js";
+import { buildRunState } from "@/test/factories/run_state_factory.js";
 import {
     buildConditionFlow,
     buildLoopBesideAgentFlow,
@@ -309,6 +311,82 @@ describe("scheduler: retries", () => {
         expect(harness.finalStatusOf("a", "1")).toBe("SUCCEEDED");
         expect(harness.finalStatusOf("b", "1")).toBe("SUCCEEDED");
         expect(harness.run.status).toBe("SUCCEEDED");
+    });
+});
+
+describe("scheduler: total timeout", () => {
+    const ONE_MINUTE_MS = 60_000;
+
+    it("cancels an agent that exceeds timeoutMinutes and records it as timeout_total", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1, retries: 0 }),
+            scripts: { a: () => ({ durationMs: 5 * ONE_MINUTE_MS }) },
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(harness.commands).toContainEqual({
+            type: "cancel_node_run",
+            nodeRunId: harness.attemptsOf("a", "1")[0]?.nodeRunId,
+        });
+        expect(harness.elapsedMsWhen("a", "1", "FAILED")).toBe(ONE_MINUTE_MS);
+        expect(errorKindsOf(harness, "a")).toEqual(["timeout_total"]);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
+    it("retries an agent that timed out like any other retryable failure", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1, retries: 1 }),
+            scripts: {
+                a: ({ nodeRun }) => ({
+                    durationMs:
+                        nodeRun.attempt === 1 ? 5 * ONE_MINUTE_MS : DEFAULT_NODE_DURATION_MS,
+                }),
+            },
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(errorKindsOf(harness, "a")).toEqual(["timeout_total", undefined]);
+        expect(harness.finalStatusOf("a", "1")).toBe("SUCCEEDED");
+    });
+
+    it("leaves alone an agent that finishes within its timeout", () => {
+        const harness = createSchedulerHarness({
+            graph: withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1 }),
+        });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(harness.commands.filter((command) => command.type === "cancel_node_run")).toEqual(
+            [],
+        );
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("still records the timeout when restored from a snapshot before the cancel confirms", () => {
+        const graph = withAgentConfig(buildSingleAgentFlow(), "a", { timeoutMinutes: 1 });
+        const options = { maxConcurrentAgents: 1, minStartIntervalMs: 0, newId: sequentialIds() };
+        const startedAt = new Date("2026-01-01T00:00:00Z");
+        const scheduler = createScheduler(graph, buildRunState(), options);
+        scheduler.handle({ type: "start", items: [{ id: "1" }], at: startedAt });
+        const cancel = scheduler
+            .tick(new Date(startedAt.getTime() + ONE_MINUTE_MS))
+            .find((command) => command.type === "cancel_node_run");
+
+        const restored = createScheduler(graph, buildRunState(), options, scheduler.snapshot());
+        const commands = restored.handle({
+            type: "node_run_failed",
+            nodeRunId: cancel?.nodeRunId ?? "",
+            error: { kind: "canceled", message: "Cancelado" },
+            at: new Date(startedAt.getTime() + ONE_MINUTE_MS),
+        });
+
+        const changedNodeRun = commands.find((command) => command.type === "node_run_changed");
+        expect(changedNodeRun?.nodeRun.error?.kind).toBe("timeout_total");
     });
 });
 
@@ -718,6 +796,19 @@ function failingWith(error: NodeRunError): NodeScript {
 
 function failingOnFirstAttemptWith(error: NodeRunError): NodeScript {
     return ({ nodeRun }) => (nodeRun.attempt === 1 ? { outcome: { kind: "fail", error } } : {});
+}
+
+function sequentialIds(): () => string {
+    let nextNumber = 1;
+
+    return () => `nrn_${nextNumber++}`;
+}
+
+function errorKindsOf(harness: SchedulerHarness, nodeId: string): (string | undefined)[] {
+    return harness
+        .snapshot()
+        .nodeRuns.filter((nodeRun) => nodeRun.nodeId === nodeId)
+        .map((nodeRun) => nodeRun.error?.kind);
 }
 
 function startTimesMsOf(harness: SchedulerHarness, nodeId: string, itemId: string): number[] {

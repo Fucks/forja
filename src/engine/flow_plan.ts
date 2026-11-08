@@ -19,6 +19,7 @@ const NODE_TYPES_LIMITED_BY_CONCURRENCY: ReadonlySet<NodeType> = new Set<NodeTyp
 ]);
 
 const NO_RETRIES = 0;
+const MINUTE_MS = 60_000;
 
 // Everything the scheduler asks about the graph, computed once per run.
 export class FlowPlan {
@@ -126,6 +127,16 @@ export class FlowPlan {
         const node = this.findNode(nodeId);
 
         return node?.type === "agent" ? node.config.retries : NO_RETRIES;
+    }
+
+    // Undefined for nodes that run without a time limit.
+    timeoutMsOf(nodeId: string): number | undefined {
+        const node = this.findNode(nodeId);
+        if (node?.type !== "agent" && node?.type !== "script") {
+            return undefined;
+        }
+
+        return node.config.timeoutMinutes * MINUTE_MS;
     }
 
     findEdgeSplittingListIntoItems(nodeId: string): FlowEdge | undefined {

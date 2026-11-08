@@ -61,6 +61,7 @@ export interface SchedulerSnapshot {
     loopInstances?: LoopInstanceState[];
     lastAgentStartAt?: string;
     stopOutcome?: StopOutcome;
+    timedOutNodeRunIds?: string[];
 }
 
 export const TRIGGER_ITEMS_PORT = "items";
@@ -73,4 +74,5 @@ export interface SchedulerState {
     loopInstances?: LoopInstanceState[];
     lastAgentStartAt?: Date;
     stopOutcome?: StopOutcome;
+    timedOutNodeRunIds?: string[];
 }

@@ -10,6 +10,7 @@ import {
     type NodeRunState,
     transitionNodeRun,
 } from "@/engine/node_run_state.js";
+import { NodeRunTimeouts, TIMEOUT_TOTAL_ERROR } from "@/engine/node_run_timeouts.js";
 import { decideRetry, type FailureKind } from "@/engine/retry_policy.js";
 import { RUN_TERMINAL, type RunState, transitionRun } from "@/engine/run_state.js";
 import { compareQueueOrder, type QueuePosition } from "@/engine/scheduler_queue.js";
@@ -47,6 +48,7 @@ class DagScheduler implements Scheduler {
     private run: RunState;
     private items: WorkItemRef[] | undefined;
     private readonly agentStarts: AgentStartPacer;
+    private readonly timeouts: NodeRunTimeouts;
     private stopOutcome: StopOutcome | undefined;
     private outbox: SchedulerCommand[] = [];
 
@@ -73,6 +75,7 @@ class DagScheduler implements Scheduler {
         this.run = state.run;
         this.items = state.items;
         this.agentStarts = new AgentStartPacer(options, state.lastAgentStartAt);
+        this.timeouts = new NodeRunTimeouts(plan, state.timedOutNodeRunIds ?? []);
         this.stopOutcome = state.stopOutcome;
     }
 
@@ -112,6 +115,7 @@ class DagScheduler implements Scheduler {
             loopInstances: this.loops.states(),
             lastAgentStartAt: this.agentStarts.lastAgentStartAt,
             stopOutcome: this.stopOutcome,
+            timedOutNodeRunIds: this.timeouts.timedOutIds(),
         });
     }
 
@@ -149,9 +153,10 @@ class DagScheduler implements Scheduler {
 
     private failNodeRun(nodeRunId: string, error: NodeRunError | undefined, at: Date): void {
         const nodeRun = this.nodeRuns.get(nodeRunId);
-        const failureKind: FailureKind = error?.kind ?? "runtime";
+        const recordedError = this.recordedErrorOf(nodeRun, error);
+        const failureKind: FailureKind = recordedError?.kind ?? "runtime";
         const status = failureKind === "canceled" ? "CANCELED" : "FAILED";
-        const failed = transitionNodeRun(nodeRun, status, at, { error });
+        const failed = transitionNodeRun(nodeRun, status, at, { error: recordedError });
         this.changeNodeRun(failed);
         const retryDelayMs = this.findRetryDelayMs(failed, failureKind);
         if (retryDelayMs === undefined) {
@@ -161,6 +166,18 @@ class DagScheduler implements Scheduler {
         }
 
         this.advance(at);
+    }
+
+    // The cancel the scheduler asked for an overdue NodeRun comes back as a plain cancel.
+    private recordedErrorOf(
+        nodeRun: NodeRunState,
+        error: NodeRunError | undefined,
+    ): NodeRunError | undefined {
+        if (error?.kind === "canceled" && this.timeouts.hasTimedOut(nodeRun.id)) {
+            return TIMEOUT_TOTAL_ERROR;
+        }
+
+        return error;
     }
 
     // Undefined when the NodeRun fails for good.
@@ -267,10 +284,15 @@ class DagScheduler implements Scheduler {
             return;
         }
 
+        this.cancelOverdueNodeRuns(now);
         this.moveItemsThroughGroups(now);
         this.startQueuedNodeRuns(now);
         this.scheduleWakeupForWaitingAgents(now);
         this.finishRunWhenSettled(now);
+    }
+
+    private cancelOverdueNodeRuns(now: Date): void {
+        this.requestCancel(this.timeouts.markOverdue(this.nodeRuns.withStatus("RUNNING"), now));
     }
 
     // Repeats until stable: a finished loop iteration may start the next one or release the loop's
@@ -383,6 +405,14 @@ class DagScheduler implements Scheduler {
         const running = transitionNodeRun(nodeRun, "RUNNING", now, { inputs });
         this.changeNodeRun(running);
         this.outbox.push({ type: "start_node_run", nodeRun: running, inputs });
+        this.scheduleWakeupAtDeadline(running);
+    }
+
+    private scheduleWakeupAtDeadline(running: NodeRunState): void {
+        const deadline = this.timeouts.deadlineOf(running);
+        if (deadline) {
+            this.outbox.push({ type: "schedule_wakeup", at: deadline });
+        }
     }
 
     private scheduleWakeupForWaitingAgents(now: Date): void {
