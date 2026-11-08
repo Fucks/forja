@@ -18,8 +18,8 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `checkBudget` for run scope (cost and tokens, missing limits) — `src/engine/budgets.ts`, `budgets.test.ts`
-- [ ] 2. Test + implement node scope and daily scope (already spent + run totals) — `budgets.ts`, `budgets.test.ts`
+- [x] 1. Test + implement `checkBudget` for run scope (cost and tokens, missing limits) — `src/engine/budgets.ts`, `budgets.test.ts`
+- [x] 2. Test + implement node scope and daily scope (already spent + run totals) — `budgets.ts`, `budgets.test.ts`
 - [ ] 3. Contracts in scheduler types: `budget?` option, `usage_recorded`, `budget_raised`, `usageByNode` snapshot — `scheduler_types.ts`, `scheduler_snapshot.ts`
 - [ ] 4. `RunBudgetGuard` (records usage per node, raises budget, finds exceeded scope) — `src/engine/run_budget_guard.ts`
 - [ ] 5. Harness: budget option, usage per script, `raiseBudget` — `src/test/factories/scheduler_harness.ts`
