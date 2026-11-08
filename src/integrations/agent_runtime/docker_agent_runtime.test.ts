@@ -117,6 +117,9 @@ function scriptHealthyHost(commands: FakeCommandRunner): void {
     commands.when("docker", isDocker("run")).returns({ stdout: `${CONTAINER_ID}\n` });
     commands.when("docker", isDocker("exec")).returns({});
     commands.when("docker", ["rm", "-f", CONTAINER_ID]).returns({});
+    commands
+        .when("docker", ["rm", "-f", WORKSPACE_ID])
+        .returns({ exitCode: 1, stderr: `Error: No such container: ${WORKSPACE_ID}` });
 }
 
 function scriptRegisteredWorktree(commands: FakeCommandRunner): void {
@@ -245,6 +248,19 @@ describe("DockerAgentRuntime.openWorkspace", () => {
         expect(second.root).toBe(first.root);
         const worktreeAdds = argsOf(commands, "git").filter((args) => args[1] === "add");
         expect(worktreeAdds).toHaveLength(1);
+    });
+
+    it("replaces a leftover container of the same workspace before starting a new one", async () => {
+        const commands = new FakeCommandRunner();
+        scriptHealthyHost(commands);
+        commands.when("docker", ["rm", "-f", WORKSPACE_ID]).returns({});
+
+        await createRuntime(commands).openWorkspace(workspaceSpec(), SILENT_HOOKS, neverAborted());
+
+        const dockerCalls = argsOf(commands, "docker");
+        const removal = dockerCalls.findIndex((args) => args.join(" ") === `rm -f ${WORKSPACE_ID}`);
+        expect(removal).toBeGreaterThanOrEqual(0);
+        expect(removal).toBeLessThan(dockerCalls.findIndex(isDocker("run")));
     });
 
     it("writes the spec files into the worktree and then runs the setup commands", async () => {

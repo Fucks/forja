@@ -103,7 +103,7 @@ export class FakeAgentRuntime implements AgentRuntime {
         this.openedWorkspaceCount += 1;
         const id = `workspace-${this.openedWorkspaceCount}`;
         this.openWorkspaces.set(id, { id, runId: spec.runId, workItemId: spec.workItemId });
-        void this.storeFiles(id, spec.files);
+        this.storeFiles(id, spec.files);
         hooks.onEvent({ kind: "system", message: WORKSPACE_READY_MESSAGE, at: this.clock.now() });
 
         return Promise.resolve(this.createWorkspace(id, spec));
@@ -138,7 +138,10 @@ export class FakeAgentRuntime implements AgentRuntime {
             runAgent: (request, hooks) => this.runAgent("run", { request, hooks, workItemId }),
             exec: (command) => this.exec(command, workItemId),
             diff: () => Promise.resolve(""),
-            writeFiles: (files) => this.storeFiles(id, files),
+            writeFiles: (files) => {
+                this.storeFiles(id, files);
+                return Promise.resolve();
+            },
             close: () => this.closeWorkspace(id),
         };
     }
@@ -191,12 +194,10 @@ export class FakeAgentRuntime implements AgentRuntime {
         return Promise.resolve(this.execResults.get(command) ?? SUCCESSFUL_EXEC);
     }
 
-    private storeFiles(workspaceId: string, files: WorkspaceFile[]): Promise<void> {
+    private storeFiles(workspaceId: string, files: WorkspaceFile[]): void {
         const storedFiles = this.workspaceFiles.get(workspaceId) ?? new Map<string, string>();
         files.forEach((file) => storedFiles.set(file.path, file.content));
         this.workspaceFiles.set(workspaceId, storedFiles);
-
-        return Promise.resolve();
     }
 
     private record(call: Omit<RuntimeCall, "at">): void {

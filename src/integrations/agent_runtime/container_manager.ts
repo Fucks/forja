@@ -91,7 +91,10 @@ export function createContainerManager(
     commands: CommandRunner,
     newExecId: NewExecId = randomUUID,
 ): ContainerManager {
-    function runDocker(args: string[], timeoutMs = DOCKER_COMMAND_TIMEOUT_MS) {
+    function runDocker(
+        args: string[],
+        timeoutMs = DOCKER_COMMAND_TIMEOUT_MS,
+    ): Promise<CommandResult> {
         return commands.run("docker", args, { timeoutMs });
     }
 

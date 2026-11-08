@@ -15,6 +15,7 @@
   and the wrapper forwards TERM to the command. Abort → kill + `AgentCanceledError`; timeout → kill +
   `AgentTimeoutError("total")`. `stop` treats "No such container" as success. `list` parses
   `--format {{.ID}}\t{{.Labels}}`.
+- `openWorkspace` first removes a leftover container with the same name (`rm -f <id>`), then starts.
 - Workspace id = container name `forja-<last 8 of runId>-<last 8 of workItemId>` (lowercased, sanitized).
 - `Workspace.exec(command: string)` keeps its string contract and runs `sh -c <command>` with the spec env.
 - `AgentContainer`, `RunAgentInContainer` and the `runAgentNotImplemented` stub live in `agent_container.ts`
@@ -42,4 +43,4 @@
 - [x] 13. Test+impl: `close` / `closeWorkspace` (keeps branch, idempotent, orphans by label), `listOpenWorkspaces` from Docker
 - [x] 14. Test+impl: `runHeadless` ephemeral read-only container, removed at the end
 - [x] 15. Integration test `docker_agent_runtime.integration.test.ts` (skipIf !FORJA_IT_DOCKER)
-- [ ] 16. Self-review checklist and feedback loops
+- [x] 16. Self-review checklist and feedback loops

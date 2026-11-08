@@ -78,6 +78,7 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
             baseBranch: spec.baseBranch,
         });
         const id = workspaceIdFor(spec.runId, spec.workItemId);
+        await removeLeftoverContainer(id);
 
         const containerId = await startPreparedContainer(
             {
@@ -214,6 +215,11 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
                 ),
             closeWorkspace,
         });
+    }
+
+    // A container left behind by a crash keeps the workspace's name taken; its worktree is reused.
+    function removeLeftoverContainer(workspaceId: string): Promise<void> {
+        return containers.stop(workspaceId);
     }
 
     // After a restart nothing is in memory: the containers are found by label.
