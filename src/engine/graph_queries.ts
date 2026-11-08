@@ -1,4 +1,11 @@
-import type { FlowEdge, FlowGraph, FlowGroup, FlowNode, PortType } from "@/shared/flow_graph.js";
+import {
+    type FlowEdge,
+    type FlowGraph,
+    type FlowGroup,
+    type FlowNode,
+    LOOP_EXHAUSTED_PORT,
+    type PortType,
+} from "@/shared/flow_graph.js";
 
 export type MapGroup = Extract<FlowGroup, { kind: "map" }>;
 export type LoopGroup = Extract<FlowGroup, { kind: "loop" }>;
@@ -103,6 +110,16 @@ export function isItemCorrelatedEdge(graph: FlowGraph, edge: FlowEdge): boolean 
     }
 
     return !targetGroups.includes(sourceMap) && !sourceGroups.includes(targetMap);
+}
+
+export function isLoopExhaustedEdge(graph: FlowGraph, edge: FlowEdge): boolean {
+    const sourceGroup = findGroup(graph, edge.from.nodeId);
+
+    return (
+        sourceGroup !== undefined &&
+        isLoopGroup(sourceGroup) &&
+        edge.from.port === LOOP_EXHAUSTED_PORT
+    );
 }
 
 export function findNode(graph: FlowGraph, nodeId: string): FlowNode | undefined {

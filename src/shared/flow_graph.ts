@@ -73,6 +73,11 @@ export type NodeOfType<Type extends NodeType> = Extract<FlowNode, { type: Type }
 
 const portReferenceSchema = z.object({ nodeId: z.string(), port: z.string() });
 
+// The port of a loop group that its items leave through when the loop reaches maxIterations.
+export const LOOP_EXHAUSTED_PORT = "exhausted";
+
+// `from` may also be { nodeId: <loop group id>, port: LOOP_EXHAUSTED_PORT }: that edge carries the
+// work item only when the loop is exhausted.
 export const flowEdgeSchema = z.object({
     id: z.string(),
     from: portReferenceSchema,

@@ -16,6 +16,7 @@ import {
 import { assertNever } from "@/lib/assert_never.js";
 import { type Condition, CONDITION_PATH_SEPARATOR } from "@/shared/conditions.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 
 type CycleNodeIds = [firstNodeId: string, ...otherNodeIds: string[]];
@@ -117,7 +118,10 @@ function describeNodes(graph: FlowGraph, nodeIds: string[]): string {
 function findUnknownConditionPathsOfLoop(graph: FlowGraph, loop: LoopGroup): ValidationIssue[] {
     const loopNodes = nodesInsideGroup(graph, loop.id);
     const knownNames = new Set(
-        loopNodes.flatMap((node) => [node.id, ...node.outputs.map((port) => port.name)]),
+        loopNodes.flatMap((node) => [
+            nodeSlug(node.label),
+            ...node.outputs.map((port) => port.name),
+        ]),
     );
     const unknownPaths = listConditionPaths(loop.config.until).filter(
         (path) => !knownNames.has(firstPathSegment(path)),

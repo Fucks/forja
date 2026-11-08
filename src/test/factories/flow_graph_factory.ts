@@ -1,11 +1,12 @@
-import type {
-    FlowEdge,
-    FlowGraph,
-    FlowGroup,
-    FlowNode,
-    NodeOfType,
-    NodeType,
-    Position,
+import {
+    type FlowEdge,
+    type FlowGraph,
+    type FlowGroup,
+    type FlowNode,
+    LOOP_EXHAUSTED_PORT,
+    type NodeOfType,
+    type NodeType,
+    type Position,
 } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 
@@ -99,6 +100,25 @@ export function buildLoopFlow(): FlowGraph {
     };
 }
 
+// The loop flow with its two ways out: approved reviews open a PR; an exhausted loop asks for a human.
+export function buildLoopFlowWithExits(): FlowGraph {
+    const loopFlow = buildLoopFlow();
+
+    return {
+        ...loopFlow,
+        nodes: [
+            ...loopFlow.nodes,
+            { ...buildOpenPullRequestNode(), parentGroupId: "items" },
+            { ...buildNeedsHumanOutputNode(), parentGroupId: "items" },
+        ],
+        edges: [
+            ...loopFlow.edges,
+            connect(["review", "summary"], ["open_pr", "body"]),
+            connect(["review_loop", LOOP_EXHAUSTED_PORT], ["needs_human", "item"]),
+        ],
+    };
+}
+
 export function connect(
     [fromNodeId, fromPort]: [string, string],
     [toNodeId, toPort]: [string, string],
@@ -185,6 +205,16 @@ function buildDoneOutputNode(): FlowNode {
     return { ...output, config: { ...output.config, moveItemTo: "done" } };
 }
 
+function buildNeedsHumanOutputNode(): FlowNode {
+    const output = createNodeOfType("output", "needs_human", gridPosition(5, 1));
+
+    return {
+        ...output,
+        label: "Precisa de humano",
+        config: { ...output.config, moveItemTo: "needs_human" },
+    };
+}
+
 function buildLoopDeveloperNode(): FlowNode {
     const developer = createNodeOfType("agent", "dev", gridPosition(2));
 
@@ -229,7 +259,7 @@ function buildReviewLoopGroup(parentGroupId: string): FlowGroup {
         ...frameColumns(LOOP_COLUMNS, LOOP_GROUP_PADDING_PX),
         config: {
             maxIterations: 3,
-            until: { op: "eq", path: "review.approved", value: true },
+            until: { op: "eq", path: "revisar.approved", value: true },
             carry: ["notes"],
         },
     };

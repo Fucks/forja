@@ -10,18 +10,21 @@ export class UnknownNodeRunError extends Error {
 
 export class NodeRunRegistry {
     private readonly nodeRunsById = new Map<string, NodeRunState>();
-    private readonly nodeRunIdsByNodeAndItem = new Map<string, string>();
+    private readonly latestNodeRunIdsByNodeAndItem = new Map<string, string>();
 
     constructor(nodeRuns: NodeRunState[]) {
         nodeRuns.forEach((nodeRun) => this.save(nodeRun));
     }
 
     save(nodeRun: NodeRunState): void {
+        const latest = this.find(nodeRun.nodeId, nodeRun.workItemId);
         this.nodeRunsById.set(nodeRun.id, nodeRun);
-        this.nodeRunIdsByNodeAndItem.set(
-            nodeAndItemKey(nodeRun.nodeId, nodeRun.workItemId),
-            nodeRun.id,
-        );
+        if (latest && latest.iteration > nodeRun.iteration) {
+            return;
+        }
+
+        const key = nodeAndItemKey(nodeRun.nodeId, nodeRun.workItemId);
+        this.latestNodeRunIdsByNodeAndItem.set(key, nodeRun.id);
     }
 
     get(nodeRunId: string): NodeRunState {
@@ -33,8 +36,11 @@ export class NodeRunRegistry {
         return nodeRun;
     }
 
+    // The NodeRun of the latest loop iteration of the node for the item.
     find(nodeId: string, workItemId: string | undefined): NodeRunState | undefined {
-        const nodeRunId = this.nodeRunIdsByNodeAndItem.get(nodeAndItemKey(nodeId, workItemId));
+        const nodeRunId = this.latestNodeRunIdsByNodeAndItem.get(
+            nodeAndItemKey(nodeId, workItemId),
+        );
         if (nodeRunId === undefined) {
             return undefined;
         }

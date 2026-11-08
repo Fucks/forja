@@ -8,6 +8,7 @@ export function takeSnapshot(state: SchedulerState): SchedulerSnapshot {
         nodeRuns: state.nodeRuns.map(nodeRunToJson),
         items: state.items,
         mapGroups: state.mapGroups,
+        loopInstances: state.loopInstances,
         lastAgentStartAt: state.lastAgentStartAt?.toISOString(),
         stopOutcome: state.stopOutcome,
     };
@@ -19,6 +20,7 @@ export function restoreSnapshot(snapshot: SchedulerSnapshot): SchedulerState {
         nodeRuns: snapshot.nodeRuns.map(nodeRunFromJson),
         items: snapshot.items,
         mapGroups: snapshot.mapGroups,
+        loopInstances: snapshot.loopInstances,
         lastAgentStartAt: optionalDate(snapshot.lastAgentStartAt),
         stopOutcome: snapshot.stopOutcome,
     };

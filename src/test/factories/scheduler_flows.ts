@@ -1,6 +1,7 @@
 import type { Condition } from "@/shared/conditions.js";
 import type {
     FlowGraph,
+    FlowGroup,
     FlowNode,
     MapConfig,
     NodeOfType,
@@ -19,6 +20,19 @@ import {
 } from "@/test/factories/flow_graph_variations.js";
 
 const ORIGIN = { x: 0, y: 0 };
+
+const SIDE_LOOP: FlowGroup = {
+    id: "side_loop",
+    kind: "loop",
+    label: "side_loop",
+    position: ORIGIN,
+    size: { width: 480, height: 480 },
+    config: {
+        maxIterations: 3,
+        until: { op: "eq", path: "b.approved", value: true },
+        carry: [],
+    },
+};
 
 export function buildLinearAgentFlow(): FlowGraph {
     return buildFlow(
@@ -85,6 +99,26 @@ export function buildReportedCanonicalFlow(): FlowGraph {
     return addEdges(addNodes(buildCanonicalFlow(), [report]), [
         connect(["reviewer", "summary"], ["report", "reviews"]),
     ]);
+}
+
+// trigger → loop(a ↔ b, until b approves) per item, beside an agent c that runs per item too
+export function buildLoopBesideAgentFlow(): FlowGraph {
+    const graph = buildFlow(
+        [
+            buildNode("trigger", "trigger"),
+            { ...buildNode("agent", "a"), parentGroupId: SIDE_LOOP.id },
+            { ...buildNode("agent", "b"), parentGroupId: SIDE_LOOP.id },
+            buildNode("agent", "c"),
+        ],
+        [
+            connect(["trigger", "items"], ["a", "item"]),
+            connect(["a", "summary"], ["b", "context"]),
+            connect(["b", "summary"], ["a", "context"]),
+            connect(["trigger", "items"], ["c", "item"]),
+        ],
+    );
+
+    return addGroups(graph, [SIDE_LOOP]);
 }
 
 export function withMapConfig(

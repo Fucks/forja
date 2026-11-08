@@ -1,7 +1,12 @@
 import {
+    enclosingGroups,
     enclosingMapGroup,
+    groupBoundaryEdges,
     isItemCorrelatedEdge,
+    isLoopGroup,
     isMapGroup,
+    isNodeInsideGroup,
+    type LoopGroup,
     type MapGroup,
     topologicalOrder,
 } from "@/engine/graph_queries.js";
@@ -17,11 +22,14 @@ const NODE_TYPES_LIMITED_BY_CONCURRENCY: ReadonlySet<NodeType> = new Set<NodeTyp
 export class FlowPlan {
     readonly nodeIdsInDagOrder: string[];
     readonly mapGroups: MapGroup[];
+    readonly loopGroups: LoopGroup[];
     private readonly nodesById: Map<string, FlowNode>;
     private readonly scopes: Map<string, NodeScope>;
     private readonly dagPositions: Map<string, number>;
     private readonly mapGroupIdsByNodeId: Map<string, string>;
     private readonly upstreamMapIdsByMapId: Map<string, string[]>;
+    private readonly loopGroupsByNodeId: Map<string, LoopGroup>;
+    private readonly loopBackEdges: Set<FlowEdge>;
 
     constructor(readonly graph: FlowGraph) {
         this.nodeIdsInDagOrder = topologicalOrder(graph);
@@ -31,6 +39,11 @@ export class FlowPlan {
         this.dagPositions = new Map(this.nodeIdsInDagOrder.map((id, index) => [id, index]));
         this.mapGroupIdsByNodeId = planMapMembership(graph);
         this.upstreamMapIdsByMapId = planUpstreamMaps(graph);
+        this.loopGroups = graph.groups.filter(isLoopGroup);
+        this.loopGroupsByNodeId = planLoopMembership(graph);
+        this.loopBackEdges = new Set(
+            this.loopGroups.flatMap((loop) => groupBoundaryEdges(graph, loop.id).back),
+        );
     }
 
     findNode(nodeId: string): FlowNode | undefined {
@@ -61,6 +74,35 @@ export class FlowPlan {
     // Maps whose items feed this map through item-correlated edges; empty for a list-fed map.
     upstreamMapIdsOf(mapGroupId: string): string[] {
         return this.upstreamMapIdsByMapId.get(mapGroupId) ?? [];
+    }
+
+    // The innermost loop around the node.
+    loopGroupOf(nodeId: string): LoopGroup | undefined {
+        return this.loopGroupsByNodeId.get(nodeId);
+    }
+
+    memberNodeIdsOfLoop(loopGroupId: string): string[] {
+        return this.nodeIdsInDagOrder.filter(
+            (nodeId) => this.loopGroupOf(nodeId)?.id === loopGroupId,
+        );
+    }
+
+    findLoopGroup(groupId: string): LoopGroup | undefined {
+        return this.loopGroups.find((loop) => loop.id === groupId);
+    }
+
+    isLoopBackEdge(edge: FlowEdge): boolean {
+        return this.loopBackEdges.has(edge);
+    }
+
+    // The loop the edge leaves: its source node is inside the loop and its target is not.
+    loopGroupLeftBy(edge: FlowEdge): LoopGroup | undefined {
+        const sourceLoop = this.loopGroupOf(edge.from.nodeId);
+        if (!sourceLoop || isNodeInsideGroup(this.graph, edge.to.nodeId, sourceLoop.id)) {
+            return undefined;
+        }
+
+        return sourceLoop;
     }
 
     triggerNodeIds(): string[] {
@@ -94,6 +136,18 @@ function planMapMembership(graph: FlowGraph): Map<string, string> {
     }
 
     return mapGroupIdsByNodeId;
+}
+
+function planLoopMembership(graph: FlowGraph): Map<string, LoopGroup> {
+    const loopGroupsByNodeId = new Map<string, LoopGroup>();
+    for (const node of graph.nodes) {
+        const loopGroup = enclosingGroups(graph, node.id).find(isLoopGroup);
+        if (loopGroup) {
+            loopGroupsByNodeId.set(node.id, loopGroup);
+        }
+    }
+
+    return loopGroupsByNodeId;
 }
 
 function planUpstreamMaps(graph: FlowGraph): Map<string, string[]> {
