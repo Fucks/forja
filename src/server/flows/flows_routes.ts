@@ -8,9 +8,11 @@ import { CredentialRepository } from "@/server/credentials/credential_repository
 import { FlowRepository } from "@/server/flows/flow_repository.js";
 import { createFlowService } from "@/server/flows/flow_service.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
+import { flowFileName, flowToYaml } from "@/server/flows/flow_yaml.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import {
     createFlowInput,
+    exportFlowQuery,
     listFlowsQuery,
     publishFlowInput,
     renameFlowInput,
@@ -18,16 +20,20 @@ import {
 } from "@/shared/flow_types.js";
 
 const PROJECT_FLOWS_PATH = "/projects/:projectId/flows";
+const PROJECT_FLOWS_IMPORT_PATH = `${PROJECT_FLOWS_PATH}/import`;
 const FLOW_PATH = "/flows/:flowId";
 const FLOW_ARCHIVE_PATH = `${FLOW_PATH}/archive`;
 const FLOW_DEFAULT_PATH = `${FLOW_PATH}/default`;
 const FLOW_DRAFT_PATH = `${FLOW_PATH}/draft`;
+const FLOW_EXPORT_PATH = `${FLOW_PATH}/export`;
 const FLOW_PUBLISH_PATH = `${FLOW_PATH}/publish`;
 const FLOW_VERSIONS_PATH = `${FLOW_PATH}/versions`;
 const FLOW_VERSION_PATH = `${FLOW_VERSIONS_PATH}/:version`;
 const FLOW_VERSION_RESTORE_PATH = `${FLOW_VERSION_PATH}/restore`;
 const HTTP_CREATED = 201;
 const HTTP_NO_CONTENT = 204;
+const YAML_CONTENT_TYPE = "application/yaml";
+const YAML_BODY_CONTENT_TYPES = [YAML_CONTENT_TYPE, "text/yaml"];
 
 const projectParamsSchema = z.object({ projectId: z.string().min(1) });
 const flowParamsSchema = z.object({ flowId: z.string().min(1) });
@@ -48,6 +54,7 @@ export const registerFlowsRoutes: RouteModule = (app, deps) => {
     registerFlowRoutes(app, flows);
     registerDraftRoutes(app, flows);
     registerVersionRoutes(app, flows);
+    registerYamlFileRoutes(app, flows);
 };
 
 // TODO(#23): add the ids of the existing tool profiles as knownToolProfileIds.
@@ -145,4 +152,38 @@ function registerVersionRoutes(app: FastifyInstance, flows: FlowService): void {
         { schema: { params: versionParamsSchema } },
         (request) => flows.restoreVersionToDraft(request.params.flowId, request.params.version),
     );
+}
+
+function registerYamlFileRoutes(app: FastifyInstance, flows: FlowService): void {
+    const typedApp = app.withTypeProvider<ZodTypeProvider>();
+    app.addContentTypeParser(YAML_BODY_CONTENT_TYPES, { parseAs: "string" }, passTextBodyThrough);
+
+    typedApp.get(
+        FLOW_EXPORT_PATH,
+        { schema: { params: flowParamsSchema, querystring: exportFlowQuery } },
+        async (request, reply) => {
+            const file = await flows.exportFlow(request.params.flowId, request.query.version);
+            return reply
+                .type(YAML_CONTENT_TYPE)
+                .header("content-disposition", `attachment; filename="${flowFileName(file.name)}"`)
+                .send(flowToYaml(file));
+        },
+    );
+
+    typedApp.post(
+        PROJECT_FLOWS_IMPORT_PATH,
+        { schema: { params: projectParamsSchema, body: z.string() } },
+        async (request, reply) => {
+            const flow = await flows.importFlow(request.params.projectId, request.body);
+            return reply.code(HTTP_CREATED).send(flow);
+        },
+    );
+}
+
+function passTextBodyThrough(
+    _request: unknown,
+    body: string,
+    done: (error: null, body: string) => void,
+): void {
+    done(null, body);
 }

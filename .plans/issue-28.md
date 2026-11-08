@@ -26,6 +26,6 @@
 - [x] 4. Test + implement unknown `forja` version error
 - [x] 5. Test + implement broken YAML error with line/column, and invalid graph content error with paths
 - [x] 6. Refactor `flow_yaml.ts` for readability
-- [ ] 7. Test + implement `GET /api/flows/:flowId/export` (draft and published version, headers) — `flow_service.ts`, `flows_routes.ts`, `flows_routes.test.ts`
-- [ ] 8. Test + implement `POST /api/projects/:projectId/flows/import` (creates flow with draft = imported graph; 422 with position on broken YAML)
+- [x] 7. Test + implement `GET /api/flows/:flowId/export` (draft and published version, headers) — `flow_service.ts`, `flows_routes.ts`, `flows_routes.test.ts`
+- [x] 8. Test + implement `POST /api/projects/:projectId/flows/import` (creates flow with draft = imported graph; 422 with position on broken YAML)
 - [ ] 9. Self-review checklist (section 5) and feedback loops (section 6)

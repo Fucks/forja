@@ -8,7 +8,7 @@ import type { FlowEdge, FlowGraph, FlowGroup, FlowNode, Position } from "@/share
 import { flowNameSchema } from "@/shared/flow_types.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 
-const FLOW_FILE_FORMAT_VERSION = 1;
+export const FLOW_FILE_FORMAT_VERSION = 1;
 const FLOW_FILE_EXTENSION = ".forja.yaml";
 const FALLBACK_FILE_SLUG = "fluxo";
 const UNSAFE_FILE_NAME_CHARACTERS = /[^a-z0-9_-]/g;
@@ -52,9 +52,20 @@ export interface FlowFile {
     graph: FlowGraph;
 }
 
-export type FlowFileIssue =
-    | { kind: "syntax"; line: number; column: number; message: string }
-    | { kind: "content"; path: string; message: string };
+export interface FlowFileSyntaxIssue {
+    kind: "syntax";
+    line: number;
+    column: number;
+    message: string;
+}
+
+export interface FlowFileContentIssue {
+    kind: "content";
+    path: string;
+    message: string;
+}
+
+export type FlowFileIssue = FlowFileSyntaxIssue | FlowFileContentIssue;
 
 export class FlowFileError extends DomainValidationError {
     constructor(
@@ -170,10 +181,7 @@ function parseYaml(text: string): unknown {
     return document.toJS();
 }
 
-function toSyntaxIssue(
-    error: YAMLError,
-    lineCounter: LineCounter,
-): Extract<FlowFileIssue, { kind: "syntax" }> {
+function toSyntaxIssue(error: YAMLError, lineCounter: LineCounter): FlowFileSyntaxIssue {
     const [startOffset] = error.pos;
     const { line, col } = lineCounter.linePos(startOffset);
 
@@ -216,7 +224,7 @@ function parseFlowFile(document: unknown): FlowFile {
     return result.data;
 }
 
-function toContentIssue(issue: z.core.$ZodIssue): FlowFileIssue {
+function toContentIssue(issue: z.core.$ZodIssue): FlowFileContentIssue {
     const path = issue.path.map(String).join(".");
 
     return { kind: "content", path: path || ROOT_PATH_LABEL, message: issue.message };
