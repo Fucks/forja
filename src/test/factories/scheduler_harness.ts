@@ -1,3 +1,4 @@
+import type { RunBudget, UsageTotals } from "@/engine/budgets.js";
 import { FlowPlan } from "@/engine/flow_plan.js";
 import {
     NODE_RUN_TERMINAL,
@@ -33,6 +34,8 @@ export type NodeOutcome =
 export interface NodeBehavior {
     durationMs: number;
     outcome: NodeOutcome;
+    // Reported just before the NodeRun finishes.
+    usage?: UsageTotals;
 }
 
 export interface StartedNodeRun {
@@ -50,6 +53,7 @@ export interface SchedulerHarnessOptions {
     maxConcurrentAgents?: number;
     minStartIntervalMs?: number;
     scripts?: Record<string, NodeScript>;
+    budget?: RunBudget;
 }
 
 export interface TimelineEntry {
@@ -105,6 +109,10 @@ export class SchedulerHarness {
 
     requestNodeRunRetry(nodeRunId: string): void {
         this.deliver({ type: "retry_node_run_requested", nodeRunId, at: this.clock.now() });
+    }
+
+    raiseBudget(budget: RunBudget): void {
+        this.deliver({ type: "budget_raised", budget, at: this.clock.now() });
     }
 
     advance(ms: number): void {
@@ -196,6 +204,7 @@ export class SchedulerHarness {
             maxConcurrentAgents: this.options.maxConcurrentAgents ?? UNLIMITED_AGENTS,
             minStartIntervalMs: this.options.minStartIntervalMs ?? 0,
             newId: () => `nrn_${this.nextNodeRunNumber++}`,
+            budget: this.options.budget,
         };
 
         return createScheduler(this.options.graph, this.run, schedulerOptions, restore);
@@ -240,12 +249,19 @@ export class SchedulerHarness {
         const behavior = this.behaviorOf(started);
         const finish = () => {
             this.runningTimers.delete(started.nodeRun.id);
+            this.reportUsage(started.nodeRun.id, behavior.usage);
             this.deliver(finishingEvent(started.nodeRun.id, behavior.outcome, this.clock.now()));
         };
         this.runningTimers.set(
             started.nodeRun.id,
             this.clock.setTimeout(finish, behavior.durationMs),
         );
+    }
+
+    private reportUsage(nodeRunId: string, usage: UsageTotals | undefined): void {
+        if (usage) {
+            this.deliver({ type: "usage_recorded", nodeRunId, ...usage, at: this.clock.now() });
+        }
     }
 
     private cancelNodeRun(nodeRunId: string): void {
@@ -268,6 +284,7 @@ export class SchedulerHarness {
         return {
             durationMs: scripted.durationMs ?? DEFAULT_NODE_DURATION_MS,
             outcome: scripted.outcome ?? { kind: "succeed", outputs: this.defaultOutputs(started) },
+            usage: scripted.usage,
         };
     }
 

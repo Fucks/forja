@@ -1,3 +1,4 @@
+import type { RunBudget, UsageTotals } from "@/engine/budgets.js";
 import type { LoopInstanceState } from "@/engine/loop_group.js";
 import type { MapGroupState } from "@/engine/map_group.js";
 import type { NodeRunState } from "@/engine/node_run_state.js";
@@ -7,6 +8,7 @@ export interface SchedulerOptions {
     maxConcurrentAgents: number;
     minStartIntervalMs: number;
     newId(): string;
+    budget?: RunBudget;
 }
 
 // The full work item stays outside the engine; the scheduler only needs to tell items apart.
@@ -27,7 +29,11 @@ export type SchedulerEvent =
     | { type: "cancel_node_run_requested"; nodeRunId: string; at: Date }
     // For a FAILED/CANCELED NodeRun of a run still going on, or any finished NodeRun of a
     // FAILED/SUCCEEDED run, which reopens.
-    | { type: "retry_node_run_requested"; nodeRunId: string; at: Date };
+    | { type: "retry_node_run_requested"; nodeRunId: string; at: Date }
+    // May arrive before the node_run_succeeded of the same NodeRun.
+    | { type: "usage_recorded"; nodeRunId: string; costUsd: number; tokens: number; at: Date }
+    // The user raised the limits and resumes a run paused by the budget.
+    | { type: "budget_raised"; budget: RunBudget; at: Date };
 
 export type SchedulerCommand =
     | { type: "start_node_run"; nodeRun: NodeRunState; inputs: Record<string, unknown> }
@@ -66,6 +72,7 @@ export interface SchedulerSnapshot {
     lastAgentStartAt?: string;
     stopOutcome?: StopOutcome;
     timedOutNodeRunIds?: string[];
+    usageByNode?: Record<string, UsageTotals>;
 }
 
 export const TRIGGER_ITEMS_PORT = "items";
@@ -79,4 +86,5 @@ export interface SchedulerState {
     lastAgentStartAt?: Date;
     stopOutcome?: StopOutcome;
     timedOutNodeRunIds?: string[];
+    usageByNode?: Record<string, UsageTotals>;
 }
