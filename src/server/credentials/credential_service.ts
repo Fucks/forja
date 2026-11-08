@@ -59,7 +59,9 @@ export function createCredentialService(deps: CredentialServiceDeps): Credential
 }
 
 /** Run on boot so values stored in earlier sessions are masked in logs too. */
-export function registerStoredCredentialValues(deps: Omit<CredentialServiceDeps, "clock">): void {
+export function registerStoredCredentialValues(
+    deps: ValueProtectionDeps & Pick<CredentialServiceDeps, "repo">,
+): void {
     for (const credential of deps.repo.list()) {
         deps.redactor.register(deps.secrets.open(credential.sealedValue));
     }

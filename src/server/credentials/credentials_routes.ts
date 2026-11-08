@@ -14,7 +14,7 @@ import { credentialInput, updateCredentialInput } from "@/shared/credential_type
 import type { CredentialSummary, UpdateCredentialInput } from "@/shared/credential_types.js";
 
 const CREDENTIALS_PATH = "/credentials";
-const CREDENTIAL_PATH = "/credentials/:id";
+const CREDENTIAL_BY_ID_PATH = "/credentials/:id";
 const HTTP_CREATED = 201;
 const HTTP_NO_CONTENT = 204;
 
@@ -53,13 +53,13 @@ function registerCredentialRoutes(app: FastifyInstance, credentials: CredentialS
     const typedApp = app.withTypeProvider<ZodTypeProvider>();
 
     typedApp.patch(
-        CREDENTIAL_PATH,
+        CREDENTIAL_BY_ID_PATH,
         { schema: { params: credentialParamsSchema, body: updateCredentialInput } },
         (request) => applyCredentialChanges(credentials, request.params.id, request.body),
     );
 
     typedApp.delete(
-        CREDENTIAL_PATH,
+        CREDENTIAL_BY_ID_PATH,
         { schema: { params: credentialParamsSchema } },
         async (request, reply) => {
             await credentials.remove(request.params.id);

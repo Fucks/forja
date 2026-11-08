@@ -36,11 +36,12 @@ const versionParamsSchema = flowParamsSchema.extend({
 });
 
 export const registerFlowsRoutes: RouteModule = (app, deps) => {
+    const credentials = new CredentialRepository(deps.db);
     const flows = createFlowService({
         repo: new FlowRepository(deps.db),
         events: deps.events,
         clock: systemClock,
-        validationContext: () => buildValidationContext(new CredentialRepository(deps.db)),
+        validationContext: () => buildValidationContext(credentials),
     });
 
     registerProjectFlowsRoutes(app, flows);
