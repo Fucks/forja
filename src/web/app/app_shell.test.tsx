@@ -1,12 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { ComponentProps } from "react";
-import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router";
+import { MemoryRouter } from "react-router";
 
+import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import { createFakeMatchMedia } from "@/test/fakes/fake_match_media.js";
-import { APP_ROUTES } from "@/web/app/routes.js";
+import { renderAppAt } from "@/test/render_app_at.js";
 import { Topbar } from "@/web/app/topbar.js";
-import { ToastProvider } from "@/web/components/ui/toast.js";
 import { THEME_STORAGE_KEY } from "@/web/styles/theme.js";
 
 const ROUTE_TITLES = [
@@ -29,6 +29,10 @@ const ROUTE_TITLES = [
 ];
 
 describe("AppShell", () => {
+    beforeEach(() => {
+        stubFetchRoutes({ "GET /api/projects": () => Response.json([]) });
+    });
+
     it.each(ROUTE_TITLES)("renders $path inside the shell", ({ path, title }) => {
         renderAppAt(path);
 
@@ -185,15 +189,6 @@ describe("Topbar", () => {
         expect(screen.getByRole("button", { name: "Usar tema escuro" })).toBeInTheDocument();
     });
 });
-
-function renderAppAt(path: string): void {
-    const router = createMemoryRouter(APP_ROUTES, { initialEntries: [path] });
-    render(
-        <ToastProvider>
-            <RouterProvider router={router} />
-        </ToastProvider>,
-    );
-}
 
 function renderTopbar(props: ComponentProps<typeof Topbar>): void {
     render(
