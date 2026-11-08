@@ -9,7 +9,7 @@ import type {
     StoredCredential,
 } from "@/server/credentials/credential_repository.js";
 import { DomainValidationError, NotFoundError } from "@/server/errors.js";
-import { ENV_VAR_BY_KIND } from "@/shared/credential_types.js";
+import { ENV_VAR_BY_KIND, GENERIC_ENV_VAR_REQUIRED_MESSAGE } from "@/shared/credential_types.js";
 import type { CredentialInput, CredentialSummary } from "@/shared/credential_types.js";
 
 type LastCheck = Pick<CredentialSummary, "lastCheckedAt" | "lastCheckOk">;
@@ -146,7 +146,7 @@ function resolveEnvVar(input: CredentialInput): string {
         return ENV_VAR_BY_KIND[input.kind];
     }
     if (input.envVar === undefined) {
-        throw new DomainValidationError("Informe a variável de ambiente da credencial genérica.", {
+        throw new DomainValidationError(GENERIC_ENV_VAR_REQUIRED_MESSAGE, {
             field: "envVar",
         });
     }

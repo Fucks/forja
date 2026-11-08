@@ -19,6 +19,8 @@ export const ENV_VAR_BY_KIND: Record<FixedEnvVarCredentialKind, string> = {
 
 export const CREDENTIAL_NAME_MAX_LENGTH = 60;
 const ENV_VAR_PATTERN = /^[A-Z_][A-Z0-9_]*$/;
+export const GENERIC_ENV_VAR_REQUIRED_MESSAGE =
+    "Informe a variável de ambiente da credencial genérica.";
 
 const credentialName = z.string().trim().min(1).max(CREDENTIAL_NAME_MAX_LENGTH);
 const credentialValue = z.string().min(1);
@@ -35,7 +37,7 @@ export const credentialInput = z
             context.addIssue({
                 code: "custom",
                 path: ["envVar"],
-                message: "Informe a variável de ambiente da credencial genérica.",
+                message: GENERIC_ENV_VAR_REQUIRED_MESSAGE,
             });
         }
     });

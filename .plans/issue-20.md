@@ -37,4 +37,4 @@
       `credential_form_dialog.tsx`, `credentials_page.test.tsx`
 - [x] 12. Page test + implement rename/replace value — page, dialog
 - [x] 13. Page test + implement remove with confirmation dialog — page
-- [ ] 14. Self-review checklist and feedback loops
+- [x] 14. Self-review checklist and feedback loops
