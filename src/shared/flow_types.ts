@@ -5,6 +5,7 @@ import type { FlowGraph } from "@/shared/flow_graph.js";
 
 const FLOW_NAME_MAX_LENGTH = 80;
 const VERSION_NOTE_MAX_LENGTH = 500;
+export const DRAFT_VERSION = "draft";
 
 export interface FlowSummary {
     id: string;
@@ -34,7 +35,7 @@ export interface FlowDraft {
     updatedAt: string;
 }
 
-const flowNameSchema = z.string().trim().min(1).max(FLOW_NAME_MAX_LENGTH);
+export const flowNameSchema = z.string().trim().min(1).max(FLOW_NAME_MAX_LENGTH);
 
 export const createFlowInput = z.object({
     name: flowNameSchema,
@@ -56,3 +57,8 @@ export const saveFlowDraftInput = z.object({
 export const publishFlowInput = z
     .object({ note: z.string().trim().min(1).max(VERSION_NOTE_MAX_LENGTH).optional() })
     .nullish();
+
+export const exportFlowQuery = z.object({
+    version: z.union([z.literal(DRAFT_VERSION), z.coerce.number().int().positive()]),
+});
+export type ExportedFlowVersion = z.infer<typeof exportFlowQuery>["version"];

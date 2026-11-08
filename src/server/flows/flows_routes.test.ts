@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 
 import { buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
+import { flowToYaml, normalizeFlowGraph, yamlToFlow } from "@/server/flows/flow_yaml.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { FlowDraft, FlowSummary, FlowVersion } from "@/shared/flow_types.js";
@@ -12,6 +13,7 @@ import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 
 const PROJECT_ID = "prj_forja";
+const EXPORTED_AT = "2026-11-08T12:00:00.000Z";
 const GRAPH_WITHOUT_TRIGGER: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
 
 describe("flows routes", () => {
@@ -345,6 +347,135 @@ describe("flows routes", () => {
                 graph: published.graph,
                 revision: 3,
             });
+        });
+    });
+
+    describe("GET /api/flows/:flowId/export", () => {
+        async function exportFlow(flowId: string, version: string) {
+            return app.inject({
+                method: "GET",
+                url: `/api/flows/${flowId}/export?version=${version}`,
+            });
+        }
+
+        it("answers the draft as a YAML attachment named after the flow", async () => {
+            const flow = await createFlow("Entrega Contínua");
+            await saveDraft(flow.id, buildCanonicalFlow(), 1);
+
+            const response = await exportFlow(flow.id, "draft");
+
+            expect(response.statusCode).toBe(200);
+            expect(response.headers["content-type"]).toContain("application/yaml");
+            expect(response.headers["content-disposition"]).toBe(
+                'attachment; filename="entrega_continua.forja.yaml"',
+            );
+            expect(yamlToFlow(response.body)).toMatchObject({
+                forja: 1,
+                name: "Entrega Contínua",
+                graph: normalizeFlowGraph(buildCanonicalFlow()),
+            });
+        });
+
+        it("answers a published version unchanged by later draft edits", async () => {
+            const flow = await createFlow();
+            const published = (await publish(flow.id)).json<FlowVersion>();
+            await saveDraft(flow.id, buildCanonicalFlow(), 1);
+
+            const response = await exportFlow(flow.id, "1");
+
+            expect(response.statusCode).toBe(200);
+            expect(yamlToFlow(response.body).graph).toEqual(normalizeFlowGraph(published.graph));
+        });
+
+        it("answers 404 for an unknown version", async () => {
+            const flow = await createFlow();
+
+            const response = await exportFlow(flow.id, "7");
+
+            expect(response.statusCode).toBe(404);
+        });
+
+        it("answers 404 for an unknown flow", async () => {
+            const response = await exportFlow("flw_nenhum", "draft");
+
+            expect(response.statusCode).toBe(404);
+        });
+
+        it("answers 400 for a version that is neither a number nor draft", async () => {
+            const flow = await createFlow();
+
+            const response = await exportFlow(flow.id, "primeira");
+
+            expect(response.statusCode).toBe(400);
+        });
+    });
+
+    describe("POST /api/projects/:projectId/flows/import", () => {
+        async function importFlow(yaml: string, contentType = "application/yaml") {
+            return app.inject({
+                method: "POST",
+                url: `/api/projects/${PROJECT_ID}/flows/import`,
+                headers: { "content-type": contentType },
+                payload: yaml,
+            });
+        }
+
+        function buildFlowYaml(name: string, graph: FlowGraph): string {
+            return flowToYaml({ forja: 1, name, exportedAt: EXPORTED_AT, graph });
+        }
+
+        it.each(["application/yaml", "text/yaml", "text/plain"])(
+            "creates a flow whose draft is the imported graph (%s)",
+            async (contentType) => {
+                const yaml = buildFlowYaml("Importado", buildCanonicalFlow());
+
+                const response = await importFlow(yaml, contentType);
+                const flow = response.json<FlowSummary>();
+                const draft = await app.inject({
+                    method: "GET",
+                    url: `/api/flows/${flow.id}/draft`,
+                });
+
+                expect(response.statusCode).toBe(201);
+                expect(flow).toMatchObject({ projectId: PROJECT_ID, name: "Importado" });
+                expect(draft.json<FlowDraft>().graph).toEqual(
+                    normalizeFlowGraph(buildCanonicalFlow()),
+                );
+            },
+        );
+
+        it("answers 422 with the line and column of broken YAML", async () => {
+            const response = await importFlow("forja: 1\nname: [Importado\ngraph: {}\n");
+
+            expect(response.statusCode).toBe(422);
+            expect(response.json()).toMatchObject({
+                error: {
+                    code: "invalid",
+                    details: [{ kind: "syntax", line: 3, column: 1 }],
+                },
+            });
+        });
+
+        it("answers 422 for a file of an unknown forja version", async () => {
+            const yaml = buildFlowYaml("Importado", buildCanonicalFlow()).replace(
+                "forja: 1",
+                "forja: 2",
+            );
+
+            const response = await importFlow(yaml);
+
+            expect(response.statusCode).toBe(422);
+        });
+
+        it("answers 404 for an unknown project", async () => {
+            const response = await app.inject({
+                method: "POST",
+                url: "/api/projects/prj_nenhum/flows/import",
+                headers: { "content-type": "application/yaml" },
+                payload: buildFlowYaml("Importado", buildCanonicalFlow()),
+            });
+
+            expect(response.statusCode).toBe(404);
         });
     });
 });

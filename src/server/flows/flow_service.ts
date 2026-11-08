@@ -6,10 +6,14 @@ import { newId } from "@/lib/ids.js";
 import { resolveWith } from "@/lib/resolve_with.js";
 import { ConflictError, DomainValidationError, NotFoundError } from "@/server/errors.js";
 import type { FlowRepository } from "@/server/flows/flow_repository.js";
+import { FLOW_FILE_FORMAT_VERSION, yamlToFlow } from "@/server/flows/flow_yaml.js";
+import type { FlowFile } from "@/server/flows/flow_yaml.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import { FlowGraphParseError, parseFlowGraph } from "@/shared/flow_graph.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+import { DRAFT_VERSION } from "@/shared/flow_types.js";
 import type {
+    ExportedFlowVersion,
     FlowDraft,
     FlowSummary,
     FlowVersion,
@@ -36,6 +40,9 @@ export interface FlowService {
     getVersion(flowId: string, version: number): Promise<FlowVersion>;
     listVersions(flowId: string): Promise<FlowVersionSummary[]>;
     restoreVersionToDraft(flowId: string, version: number): Promise<FlowDraft>;
+    exportFlow(flowId: string, version: ExportedFlowVersion): Promise<FlowFile>;
+    /** @throws FlowFileError when the YAML is broken or is not a valid flow file */
+    importFlow(projectId: string, yamlText: string): Promise<FlowSummary>;
 }
 
 export interface FlowServiceDeps {
@@ -63,6 +70,9 @@ export function createFlowService(deps: FlowServiceDeps): FlowService {
         listVersions: (flowId) => resolveWith(() => listVersions(repo, flowId)),
         restoreVersionToDraft: (flowId, version) =>
             resolveWith(() => restoreVersionToDraft(deps, flowId, version)),
+        exportFlow: (flowId, version) => resolveWith(() => exportFlow(deps, flowId, version)),
+        importFlow: (projectId, yamlText) =>
+            resolveWith(() => importFlow(deps, projectId, yamlText)),
     };
 }
 
@@ -229,6 +239,35 @@ function restoreVersionToDraft(
     });
 
     return findDraftOrThrow(deps.repo, flowId);
+}
+
+function exportFlow(deps: FlowServiceDeps, flowId: string, version: ExportedFlowVersion): FlowFile {
+    const flow = findFlowOrThrow(deps.repo, flowId);
+
+    return {
+        forja: FLOW_FILE_FORMAT_VERSION,
+        name: flow.name,
+        exportedAt: deps.clock.now().toISOString(),
+        graph: findGraphToExport(deps.repo, flowId, version),
+    };
+}
+
+function findGraphToExport(
+    repo: FlowRepository,
+    flowId: string,
+    version: ExportedFlowVersion,
+): FlowGraph {
+    if (version === DRAFT_VERSION) {
+        return findDraftOrThrow(repo, flowId).graph;
+    }
+
+    return findVersionOrThrow(repo, flowId, version).graph;
+}
+
+function importFlow(deps: FlowServiceDeps, projectId: string, yamlText: string): FlowSummary {
+    const { name, graph } = yamlToFlow(yamlText);
+
+    return createFlow(deps, projectId, { name, graph });
 }
 
 function assertProjectExists(repo: FlowRepository, projectId: string): void {

@@ -162,9 +162,13 @@ export function parseFlowGraph(input: unknown): FlowGraph {
 const ROOT_PATH_LABEL = "(raiz)";
 
 function toFlowGraphParseIssue(issue: z.core.$ZodIssue): FlowGraphParseIssue {
+    return { path: describeIssuePath(issue), message: issue.message };
+}
+
+export function describeIssuePath(issue: z.core.$ZodIssue): string {
     const path = issue.path.map(String).join(".");
 
-    return { path: path || ROOT_PATH_LABEL, message: issue.message };
+    return path || ROOT_PATH_LABEL;
 }
 
 function describeParseIssues(issues: FlowGraphParseIssue[]): string {
