@@ -32,7 +32,7 @@
 
 - [x] 1. Test + implement `decideRetry` matrix — `src/engine/retry_policy.ts`, `retry_policy.test.ts`
 - [x] 2. Test + implement run reopening transitions FAILED/SUCCEEDED → RUNNING clearing finishedAt/error — `src/engine/run_state.ts`, `run_state.test.ts`
-- [ ] 3. Add `withoutRetries` to flows used by failing-for-good scheduler tests — `src/test/factories/scheduler_flows.ts`, `scheduler.test.ts`
+- [x] 3. Add `withoutRetries` to flows used by failing-for-good scheduler tests — `src/test/factories/scheduler_flows.ts`, `scheduler.test.ts`
 - [ ] 4. Test + implement automatic retry with delay (structured_output, retries 1 → 2 NodeRuns, 30 s apart) — `scheduler.ts`, `flow_plan.ts`, `scheduler.test.ts`
 - [ ] 5. Test + implement `workspace` retried after 2 min up to 2 times with retries 0 — `scheduler.test.ts`
 - [ ] 6. Test + implement total timeout cancel recorded as `timeout_total` — `scheduler.ts`, `scheduler_types.ts`, `scheduler_snapshot.ts`, `scheduler.test.ts`

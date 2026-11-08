@@ -11,6 +11,7 @@ import {
     buildSingleAgentFlow,
     buildSourceFlow,
     withMapConfig,
+    withoutRetries,
 } from "@/test/factories/scheduler_flows.js";
 import {
     createSchedulerHarness,
@@ -214,7 +215,7 @@ describe("scheduler: condition branches", () => {
 describe("scheduler: failure", () => {
     it("fails the run only after the other running agents finish", () => {
         const harness = createSchedulerHarness({
-            graph: buildLinearAgentFlow(),
+            graph: withoutRetries(buildLinearAgentFlow()),
             scripts: {
                 a: ({ nodeRun }) => {
                     if (nodeRun.workItemId === "1") {
@@ -410,7 +411,10 @@ describe("scheduler: map groups", () => {
     });
 
     it("keeps the other items going when one fails and does not pass it to the next map", () => {
-        const harness = createCanonicalHarness({ scripts: { dev: developerFailingItem("2") } });
+        const harness = createCanonicalHarness({
+            graph: withoutRetries(buildReportedCanonicalFlow()),
+            scripts: { dev: developerFailingItem("2") },
+        });
 
         harness.start([]);
         harness.runToCompletion();
@@ -425,7 +429,9 @@ describe("scheduler: map groups", () => {
 
     it("cancels the queue and the running items of a failFast map when an item fails", () => {
         const harness = createCanonicalHarness({
-            graph: withMapConfig(buildReportedCanonicalFlow(), "develop", { failFast: true }),
+            graph: withMapConfig(withoutRetries(buildReportedCanonicalFlow()), "develop", {
+                failFast: true,
+            }),
             scripts: { dev: developerFailingItem("2") },
         });
 
@@ -612,7 +618,7 @@ describe("scheduler: loop groups", () => {
 
     it("starts no new iteration once the run is failing", () => {
         const harness = createSchedulerHarness({
-            graph: buildLoopBesideAgentFlow(),
+            graph: withoutRetries(buildLoopBesideAgentFlow()),
             scripts: { c: () => ({ durationMs: 1_500, outcome: FAILED_FOR_GOOD }) },
         });
 
