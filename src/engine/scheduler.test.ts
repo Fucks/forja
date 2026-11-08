@@ -1522,20 +1522,20 @@ function hittingUsageLimitOnceOn(limitedItemId: string, resetAt?: Date): NodeScr
     };
 }
 
-// Devs 1, 2 and 3 work 10, 1 and 20 minutes; those in resetAtByItem hit the limit once instead.
 function devsHittingTheLimit(resetAtByItem: Record<string, Date>): NodeScript {
-    const limitScripts = Object.entries(resetAtByItem).map(([itemId, resetAt]) =>
-        hittingUsageLimitOnceOn(itemId, resetAt),
+    const limitScriptsByItem = new Map(
+        Object.entries(resetAtByItem).map(([itemId, resetAt]) => [
+            itemId,
+            hittingUsageLimitOnceOn(itemId, resetAt),
+        ]),
     );
 
     return (started) => {
-        const workMinutes = DEV_WORK_MINUTES_BY_ITEM[started.nodeRun.workItemId ?? ""] ?? 1;
-        const working: Partial<NodeBehavior> = { durationMs: workMinutes * MINUTE_MS };
+        const itemId = started.nodeRun.workItemId ?? "";
+        const workMinutes = DEV_WORK_MINUTES_BY_ITEM[itemId] ?? 1;
+        const limitHit = limitScriptsByItem.get(itemId)?.(started) ?? {};
 
-        return limitScripts.reduce(
-            (behavior, limitScript) => ({ ...behavior, ...limitScript(started) }),
-            working,
-        );
+        return { durationMs: workMinutes * MINUTE_MS, ...limitHit };
     };
 }
 

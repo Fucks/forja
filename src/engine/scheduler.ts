@@ -423,9 +423,12 @@ class DagScheduler implements Scheduler {
 
     // Only a pause that is still the limit's: a user pause taken meanwhile keeps the run paused.
     private hasUsageLimitReset(now: Date): boolean {
-        const resumeAt = this.isPausedByUsageLimit() ? this.run.resumeAt : undefined;
+        const { resumeAt } = this.run;
+        if (!this.isPausedByUsageLimit() || !resumeAt) {
+            return false;
+        }
 
-        return resumeAt !== undefined && resumeAt.getTime() <= now.getTime();
+        return resumeAt.getTime() <= now.getTime();
     }
 
     private raiseBudget(budget: RunBudget, at: Date): void {
