@@ -25,7 +25,7 @@
 - [x] 5. Routes `settings_routes.ts` (GET/PUT both levels, 404/422) with a routes test `settings_routes.test.ts`
 - [x] 6. Test + implement `resolveAgentDefaults` override combinations — `resolve_agent_defaults.ts`
 - [x] 7. Web hooks `use_settings.ts` and draft helpers `settings_draft.ts` (blank ↔ default)
-- [ ] 8. Test: editing effort and saving sends the PUT — `project_settings_page.test.tsx`
-- [ ] 9. Page: project sections (Agentes, Execução, Container), global section "Toda a Forja", fixed save bar — `project_settings_page.tsx` + form components
-- [ ] 10. Test: global section saves and the page reloads both levels
-- [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 8. Test: editing effort and saving sends the PUT — `project_settings_page.test.tsx`
+- [x] 9. Page: project sections (Agentes, Execução, Container), global section "Toda a Forja", fixed save bar — `project_settings_page.tsx` + form components
+- [x] 10. Test: global section saves and the page reloads both levels
+- [x] 11. Self-review checklist and feedback loops (typecheck, lint, test)
