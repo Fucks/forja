@@ -31,7 +31,7 @@
       `test_app_deps.ts`
 - [x] 8. Test + implement routes (no value in responses, generic_env 400, PATCH, DELETE) —
       `credentials_routes.ts`, `credentials_routes.test.ts`
-- [ ] 9. Pass known credential ids to flow validation — `flows_routes.ts`
+- [x] 9. Pass known credential ids to flow validation — `flows_routes.ts`
 - [ ] 10. `apiClient.patch` and `use_credentials.ts` hooks
 - [ ] 11. Page test + implement list and create flow — `credentials_page.tsx`,
       `credential_form_dialog.tsx`, `credentials_page.test.tsx`
