@@ -5,12 +5,16 @@ export interface CommandResult {
     timedOut: boolean;
 }
 
+export type LineListener = (line: string) => void;
+
 export interface CommandOptions {
     cwd?: string;
     env?: Record<string, string>;
     timeoutMs: number;
     input?: string;
     signal?: AbortSignal;
+    onStdoutLine?: LineListener;
+    onStderrLine?: LineListener;
 }
 
 export interface CommandRunner {

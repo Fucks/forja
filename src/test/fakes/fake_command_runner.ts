@@ -2,6 +2,7 @@ import type {
     CommandOptions,
     CommandResult,
     CommandRunner,
+    LineListener,
 } from "@/integrations/process/command_runner.js";
 
 export interface RecordedCommand {
@@ -37,8 +38,20 @@ export class FakeCommandRunner implements CommandRunner {
             (candidate) => candidate.command === command && haveSameArgs(candidate.args, args),
         );
 
-        return Promise.resolve(scripted?.result ?? buildUnscriptedResult(command, args));
+        const result = scripted?.result ?? buildUnscriptedResult(command, args);
+        replayLines(result.stdout, options.onStdoutLine);
+        replayLines(result.stderr, options.onStderrLine);
+
+        return Promise.resolve(result);
     }
+}
+
+function replayLines(output: string, listener: LineListener | undefined): void {
+    if (!listener || output === "") {
+        return;
+    }
+
+    output.split("\n").forEach((line) => listener(line));
 }
 
 function buildCommandResult(overrides: Partial<CommandResult> = {}): CommandResult {

@@ -4,10 +4,12 @@ import type {
     CommandOptions,
     CommandResult,
     CommandRunner,
+    LineListener,
 } from "@/integrations/process/command_runner.js";
 
 // execa leaves exitCode undefined when the process never ran or was killed (timeout, abort).
 const NO_EXIT_CODE = -1;
+const BUFFER_ONLY = "pipe";
 
 export class ExecaCommandRunner implements CommandRunner {
     async run(command: string, args: string[], options: CommandOptions): Promise<CommandResult> {
@@ -17,6 +19,8 @@ export class ExecaCommandRunner implements CommandRunner {
             input: options.input,
             timeout: options.timeoutMs,
             cancelSignal: options.signal,
+            stdout: notifyEachLine(options.onStdoutLine),
+            stderr: notifyEachLine(options.onStderrLine),
             reject: false,
             windowsHide: true,
             stripFinalNewline: true,
@@ -29,4 +33,17 @@ export class ExecaCommandRunner implements CommandRunner {
             timedOut: result.timedOut,
         };
     }
+}
+
+function notifyEachLine(
+    listener: LineListener | undefined,
+): typeof BUFFER_ONLY | ((line: string) => Generator<string>) {
+    if (!listener) {
+        return BUFFER_ONLY;
+    }
+
+    return function* passLineThrough(line: string) {
+        listener(line);
+        yield line;
+    };
 }
