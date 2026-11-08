@@ -22,15 +22,19 @@ export async function writeWorkspaceFiles(root: string, files: WorkspaceFile[]):
 
 function resolveInsideRoot(root: string, relativePath: string): string {
     const absolutePath = path.resolve(root, relativePath);
-    const pathFromRoot = path.relative(root, absolutePath);
-    const isInsideRoot =
-        pathFromRoot !== "" &&
-        pathFromRoot !== PARENT_DIR &&
-        !pathFromRoot.startsWith(`${PARENT_DIR}${path.sep}`) &&
-        !path.isAbsolute(pathFromRoot);
-    if (!isInsideRoot) {
+    if (!isStrictlyInside(root, absolutePath)) {
         throw new WorkspaceError(`O arquivo ${relativePath} fica fora do workspace`);
     }
 
     return absolutePath;
+}
+
+function isStrictlyInside(root: string, absolutePath: string): boolean {
+    const pathFromRoot = path.relative(root, absolutePath);
+    return (
+        pathFromRoot !== "" &&
+        pathFromRoot !== PARENT_DIR &&
+        !pathFromRoot.startsWith(`${PARENT_DIR}${path.sep}`) &&
+        !path.isAbsolute(pathFromRoot)
+    );
 }

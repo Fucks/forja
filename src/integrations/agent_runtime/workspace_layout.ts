@@ -17,6 +17,7 @@ const ITEM_LABEL = "forja.item";
 const PROJECT_LABEL = "forja.project";
 
 const CONTAINER_NAME_PREFIX = "forja";
+const CONTAINER_NAME_SEPARATOR = "-";
 const SHORT_ID_LENGTH = 8;
 const NOT_ALLOWED_IN_SHORT_ID = /[^a-z0-9]/g;
 const WINDOWS_DRIVE_PATH = /^([A-Za-z]):[\\/](.*)$/;
@@ -24,11 +25,11 @@ const WINDOWS_PATH_SEPARATOR = /\\/g;
 
 /** The workspace id is also its container name: `forja-<runId curto>-<itemId curto>`. */
 export function workspaceIdFor(runId: string, workItemId: string): string {
-    return [CONTAINER_NAME_PREFIX, shortId(runId), shortId(workItemId)].join("-");
+    return containerNameFor(runId, workItemId);
 }
 
 export function headlessContainerNameFor(runId: string, nodeRunId: string): string {
-    return [CONTAINER_NAME_PREFIX, shortId(runId), shortId(nodeRunId)].join("-");
+    return containerNameFor(runId, nodeRunId);
 }
 
 export function workspaceLabels(workspaceId: string, spec: WorkspaceSpec): Record<string, string> {
@@ -84,6 +85,10 @@ export function toContainerPath(hostPath: string): string {
 /** Without a host user (Windows) the container keeps the image's default user. */
 export function containerUserFor(hostUser: HostUser | null): string | undefined {
     return hostUser ? `${hostUser.uid}:${hostUser.gid}` : undefined;
+}
+
+function containerNameFor(runId: string, ownerId: string): string {
+    return [CONTAINER_NAME_PREFIX, shortId(runId), shortId(ownerId)].join(CONTAINER_NAME_SEPARATOR);
 }
 
 function shortId(id: string): string {

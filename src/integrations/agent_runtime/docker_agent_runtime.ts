@@ -56,6 +56,8 @@ export interface DockerAgentRuntimeDeps {
     runAgentInContainer: RunAgentInContainer;
 }
 
+type SetupSpec = Pick<HeadlessSpec, "setupCommands" | "env">;
+
 const WORKSPACE_READY_MESSAGE = "workspace pronto";
 
 export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRuntime {
@@ -185,7 +187,7 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
 
     function runSetup(
         containerId: string,
-        spec: HeadlessSpec,
+        spec: SetupSpec,
         hooks: AgentRunHooks,
         signal: AbortSignal,
     ): Promise<void> {
