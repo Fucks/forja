@@ -57,6 +57,7 @@ export interface TimelineEntry {
     nodeRunId: string;
     nodeId: string;
     workItemId?: string;
+    attempt: number;
     status: NodeRunStatusName;
 }
 
@@ -143,6 +144,16 @@ export class SchedulerHarness {
     ): number | undefined {
         return this.entriesOf(nodeId, workItemId).find((entry) => entry.status === status)
             ?.elapsedMs;
+    }
+
+    // The last recorded entry of each NodeRun of the node, in creation order.
+    attemptsOf(nodeId: string, workItemId?: string): TimelineEntry[] {
+        const lastEntriesByNodeRunId = new Map<string, TimelineEntry>();
+        for (const entry of this.entriesOf(nodeId, workItemId)) {
+            lastEntriesByNodeRunId.set(entry.nodeRunId, entry);
+        }
+
+        return [...lastEntriesByNodeRunId.values()];
     }
 
     finalStatusOf(nodeId: string, workItemId?: string): NodeRunStatusName | undefined {
@@ -272,6 +283,7 @@ export class SchedulerHarness {
             nodeRunId: nodeRun.id,
             nodeId: nodeRun.nodeId,
             workItemId: nodeRun.workItemId,
+            attempt: nodeRun.attempt,
             status: nodeRun.status,
         });
     }

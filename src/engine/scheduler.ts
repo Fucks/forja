@@ -10,6 +10,7 @@ import {
     type NodeRunState,
     transitionNodeRun,
 } from "@/engine/node_run_state.js";
+import { decideRetry, type FailureKind } from "@/engine/retry_policy.js";
 import { RUN_TERMINAL, type RunState, transitionRun } from "@/engine/run_state.js";
 import { compareQueueOrder, type QueuePosition } from "@/engine/scheduler_queue.js";
 import { restoreSnapshot, takeSnapshot } from "@/engine/scheduler_snapshot.js";
@@ -148,14 +149,56 @@ class DagScheduler implements Scheduler {
 
     private failNodeRun(nodeRunId: string, error: NodeRunError | undefined, at: Date): void {
         const nodeRun = this.nodeRuns.get(nodeRunId);
-        const status = error?.kind === "canceled" ? "CANCELED" : "FAILED";
-        this.changeNodeRun(transitionNodeRun(nodeRun, status, at, { error }));
-        // Inside a map the failure belongs to the item: applyFinishedItem decides what it stops.
-        if (!this.stopOutcome && !this.plan.mapGroupIdOf(nodeRun.nodeId)) {
-            this.stop("FAILED", at);
+        const failureKind: FailureKind = error?.kind ?? "runtime";
+        const status = failureKind === "canceled" ? "CANCELED" : "FAILED";
+        const failed = transitionNodeRun(nodeRun, status, at, { error });
+        this.changeNodeRun(failed);
+        const retryDelayMs = this.findRetryDelayMs(failed, failureKind);
+        if (retryDelayMs === undefined) {
+            this.giveUpOn(failed, at);
+        } else {
+            this.queueNextAttempt(failed, new Date(at.getTime() + retryDelayMs));
         }
 
         this.advance(at);
+    }
+
+    // Undefined when the NodeRun fails for good.
+    private findRetryDelayMs(failed: NodeRunState, failureKind: FailureKind): number | undefined {
+        if (this.stopOutcome) {
+            return undefined;
+        }
+
+        const maxRetries = this.plan.maxRetriesOf(failed.nodeId);
+        const decision = decideRetry(failureKind, failed.attempt, maxRetries);
+
+        return decision.retry ? decision.delayMs : undefined;
+    }
+
+    // Inside a map the failure belongs to the item: applyFinishedItem decides what it stops.
+    private giveUpOn(failed: NodeRunState, at: Date): void {
+        if (!this.stopOutcome && !this.plan.mapGroupIdOf(failed.nodeId)) {
+            this.stop("FAILED", at);
+        }
+    }
+
+    // The failed NodeRun stays in the history; the next attempt only starts once its queuedAt comes.
+    private queueNextAttempt(failed: NodeRunState, queuedAt: Date): void {
+        this.changeNodeRun(transitionNodeRun(this.nextAttemptOf(failed), "QUEUED", queuedAt));
+        this.outbox.push({ type: "schedule_wakeup", at: queuedAt });
+    }
+
+    private nextAttemptOf(previous: NodeRunState): NodeRunState {
+        return {
+            id: this.options.newId(),
+            runId: previous.runId,
+            nodeId: previous.nodeId,
+            workItemId: previous.workItemId,
+            iteration: previous.iteration,
+            attempt: previous.attempt + 1,
+            groupPath: previous.groupPath,
+            status: "PENDING",
+        };
     }
 
     private cancelRun(at: Date): void {
@@ -312,9 +355,9 @@ class DagScheduler implements Scheduler {
     }
 
     private startQueuedNodeRuns(now: Date): void {
-        const queueInStartOrder = this.nodeRuns
-            .withStatus("QUEUED")
-            .sort((a, b) => compareQueueOrder(this.queuePositionOf(a), this.queuePositionOf(b)));
+        const queueInStartOrder = this.dueQueuedNodeRuns(now).sort((a, b) =>
+            compareQueueOrder(this.queuePositionOf(a), this.queuePositionOf(b)),
+        );
         for (const nodeRun of queueInStartOrder) {
             if (this.plan.isLimitedByConcurrency(nodeRun.nodeId)) {
                 this.startAgentWhenAllowed(nodeRun, now);
@@ -343,7 +386,9 @@ class DagScheduler implements Scheduler {
     }
 
     private scheduleWakeupForWaitingAgents(now: Date): void {
-        const hasWaitingAgent = this.agentNodeRunsWithStatus("QUEUED").length > 0;
+        const hasWaitingAgent = this.dueQueuedNodeRuns(now).some((nodeRun) =>
+            this.plan.isLimitedByConcurrency(nodeRun.nodeId),
+        );
         const nextStartTime = this.agentStarts.findNextStartTime(now);
         if (!hasWaitingAgent || !nextStartTime) {
             return;
@@ -383,6 +428,13 @@ class DagScheduler implements Scheduler {
             dagPosition: this.plan.dagPositionOf(nodeRun.nodeId),
             workItemId: nodeRun.workItemId,
         };
+    }
+
+    // A retry waits in the queue until its queuedAt.
+    private dueQueuedNodeRuns(now: Date): NodeRunState[] {
+        return this.nodeRuns
+            .withStatus("QUEUED")
+            .filter((nodeRun) => (nodeRun.queuedAt?.getTime() ?? 0) <= now.getTime());
     }
 
     private agentNodeRunsWithStatus(status: NodeRunStatusName): NodeRunState[] {

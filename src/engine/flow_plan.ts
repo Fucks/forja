@@ -18,6 +18,8 @@ const NODE_TYPES_LIMITED_BY_CONCURRENCY: ReadonlySet<NodeType> = new Set<NodeTyp
     "script",
 ]);
 
+const NO_RETRIES = 0;
+
 // Everything the scheduler asks about the graph, computed once per run.
 export class FlowPlan {
     readonly nodeIdsInDagOrder: string[];
@@ -117,6 +119,13 @@ export class FlowPlan {
         const node = this.findNode(nodeId);
 
         return node !== undefined && NODE_TYPES_LIMITED_BY_CONCURRENCY.has(node.type);
+    }
+
+    // Only agents have their own retries; the workspace retries of the policy apply to every node.
+    maxRetriesOf(nodeId: string): number {
+        const node = this.findNode(nodeId);
+
+        return node?.type === "agent" ? node.config.retries : NO_RETRIES;
     }
 
     findEdgeSplittingListIntoItems(nodeId: string): FlowEdge | undefined {
