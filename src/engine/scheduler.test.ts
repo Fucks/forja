@@ -1297,6 +1297,26 @@ describe("scheduler: usage limit", () => {
         expect(scheduler.snapshot().run).toMatchObject({ status: "PAUSED", pauseReason: "user" });
     });
 
+    it("cancels the NodeRuns waiting for the limit when the run fails during the pause", () => {
+        const limitOnItem1 = hittingUsageLimitOnceOn("1", RESET_AT_15H);
+        const harness = createSchedulerHarness({
+            graph: withoutRetries(buildSingleAgentFlow()),
+            scripts: {
+                a: (started) =>
+                    started.nodeRun.workItemId === "2"
+                        ? { durationMs: 5_000, outcome: FAILED_FOR_GOOD }
+                        : limitOnItem1(started),
+            },
+        });
+        harness.start(["1", "2"]);
+
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("a", "1")).toBe("CANCELED");
+        expect(startTimesMsOf(harness, "a", "1")).toEqual([0]);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
     it("does not spend a retry when the agent hits the limit", () => {
         const harness = createSchedulerHarness({
             graph: withoutRetries(buildSingleAgentFlow()),

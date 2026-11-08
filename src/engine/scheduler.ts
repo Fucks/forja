@@ -432,7 +432,7 @@ class DagScheduler implements Scheduler {
     // Nothing new starts once the run is stopping; RUNNING NodeRuns are left to finish.
     private stop(outcome: StopOutcome, at: Date): void {
         this.stopOutcome = outcome;
-        for (const nodeRun of this.nodeRuns.withStatus("PENDING", "QUEUED")) {
+        for (const nodeRun of this.nodeRuns.withStatus("PENDING", "QUEUED", "WAITING_LIMIT")) {
             this.changeNodeRun(transitionNodeRun(nodeRun, "CANCELED", at));
         }
         this.mapGroups.cancelQueuedItems();
