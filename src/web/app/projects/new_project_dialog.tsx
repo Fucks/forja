@@ -59,11 +59,7 @@ function NewProjectForm({
     return (
         <form onSubmit={submit} className="flex flex-col gap-3">
             <Field label="Nome" htmlFor="new-project-name">
-                <Input
-                    required
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                />
+                <Input required value={name} onChange={(event) => setName(event.target.value)} />
             </Field>
             <Field
                 label="Caminho do repositório"

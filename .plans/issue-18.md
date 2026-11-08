@@ -25,9 +25,9 @@
 - [x] 3. Hooks `useProjects`, `useProject`, `useCreateProject` — `use_projects.ts`
 - [x] 4. Test + impl: empty list shows EmptyState with "Novo projeto" — `projects_page.tsx`
 - [x] 5. Test + impl: projects listed in a table (name link, path mono, GitHub repo, base branch)
-- [ ] 6. Test + impl: creating a project closes the dialog, refreshes the list and opens the overview
+- [x] 6. Test + impl: creating a project closes the dialog, refreshes the list and opens the overview
       — `new_project_dialog.tsx`
-- [ ] 7. Test + impl: 422/409 error under the path field
+- [x] 7. Test + impl: 422/409 error under the path field
 - [ ] 8. Test + impl: `ProjectPage` overview (KeyValue, detection badges with next-step hint,
       shortcut cards to Fluxos/Board/Runs) — `project_page.tsx`
 - [ ] 9. Test + impl: `switchProjectPath` keeps the current area — `navigation.ts`
