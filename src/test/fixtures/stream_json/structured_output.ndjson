@@ -1,0 +1,4 @@
+{"_fixture":"sintética"}
+{"type":"system","subtype":"init","session_id":"sess-structured","model":"claude-sonnet-5-5","tools":["Read"],"mcp_servers":[]}
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_9","name":"StructuredOutput","input":{"verdict":"approve","issues":[]}}]},"session_id":"sess-structured"}
+{"type":"result","subtype":"success","is_error":false,"duration_ms":2500,"num_turns":2,"result":"","structured_output":{"verdict":"approve","issues":[]},"session_id":"sess-structured","total_cost_usd":0.01,"usage":{"input_tokens":80,"output_tokens":20,"cache_read_input_tokens":0,"cache_creation_input_tokens":0},"permission_denials":[]}
