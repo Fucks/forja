@@ -22,9 +22,9 @@
 
 - [x] 1. Move pure project types to `src/shared/project_types.ts` and re-export them on the server
 - [x] 2. Test helpers `stubFetchRoutes` and `renderAppAt`; `app_shell.test.tsx` uses them
-- [ ] 3. Hooks `useProjects`, `useProject`, `useCreateProject` — `use_projects.ts`
-- [ ] 4. Test + impl: empty list shows EmptyState with "Novo projeto" — `projects_page.tsx`
-- [ ] 5. Test + impl: projects listed in a table (name link, path mono, GitHub repo, base branch)
+- [x] 3. Hooks `useProjects`, `useProject`, `useCreateProject` — `use_projects.ts`
+- [x] 4. Test + impl: empty list shows EmptyState with "Novo projeto" — `projects_page.tsx`
+- [x] 5. Test + impl: projects listed in a table (name link, path mono, GitHub repo, base branch)
 - [ ] 6. Test + impl: creating a project closes the dialog, refreshes the list and opens the overview
       — `new_project_dialog.tsx`
 - [ ] 7. Test + impl: 422/409 error under the path field
