@@ -34,5 +34,5 @@
 - [x] 10. Test+impl: `snapshots` returns items in the requested order; 404 for an id of another project
 - [x] 11. Test+impl: `upsertFromGithub` creates items with `forja/issue-<n>` and resolves dependencies inside the batch
 - [x] 12. Test+impl: `upsertFromGithub` twice with the same data does not duplicate (`created: 0, updated: 0`) and updates changed issues
-- [ ] 13. Routes + `work_items_routes.test.ts` (list/create/get/patch/column/archive, 404/409/400/422)
+- [x] 13. Routes + `work_items_routes.test.ts` (list/create/get/patch/column/archive, 404/409/400/422)
 - [ ] 14. Self-review checklist (section 5) and feedback loops (section 6)
