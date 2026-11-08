@@ -31,8 +31,8 @@
 ## Tasks
 
 - [x] 1. Test + implement `pause_requested`/`resume_requested` in the scheduler — `src/engine/scheduler.ts`, `scheduler_types.ts`, `scheduler.test.ts`, `scheduler_harness.ts`
-- [ ] 2. Test + implement `mapAgentError` and `usageLimitResetAt` — `src/server/runtime/error_mapping.ts` (+ test)
-- [ ] 3. `buildPromptContext` — `src/server/runtime/run_context.ts`
+- [x] 2. Test + implement `mapAgentError` and `usageLimitResetAt` — `src/server/runtime/error_mapping.ts` (+ test)
+- [x] 3. `buildPromptContext` — `src/server/runtime/run_context.ts`
 - [ ] 4. Test: concurrent acquire opens once; release closes; failed open retried — `workspace_pool.test.ts`
 - [ ] 5. Implement `createWorkspacePool` — `src/server/runtime/workspace_pool.ts`
 - [ ] 6. Node executor contracts + registry — `src/server/runtime/node_executors.ts`
