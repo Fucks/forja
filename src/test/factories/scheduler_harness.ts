@@ -23,13 +23,20 @@ import { buildRunState } from "@/test/factories/run_state_factory.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 
 export const DEFAULT_NODE_DURATION_MS = 1_000;
+export const DEFAULT_USAGE_LIMIT_MARGIN_MINUTES = 5;
 const ENOUGH_TIME_TO_FINISH_MS = 24 * 60 * 60 * 1_000;
 const UNLIMITED_AGENTS = 100;
 const CONDITION_INPUT_PORT = "value";
 const CANCELED_BY_USER: NodeRunError = { kind: "canceled", message: "Cancelado pelo usuário" };
+const USAGE_LIMIT_REACHED: NodeRunError = {
+    kind: "usage_limit",
+    message: "Limite de uso atingido",
+};
 
 export type NodeOutcome =
-    { kind: "succeed"; outputs: Record<string, unknown> } | { kind: "fail"; error: NodeRunError };
+    | { kind: "succeed"; outputs: Record<string, unknown> }
+    | { kind: "fail"; error: NodeRunError }
+    | { kind: "hit_usage_limit"; resetAt?: Date };
 
 export interface NodeBehavior {
     durationMs: number;
@@ -205,6 +212,7 @@ export class SchedulerHarness {
             minStartIntervalMs: this.options.minStartIntervalMs ?? 0,
             newId: () => `nrn_${this.nextNodeRunNumber++}`,
             budget: this.options.budget,
+            usageLimitMarginMinutes: DEFAULT_USAGE_LIMIT_MARGIN_MINUTES,
         };
 
         return createScheduler(this.options.graph, this.run, schedulerOptions, restore);
@@ -239,6 +247,8 @@ export class SchedulerHarness {
                 this.scheduleWakeup(command.at);
                 break;
             case "group_progress":
+            case "usage_limit_reached":
+            case "usage_limit_reset":
                 break;
             default:
                 assertNever(command);
@@ -345,9 +355,20 @@ function chooseConditionPort(
 }
 
 function finishingEvent(nodeRunId: string, outcome: NodeOutcome, at: Date): SchedulerEvent {
-    if (outcome.kind === "succeed") {
-        return { type: "node_run_succeeded", nodeRunId, outputs: outcome.outputs, at };
+    switch (outcome.kind) {
+        case "succeed":
+            return { type: "node_run_succeeded", nodeRunId, outputs: outcome.outputs, at };
+        case "fail":
+            return { type: "node_run_failed", nodeRunId, error: outcome.error, at };
+        case "hit_usage_limit":
+            return {
+                type: "node_run_failed",
+                nodeRunId,
+                error: USAGE_LIMIT_REACHED,
+                at,
+                resetAt: outcome.resetAt,
+            };
+        default:
+            return assertNever(outcome);
     }
-
-    return { type: "node_run_failed", nodeRunId, error: outcome.error, at };
 }

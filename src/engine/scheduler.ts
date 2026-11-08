@@ -39,9 +39,12 @@ import {
     TRIGGER_ITEMS_PORT,
     type WorkItemRef,
 } from "@/engine/scheduler_types.js";
+import { computeResumeAt, requeueAfterUsageLimit } from "@/engine/usage_pause.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+
+type NodeRunFailure = Extract<SchedulerEvent, { type: "node_run_failed" }>;
 
 interface QueuedAgentOverBudget {
     nodeRun: NodeRunState;
@@ -108,7 +111,7 @@ class DagScheduler implements Scheduler {
                 this.succeedNodeRun(event.nodeRunId, event.outputs, event.at);
                 break;
             case "node_run_failed":
-                this.failNodeRun(event.nodeRunId, event.error, event.at);
+                this.failNodeRun(event);
                 break;
             case "cancel_requested":
                 this.cancelRun(event.at);
@@ -133,6 +136,7 @@ class DagScheduler implements Scheduler {
     }
 
     tick(now: Date): SchedulerCommand[] {
+        this.resumeWhenUsageLimitResets(now);
         this.advance(now);
 
         return this.takeCommands();
@@ -184,7 +188,62 @@ class DagScheduler implements Scheduler {
         this.advance(at);
     }
 
-    private failNodeRun(nodeRunId: string, error: NodeRunError | undefined, at: Date): void {
+    private failNodeRun(failure: NodeRunFailure): void {
+        if (this.shouldWaitForUsageLimit(failure)) {
+            this.waitForUsageLimitReset(failure);
+        } else {
+            this.recordFailure(failure.nodeRunId, failure.error, failure.at);
+        }
+
+        this.advance(failure.at);
+    }
+
+    // A run that is already stopping has nothing to wait for: the NodeRun just fails.
+    private shouldWaitForUsageLimit(failure: NodeRunFailure): boolean {
+        return failure.error?.kind === "usage_limit" && !this.stopOutcome;
+    }
+
+    // The limit belongs to the account, so the whole run waits; it is not a failed attempt.
+    private waitForUsageLimitReset({ nodeRunId, error, resetAt, at }: NodeRunFailure): void {
+        const nodeRun = this.nodeRuns.get(nodeRunId);
+        this.changeNodeRun(transitionNodeRun(nodeRun, "WAITING_LIMIT", at, { error }));
+        const resumeAt = computeResumeAt(at, resetAt, this.options.usageLimitMarginMinutes);
+        if (this.isPausedByUsageLimit()) {
+            this.postponeResume(resumeAt);
+            return;
+        }
+
+        this.pauseForUsageLimit(resetAt, resumeAt, at);
+    }
+
+    // The later reset wins: resuming at the earlier one would only hit the limit again.
+    private postponeResume(resumeAt: Date): void {
+        const currentResumeAtMs = this.run.resumeAt?.getTime() ?? 0;
+        if (resumeAt.getTime() <= currentResumeAtMs) {
+            return;
+        }
+
+        this.changeRun({ ...this.run, resumeAt });
+        this.outbox.push({ type: "schedule_wakeup", at: resumeAt });
+    }
+
+    private pauseForUsageLimit(resetAt: Date | undefined, resumeAt: Date, at: Date): void {
+        this.changeRun(this.runPausedByUsageLimit(resumeAt, at));
+        this.outbox.push({ type: "usage_limit_reached", resetAt, resumeAt });
+        this.outbox.push({ type: "schedule_wakeup", at: resumeAt });
+    }
+
+    // The budget is checked again before each agent starts, so its pause can give way to the limit.
+    private runPausedByUsageLimit(resumeAt: Date, at: Date): RunState {
+        const usageLimitPause: Partial<RunState> = { pauseReason: "usage_limit", resumeAt };
+        if (this.isPausedByBudget()) {
+            return { ...this.run, ...usageLimitPause };
+        }
+
+        return transitionRun(this.run, "PAUSED", at, usageLimitPause);
+    }
+
+    private recordFailure(nodeRunId: string, error: NodeRunError | undefined, at: Date): void {
         const nodeRun = this.nodeRuns.get(nodeRunId);
         const recordedError = this.recordedErrorOf(nodeRun, error);
         const failureKind: FailureKind = recordedError?.kind ?? "runtime";
@@ -192,8 +251,6 @@ class DagScheduler implements Scheduler {
         const failed = transitionNodeRun(nodeRun, status, at, { error: recordedError });
         this.changeNodeRun(failed);
         this.retryOrGiveUp(failed, failureKind, at);
-
-        this.advance(at);
     }
 
     // The cancel the scheduler asked for an overdue NodeRun comes back as a plain cancel.
@@ -352,6 +409,28 @@ class DagScheduler implements Scheduler {
         this.budget.recordUsage(this.nodeRuns.get(nodeRunId).nodeId, usage);
     }
 
+    private resumeWhenUsageLimitResets(now: Date): void {
+        if (!this.hasUsageLimitReset(now)) {
+            return;
+        }
+
+        this.outbox.push({ type: "usage_limit_reset" });
+        for (const waiting of this.nodeRuns.withStatus("WAITING_LIMIT")) {
+            this.changeNodeRun(requeueAfterUsageLimit(waiting, now));
+        }
+        this.changeRun(transitionRun(this.run, "RUNNING", now));
+    }
+
+    // Only a pause that is still the limit's: a user pause taken meanwhile keeps the run paused.
+    private hasUsageLimitReset(now: Date): boolean {
+        const { resumeAt } = this.run;
+        if (!this.isPausedByUsageLimit() || !resumeAt) {
+            return false;
+        }
+
+        return resumeAt.getTime() <= now.getTime();
+    }
+
     private raiseBudget(budget: RunBudget, at: Date): void {
         this.budget.replaceBudget(budget);
         if (!this.isPausedByBudget()) {
@@ -365,7 +444,7 @@ class DagScheduler implements Scheduler {
     // Nothing new starts once the run is stopping; RUNNING NodeRuns are left to finish.
     private stop(outcome: StopOutcome, at: Date): void {
         this.stopOutcome = outcome;
-        for (const nodeRun of this.nodeRuns.withStatus("PENDING", "QUEUED")) {
+        for (const nodeRun of this.nodeRuns.withStatus("PENDING", "QUEUED", "WAITING_LIMIT")) {
             this.changeNodeRun(transitionNodeRun(nodeRun, "CANCELED", at));
         }
         this.mapGroups.cancelQueuedItems();
@@ -664,6 +743,10 @@ class DagScheduler implements Scheduler {
 
     private isRunGoingOn(): boolean {
         return this.run.status === "RUNNING";
+    }
+
+    private isPausedByUsageLimit(): boolean {
+        return this.run.status === "PAUSED" && this.run.pauseReason === "usage_limit";
     }
 
     private isPausedByBudget(): boolean {

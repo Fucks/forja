@@ -9,6 +9,7 @@ export interface SchedulerOptions {
     minStartIntervalMs: number;
     newId(): string;
     budget?: RunBudget;
+    usageLimitMarginMinutes: number;
 }
 
 // The full work item stays outside the engine; the scheduler only needs to tell items apart.
@@ -24,7 +25,14 @@ export type SchedulerEvent =
           outputs: Record<string, unknown>;
           at: Date;
       }
-    | { type: "node_run_failed"; nodeRunId: string; error: NodeRunState["error"]; at: Date }
+    | {
+          type: "node_run_failed";
+          nodeRunId: string;
+          error: NodeRunState["error"];
+          at: Date;
+          // When the usage limit told when it resets.
+          resetAt?: Date;
+      }
     | { type: "cancel_requested"; at: Date }
     | { type: "cancel_node_run_requested"; nodeRunId: string; at: Date }
     // For a FAILED/CANCELED NodeRun of a run still going on, or any finished NodeRun of a
@@ -49,7 +57,9 @@ export type SchedulerCommand =
           failed: number;
       }
     // The executor calls tick(at) at that time.
-    | { type: "schedule_wakeup"; at: Date };
+    | { type: "schedule_wakeup"; at: Date }
+    | { type: "usage_limit_reached"; resetAt?: Date; resumeAt: Date }
+    | { type: "usage_limit_reset" };
 
 export interface Scheduler {
     handle(event: SchedulerEvent): SchedulerCommand[];
