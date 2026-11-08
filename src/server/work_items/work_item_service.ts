@@ -48,12 +48,12 @@ export function createWorkItemService(deps: WorkItemServiceDeps): WorkItemServic
         createLocal: (projectId, input) =>
             resolveWith(() => createLocalItem(deps, projectId, input)),
         updateLocal: (id, input) => resolveWith(() => updateLocalItem(deps, id, input)),
-        setManualColumn: () => Promise.reject(new Error("not implemented")),
-        archive: () => Promise.reject(new Error("not implemented")),
-        list: () => Promise.reject(new Error("not implemented")),
+        setManualColumn: (id, column) => resolveWith(() => setManualColumn(deps, id, column)),
+        archive: (id) => resolveWith(() => archiveLocalItem(deps, id)),
+        list: (projectId, options) => resolveWith(() => listItems(repo, projectId, options)),
         get: (id) => resolveWith(() => findItemOrThrow(repo, id)),
-        isBlocked: () => false,
-        snapshots: () => Promise.reject(new Error("not implemented")),
+        isBlocked: isBlockedByOpenItem,
+        snapshots: (projectId, ids) => resolveWith(() => findSnapshots(repo, projectId, ids)),
         upsertFromGithub: () => Promise.reject(new Error("not implemented")),
     };
 }
@@ -108,6 +108,23 @@ function updateLocalItem(
     return saveChangedItem(deps, { ...item, ...input });
 }
 
+function setManualColumn(
+    deps: WorkItemServiceDeps,
+    id: string,
+    column: ManualColumn | null,
+): WorkItem {
+    const item = findItemOrThrow(deps.repo, id);
+
+    return saveChangedItem(deps, { ...item, manualColumn: column ?? undefined });
+}
+
+function archiveLocalItem(deps: WorkItemServiceDeps, id: string): WorkItem {
+    const item = findItemOrThrow(deps.repo, id);
+    assertIsLocal(item);
+
+    return saveChangedItem(deps, { ...item, archived: true });
+}
+
 function saveChangedItem(deps: WorkItemServiceDeps, changedItem: WorkItem): WorkItem {
     const item = { ...changedItem, updatedAt: deps.clock.now().toISOString() };
     deps.repo.update(item);
@@ -143,6 +160,55 @@ function assertBlockersAreOtherItemsOfProject(
             { blockedBy: invalidBlockerIds },
         );
     }
+}
+
+function listItems(
+    repo: WorkItemRepository,
+    projectId: string,
+    options: ListWorkItemsOptions = {},
+): WorkItem[] {
+    assertProjectExists(repo, projectId);
+
+    return repo.listByProject(projectId).filter((item) => matchesListOptions(item, options));
+}
+
+function matchesListOptions(item: WorkItem, options: ListWorkItemsOptions): boolean {
+    const isVisible = options.includeArchived === true || !item.archived;
+    const hasState = options.state === undefined || item.state === options.state;
+    const hasLabel = options.label === undefined || item.labels.includes(options.label);
+
+    return isVisible && hasState && hasLabel;
+}
+
+function isBlockedByOpenItem(item: WorkItem, all: Map<string, WorkItem>): boolean {
+    return item.blockedBy.some((blockerId) => all.get(blockerId)?.state === "open");
+}
+
+function findSnapshots(
+    repo: WorkItemRepository,
+    projectId: string,
+    ids: string[],
+): WorkItemSnapshot[] {
+    return ids.map((id) => toSnapshot(findItemOfProjectOrThrow(repo, projectId, id)));
+}
+
+function toSnapshot(item: WorkItem): WorkItemSnapshot {
+    const { id, title, body, number, url, labels, branch } = item;
+
+    return { id, title, body, number, url, labels, branch };
+}
+
+function findItemOfProjectOrThrow(
+    repo: WorkItemRepository,
+    projectId: string,
+    id: string,
+): WorkItem {
+    const item = findItemOrThrow(repo, id);
+    if (item.projectId !== projectId) {
+        throw new NotFoundError(`Item ${id} não encontrado no projeto ${projectId}.`);
+    }
+
+    return item;
 }
 
 function assertProjectExists(repo: WorkItemRepository, projectId: string): void {

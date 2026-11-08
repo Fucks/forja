@@ -27,11 +27,11 @@
 - [x] 3. Test+impl: `createLocal` rejects `blockedBy` ids outside the project (422)
 - [x] 4. Test+impl: `get` returns the item; 404 for unknown id
 - [x] 5. Test+impl: `updateLocal` edits fields, keeps branch, publishes `work_item.updated`; github item → ConflictError; self-block rejected
-- [ ] 6. Test+impl: `setManualColumn` sets and clears the column
-- [ ] 7. Test+impl: `archive` hides the item from `list` unless `includeArchived`
-- [ ] 8. Test+impl: `list` filters by state and label, ordered by creation
-- [ ] 9. Test+impl: `isBlocked` true while a blocker is open, false when all closed
-- [ ] 10. Test+impl: `snapshots` returns items in the requested order; 404 for an id of another project
+- [x] 6. Test+impl: `setManualColumn` sets and clears the column
+- [x] 7. Test+impl: `archive` hides the item from `list` unless `includeArchived`
+- [x] 8. Test+impl: `list` filters by state and label, ordered by creation
+- [x] 9. Test+impl: `isBlocked` true while a blocker is open, false when all closed
+- [x] 10. Test+impl: `snapshots` returns items in the requested order; 404 for an id of another project
 - [ ] 11. Test+impl: `upsertFromGithub` creates items with `forja/issue-<n>` and resolves dependencies inside the batch
 - [ ] 12. Test+impl: `upsertFromGithub` twice with the same data does not duplicate (`created: 0, updated: 0`) and updates changed issues
 - [ ] 13. Routes + `work_items_routes.test.ts` (list/create/get/patch/column/archive, 404/409/400/422)
