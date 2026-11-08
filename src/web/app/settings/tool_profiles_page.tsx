@@ -5,6 +5,7 @@ import type { JSX } from "react";
 import type { ToolProfile, ToolProfileInput } from "@/shared/tool_profile_types.js";
 import { PageTitle } from "@/web/app/page_title.js";
 import { ToolProfileCard } from "@/web/app/settings/tool_profile_card.js";
+import type { ToolProfileActions } from "@/web/app/settings/tool_profile_card.js";
 import { ToolProfileForm } from "@/web/app/settings/tool_profile_form.js";
 import {
     useCreateToolProfile,
@@ -45,9 +46,7 @@ export function ToolProfilesPage(): JSX.Element {
 
 function ToolProfileList({ onEdit }: { onEdit: (profile: ToolProfile) => void }): JSX.Element {
     const profilesQuery = useToolProfiles();
-    const duplicateProfile = useDuplicateToolProfile();
-    const removeProfile = useRemoveToolProfile();
-    const showFailure = useFailureToast();
+    const actions = useToolProfileActions(onEdit);
 
     if (profilesQuery.isPending) {
         return <Skeleton className="h-32" />;
@@ -62,18 +61,6 @@ function ToolProfileList({ onEdit }: { onEdit: (profile: ToolProfile) => void })
         );
     }
 
-    const actions = {
-        onEdit,
-        onDuplicate: (profile: ToolProfile) =>
-            duplicateProfile.mutate(profile.id, {
-                onError: (error) => showFailure("Não foi possível duplicar o perfil", error),
-            }),
-        onRemove: (profile: ToolProfile) =>
-            removeProfile.mutate(profile.id, {
-                onError: (error) => showFailure("Não foi possível remover o perfil", error),
-            }),
-    };
-
     return (
         <div className="grid gap-3 lg:grid-cols-2">
             {profilesQuery.data.map((profile) => (
@@ -81,6 +68,24 @@ function ToolProfileList({ onEdit }: { onEdit: (profile: ToolProfile) => void })
             ))}
         </div>
     );
+}
+
+function useToolProfileActions(onEdit: (profile: ToolProfile) => void): ToolProfileActions {
+    const duplicateProfile = useDuplicateToolProfile();
+    const removeProfile = useRemoveToolProfile();
+    const showFailure = useFailureToast();
+
+    return {
+        onEdit,
+        onDuplicate: (profile) =>
+            duplicateProfile.mutate(profile.id, {
+                onError: (error) => showFailure("Não foi possível duplicar o perfil", error),
+            }),
+        onRemove: (profile) =>
+            removeProfile.mutate(profile.id, {
+                onError: (error) => showFailure("Não foi possível remover o perfil", error),
+            }),
+    };
 }
 
 function ToolProfileEditorDialog({

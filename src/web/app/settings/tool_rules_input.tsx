@@ -25,11 +25,20 @@ export function ToolRulesInput({
         }
 
         event.preventDefault();
-        const rule = pendingRule.trim();
-        if (rule !== "" && !rules.includes(rule)) {
-            onChange([...rules, rule]);
-        }
+        addRule(pendingRule.trim());
         setPendingRule("");
+    }
+
+    function addRule(rule: string): void {
+        if (rule === "" || rules.includes(rule)) {
+            return;
+        }
+
+        onChange([...rules, rule]);
+    }
+
+    function removeRule(rule: string): void {
+        onChange(rules.filter((kept) => kept !== rule));
     }
 
     return (
@@ -37,11 +46,7 @@ export function ToolRulesInput({
             {rules.length > 0 && (
                 <ul className="flex flex-wrap gap-1.5">
                     {rules.map((rule) => (
-                        <ToolRuleChip
-                            key={rule}
-                            rule={rule}
-                            onRemove={() => onChange(rules.filter((kept) => kept !== rule))}
-                        />
+                        <ToolRuleChip key={rule} rule={rule} onRemove={() => removeRule(rule)} />
                     ))}
                 </ul>
             )}
