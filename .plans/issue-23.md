@@ -18,14 +18,14 @@
 
 ## Tasks
 
-- [ ] 1. Contracts in `src/shared/tool_profile_types.ts`
-- [ ] 2. Test + impl: list returns the three builtin presets — presets, service `list`/`get`
-- [ ] 3. Test + impl: create persists a profile listed after presets — migration, schema, repository, service
-- [ ] 4. Test + impl: create rejects two MCP servers with the same name (DomainValidationError)
-- [ ] 5. Test + impl: create rejects malformed `${cred:...}` references
-- [ ] 6. Test + impl: update a profile; updating a preset → ConflictError
-- [ ] 7. Test + impl: remove a profile; removing a preset → ConflictError
-- [ ] 8. Test + impl: duplicate a preset and a custom profile
+- [x] 1. Contracts in `src/shared/tool_profile_types.ts`
+- [x] 2. Test + impl: list returns the three builtin presets — presets, service `list`/`get`
+- [x] 3. Test + impl: create persists a profile listed after presets — migration, schema, repository, service
+- [x] 4. Test + impl: create rejects two MCP servers with the same name (DomainValidationError)
+- [x] 5. Test + impl: create rejects malformed `${cred:...}` references
+- [x] 6. Test + impl: update a profile; updating a preset → ConflictError
+- [x] 7. Test + impl: remove a profile; removing a preset → ConflictError
+- [x] 8. Test + impl: duplicate a preset and a custom profile
 - [ ] 9. Routes + `tool_profiles_routes.test.ts` (201/204, 422 duplicate MCP, 400 invalid mode, 409 preset)
 - [ ] 10. Web: `use_tool_profiles.ts` query/mutation hooks
 - [ ] 11. Test + impl: page lists profiles, presets marked "embutido" without edit/remove
