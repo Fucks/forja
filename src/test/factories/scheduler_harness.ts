@@ -99,6 +99,10 @@ export class SchedulerHarness {
         this.deliver({ type: "cancel_requested", at: this.clock.now() });
     }
 
+    requestNodeRunCancel(nodeRunId: string): void {
+        this.deliver({ type: "cancel_node_run_requested", nodeRunId, at: this.clock.now() });
+    }
+
     advance(ms: number): void {
         this.clock.advance(ms);
     }

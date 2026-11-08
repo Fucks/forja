@@ -414,6 +414,63 @@ describe("scheduler: cancel", () => {
         expect(harness.run.status).toBe("CANCELED");
     });
 
+    it("fails only the item whose NodeRun is canceled inside a map", () => {
+        const harness = createCanonicalHarness();
+        harness.start([]);
+        harness.advance(5_000);
+
+        harness.requestNodeRunCancel(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("dev", "2")).toBe("CANCELED");
+        expect(harness.entriesOf("reviewer", "2")).toEqual([]);
+        expect(harness.finalStatusOf("reviewer", "5")).toBe("SUCCEEDED");
+        expect(harness.run.failedItems).toEqual(["2"]);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("never retries a NodeRun the user canceled", () => {
+        const harness = createCanonicalHarness();
+        harness.start([]);
+        harness.advance(5_000);
+
+        harness.requestNodeRunCancel(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.runToCompletion();
+
+        expect(harness.attemptsOf("dev", "2")).toHaveLength(1);
+    });
+
+    it("cancels a queued NodeRun without asking the executor", () => {
+        const harness = createSchedulerHarness({
+            graph: withMapConfig(buildMappedLinearFlow(), "map_a", { concurrency: 2 }),
+            maxConcurrentAgents: 1,
+        });
+        harness.start(["1", "2"]);
+        const queuedNodeRunId = latestNodeRunIdOf(harness, "a", "2");
+
+        harness.requestNodeRunCancel(queuedNodeRunId);
+
+        expect(harness.finalStatusOf("a", "2")).toBe("CANCELED");
+        expect(harness.commands).not.toContainEqual({
+            type: "cancel_node_run",
+            nodeRunId: queuedNodeRunId,
+        });
+        harness.runToCompletion();
+        expect(harness.finalStatusOf("b", "1")).toBe("SUCCEEDED");
+        expect(harness.run.failedItems).toEqual(["2"]);
+    });
+
+    it("cancels the whole run when the canceled NodeRun is outside groups", () => {
+        const harness = createSchedulerHarness({ graph: buildLinearAgentFlow() });
+        harness.start(["1", "2"]);
+
+        harness.requestNodeRunCancel(latestNodeRunIdOf(harness, "a", "1"));
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("a", "2")).toBe("CANCELED");
+        expect(harness.run.status).toBe("CANCELED");
+    });
+
     it("cancels a run that has not started yet right away", () => {
         const harness = createSchedulerHarness({ graph: buildLinearAgentFlow() });
 
@@ -796,6 +853,10 @@ function failingWith(error: NodeRunError): NodeScript {
 
 function failingOnFirstAttemptWith(error: NodeRunError): NodeScript {
     return ({ nodeRun }) => (nodeRun.attempt === 1 ? { outcome: { kind: "fail", error } } : {});
+}
+
+function latestNodeRunIdOf(harness: SchedulerHarness, nodeId: string, itemId: string): string {
+    return harness.attemptsOf(nodeId, itemId).at(-1)?.nodeRunId ?? "";
 }
 
 function sequentialIds(): () => string {

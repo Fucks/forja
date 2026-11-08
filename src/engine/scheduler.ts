@@ -6,6 +6,7 @@ import { type FinishedMapItem, MapGroupCoordinator } from "@/engine/map_group_co
 import { type InputResolution, resolveInputs } from "@/engine/node_inputs.js";
 import { NodeRunRegistry } from "@/engine/node_run_registry.js";
 import {
+    NODE_RUN_TERMINAL,
     type NodeRunError,
     type NodeRunState,
     transitionNodeRun,
@@ -92,6 +93,9 @@ class DagScheduler implements Scheduler {
                 break;
             case "cancel_requested":
                 this.cancelRun(event.at);
+                break;
+            case "cancel_node_run_requested":
+                this.cancelNodeRun(event.nodeRunId, event.at);
                 break;
             default:
                 assertNever(event);
@@ -233,6 +237,26 @@ class DagScheduler implements Scheduler {
         this.advance(at);
     }
 
+    // Inside a map only the item fails; anywhere else the run cannot go on without the NodeRun.
+    private cancelNodeRun(nodeRunId: string, at: Date): void {
+        const nodeRun = this.nodeRuns.get(nodeRunId);
+        if (NODE_RUN_TERMINAL.has(nodeRun.status)) {
+            return;
+        }
+        if (!this.plan.mapGroupIdOf(nodeRun.nodeId)) {
+            this.cancelRun(at);
+            return;
+        }
+
+        if (nodeRun.status === "RUNNING") {
+            this.requestCancel([nodeRun]);
+        } else {
+            this.changeNodeRun(transitionNodeRun(nodeRun, "CANCELED", at));
+        }
+
+        this.advance(at);
+    }
+
     // Nothing new starts once the run is stopping; RUNNING NodeRuns are left to finish.
     private stop(outcome: StopOutcome, at: Date): void {
         this.stopOutcome = outcome;
@@ -328,12 +352,18 @@ class DagScheduler implements Scheduler {
     }
 
     private applyFinishedItem(finished: FinishedMapItem, at: Date): void {
-        if (finished.hasFailedNodeRun) {
+        if (this.hasItemFailedByItself(finished)) {
             this.recordFailedItem(finished.itemId);
         }
         if (finished.result === "failed" && finished.mapGroup.failFast) {
             this.stopOnFailedItem(finished.mapGroup, at);
         }
+    }
+
+    // Items canceled because the run is stopping did not fail by themselves; a NodeRun the user
+    // canceled does fail its item.
+    private hasItemFailedByItself(finished: FinishedMapItem): boolean {
+        return finished.hasFailedNodeRun || (finished.result === "failed" && !this.stopOutcome);
     }
 
     private recordFailedItem(itemId: string): void {

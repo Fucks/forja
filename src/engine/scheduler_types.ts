@@ -23,7 +23,8 @@ export type SchedulerEvent =
           at: Date;
       }
     | { type: "node_run_failed"; nodeRunId: string; error: NodeRunState["error"]; at: Date }
-    | { type: "cancel_requested"; at: Date };
+    | { type: "cancel_requested"; at: Date }
+    | { type: "cancel_node_run_requested"; nodeRunId: string; at: Date };
 
 export type SchedulerCommand =
     | { type: "start_node_run"; nodeRun: NodeRunState; inputs: Record<string, unknown> }
