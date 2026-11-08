@@ -17,7 +17,10 @@
   `--format {{.ID}}\t{{.Labels}}`.
 - Workspace id = container name `forja-<last 8 of runId>-<last 8 of workItemId>` (lowercased, sanitized).
 - `Workspace.exec(command: string)` keeps its string contract and runs `sh -c <command>` with the spec env.
-- `RunAgentInContainer` type + `runAgentNotImplemented` stub live in `docker_agent_runtime.ts` (#57 replaces it).
+- `AgentContainer`, `RunAgentInContainer` and the `runAgentNotImplemented` stub live in `agent_container.ts`
+  (#57 implements it). `FakeCommandRunner.when` accepts an args predicate (random exec markers).
+- Runtime split: `workspace_layout.ts` (ids, labels, mounts, Windows paths), `workspace_files.ts`,
+  `workspace_setup.ts`, `docker_workspace.ts` (the `Workspace` object), `docker_agent_runtime.ts` (factory).
 - `writeFiles` writes on the host worktree and rejects paths that escape it (`WorkspaceError`).
 - Orphan `closeWorkspace(id)` (not in memory) removes containers found by label; orphan worktrees are #87.
 - Windows: `toContainerPath` maps `C:\x` → `/c/x` for the git common dir mount and emits a `system` event.
@@ -33,10 +36,10 @@
 - [x] 7. Test+impl: `ContainerManager.exec` env names only in argv, values in env, stdin, streaming, tails
 - [x] 8. Test+impl: `ContainerManager.exec` abort/timeout kills via pkill marker
 - [x] 9. Test+impl: `ContainerManager.stop` idempotent, `list` by labels
-- [ ] 10. Test+impl: `openWorkspace` worktree + container with documented mounts/labels/user — `docker_agent_runtime.ts`
-- [ ] 11. Test+impl: setup writes `spec.files`, runs setup commands emitting `system` events; failure removes container and throws `WorkspaceError`
-- [ ] 12. Test+impl: workspace `exec`, `diff` (truncated 200 KB), `writeFiles` (rejects escaping paths)
-- [ ] 13. Test+impl: `close` / `closeWorkspace` (keeps branch, idempotent, orphans by label), `listOpenWorkspaces` from Docker
-- [ ] 14. Test+impl: `runHeadless` ephemeral read-only container, removed at the end
+- [x] 10. Test+impl: `openWorkspace` worktree + container with documented mounts/labels/user — `docker_agent_runtime.ts`
+- [x] 11. Test+impl: setup writes `spec.files`, runs setup commands emitting `system` events; failure removes container and throws `WorkspaceError`
+- [x] 12. Test+impl: workspace `exec`, `diff` (truncated 200 KB), `writeFiles` (rejects escaping paths)
+- [x] 13. Test+impl: `close` / `closeWorkspace` (keeps branch, idempotent, orphans by label), `listOpenWorkspaces` from Docker
+- [x] 14. Test+impl: `runHeadless` ephemeral read-only container, removed at the end
 - [ ] 15. Integration test `docker_agent_runtime.integration.test.ts` (skipIf !FORJA_IT_DOCKER)
 - [ ] 16. Self-review checklist and feedback loops

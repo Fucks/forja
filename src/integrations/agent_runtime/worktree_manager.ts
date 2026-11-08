@@ -112,6 +112,17 @@ export function createWorktreeManager(commands: CommandRunner): WorktreeManager 
     };
 }
 
+/** Absolute path of the `.git` dir shared by the repository and all of its worktrees. */
+export async function readGitCommonDir(commands: CommandRunner, repoPath: string): Promise<string> {
+    const result = await commands.run("git", ["rev-parse", "--git-common-dir"], {
+        cwd: repoPath,
+        timeoutMs: GIT_WORKTREE_TIMEOUT_MS,
+    });
+    assertCommandSucceeded(result, `Não foi possível achar o diretório .git de ${repoPath}`);
+
+    return path.resolve(repoPath, result.stdout.trim());
+}
+
 function worktreePathFor(worktreesDir: string, branch: string): string {
     const directoryName = branch.replaceAll(BRANCH_SEPARATOR, BRANCH_SEPARATOR_IN_DIR_NAME);
     return path.join(worktreesDir, directoryName);

@@ -55,4 +55,13 @@ describe("FakeCommandRunner", () => {
         expect(stdoutLines).toEqual(["first", "second"]);
         expect(stderrLines).toEqual(["warning"]);
     });
+
+    it("matches arguments with a predicate when given one", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("docker", (args) => args[0] === "exec").returns({ stdout: "done" });
+
+        const result = await commands.run("docker", ["exec", "c1", "ls"], OPTIONS);
+
+        expect(result.stdout).toBe("done");
+    });
 });

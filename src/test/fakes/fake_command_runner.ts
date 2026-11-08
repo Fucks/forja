@@ -11,9 +11,11 @@ export interface RecordedCommand {
     options: CommandOptions;
 }
 
+export type ArgsMatcher = string[] | ((args: string[]) => boolean);
+
 interface ScriptedCommand {
     command: string;
-    args: string[];
+    args: ArgsMatcher;
     result: CommandResult;
 }
 
@@ -23,7 +25,7 @@ export class FakeCommandRunner implements CommandRunner {
     readonly calls: RecordedCommand[] = [];
     private scriptedCommands: ScriptedCommand[] = [];
 
-    when(command: string, args: string[]): { returns(result: Partial<CommandResult>): void } {
+    when(command: string, args: ArgsMatcher): { returns(result: Partial<CommandResult>): void } {
         return {
             returns: (result) => {
                 const scripted = { command, args, result: buildCommandResult(result) };
@@ -35,7 +37,7 @@ export class FakeCommandRunner implements CommandRunner {
     run(command: string, args: string[], options: CommandOptions): Promise<CommandResult> {
         this.calls.push({ command, args, options });
         const scripted = this.scriptedCommands.find(
-            (candidate) => candidate.command === command && haveSameArgs(candidate.args, args),
+            (candidate) => candidate.command === command && argsMatch(candidate.args, args),
         );
 
         const result = scripted?.result ?? buildUnscriptedResult(command, args);
@@ -63,6 +65,14 @@ function buildUnscriptedResult(command: string, args: string[]): CommandResult {
         exitCode: UNSCRIPTED_COMMAND_EXIT_CODE,
         stderr: `FakeCommandRunner: no script for ${[command, ...args].join(" ")}`,
     });
+}
+
+function argsMatch(matcher: ArgsMatcher, args: string[]): boolean {
+    if (typeof matcher === "function") {
+        return matcher(args);
+    }
+
+    return haveSameArgs(matcher, args);
 }
 
 function haveSameArgs(expected: string[], actual: string[]): boolean {

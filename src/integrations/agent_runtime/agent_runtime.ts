@@ -73,7 +73,7 @@ export interface AgentRunHooks {
 export interface ExecOptions {
     timeoutMs: number;
     signal: AbortSignal;
-    onOutput?(line: string): void;
+    onOutput?: (line: string) => void;
 }
 
 export interface ExecResult {
