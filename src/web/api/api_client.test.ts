@@ -45,6 +45,18 @@ describe("apiClient", () => {
         });
     });
 
+    it("sends a PATCH with the partial changes as JSON", async () => {
+        const fetchSpy = respondWith(Response.json(project));
+
+        await apiClient.patch("/projects/p1", { name: "Forja" }, projectSchema);
+
+        expect(fetchSpy).toHaveBeenCalledWith("/api/projects/p1", {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ name: "Forja" }),
+        });
+    });
+
     it("sends no body nor content type when there is no body", async () => {
         const fetchSpy = respondWith(new Response(null, { status: 204 }));
 

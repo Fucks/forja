@@ -5,7 +5,7 @@ import { apiErrorBodySchema } from "@/shared/api_types.js";
 const API_PREFIX = "/api";
 const JSON_HEADERS = { "content-type": "application/json" };
 
-type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 interface ApiErrorFields {
     status: number;
@@ -32,6 +32,7 @@ interface ApiClient {
     get<T>(path: string, schema?: z.ZodType<T>): Promise<T>;
     post<T>(path: string, body?: unknown, schema?: z.ZodType<T>): Promise<T>;
     put<T>(path: string, body?: unknown, schema?: z.ZodType<T>): Promise<T>;
+    patch<T>(path: string, body?: unknown, schema?: z.ZodType<T>): Promise<T>;
     delete<T>(path: string, schema?: z.ZodType<T>): Promise<T>;
 }
 
@@ -39,6 +40,7 @@ export const apiClient: ApiClient = {
     get: (path, schema) => sendRequest({ method: "GET", path, schema }),
     post: (path, body, schema) => sendRequest({ method: "POST", path, body, schema }),
     put: (path, body, schema) => sendRequest({ method: "PUT", path, body, schema }),
+    patch: (path, body, schema) => sendRequest({ method: "PATCH", path, body, schema }),
     delete: (path, schema) => sendRequest({ method: "DELETE", path, schema }),
 };
 
