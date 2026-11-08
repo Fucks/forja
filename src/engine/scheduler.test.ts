@@ -556,6 +556,63 @@ describe("scheduler: retry requested by the user", () => {
     });
 });
 
+describe("scheduler: retry requested while the run goes on", () => {
+    it("reruns a canceled NodeRun of a map item and lets the item go on", () => {
+        const harness = createCanonicalHarness();
+        harness.start([]);
+        harness.advance(5_000);
+        harness.requestNodeRunCancel(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.advance(1_000);
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "dev", "2"));
+        harness.runToCompletion();
+
+        expect(harness.attemptsOf("dev", "2").map((entry) => entry.status)).toEqual([
+            "CANCELED",
+            "SUCCEEDED",
+        ]);
+        expect(harness.finalStatusOf("reviewer", "2")).toBe("SUCCEEDED");
+        expect(harness.run.failedItems).toEqual([]);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("ignores a retry of a NodeRun that is still running", () => {
+        const harness = createSchedulerHarness({ graph: buildSingleAgentFlow() });
+        harness.start(["1"]);
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "a", "1"));
+        harness.runToCompletion();
+
+        expect(harness.attemptsOf("a", "1")).toHaveLength(1);
+    });
+
+    it("ignores a retry of an attempt that was already retried", () => {
+        const harness = createSchedulerHarness({
+            graph: buildSingleAgentFlow(),
+            scripts: { a: failingOnFirstAttemptOf("1", INVALID_OUTPUT) },
+        });
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        harness.requestNodeRunRetry(harness.attemptsOf("a", "1")[0]?.nodeRunId ?? "");
+
+        expect(harness.attemptsOf("a", "1")).toHaveLength(2);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("does not reopen a canceled run", () => {
+        const harness = createSchedulerHarness({ graph: buildSingleAgentFlow() });
+        harness.start(["1"]);
+        harness.requestCancel();
+        harness.runToCompletion();
+
+        harness.requestNodeRunRetry(latestNodeRunIdOf(harness, "a", "1"));
+
+        expect(harness.attemptsOf("a", "1")).toHaveLength(1);
+        expect(harness.run.status).toBe("CANCELED");
+    });
+});
+
 describe("scheduler: snapshot and restore", () => {
     it("produces a snapshot that survives a JSON round trip", () => {
         const harness = createSchedulerHarness({ graph: buildLinearAgentFlow() });
