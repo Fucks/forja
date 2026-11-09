@@ -34,7 +34,7 @@
 - [x] 3. Implement `template_layout.ts` and `basic_factory.ts`
 - [x] 4. Test: "Dev ↔ Review em loop" is publishable, loop max 3, `exhausted` → needs_human, map concurrency 2
 - [x] 5. Implement `review_loop.ts`
-- [ ] 6. Test + implement `FLOW_TEMPLATES` / `findFlowTemplate` in `flow_template_registry.ts`
+- [x] 6. Test + implement `FLOW_TEMPLATES` / `findFlowTemplate` in `flow_template_registry.ts`
       (every template valid with `checkPromptVariables`, unique ids)
 - [ ] 7. Test + implement `GET /api/flow-templates` — `flows_routes.ts`, `flow_types.ts`
 - [ ] 8. Test + implement `POST /api/projects/:projectId/flows/from-template` (creates a draft that publishes;

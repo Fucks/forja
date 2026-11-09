@@ -2,7 +2,12 @@ import { findGroup, findNode } from "@/engine/graph_queries.js";
 import { validateFlowGraph } from "@/engine/graph_validation.js";
 import type { ValidationContext } from "@/engine/graph_validation.js";
 import { checkPromptVariables } from "@/engine/prompt_template.js";
+import { NotFoundError } from "@/server/errors.js";
 import { basicFactoryTemplate } from "@/server/flows/templates/basic_factory.js";
+import {
+    FLOW_TEMPLATES,
+    findFlowTemplateOrThrow,
+} from "@/server/flows/templates/flow_template_registry.js";
 import { reviewLoopTemplate } from "@/server/flows/templates/review_loop.js";
 import { TOOL_PROFILE_PRESETS } from "@/server/tool_profiles/tool_profile_presets.js";
 import { LOOP_EXHAUSTED_PORT } from "@/shared/flow_graph.js";
@@ -15,13 +20,44 @@ const PUBLISH_CONTEXT: ValidationContext = {
     checkPrompt: checkPromptVariables,
 };
 
-describe("Fábrica básica template", () => {
-    it("builds a graph that publishes without errors", () => {
-        const graph = basicFactoryTemplate.build();
+describe("FLOW_TEMPLATES", () => {
+    it("lists the basic factory and the review loop", () => {
+        expect(FLOW_TEMPLATES.map((template) => template.name)).toEqual([
+            "Fábrica básica",
+            "Dev ↔ Review em loop com testes",
+        ]);
+    });
+
+    it.each(FLOW_TEMPLATES)("$name builds a graph that publishes without errors", (template) => {
+        const graph = template.build();
 
         expect(publishErrorsOf(graph)).toEqual([]);
     });
 
+    it("gives every template its own id", () => {
+        const ids = FLOW_TEMPLATES.map((template) => template.id);
+
+        expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it("builds a new graph on every call, so a flow never shares it with the template", () => {
+        const [template] = FLOW_TEMPLATES;
+
+        expect(template?.build()).not.toBe(template?.build());
+    });
+});
+
+describe("findFlowTemplateOrThrow", () => {
+    it("finds a template by its id", () => {
+        expect(findFlowTemplateOrThrow("review_loop")).toBe(reviewLoopTemplate);
+    });
+
+    it("rejects an unknown template id", () => {
+        expect(() => findFlowTemplateOrThrow("tpl_nenhum")).toThrow(NotFoundError);
+    });
+});
+
+describe("Fábrica básica template", () => {
     it("has the nodes, edges and groups of the canonical flow", () => {
         const graph = basicFactoryTemplate.build();
 
@@ -45,12 +81,6 @@ describe("Fábrica básica template", () => {
 });
 
 describe("Dev ↔ Review em loop com testes template", () => {
-    it("builds a graph that publishes without errors", () => {
-        const graph = reviewLoopTemplate.build();
-
-        expect(publishErrorsOf(graph)).toEqual([]);
-    });
-
     it("works on two items at a time", () => {
         const graph = reviewLoopTemplate.build();
 
