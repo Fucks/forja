@@ -44,4 +44,4 @@
 - [x] 13. Test + implement idle/total timeouts and user cancel
 - [x] 14. Test + implement prompt command expansion in the runner (`expandPromptCommands` flag)
 - [x] 15. Wire the adapter into `DockerAgentRuntime` (default runner, commits, remove `runAgentNotImplemented`)
-- [ ] 16. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 16. Self-review checklist (section 5) and feedback loops (section 6)

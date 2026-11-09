@@ -20,8 +20,6 @@ import {
 } from "@/integrations/agent_runtime/run_deadlines.js";
 import type { Clock } from "@/lib/clock.js";
 
-export type { RunAgentInContainer } from "@/integrations/agent_runtime/agent_container.js";
-
 export interface RunAgentInContainerDeps {
     clock: Clock;
 }
