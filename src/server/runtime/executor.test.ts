@@ -4,6 +4,7 @@ import { DomainValidationError, NotFoundError } from "@/server/errors.js";
 import { InvalidRunSnapshotError } from "@/server/runtime/stored_snapshot.js";
 import type { ForjaEvent, NodeRunStatusName } from "@/shared/events.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import { updateAgentConfig } from "@/test/factories/flow_graph_variations.js";
 import {
     buildIssueSnapshot,
     ExecutorTestBed,
@@ -116,6 +117,26 @@ describe("executor", () => {
                 "Escreva a especificação da issue #2 (Issue 2):\nCorpo da issue 2" +
                     `\n\n## Convenções do projeto\n\n${PROJECT_SYSTEM_PROMPT}`,
             );
+        });
+        it("passes the turn limit, the budget and the prompt commands option of the node", async () => {
+            const limitedFlow = updateAgentConfig(buildCanonicalFlow(), "tl", {
+                maxTurns: 30,
+                maxBudgetUsd: 2,
+                expandPromptCommands: false,
+            });
+            const limitedFlowId = await bed.publishFlow(limitedFlow);
+            const runHeadless = vi.spyOn(bed.runtime, "runHeadless");
+            const started = await bed.startRun(limitedFlowId);
+
+            await bed.runUntilFinished(started.id);
+
+            const [, request] = runHeadless.mock.calls[0] ?? [];
+            expect(request).toMatchObject({
+                maxTurns: 30,
+                maxBudgetUsd: 2,
+                expandPromptCommands: false,
+                toolArgs: [],
+            });
         });
     });
 

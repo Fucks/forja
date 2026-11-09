@@ -1,4 +1,5 @@
 import type { FlowEdge, FlowGraph, FlowGroup, FlowNode } from "@/shared/flow_graph.js";
+import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
 
 type GroupPlacement = Pick<FlowGroup, "parentGroupId">;
 
@@ -57,6 +58,16 @@ export function updateNode(
         ...graph,
         nodes: graph.nodes.map((node) => (node.id === nodeId ? update(node) : node)),
     };
+}
+
+export function updateAgentConfig(
+    graph: FlowGraph,
+    nodeId: string,
+    changes: Partial<AgentConfig>,
+): FlowGraph {
+    return updateNode(graph, nodeId, (node) =>
+        node.type === "agent" ? { ...node, config: { ...node.config, ...changes } } : node,
+    );
 }
 
 export function updateGroup(

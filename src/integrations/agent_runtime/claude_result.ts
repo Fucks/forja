@@ -26,7 +26,7 @@ export interface ClaudeResult {
     errors: string[];
 }
 
-const EMPTY_USAGE: TokenUsage = {
+export const EMPTY_USAGE: TokenUsage = {
     inputTokens: 0,
     outputTokens: 0,
     cacheReadInputTokens: 0,
@@ -79,7 +79,7 @@ function totalUsageOf(message: ResultMessage): TokenUsage {
     };
 }
 
-function addUsage(total: TokenUsage, usage: TokenUsage): TokenUsage {
+export function addUsage(total: TokenUsage, usage: TokenUsage): TokenUsage {
     return {
         inputTokens: total.inputTokens + usage.inputTokens,
         outputTokens: total.outputTokens + usage.outputTokens,

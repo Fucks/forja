@@ -17,6 +17,8 @@ const MS_PER_MINUTE = 60_000;
 const PROJECT_CONVENTIONS_HEADING = "## Convenções do projeto";
 // TODO(#61): take the permission mode from the tool profile of the node.
 const PERMISSION_MODE: PermissionMode = "bypassPermissions";
+// TODO(#61): take the tool and MCP flags from the tool profile of the node.
+const TOOL_ARGS: string[] = [];
 
 export async function executeAgentNode(
     context: NodeExecutionContext,
@@ -46,11 +48,15 @@ function buildAgentRunRequest(context: NodeExecutionContext, node: AgentNode): A
         model: defaults.model,
         effort: defaults.effort,
         maxIterations: config.maxIterations,
+        maxTurns: config.maxTurns,
+        maxBudgetUsd: config.maxBudgetUsd,
         idleTimeoutSeconds: config.idleTimeoutMinutes * SECONDS_PER_MINUTE,
         timeoutMs: config.timeoutMinutes * MS_PER_MINUTE,
         permissionMode: PERMISSION_MODE,
         outputSchema: config.outputSchema,
         completionSignal: config.completionSignal,
+        toolArgs: TOOL_ARGS,
+        expandPromptCommands: config.expandPromptCommands,
         env: {},
         signal: context.signal,
     };

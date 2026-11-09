@@ -539,6 +539,8 @@ function runRequest(overrides: Partial<AgentRunRequest> = {}): AgentRunRequest {
         idleTimeoutSeconds: 600,
         timeoutMs: 3_600_000,
         permissionMode: "bypassPermissions",
+        toolArgs: [],
+        expandPromptCommands: false,
         env: {},
         signal: neverAborted(),
         ...overrides,

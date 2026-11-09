@@ -1,7 +1,6 @@
 import { type AgentNode, validateFlowGraph } from "@/engine/graph_validation.js";
 import type { Condition } from "@/shared/conditions.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
-import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import {
@@ -18,8 +17,8 @@ import {
     removeEdges,
     removeGroups,
     removeNodes,
+    updateAgentConfig,
     updateGroup,
-    updateNode,
 } from "@/test/factories/flow_graph_variations.js";
 
 describe("validateFlowGraph", () => {
@@ -361,16 +360,6 @@ function targetsOf(graph: FlowGraph, code: string): ValidationIssue["target"][] 
 
 function targetsWithCode(issues: ValidationIssue[], code: string): ValidationIssue["target"][] {
     return issues.filter((issue) => issue.code === code).map((issue) => issue.target);
-}
-
-function updateAgentConfig(
-    graph: FlowGraph,
-    nodeId: string,
-    changes: Partial<AgentConfig>,
-): FlowGraph {
-    return updateNode(graph, nodeId, (node) =>
-        node.type === "agent" ? { ...node, config: { ...node.config, ...changes } } : node,
-    );
 }
 
 function updateLoopCondition(graph: FlowGraph, groupId: string, until: Condition): FlowGraph {

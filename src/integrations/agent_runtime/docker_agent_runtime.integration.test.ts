@@ -2,7 +2,6 @@ import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { runAgentNotImplemented } from "@/integrations/agent_runtime/agent_container.js";
 import type { AgentRunHooks, WorkspaceSpec } from "@/integrations/agent_runtime/agent_runtime.js";
 import { createDockerAgentRuntime } from "@/integrations/agent_runtime/docker_agent_runtime.js";
 import { ExecaCommandRunner } from "@/integrations/process/execa_command_runner.js";
@@ -71,7 +70,6 @@ describe.skipIf(!process.env.FORJA_IT_DOCKER)("DockerAgentRuntime against real D
                 paths: resolvePaths(path.join(sandbox, "forja"), sandbox),
                 clock: systemClock,
                 hostUser: null,
-                runAgentInContainer: runAgentNotImplemented,
             });
 
             const workspace = await runtime.openWorkspace(

@@ -15,14 +15,12 @@ import type {
     HeadlessSpec,
     WorkspaceSpec,
 } from "@/integrations/agent_runtime/agent_runtime.js";
-import {
-    runAgentNotImplemented,
-    type RunAgentInContainer,
-} from "@/integrations/agent_runtime/agent_container.js";
+import type { RunAgentInContainer } from "@/integrations/agent_runtime/agent_container.js";
 import { createDockerAgentRuntime } from "@/integrations/agent_runtime/docker_agent_runtime.js";
 import { resolvePaths, type ForjaPaths } from "@/lib/paths.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
+import { resultLine } from "@/test/fixtures/stream_json_fixtures.js";
 
 const NOW = new Date("2026-11-08T10:00:00Z");
 const REPO_PATH = "/repos/forja";
@@ -93,6 +91,8 @@ function runRequest(): AgentRunRequest {
         idleTimeoutSeconds: 600,
         timeoutMs: 3_600_000,
         permissionMode: "bypassPermissions",
+        toolArgs: [],
+        expandPromptCommands: false,
         env: {},
         signal: neverAborted(),
     };
@@ -104,6 +104,10 @@ function neverAborted(): AbortSignal {
 
 function isDocker(subcommand: string) {
     return (args: string[]) => args[0] === subcommand;
+}
+
+function isDockerExecOf(command: string) {
+    return (args: string[]) => args[0] === "exec" && args.includes(command);
 }
 
 function scriptHealthyHost(commands: FakeCommandRunner): void {
@@ -141,7 +145,6 @@ function createRuntime(
         paths,
         clock: new FakeClock(NOW),
         hostUser: { uid: 1000, gid: 1001 },
-        runAgentInContainer: runAgentNotImplemented,
         ...overrides,
     });
 }
@@ -454,6 +457,20 @@ describe("DockerAgentRuntime workspace", () => {
 
         expect(result).toBe(AGENT_RESULT);
         expect(runAgentInContainer.mock.calls[0]?.[0]).toMatchObject({ containerId: CONTAINER_ID });
+    });
+
+    it("runs Claude Code in the container by default and returns the commits of the worktree", async () => {
+        const commands = new FakeCommandRunner();
+        const { workspace } = await openWorkspace(commands);
+        commands.when("docker", isDockerExecOf("claude")).returns({ stdout: resultLine() });
+        commands.when("git", ["rev-parse", "HEAD"]).returns({ stdout: "base\n" });
+        commands.when("git", ["rev-list", "--reverse", "base..HEAD"]).returns({ stdout: "sha1\n" });
+
+        const result = await workspace.runAgent(runRequest(), SILENT_HOOKS);
+
+        expect(result).toMatchObject({ summary: "feito", commits: [{ sha: "sha1" }] });
+        const gitLogCall = commands.calls.find((call) => call.args[0] === "rev-list");
+        expect(gitLogCall?.options.cwd).toBe(worktreePath);
     });
 
     it("removes the container and the worktree on close but keeps the branch", async () => {

@@ -24,6 +24,8 @@ import {
     createDockerWorkspace,
     type OpenedWorkspace,
 } from "@/integrations/agent_runtime/docker_workspace.js";
+import { createRunAgentInContainer } from "@/integrations/agent_runtime/run_agent_in_container.js";
+import { createWorkspaceCommits } from "@/integrations/agent_runtime/workspace_commits.js";
 import { writeWorkspaceFiles } from "@/integrations/agent_runtime/workspace_files.js";
 import {
     containerUserFor,
@@ -53,7 +55,8 @@ export interface DockerAgentRuntimeDeps {
     paths: ForjaPaths;
     clock: Clock;
     hostUser: HostUser | null;
-    runAgentInContainer: RunAgentInContainer;
+    /** Defaults to running Claude Code in the container. */
+    runAgentInContainer?: RunAgentInContainer;
 }
 
 type SetupSpec = Pick<HeadlessSpec, "setupCommands" | "env">;
@@ -66,6 +69,7 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
     const containers = createContainerManager(commands);
     const containerUser = containerUserFor(deps.hostUser);
     const openWorkspaces = new Map<string, OpenedWorkspace>();
+    const runAgentInContainer = deps.runAgentInContainer ?? createRunAgentInContainer({ clock });
 
     async function openWorkspace(
         spec: WorkspaceSpec,
@@ -129,8 +133,8 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         );
 
         try {
-            return await deps.runAgentInContainer(
-                agentContainer(containerId, spec.env),
+            return await runAgentInContainer(
+                headlessContainer(containerId, spec.env),
                 request,
                 hooks,
             );
@@ -210,11 +214,7 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
             commands,
             containers,
             runAgent: (request, agentHooks) =>
-                deps.runAgentInContainer(
-                    agentContainer(opened.containerId, opened.env),
-                    request,
-                    agentHooks,
-                ),
+                runAgentInContainer(workspaceContainer(opened), request, agentHooks),
             closeWorkspace,
         });
     }
@@ -230,8 +230,17 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         await Promise.all(found.map((container) => containers.stop(container.id)));
     }
 
-    function agentContainer(containerId: string, env: Record<string, string>): AgentContainer {
+    function headlessContainer(containerId: string, env: Record<string, string>): AgentContainer {
         return { containerId, containers, env };
+    }
+
+    function workspaceContainer(opened: OpenedWorkspace): AgentContainer {
+        return {
+            containerId: opened.containerId,
+            containers,
+            env: opened.env,
+            commits: createWorkspaceCommits(commands, opened.worktreePath),
+        };
     }
 
     function emitSystemEvent(hooks: AgentRunHooks, message: string): void {
