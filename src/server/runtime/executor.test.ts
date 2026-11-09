@@ -185,11 +185,11 @@ describe("executor", () => {
             const agentTexts = log.events
                 .filter((event) => event.kind === "text")
                 .map((event) => event.text);
-            // The first line is the workspace being ready, announced before the agent starts.
             const announcedRanges = bed
                 .publishedEventsOf("log.appended")
                 .filter((event) => event.type === "log.appended" && event.nodeRunId === dev.id);
             expect(agentTexts).toEqual(AGENT_TEXTS);
+            // The first line is the workspace being ready, announced before the agent starts.
             expect(announcedRanges).toEqual([
                 expect.objectContaining({ runId: started.id, fromSeq: 1, toSeq: 1 }),
                 expect.objectContaining({ runId: started.id, fromSeq: 2, toSeq: 4 }),

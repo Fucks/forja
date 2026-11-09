@@ -2,15 +2,16 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
 import { systemClock } from "@/lib/clock.js";
+import { describeAttachment } from "@/server/attachment_header.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import { findNodeRunOrThrow } from "@/server/runs/run_service.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
+import { LOG_FILE_EXTENSION } from "@/server/runtime/log_store.js";
 import { logPageQuery } from "@/shared/log_types.js";
 
 const NODE_RUN_LOGS_PATH = "/node-runs/:nodeRunId/logs";
 const RAW_NODE_RUN_LOGS_PATH = `${NODE_RUN_LOGS_PATH}/raw`;
 const RAW_LOGS_CONTENT_TYPE = "text/plain; charset=utf-8";
-const LOG_FILE_EXTENSION = ".ndjson";
 
 const nodeRunParamsSchema = z.object({ nodeRunId: z.string().min(1) });
 
@@ -38,12 +39,8 @@ export const registerLogsRoutes: RouteModule = (app, deps) => {
 
             return reply
                 .type(RAW_LOGS_CONTENT_TYPE)
-                .header("content-disposition", attachmentNamed(nodeRunId + LOG_FILE_EXTENSION))
+                .header("content-disposition", describeAttachment(nodeRunId + LOG_FILE_EXTENSION))
                 .send(deps.logs.rawStream(nodeRunId));
         },
     );
 };
-
-function attachmentNamed(fileName: string): string {
-    return `attachment; filename="${fileName}"`;
-}

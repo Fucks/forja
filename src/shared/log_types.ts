@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const MAX_LOG_PAGE_SIZE = 2_000;
 const DEFAULT_LOG_PAGE_SIZE = 500;
-const FIRST_LOG_SEQ = 1;
+export const FIRST_LOG_SEQ = 1;
 
 export const LOG_EVENT_KINDS = ["text", "tool_call", "raw", "system"] as const;
 

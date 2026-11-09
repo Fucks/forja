@@ -12,7 +12,12 @@ import type { Clock } from "@/lib/clock.js";
 import type { ForjaDb } from "@/server/db/client.js";
 import { logIndex, type LogIndexRow } from "@/server/db/schema/log_index.js";
 import { SerialQueueByKey } from "@/server/runtime/serial_queue_by_key.js";
-import { storedLogEventSchema, type LogPage, type StoredLogEvent } from "@/shared/log_types.js";
+import {
+    FIRST_LOG_SEQ,
+    storedLogEventSchema,
+    type LogPage,
+    type StoredLogEvent,
+} from "@/shared/log_types.js";
 
 export interface NodeRunLogRef {
     runId: string;
@@ -22,10 +27,15 @@ export interface NodeRunLogRef {
 export interface LogStore {
     // Masks the registered secrets before writing.
     append(ref: NodeRunLogRef, event: AgentEvent): Promise<StoredLogEvent>;
-    read(nodeRunId: string, opts: { fromSeq?: number; limit: number }): Promise<LogPage>;
+    read(nodeRunId: string, opts: LogReadOptions): Promise<LogPage>;
     rawStream(nodeRunId: string): NodeJS.ReadableStream;
     stats(nodeRunId: string): Promise<LogStats>;
     deleteRun(runId: string): Promise<void>;
+}
+
+export interface LogReadOptions {
+    fromSeq?: number;
+    limit: number;
 }
 
 export interface LogStats {
@@ -51,8 +61,7 @@ export interface LogStoreDeps {
 
 const ENCODING = "utf8";
 const LINE_BREAK = "\n";
-const LOG_FILE_EXTENSION = ".ndjson";
-const FIRST_SEQ = 1;
+export const LOG_FILE_EXTENSION = ".ndjson";
 
 const nodeFs: FsLike = {
     mkdir: (dirPath, options) => fsPromises.mkdir(dirPath, options),
@@ -82,7 +91,7 @@ class NdjsonLogStore implements LogStore {
 
     async read(
         nodeRunId: string,
-        { fromSeq = FIRST_SEQ, limit }: { fromSeq?: number; limit: number },
+        { fromSeq = FIRST_LOG_SEQ, limit }: LogReadOptions,
     ): Promise<LogPage> {
         const entry = this.findIndexEntry(nodeRunId);
         if (!entry) {
@@ -91,9 +100,8 @@ class NdjsonLogStore implements LogStore {
 
         const allEvents = await this.readAllEvents(entry);
         const events = allEvents.filter((event) => event.seq >= fromSeq).slice(0, limit);
-        const lastEvent = events.at(-1);
 
-        return { events, nextSeq: lastEvent ? lastEvent.seq + 1 : fromSeq, total: entry.count };
+        return { events, nextSeq: nextSeqAfter(events, fromSeq), total: entry.count };
     }
 
     rawStream(nodeRunId: string): NodeJS.ReadableStream {
@@ -195,6 +203,15 @@ function toStoredLogEvent(
         default:
             return assertNever(event);
     }
+}
+
+function nextSeqAfter(events: StoredLogEvent[], fromSeq: number): number {
+    const lastEvent = events.at(-1);
+    if (!lastEvent) {
+        return fromSeq;
+    }
+
+    return lastEvent.seq + 1;
 }
 
 function byteLengthOf(text: string): number {
