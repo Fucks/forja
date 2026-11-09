@@ -74,8 +74,6 @@ export const createTriggerInput = z.object({
     config: triggerConfigSchema,
 });
 
-export type CreateTriggerRequest = z.infer<typeof createTriggerInput>;
-
 // Built without defaults: a partial of `createTriggerInput` would reset the fields the request did
 // not send.
 export const updateTriggerInput = z.object({

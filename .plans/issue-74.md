@@ -34,7 +34,7 @@
 - [x] 10. Queued fires of idle flows start when the listener starts (server restart)
 - [x] 11. A failure to start the run records an `error` fire
 - [x] 12. Routes with tests — `src/server/triggers/triggers_routes.ts`, `triggers_routes.test.ts`
-- [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 13. Self-review checklist (section 5) and feedback loops (section 6)
 
 ## Notes
 
