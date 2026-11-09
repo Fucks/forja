@@ -37,4 +37,4 @@
 - [x] 9. Executor: daily budget gets the spending of today (`daily_budget.ts`) — executor test
 - [x] 10. Wire `UsageService` in `app_executor.ts` and the executor test bed
 - [x] 11. Routes `GET /api/projects/:projectId/usage` and `GET /api/runs/:runId/usage` with validation — `usage_routes.ts` + `usage_routes.test.ts`
-- [ ] 12. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 12. Self-review checklist (section 5) and feedback loops (section 6)

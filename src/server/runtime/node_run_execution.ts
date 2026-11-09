@@ -19,7 +19,7 @@ import type {
 import { usageRecordedEvent } from "@/server/runtime/run_events.js";
 import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
 import type { WorkspacePool } from "@/server/runtime/workspace_pool.js";
-import type { UsageService } from "@/server/usage/usage_service.js";
+import type { NewUsageRecord, UsageService } from "@/server/usage/usage_service.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
@@ -162,9 +162,25 @@ export class NodeRunExecution {
         };
     }
 
-    private async recordUsage({ model, tokens }: ModelUsage): Promise<void> {
+    private async recordUsage(modelUsage: ModelUsage): Promise<void> {
         const { run, nodeRun, events, clock } = this.deps;
-        const record = await this.deps.usage.record({
+        const record = await this.deps.usage.record(this.usageRecordOf(modelUsage));
+        const { usage, costUsd } = record;
+        events.publish(usageRecordedEvent(run, nodeRun.id, { ...usage, costUsd }));
+
+        await this.deps.deliver({
+            type: "usage_recorded",
+            nodeRunId: nodeRun.id,
+            costUsd,
+            tokens: budgetTokensOf(usage),
+            at: clock.now(),
+        });
+    }
+
+    private usageRecordOf({ model, tokens }: ModelUsage): NewUsageRecord {
+        const { run, nodeRun } = this.deps;
+
+        return {
             projectId: run.projectId,
             runId: run.id,
             flowId: run.flowId,
@@ -174,15 +190,6 @@ export class NodeRunExecution {
             iteration: nodeRun.iteration,
             model,
             usage: tokens,
-        });
-        events.publish(usageRecordedEvent(run, nodeRun.id, { ...tokens, costUsd: record.costUsd }));
-
-        await this.deps.deliver({
-            type: "usage_recorded",
-            nodeRunId: nodeRun.id,
-            costUsd: record.costUsd,
-            tokens: budgetTokensOf(tokens),
-            at: clock.now(),
-        });
+        };
     }
 }

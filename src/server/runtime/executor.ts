@@ -186,7 +186,7 @@ class RunExecutor implements Executor {
             itemIds: run.itemIds,
         });
 
-        return await this.activate(run, setup, snapshot);
+        return this.activate(run, setup, snapshot);
     }
 
     private async loadRunSetup(input: StartRunInput): Promise<RunSetup> {

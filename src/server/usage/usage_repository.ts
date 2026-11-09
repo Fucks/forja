@@ -28,7 +28,7 @@ export type GroupTotals = Omit<UsageAggregate, "label">;
 
 export const NO_ITEM_KEY = "";
 
-// Cache tokens do not count for the budgets.
+// budgetTokensOf in SQL: cache tokens do not count for the budgets.
 const BUDGET_TOKENS = sql`${usageRecords.inputTokens} + ${usageRecords.outputTokens}`;
 
 const GROUP_KEYS: Record<UsageGroupBy, (timeZone: string) => SQL<string>> = {
