@@ -1,6 +1,7 @@
 import { isItemInProgress } from "@/engine/map_group.js";
 import { NODE_RUN_TERMINAL, type NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL, type RunState } from "@/engine/run_state.js";
+import { runningNodeRunIdsOf, wakeupTimesOf } from "@/engine/scheduler_snapshot.js";
 import type {
     Scheduler,
     SchedulerCommand,
@@ -77,6 +78,18 @@ export class ActiveRun {
 
     deliver(event: SchedulerEvent): Promise<void> {
         return this.enqueue(() => this.deps.scheduler.handle(event));
+    }
+
+    // The NodeRuns that were running and the timers that were set died with the previous process.
+    async resumeAfterRestart(snapshot: SchedulerSnapshot): Promise<void> {
+        const at = this.deps.clock.now();
+        const interruptions = runningNodeRunIdsOf(snapshot).map((nodeRunId) =>
+            this.deliver({ type: "node_run_interrupted", nodeRunId, at }),
+        );
+        await Promise.all(interruptions);
+
+        wakeupTimesOf(snapshot).forEach((wakeupAt) => this.scheduleWakeup(wakeupAt));
+        await this.tick();
     }
 
     private tick(): Promise<void> {

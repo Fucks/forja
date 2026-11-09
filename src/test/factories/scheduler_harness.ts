@@ -147,6 +147,17 @@ export class SchedulerHarness {
         this.scheduler = this.createScheduler(snapshot);
     }
 
+    // The process dies: its running NodeRuns never report back and its timers are gone.
+    restartAfterCrash(): void {
+        this.runningTimers.forEach((cancelTimer) => cancelTimer());
+        this.runningTimers.clear();
+        this.restartFromSnapshot();
+    }
+
+    reportInterrupted(nodeRunId: string): void {
+        this.deliver({ type: "node_run_interrupted", nodeRunId, at: this.clock.now() });
+    }
+
     elapsedMsWhenRunFinished(): number | undefined {
         if (!this.run.finishedAt) {
             return undefined;

@@ -1,7 +1,8 @@
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { RuntimeCall } from "@/test/fakes/fake_agent_runtime.js";
 import { DomainValidationError, NotFoundError } from "@/server/errors.js";
-import type { ForjaEvent } from "@/shared/events.js";
+import { InvalidRunSnapshotError } from "@/server/runtime/stored_snapshot.js";
+import type { ForjaEvent, NodeRunStatusName } from "@/shared/events.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import {
     buildIssueSnapshot,
@@ -258,6 +259,74 @@ describe("executor", () => {
         });
     });
 
+    describe("resume after a server restart", () => {
+        async function crashWithTwoDevsRunning(runId: string): Promise<string[]> {
+            await bed.advanceUntil(async () => (await runningDeveloperIds(runId)).length === 2);
+
+            return runningDeveloperIds(runId);
+        }
+
+        async function runningDeveloperIds(runId: string): Promise<string[]> {
+            return (await bed.nodeRunsOf(runId, "dev"))
+                .filter((nodeRun) => nodeRun.status === "RUNNING")
+                .map((nodeRun) => nodeRun.id);
+        }
+
+        async function resumeFromStoredSnapshot(
+            restarted: ExecutorTestBed,
+            runId: string,
+        ): Promise<void> {
+            const run = await restarted.findRun(runId);
+            await restarted.executor.resumeFromSnapshot(
+                run,
+                await restarted.runs.getSnapshot(runId),
+            );
+        }
+
+        it("runs the interrupted Devs again with the same attempt and finishes the run", async () => {
+            scriptDevsLasting(DEV_DURATION_MS);
+            const started = await bed.startRun(flowId);
+            const interruptedIds = await crashWithTwoDevsRunning(started.id);
+            const restarted = await bed.restartServer();
+
+            await resumeFromStoredSnapshot(restarted, started.id);
+            const finished = await restarted.runUntilFinished(started.id);
+
+            const interrupted = (await restarted.nodeRunsOf(started.id, "dev")).filter((nodeRun) =>
+                interruptedIds.includes(nodeRun.id),
+            );
+            expect(finished.status).toBe("SUCCEEDED");
+            expect(interrupted).toEqual([
+                expect.objectContaining({ status: "SUCCEEDED", attempt: 1 }),
+                expect.objectContaining({ status: "SUCCEEDED", attempt: 1 }),
+            ]);
+            expect(nodeRunIdsSavedAs(restarted.journal, "INTERRUPTED").sort()).toEqual(
+                interruptedIds.sort(),
+            );
+        });
+
+        it("takes the resumed run as its own active run", async () => {
+            const started = await bed.startRun(flowId);
+            await runUntilSomeDevIsRunning(started.id);
+            const restarted = await bed.restartServer();
+
+            await resumeFromStoredSnapshot(restarted, started.id);
+
+            expect(restarted.executor.activeRunIds()).toEqual([started.id]);
+        });
+
+        it("refuses a snapshot that is not the run's", async () => {
+            const started = await bed.startRun(flowId);
+            const restarted = await bed.restartServer();
+            const run = await restarted.findRun(started.id);
+
+            await expect(
+                restarted.executor.resumeFromSnapshot(run, { run: { id: "run_other" } }),
+            ).rejects.toBeInstanceOf(InvalidRunSnapshotError);
+            expect(restarted.executor.activeRunIds()).toEqual([]);
+        });
+    });
+
     describe("errors", () => {
         it("refuses to start a flow that has no published version", async () => {
             const draftOnly = await bed.flows.create(TEST_PROJECT_ID, { name: "Rascunho" });
@@ -304,6 +373,13 @@ function workItemIdsOf(calls: RuntimeCall[]): (string | undefined)[] {
 
 function nodeRunIdsOf(calls: RuntimeCall[]): (string | undefined)[] {
     return calls.map((call) => call.nodeRunId);
+}
+
+function nodeRunIdsSavedAs(journal: JournalEntry[], status: NodeRunStatusName): string[] {
+    return journal
+        .flatMap((entry) => (entry.kind === "saved" ? entry.nodeRuns : []))
+        .filter((nodeRun) => nodeRun.status === status)
+        .map((nodeRun) => nodeRun.id);
 }
 
 function startedAfter(nodeRun: NodeRunState, moment: Date): boolean {

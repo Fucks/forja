@@ -652,6 +652,86 @@ describe("scheduler: snapshot and restore", () => {
     });
 });
 
+describe("scheduler: interrupted by a server restart", () => {
+    it("records the interruption and runs the same attempt again", () => {
+        const harness = createSchedulerHarness({ graph: withoutRetries(buildLinearAgentFlow()) });
+        harness.start(["1"]);
+
+        harness.restartAfterCrash();
+        reportRunningNodeRunsInterrupted(harness);
+        harness.runToCompletion();
+
+        expect(statusesOf(harness, "a", "1")).toEqual([
+            "PENDING",
+            "QUEUED",
+            "RUNNING",
+            "INTERRUPTED",
+            "QUEUED",
+            "RUNNING",
+            "SUCCEEDED",
+        ]);
+        expect(harness.attemptsOf("a", "1").map((entry) => entry.attempt)).toEqual([1]);
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("keeps the interrupted NodeRuns ahead of the ones queued after them", () => {
+        const harness = createSchedulerHarness({
+            graph: buildLinearAgentFlow(),
+            maxConcurrentAgents: 2,
+        });
+        harness.start(["1", "2", "3"]);
+
+        harness.restartAfterCrash();
+        reportRunningNodeRunsInterrupted(harness);
+
+        const restartedItems = harness
+            .agentStartsInOrder()
+            .slice(2)
+            .map((entry) => entry.workItemId);
+        expect(restartedItems).toEqual(["1", "2"]);
+    });
+
+    it("cancels the interrupted NodeRun of a run that is stopping", () => {
+        const harness = createSchedulerHarness({
+            graph: withoutRetries(buildLinearAgentFlow()),
+            scripts: { a: failingOn("1") },
+        });
+        harness.start(["1", "2"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        harness.restartAfterCrash();
+        reportRunningNodeRunsInterrupted(harness);
+        harness.runToCompletion();
+
+        expect(statusesOf(harness, "a", "2").slice(-2)).toEqual(["INTERRUPTED", "CANCELED"]);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
+    it("ignores an interruption of a NodeRun that is no longer running", () => {
+        const harness = createSchedulerHarness({ graph: buildSingleAgentFlow() });
+        harness.start(["1"]);
+        harness.runToCompletion();
+        const [finished] = harness.snapshot().nodeRuns.filter((nodeRun) => nodeRun.nodeId === "a");
+
+        harness.reportInterrupted(finished?.id ?? "");
+
+        expect(harness.finalStatusOf("a", "1")).toBe("SUCCEEDED");
+    });
+
+    it("leaves the interrupted NodeRun queued while the run is paused", () => {
+        const harness = createSchedulerHarness({ graph: buildSingleAgentFlow() });
+        harness.start(["1"]);
+        harness.requestPause();
+
+        harness.restartAfterCrash();
+        reportRunningNodeRunsInterrupted(harness);
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("a", "1")).toBe("QUEUED");
+        expect(harness.run.status).toBe("PAUSED");
+    });
+});
+
 describe("scheduler: map groups", () => {
     it("never runs more than concurrency items of a map and starts the rest as slots open", () => {
         const harness = createCanonicalHarness();
@@ -1624,4 +1704,25 @@ function usageLimitCommandsOf(harness: SchedulerHarness): SchedulerCommand[] {
     return harness.commands.filter(
         (command) => command.type === "usage_limit_reached" || command.type === "usage_limit_reset",
     );
+}
+
+function reportRunningNodeRunsInterrupted(harness: SchedulerHarness): void {
+    harness
+        .snapshot()
+        .nodeRuns.filter((nodeRun) => nodeRun.status === "RUNNING")
+        .forEach((nodeRun) => harness.reportInterrupted(nodeRun.id));
+}
+
+function statusesOf(harness: SchedulerHarness, nodeId: string, workItemId: string): string[] {
+    return harness.entriesOf(nodeId, workItemId).map((entry) => entry.status);
+}
+
+function failingOn(failingItemId: string): NodeScript {
+    return ({ nodeRun }) => {
+        if (nodeRun.workItemId !== failingItemId) {
+            return { durationMs: 4 * DEFAULT_NODE_DURATION_MS };
+        }
+
+        return { outcome: FAILED_FOR_GOOD };
+    };
 }

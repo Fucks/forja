@@ -30,6 +30,22 @@ export function restoreSnapshot(snapshot: SchedulerSnapshot): SchedulerState {
     };
 }
 
+// The timers the scheduler was waiting for, which die with the process that set them.
+export function wakeupTimesOf(snapshot: SchedulerSnapshot): Date[] {
+    const { run, nodeRuns } = restoreSnapshot(snapshot);
+    const queuedAtTimes = nodeRuns
+        .filter((nodeRun) => nodeRun.status === "QUEUED")
+        .flatMap((nodeRun) => (nodeRun.queuedAt ? [nodeRun.queuedAt] : []));
+
+    return [...usageLimitResumeTimesOf(run), ...queuedAtTimes];
+}
+
+export function runningNodeRunIdsOf(snapshot: SchedulerSnapshot): string[] {
+    return snapshot.nodeRuns
+        .filter((nodeRun) => nodeRun.status === "RUNNING")
+        .map((nodeRun) => nodeRun.id);
+}
+
 function runToJson(run: RunState): JsonDates<RunState> {
     return {
         ...run,
@@ -70,4 +86,13 @@ function nodeRunFromJson(nodeRun: JsonDates<NodeRunState>): NodeRunState {
 
 function optionalDate(isoDate: string | undefined): Date | undefined {
     return isoDate === undefined ? undefined : new Date(isoDate);
+}
+
+function usageLimitResumeTimesOf(run: RunState): Date[] {
+    const isPausedByUsageLimit = run.status === "PAUSED" && run.pauseReason === "usage_limit";
+    if (!isPausedByUsageLimit || !run.resumeAt) {
+        return [];
+    }
+
+    return [run.resumeAt];
 }

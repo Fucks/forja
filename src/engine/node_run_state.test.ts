@@ -4,6 +4,7 @@ import {
     createNextAttempt,
     NODE_RUN_TERMINAL,
     type NodeRunError,
+    requeueSameAttempt,
     transitionNodeRun,
 } from "@/engine/node_run_state.js";
 import { NODE_RUN_STATUS_NAMES, type NodeRunStatusName } from "@/shared/events.js";
@@ -194,5 +195,35 @@ describe("createNextAttempt", () => {
         expect(nextAttempt).toEqual(
             buildNodeRunState({ id: "node-run-2", workItemId: "7", iteration: 2, attempt: 2 }),
         );
+    });
+});
+
+describe("requeueSameAttempt", () => {
+    const waiting = buildNodeRunState({
+        id: "nrn_7",
+        attempt: 2,
+        status: "WAITING_LIMIT",
+        queuedAt: new Date("2026-01-01T12:00:00Z"),
+        startedAt: new Date("2026-01-01T12:30:00Z"),
+        error: { kind: "usage_limit", message: "Limite de uso atingido" },
+    });
+
+    it("queues the same NodeRun again with the same attempt", () => {
+        const requeued = requeueSameAttempt(waiting, TRANSITION_AT);
+
+        expect(requeued).toMatchObject({ id: "nrn_7", attempt: 2, status: "QUEUED" });
+    });
+
+    it("forgets the previous start and the limit error so the timeout counts from the restart", () => {
+        const requeued = requeueSameAttempt(waiting, TRANSITION_AT);
+
+        expect(requeued).not.toHaveProperty("startedAt");
+        expect(requeued).not.toHaveProperty("error");
+    });
+
+    it("keeps its place in the queue", () => {
+        const requeued = requeueSameAttempt(waiting, TRANSITION_AT);
+
+        expect(requeued.queuedAt).toEqual(waiting.queuedAt);
     });
 });

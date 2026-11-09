@@ -1,6 +1,10 @@
 import type { RunBudget } from "@/engine/budgets.js";
 import { createScheduler } from "@/engine/scheduler.js";
-import type { SchedulerEvent, SchedulerOptions } from "@/engine/scheduler_types.js";
+import type {
+    SchedulerEvent,
+    SchedulerOptions,
+    SchedulerSnapshot,
+} from "@/engine/scheduler_types.js";
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { Clock } from "@/lib/clock.js";
 import type { IdPrefix } from "@/lib/ids.js";
@@ -12,6 +16,10 @@ import { ActiveRun } from "@/server/runtime/active_run.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
 import { runLifecycleEvent } from "@/server/runtime/run_events.js";
+import {
+    InvalidRunSnapshotError,
+    isSchedulerSnapshotOfRun,
+} from "@/server/runtime/stored_snapshot.js";
 import type { SettingsService } from "@/server/settings/settings_service.js";
 import type { FlowVersion } from "@/shared/flow_types.js";
 import type { Project } from "@/shared/project_types.js";
@@ -39,6 +47,8 @@ export interface Executor {
     resumeRun(runId: string): Promise<void>;
     cancelNodeRun(nodeRunId: string): Promise<void>;
     retryNodeRun(nodeRunId: string): Promise<void>;
+    // Takes over a run the previous server process left active.
+    resumeFromSnapshot(run: RunRecord, snapshot: unknown): Promise<void>;
     activeRunIds(): string[];
 }
 
@@ -115,6 +125,21 @@ class RunExecutor implements Executor {
         });
     }
 
+    async resumeFromSnapshot(run: RunRecord, snapshot: unknown): Promise<void> {
+        if (!isSchedulerSnapshotOfRun(snapshot, run.id)) {
+            throw new InvalidRunSnapshotError(run.id);
+        }
+
+        const setup = await this.loadRunSetup({
+            projectId: run.projectId,
+            flowId: run.flowId,
+            version: run.flowVersion,
+            itemIds: run.itemIds,
+        });
+        const activeRun = this.activate(run, setup, snapshot);
+        await activeRun.resumeAfterRestart(snapshot);
+    }
+
     activeRunIds(): string[] {
         return [...this.activeRuns.keys()];
     }
@@ -163,7 +188,7 @@ class RunExecutor implements Executor {
         return record;
     }
 
-    private activate(record: RunRecord, setup: RunSetup): ActiveRun {
+    private activate(record: RunRecord, setup: RunSetup, restore?: SchedulerSnapshot): ActiveRun {
         const { deps } = this;
         const { version, projectSettings, globalSettings } = setup;
         const activeRun = new ActiveRun({
@@ -181,6 +206,7 @@ class RunExecutor implements Executor {
                 version.graph,
                 record,
                 this.schedulerOptionsOf(projectSettings, globalSettings),
+                restore,
             ),
             nodeExecutors: deps.nodeExecutors ?? nodeExecutors,
             onFinished: (runId) => this.activeRuns.delete(runId),
@@ -200,7 +226,7 @@ class RunExecutor implements Executor {
         };
     }
 
-    // Only runs of this server are active; a finished run is no longer in memory (#52 reloads them).
+    // Only runs of this server are active; a finished run is no longer in memory.
     private async deliverTo(runId: string, event: SchedulerEvent): Promise<void> {
         const activeRun = this.activeRuns.get(runId);
         if (!activeRun) {

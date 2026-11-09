@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 
 import type { FastifyInstance } from "fastify";
 
+import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import { UnavailableAgentRuntime } from "@/integrations/agent_runtime/unavailable_agent_runtime.js";
 import { CliGitProvider } from "@/integrations/git/cli_git_provider.js";
 import { ExecaCommandRunner } from "@/integrations/process/execa_command_runner.js";
@@ -13,8 +14,11 @@ import { buildApp } from "@/server/app.js";
 import type { AppDeps } from "@/server/app.js";
 import { openDatabase } from "@/server/db/client.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
+import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import { createAppExecutor } from "@/server/runtime/app_executor.js";
 import { createEventBus } from "@/server/runtime/event_bus.js";
+import type { Executor } from "@/server/runtime/executor.js";
+import { recoverRuns } from "@/server/runtime/recovery.js";
 
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 
@@ -42,7 +46,15 @@ async function buildAppOwningDatabase(
     const git = new CliGitProvider(commands);
     // TODO(#58): use the Docker runtime; #71 adds the demo runtime for --seed-demo.
     const agentRuntime = new UnavailableAgentRuntime();
+    const executor = createAppExecutor({
+        db: database.db,
+        events,
+        git,
+        runtime: agentRuntime,
+        clock: systemClock,
+    });
     try {
+        await recoverRunsOfPreviousProcess(database, executor, agentRuntime);
         const app = await buildApp({
             ...deps,
             db: database.db,
@@ -52,13 +64,7 @@ async function buildAppOwningDatabase(
             secrets: createSecretBox(loadOrCreateMasterKey(deps.paths.masterKey, fs)),
             redactor: createSecretRedactor(),
             agentRuntime,
-            executor: createAppExecutor({
-                db: database.db,
-                events,
-                git,
-                runtime: agentRuntime,
-                clock: systemClock,
-            }),
+            executor,
         });
         app.addHook("onClose", (_closingApp, done) => {
             database.close();
@@ -69,6 +75,21 @@ async function buildAppOwningDatabase(
         database.close();
         throw error;
     }
+}
+
+// Before the routes exist, so no request sees a run still active from the previous process.
+async function recoverRunsOfPreviousProcess(
+    database: DatabaseHandle,
+    executor: Executor,
+    runtime: AgentRuntime,
+): Promise<void> {
+    await recoverRuns({
+        runs: new SqliteRunRepository(database.db, systemClock),
+        executor,
+        runtime,
+        clock: systemClock,
+        log: (message) => console.log(message),
+    });
 }
 
 function closeOnShutdownSignals(app: FastifyInstance): void {
