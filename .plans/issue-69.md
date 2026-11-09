@@ -23,13 +23,13 @@
 
 ## Tasks
 
-- [ ] 1. Test + impl: first sync creates the items — `src/server/work_items/github_sync.ts`, `github_sync.test.ts`
-- [ ] 2. Test: second sync without changes changes nothing (idempotency)
-- [ ] 3. Test + impl: an issue closed on GitHub becomes `closed` (getIssue for missing open items)
-- [ ] 4. Test: "blocked by" in the body resolves to item ids
-- [ ] 5. Test + impl: project without GitHub returns the error in the result
-- [ ] 6. Test + impl: provider failure ends in the result's `error`
-- [ ] 7. Test + impl: label filter and limit are forwarded to the provider
+- [x] 1. Test + impl: first sync creates the items — `src/server/work_items/github_sync.ts`, `github_sync.test.ts`
+- [x] 2. Test: second sync without changes changes nothing (idempotency)
+- [x] 3. Test + impl: an issue closed on GitHub becomes `closed` (getIssue for missing open items)
+- [x] 4. Test: "blocked by" in the body resolves to item ids
+- [x] 5. Test + impl: project without GitHub returns the error in the result
+- [x] 6. Test + impl: provider failure ends in the result's `error`
+- [x] 7. Test + impl: label filter and limit are forwarded to the provider
 - [ ] 8. Test + impl: `resolveGithubEnv` (credential or host gh) — `src/server/work_items/github_env.ts`
 - [ ] 9. Test + impl: `POST /api/projects/:projectId/work-items/sync` answers with `SyncResult` — `work_items_routes.ts`
 - [ ] 10. Test + impl: `createSyncScheduler` syncs every interval with FakeClock, keeps running after an error, stops — `sync_scheduler.ts`
