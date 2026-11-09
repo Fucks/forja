@@ -1,4 +1,6 @@
 import type { AgentEvent } from "@/integrations/agent_runtime/agent_runtime.js";
+import { executeConditionNode } from "@/server/runtime/executors/condition_executor.js";
+import { executeOutputNode } from "@/server/runtime/executors/output_executor.js";
 import type { NodeExecutionContext } from "@/server/runtime/node_executors.js";
 import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
 import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.js";
@@ -57,6 +59,55 @@ describe("deterministic executors", () => {
             expect(result.outputs.result).toEqual({
                 exitCode: 0,
                 stdoutTail: lines.slice(-STDOUT_TAIL_MAX_LINES).join("\n"),
+            });
+        });
+    });
+
+    describe("condition", () => {
+        const APPROVED = { op: "eq", path: "approved", value: true } as const;
+
+        it("sends the input value to the true port when the condition holds", async () => {
+            const value = { approved: true, notes: "ok" };
+            const context = buildConditionContext(value);
+
+            const result = await executeConditionNode(context);
+
+            expect(result.outputs).toEqual({ true: value });
+        });
+
+        it("sends the input value to the false port when the condition does not hold", async () => {
+            const value = { approved: false, notes: "faltam testes" };
+            const context = buildConditionContext(value);
+
+            const result = await executeConditionNode(context);
+
+            expect(result.outputs).toEqual({ false: value });
+        });
+
+        function buildConditionContext(value: unknown): NodeExecutionContext {
+            const condition = createNodeOfType("condition", "approved", POSITION);
+            const node = { ...condition, config: { condition: APPROVED } };
+
+            return buildNodeExecutionContext(node, { inputs: { value } });
+        }
+    });
+
+    describe("output", () => {
+        it("records where the item moves as the item_outcome artifact", async () => {
+            const output = createNodeOfType("output", "needs_human", POSITION);
+            const node = {
+                ...output,
+                config: { ...output.config, moveItemTo: "needs_human" as const },
+            };
+            const context = buildNodeExecutionContext(node, { item: ISSUE_1 });
+
+            const result = await executeOutputNode(context);
+
+            expect(result).toEqual({
+                outputs: {},
+                artifacts: [
+                    { name: "item_outcome", kind: "json", value: { moveItemTo: "needs_human" } },
+                ],
             });
         });
     });

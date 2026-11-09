@@ -24,8 +24,8 @@
 - [x] 4. Script exit 1 gives `result.exitCode = 1` without failing — `executors/script_executor.ts`, `item_workspace.ts`
 - [x] 5. Script lines become `raw` agent events — `script_executor.ts`
 - [x] 6. Script stdoutTail keeps the last 200 lines — `script_executor.ts`
-- [ ] 7. Condition sends the value to the chosen port — `executors/condition_executor.ts`
-- [ ] 8. Output records the `item_outcome` artifact — `executors/output_executor.ts`
+- [x] 7. Condition sends the value to the chosen port — `executors/condition_executor.ts`
+- [x] 8. Output records the `item_outcome` artifact — `executors/output_executor.ts`
 - [ ] 9. Register executors; drop the output stub in the test bed — `node_executors.ts`, `executor_test_bed.ts`
 - [ ] 10. E2E: script timeout fails the NodeRun with `timeout_total`; script exit 1 NodeRun SUCCEEDED
 - [ ] 11. E2E: condition skips the other branch
