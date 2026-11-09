@@ -276,7 +276,7 @@ describe("work items routes", () => {
     });
 
     describe("POST /api/projects/:projectId/work-items/sync", () => {
-        function syncProject(projectId: string, query = ""): ReturnType<FastifyInstance["inject"]> {
+        function syncProject(projectId: string, query = "") {
             return app.inject({
                 method: "POST",
                 url: `/api/projects/${projectId}/work-items/sync${query}`,
