@@ -30,6 +30,7 @@ const PASSING_TESTS: ScriptedExec = { exitCode: 0, stdoutTail: "all passed" };
 const FAILING_TESTS: ScriptedExec = { exitCode: 1, stdoutTail: "1 failed" };
 const SCRIPT_LINES = ["PASS a.test.ts", "PASS b.test.ts"];
 const WORKSPACE_READY_LOG_LINES = 1;
+const LOG_PAGE_SIZE = 100;
 const ONE_MINUTE = 1;
 const TWO_MINUTES_MS = 120_000;
 const ITEMS_GROUP_ID = "items";
@@ -189,16 +190,18 @@ describe("deterministic executors", () => {
             expect(tests.error?.kind).toBe("timeout_total");
         });
 
-        it("announces the workspace opening and each script line as log lines", async () => {
+        it("logs the workspace opening and each script line", async () => {
             bed.runtime.scriptExec(TEST_COMMAND, { ...PASSING_TESTS, outputLines: SCRIPT_LINES });
 
             const runId = await runToTheEnd(buildTestsOnlyFlow());
 
             const tests = await bed.findNodeRun(runId, "tests");
-            const testsLogLines = bed
-                .publishedEventsOf("log.appended")
-                .filter((event) => "nodeRunId" in event && event.nodeRunId === tests.id);
-            expect(testsLogLines).toHaveLength(WORKSPACE_READY_LOG_LINES + SCRIPT_LINES.length);
+            const log = await bed.logs.read(tests.id, { limit: LOG_PAGE_SIZE });
+            const scriptLines = log.events.flatMap((event) =>
+                event.kind === "raw" ? [event.line] : [],
+            );
+            expect(log.total).toBe(WORKSPACE_READY_LOG_LINES + SCRIPT_LINES.length);
+            expect(scriptLines).toEqual(SCRIPT_LINES);
         });
 
         it("runs the branch the condition chose and skips the other", async () => {
