@@ -27,11 +27,16 @@
 - [x] 3. Migration and Drizzle schema — `src/server/db/migrations/0800_triggers.sql`, `src/server/db/schema/triggers.ts`
 - [x] 4. Repository for triggers, fires and the pause flag — `src/server/triggers/trigger_repository.ts`
 - [x] 5. Service CRUD (create validates project and flow, update, remove, list by kind) with tests and `FakeRunStarter` — `trigger_service.ts`, `trigger_service.test.ts`, `src/test/fakes/fake_run_starter.ts`
-- [ ] 6. `fire` of a manual trigger starts a run with `triggerId`, publishes `trigger.fired`, shows in `history`
-- [ ] 7. `fire` of a disabled trigger or under global pause records `skipped` (except manual); `setAllPaused`/`isAllPaused`
-- [ ] 8. Policy `skip` records `skipped` with an active run; `parallel` starts another run
-- [ ] 9. Policy `queue` records `queued`; the queued fire starts when the active run finishes
-- [ ] 10. Queued fires of idle flows start when the listener starts (server restart)
-- [ ] 11. A failure to start the run records an `error` fire
+- [x] 6. `fire` of a manual trigger starts a run with `triggerId`, publishes `trigger.fired`, shows in `history`
+- [x] 7. `fire` of a disabled trigger or under global pause records `skipped` (except manual); `setAllPaused`/`isAllPaused`
+- [x] 8. Policy `skip` records `skipped` with an active run; `parallel` starts another run
+- [x] 9. Policy `queue` records `queued`; the queued fire starts when the active run finishes
+- [x] 10. Queued fires of idle flows start when the listener starts (server restart)
+- [x] 11. A failure to start the run records an `error` fire
 - [ ] 12. Routes with tests — `src/server/triggers/triggers_routes.ts`, `triggers_routes.test.ts`
 - [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)
+
+## Notes
+
+- Firing lives in `src/server/triggers/trigger_firing.ts` (`fireTrigger`, `startQueuedFiresWhenRunsFinish`),
+  split from `trigger_service.ts` to keep one concept per file; `TriggerServiceDeps = TriggerFiringDeps`.

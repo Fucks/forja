@@ -68,6 +68,10 @@ export class TriggerRepository {
             .run();
     }
 
+    setLastFiredAt(id: string, lastFiredAt: string): void {
+        this.db.update(triggers).set({ lastFiredAt }).where(eq(triggers.id, id)).run();
+    }
+
     delete(id: string): void {
         this.db.delete(triggers).where(eq(triggers.id, id)).run();
     }
