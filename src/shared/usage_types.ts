@@ -55,8 +55,3 @@ export interface UsageAggregate {
     costUsd: number;
     nodeRuns: number;
 }
-
-export interface UsageSpent {
-    costUsd: number;
-    tokens: number;
-}

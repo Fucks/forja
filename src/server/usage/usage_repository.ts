@@ -11,6 +11,7 @@ import {
     type SQL,
 } from "drizzle-orm";
 
+import { NO_USAGE, type UsageTotals } from "@/engine/budgets.js";
 import type { ForjaDb } from "@/server/db/client.js";
 import { flows } from "@/server/db/schema/flows.js";
 import { usageRecords, type UsageRecordRow } from "@/server/db/schema/usage.js";
@@ -21,14 +22,11 @@ import type {
     UsageGroupBy,
     UsageQuery,
     UsageRecord,
-    UsageSpent,
 } from "@/shared/usage_types.js";
 
-export type UsageTotals = Omit<UsageAggregate, "label">;
+export type GroupTotals = Omit<UsageAggregate, "label">;
 
 export const NO_ITEM_KEY = "";
-
-const NOTHING_SPENT: UsageSpent = { costUsd: 0, tokens: 0 };
 
 // Cache tokens do not count for the budgets.
 const BUDGET_TOKENS = sql`${usageRecords.inputTokens} + ${usageRecords.outputTokens}`;
@@ -60,7 +58,7 @@ export class UsageRepository {
     }
 
     // The period includes `from` and excludes `to`; days are those of the time zone.
-    totalsByGroup(query: UsageQuery, timeZone: string): UsageTotals[] {
+    totalsByGroup(query: UsageQuery, timeZone: string): GroupTotals[] {
         const groupKey = GROUP_KEYS[query.groupBy](timeZone);
 
         return this.db
@@ -79,7 +77,7 @@ export class UsageRepository {
             .all();
     }
 
-    spentOnDay(projectId: string, timeZone: string, day: string): UsageSpent {
+    spentOnDay(projectId: string, timeZone: string, day: string): UsageTotals {
         const spent = this.db
             .select({
                 costUsd: sumOf(usageRecords.costUsd),
@@ -89,7 +87,7 @@ export class UsageRepository {
             .where(and(eq(usageRecords.projectId, projectId), eq(localDayOfRecord(timeZone), day)))
             .get();
 
-        return spent ?? NOTHING_SPENT;
+        return spent ?? NO_USAGE;
     }
 
     findFlowNames(flowIds: string[]): Map<string, string> {

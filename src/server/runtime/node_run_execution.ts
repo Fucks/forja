@@ -1,3 +1,4 @@
+import { budgetTokensOf } from "@/engine/budgets.js";
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { SchedulerEvent } from "@/engine/scheduler_types.js";
 import type { AgentEvent, AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
@@ -180,7 +181,7 @@ export class NodeRunExecution {
             type: "usage_recorded",
             nodeRunId: nodeRun.id,
             costUsd: record.costUsd,
-            tokens: tokens.inputTokens + tokens.outputTokens,
+            tokens: budgetTokensOf(tokens),
             at: clock.now(),
         });
     }

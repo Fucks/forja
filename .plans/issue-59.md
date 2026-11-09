@@ -34,7 +34,7 @@
 - [x] 6. Test + implement day grouping in the project timezone (`local_day`)
 - [x] 7. Test + implement `todaySpent(projectId, timezone)`
 - [x] 8. Executor: agent result carries model + tokens; NodeRunExecution records via `UsageService`, publishes `usage.recorded` with the computed cost and delivers `usage_recorded` — executor tests
-- [ ] 9. Executor: daily budget gets the spending of today (`daily_budget.ts`) — executor test
+- [x] 9. Executor: daily budget gets the spending of today (`daily_budget.ts`) — executor test
 - [x] 10. Wire `UsageService` in `app_executor.ts` and the executor test bed
 - [ ] 11. Routes `GET /api/projects/:projectId/usage` and `GET /api/runs/:runId/usage` with validation — `usage_routes.ts` + `usage_routes.test.ts`
 - [ ] 12. Self-review checklist (section 5) and feedback loops (section 6)

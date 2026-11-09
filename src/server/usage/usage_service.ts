@@ -1,3 +1,4 @@
+import type { UsageTotals } from "@/engine/budgets.js";
 import type { Clock } from "@/lib/clock.js";
 import type { IdPrefix } from "@/lib/ids.js";
 import { localDayOf } from "@/lib/local_day.js";
@@ -6,7 +7,7 @@ import { estimateCostUsd, priceFor } from "@/server/usage/model_prices.js";
 import {
     NO_ITEM_KEY,
     type UsageRepository,
-    type UsageTotals,
+    type GroupTotals,
 } from "@/server/usage/usage_repository.js";
 import type {
     ModelPrice,
@@ -14,7 +15,6 @@ import type {
     UsageGroupBy,
     UsageQuery,
     UsageRecord,
-    UsageSpent,
 } from "@/shared/usage_types.js";
 
 type LabelLookup = (repo: UsageRepository, keys: string[]) => Map<string, string>;
@@ -33,7 +33,7 @@ export interface UsageService {
     // The cost uses the prices of the moment; changing the prices later keeps it.
     record(input: NewUsageRecord): Promise<UsageRecord>;
     aggregate(query: UsageQuery): Promise<UsageAggregate[]>;
-    todaySpent(projectId: string, timezone: string): Promise<UsageSpent>;
+    todaySpent(projectId: string, timezone: string): Promise<UsageTotals>;
     forRun(runId: string): Promise<UsageRecord[]>;
 }
 
@@ -87,7 +87,7 @@ async function aggregateUsage(
 function findLabels(
     repo: UsageRepository,
     groupBy: UsageGroupBy,
-    groups: UsageTotals[],
+    groups: GroupTotals[],
 ): Map<string, string> {
     const lookUpLabels = LABEL_LOOKUPS[groupBy];
     if (!lookUpLabels) {
@@ -102,7 +102,7 @@ function fallbackLabelOf(key: string): string {
     return key === NO_ITEM_KEY ? NO_ITEM_LABEL : key;
 }
 
-function spentToday(deps: UsageServiceDeps, projectId: string, timezone: string): UsageSpent {
+function spentToday(deps: UsageServiceDeps, projectId: string, timezone: string): UsageTotals {
     const today = localDayOf(deps.clock.now(), timezone);
 
     return deps.repo.spentOnDay(projectId, timezone, today);
