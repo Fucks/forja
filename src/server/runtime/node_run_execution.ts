@@ -1,6 +1,6 @@
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { SchedulerEvent } from "@/engine/scheduler_types.js";
-import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
+import type { AgentEvent, AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { Clock } from "@/lib/clock.js";
 import type { IdPrefix } from "@/lib/ids.js";
 import { NotFoundError } from "@/server/errors.js";
@@ -41,7 +41,7 @@ export interface NodeRunExecutionDeps {
     events: EventBus;
     nodeExecutors: NodeExecutorRegistry;
     newId(prefix: IdPrefix): string;
-    announceAgentEvent(): void;
+    recordAgentEvent(event: AgentEvent): void;
     deliver(event: SchedulerEvent): Promise<void>;
 }
 
@@ -110,7 +110,7 @@ export class NodeRunExecution {
             runtime: deps.runtime,
             clock: deps.clock,
             signal: this.abortController.signal,
-            onAgentEvent: () => deps.announceAgentEvent(),
+            onAgentEvent: (event) => deps.recordAgentEvent(event),
         };
     }
 

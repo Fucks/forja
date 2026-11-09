@@ -21,6 +21,10 @@ const DEV_DURATION_MS = 60_000;
 const TEN_MINUTES_MS = 10 * 60_000;
 const LIMIT_RESET_AT = new Date("2026-01-01T00:20:00Z");
 const RESUME_AT = new Date("2026-01-01T00:25:00Z");
+const AGENT_TEXTS = ["Lendo a issue", "Escrevendo o teste", "Pronto"];
+// Short enough for every event to land within one announcement window.
+const AGENT_EVENTS_DURATION_MS = 200;
+const LOG_PAGE_SIZE = 100;
 
 describe("executor", () => {
     let bed: ExecutorTestBed;
@@ -160,6 +164,36 @@ describe("executor", () => {
                 .map((entry) => entry.event.type)
                 .filter((type) => type.startsWith("run."));
             expect(lifecycle).toEqual(["run.created", "run.started", "run.finished"]);
+        });
+
+        it("writes the agent events to the NodeRun log and announces their seq range", async () => {
+            bed.runtime.script({
+                match: { workItemId: ISSUE_2.id, promptIncludes: DEV_PROMPT },
+                durationMs: AGENT_EVENTS_DURATION_MS,
+                events: AGENT_TEXTS.map((text) => ({ kind: "text", text, iteration: 1 })),
+            });
+            const started = await bed.startRun(flowId);
+
+            await bed.runUntilFinished(started.id);
+
+            const dev = await bed.findNodeRun(
+                started.id,
+                "dev",
+                (nodeRun) => nodeRun.workItemId === ISSUE_2.id,
+            );
+            const log = await bed.logs.read(dev.id, { limit: LOG_PAGE_SIZE });
+            const agentTexts = log.events
+                .filter((event) => event.kind === "text")
+                .map((event) => event.text);
+            // The first line is the workspace being ready, announced before the agent starts.
+            const announcedRanges = bed
+                .publishedEventsOf("log.appended")
+                .filter((event) => event.type === "log.appended" && event.nodeRunId === dev.id);
+            expect(agentTexts).toEqual(AGENT_TEXTS);
+            expect(announcedRanges).toEqual([
+                expect.objectContaining({ runId: started.id, fromSeq: 1, toSeq: 1 }),
+                expect.objectContaining({ runId: started.id, fromSeq: 2, toSeq: 4 }),
+            ]);
         });
 
         it("announces the progress of the map groups", async () => {

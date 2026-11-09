@@ -26,7 +26,6 @@ export interface NodeExecutionContext {
     runtime: AgentRuntime;
     clock: Clock;
     signal: AbortSignal;
-    // TODO(#58): write the events to the NodeRun log file; for now they are only announced.
     onAgentEvent(event: AgentEvent): void;
 }
 

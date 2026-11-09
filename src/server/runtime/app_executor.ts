@@ -10,6 +10,7 @@ import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { createProjectService } from "@/server/projects/project_service.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import type { LogStore } from "@/server/runtime/log_store.js";
 import { createExecutor, type Executor, type ItemSource } from "@/server/runtime/executor.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
@@ -20,13 +21,21 @@ import { createWorkItemService } from "@/server/work_items/work_item_service.js"
 export interface AppExecutorDeps {
     db: ForjaDb;
     events: EventBus;
+    logs: LogStore;
     git: GitProvider;
     runtime: AgentRuntime;
     clock: Clock;
 }
 
 // The executor of the app, over the same database and event bus as the routes.
-export function createAppExecutor({ db, events, git, runtime, clock }: AppExecutorDeps): Executor {
+export function createAppExecutor({
+    db,
+    events,
+    logs,
+    git,
+    runtime,
+    clock,
+}: AppExecutorDeps): Executor {
     return createExecutor({
         runs: new SqliteRunRepository(db, clock),
         flows: createAppFlowService({ db, events, clock }),
@@ -44,6 +53,7 @@ export function createAppExecutor({ db, events, git, runtime, clock }: AppExecut
         items: createItemSource(db, events, clock),
         runtime,
         events,
+        logs,
         clock,
         newId,
     });
