@@ -35,7 +35,7 @@
 - [x] 4. Test + implement `expandPromptCommands` substitution and failure text — `prompt_commands.ts`
 - [x] 5. Test + implement: commands inside fenced code blocks are kept — `prompt_commands.ts`
 - [x] 6. Test + implement `jsonSchemaToZod` (primitives, enum, object, required, array) — `output_schema.ts`
-- [ ] 7. `FakeContainerManager` with FakeClock delays — `src/test/fakes/fake_container_manager.ts`
+- [x] 7. `FakeContainerManager` with FakeClock delays — `src/test/fakes/fake_container_manager.ts`
 - [ ] 8. Test + implement single iteration: events in order, summary, usage, sessionId, prompt on stdin — `run_agent_in_container.ts`, `claude_iteration.ts`, `run_deadlines.ts`
 - [ ] 9. Test + implement structured output validation (`output` / `StructuredOutputError`)
 - [ ] 10. Test + implement iterations with `completionSignal` (stop on signal, usage sums, iteration note)
