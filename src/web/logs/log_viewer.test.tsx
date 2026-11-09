@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
 import { buildLogLine, buildLogLines } from "@/test/factories/log_line_factory.js";
@@ -95,4 +95,55 @@ describe("LogViewer", () => {
 
         expect(screen.queryByRole("button", { expanded: false })).not.toBeInTheDocument();
     });
+
+    it("follows new lines while following the end", async () => {
+        const { rerender } = render(<LogViewer lines={buildLogLines(1_000)} />);
+
+        rerender(<LogViewer lines={buildLogLines(1_050)} />);
+
+        expect(await screen.findByText("Linha 1050")).toBeInTheDocument();
+    });
+
+    it("stops following and offers to go back to the end when scrolled up", () => {
+        const onFollowChange = vi.fn();
+        render(<LogViewer lines={buildLogLines(1_000)} onFollowChange={onFollowChange} />);
+
+        scrollLogTo(0);
+
+        expect(onFollowChange).toHaveBeenCalledWith(false);
+        expect(screen.getByRole("button", { name: "Ir para o fim" })).toBeInTheDocument();
+    });
+
+    it("stays where the reader scrolled when new lines arrive after it stopped following", () => {
+        const { rerender } = render(<LogViewer lines={buildLogLines(1_000)} />);
+        scrollLogTo(0);
+
+        rerender(<LogViewer lines={buildLogLines(1_050)} />);
+
+        expect(screen.getByText("Linha 1")).toBeInTheDocument();
+        expect(screen.queryByText("Linha 1050")).not.toBeInTheDocument();
+    });
+
+    it("goes back to the end and follows again from the go-to-end button", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={buildLogLines(1_000)} />);
+        scrollLogTo(0);
+
+        await user.click(screen.getByRole("button", { name: "Ir para o fim" }));
+
+        expect(await screen.findByText("Linha 1000")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Ir para o fim" })).not.toBeInTheDocument();
+    });
+
+    it("does not follow when the parent turns following off", () => {
+        render(<LogViewer lines={buildLogLines(1_000)} follow={false} />);
+
+        expect(screen.getByText("Linha 1")).toBeInTheDocument();
+    });
 });
+
+function scrollLogTo(scrollTopPx: number): void {
+    const log = screen.getByRole("log");
+    log.scrollTop = scrollTopPx;
+    fireEvent.scroll(log);
+}

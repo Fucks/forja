@@ -1,20 +1,23 @@
 import type { Virtualizer } from "@tanstack/react-virtual";
-import type { JSX, RefObject } from "react";
+import type { JSX, RefObject, UIEvent } from "react";
 
 import { LogLine } from "@/web/logs/log_line.js";
 import type { LogLine as LogLineEntry } from "@/web/logs/log_types.js";
 import type { ExpandedLines } from "@/web/logs/use_expanded_lines.js";
+import type { ScrollPosition } from "@/web/logs/use_log_follow.js";
 
 export function LogLineList({
     lines,
     virtualizer,
     scrollElementRef,
     expandedLines,
+    onScroll,
 }: {
     lines: LogLineEntry[];
     virtualizer: Virtualizer<HTMLDivElement, HTMLDivElement>;
     scrollElementRef: RefObject<HTMLDivElement | null>;
     expandedLines: ExpandedLines;
+    onScroll: (position: ScrollPosition) => void;
 }): JSX.Element {
     return (
         <div
@@ -22,6 +25,7 @@ export function LogLineList({
             role="log"
             aria-label="Logs"
             tabIndex={0}
+            onScroll={(event) => onScroll(readScrollPosition(event))}
             className="min-h-0 flex-1 overflow-y-auto outline-none"
         >
             <div
@@ -54,4 +58,9 @@ export function LogLineList({
             </div>
         </div>
     );
+}
+
+function readScrollPosition(event: UIEvent<HTMLDivElement>): ScrollPosition {
+    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+    return { scrollTopPx: scrollTop, distanceFromEndPx: scrollHeight - scrollTop - clientHeight };
 }

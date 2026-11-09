@@ -1,7 +1,8 @@
-import { ScrollText } from "lucide-react";
+import { ArrowDownToLine, ScrollText } from "lucide-react";
 import { useRef } from "react";
 import type { JSX } from "react";
 
+import { Button } from "@/web/components/ui/button.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { LogLineList } from "@/web/logs/log_line_list.js";
@@ -32,7 +33,12 @@ export function LogViewer({
     const scrollElementRef = useRef<HTMLDivElement>(null);
     const virtualizer = useLogVirtualizer(lines, scrollElementRef);
     const expandedLines = useExpandedLines();
-    useLogFollow({ follow, onFollowChange, lineCount: lines.length, virtualizer });
+    const following = useLogFollow({
+        follow,
+        onFollowChange,
+        lineCount: lines.length,
+        virtualizer,
+    });
 
     return (
         <div className="flex h-full min-h-0 flex-col bg-canvas font-mono text-sm leading-normal">
@@ -50,12 +56,18 @@ export function LogViewer({
         }
 
         return (
-            <LogLineList
-                lines={lines}
-                virtualizer={virtualizer}
-                scrollElementRef={scrollElementRef}
-                expandedLines={expandedLines}
-            />
+            <div className="relative flex min-h-0 flex-1 flex-col">
+                <LogLineList
+                    lines={lines}
+                    virtualizer={virtualizer}
+                    scrollElementRef={scrollElementRef}
+                    expandedLines={expandedLines}
+                    onScroll={following.trackScroll}
+                />
+                {!following.isFollowing && (
+                    <GoToEndButton onClick={() => following.setFollowing(true)} />
+                )}
+            </div>
         );
     }
 }
@@ -67,5 +79,14 @@ function LogLinesPlaceholder(): JSX.Element {
                 <Skeleton key={width} className={`h-4 ${width}`} />
             ))}
         </div>
+    );
+}
+
+function GoToEndButton({ onClick }: { onClick: () => void }): JSX.Element {
+    return (
+        <Button className="absolute right-4 bottom-4 font-sans shadow-float" onClick={onClick}>
+            <ArrowDownToLine aria-hidden className="size-4" />
+            Ir para o fim
+        </Button>
     );
 }

@@ -1,10 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { LogVirtualizer } from "@/web/logs/use_log_virtualizer.js";
 
+// Rows are measured after they mount, so the end can move a few pixels while following.
+const END_TOLERANCE_PX = 4;
+
+export interface ScrollPosition {
+    scrollTopPx: number;
+    distanceFromEndPx: number;
+}
+
 export interface LogFollow {
     isFollowing: boolean;
-    setFollowing(isFollowing: boolean): void;
+    setFollowing: (isFollowing: boolean) => void;
+    trackScroll: (position: ScrollPosition) => void;
 }
 
 export function useLogFollow({
@@ -20,6 +29,7 @@ export function useLogFollow({
 }): LogFollow {
     const [uncontrolledFollow, setUncontrolledFollow] = useState(true);
     const isFollowing = follow ?? uncontrolledFollow;
+    const previousScrollTopPxRef = useRef(0);
 
     useEffect(() => {
         if (isFollowing && lineCount > 0) {
@@ -32,5 +42,15 @@ export function useLogFollow({
         onFollowChange?.(nextIsFollowing);
     }
 
-    return { isFollowing, setFollowing };
+    function trackScroll(position: ScrollPosition): void {
+        const hasScrolledUp = position.scrollTopPx < previousScrollTopPxRef.current;
+        previousScrollTopPxRef.current = position.scrollTopPx;
+
+        const hasLeftTheEnd = position.distanceFromEndPx > END_TOLERANCE_PX;
+        if (isFollowing && hasScrolledUp && hasLeftTheEnd) {
+            setFollowing(false);
+        }
+    }
+
+    return { isFollowing, setFollowing, trackScroll };
 }
