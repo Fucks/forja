@@ -1,24 +1,12 @@
-import { existsSync } from "node:fs";
-
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
-import { createGhCliGitHubProvider } from "@/integrations/github/gh_cli_github_provider.js";
 import { systemClock } from "@/lib/clock.js";
-import type { AppDeps } from "@/server/app.js";
-import { CredentialRepository } from "@/server/credentials/credential_repository.js";
-import { createCredentialService } from "@/server/credentials/credential_service.js";
-import { ProjectRepository } from "@/server/projects/project_repository.js";
-import { createProjectService } from "@/server/projects/project_service.js";
 import type { RouteModule } from "@/server/route_modules.js";
-import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
-import { SettingsRepository } from "@/server/settings/settings_repository.js";
-import { createSettingsService } from "@/server/settings/settings_service.js";
-import { resolveGithubEnv } from "@/server/work_items/github_env.js";
-import type { GithubEnvDeps } from "@/server/work_items/github_env.js";
-import { syncGithubIssues } from "@/server/work_items/github_sync.js";
-import type { GithubSyncOptions, SyncResult } from "@/server/work_items/github_sync.js";
+import { createProjectGithubSync } from "@/server/work_items/project_github_sync.js";
+import type { SyncProject } from "@/server/work_items/project_github_sync.js";
+import type { SyncScheduler } from "@/server/work_items/sync_scheduler.js";
 import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
 import { createWorkItemService } from "@/server/work_items/work_item_service.js";
 import type { WorkItemService } from "@/server/work_items/work_item_service.js";
@@ -40,8 +28,6 @@ const projectParamsSchema = z.object({ projectId: z.string().min(1) });
 const workItemParamsSchema = z.object({ id: z.string().min(1) });
 const syncQuerySchema = z.object({ label: z.string().min(1).optional() });
 
-type SyncProject = (projectId: string, opts?: GithubSyncOptions) => Promise<SyncResult>;
-
 export const registerWorkItemsRoutes: RouteModule = (app, deps) => {
     const workItems = createWorkItemService({
         repo: new WorkItemRepository(deps.db),
@@ -49,44 +35,23 @@ export const registerWorkItemsRoutes: RouteModule = (app, deps) => {
         clock: systemClock,
     });
 
-    const syncProject = createProjectGithubSync(deps, workItems);
+    const githubSync = createProjectGithubSync({ appDeps: deps, workItems, log: app.log });
 
     registerProjectWorkItemsRoutes(app, workItems);
-    registerSyncRoute(app, syncProject);
+    registerSyncRoute(app, githubSync.syncProject);
     registerWorkItemRoutes(app, workItems);
+    runWhileAppIsUp(app, githubSync.scheduler);
 };
 
-function createProjectGithubSync(deps: AppDeps, workItems: WorkItemService): SyncProject {
-    const projects = createProjectService({
-        repo: new ProjectRepository(deps.db),
-        git: deps.git,
-        fileExists: existsSync,
-        clock: systemClock,
+function runWhileAppIsUp(app: FastifyInstance, scheduler: SyncScheduler): void {
+    app.addHook("onReady", (done) => {
+        scheduler.start();
+        done();
     });
-    const githubEnvDeps = createGithubEnvDeps(deps);
-
-    return async (projectId, opts) => {
-        const env = await resolveGithubEnv(projectId, githubEnvDeps);
-        const github = createGhCliGitHubProvider({ commands: deps.commands, env });
-        const syncDeps = { projects, items: workItems, github, clock: systemClock };
-        return syncGithubIssues(projectId, syncDeps, opts);
-    };
-}
-
-function createGithubEnvDeps(deps: AppDeps): GithubEnvDeps {
-    return {
-        settings: createSettingsService({
-            repo: new SettingsRepository(deps.db),
-            lookups: createSettingsLookups(deps.db),
-            clock: systemClock,
-        }),
-        credentials: createCredentialService({
-            repo: new CredentialRepository(deps.db),
-            secrets: deps.secrets,
-            redactor: deps.redactor,
-            clock: systemClock,
-        }),
-    };
+    app.addHook("onClose", (_closingApp, done) => {
+        scheduler.stop();
+        done();
+    });
 }
 
 function registerProjectWorkItemsRoutes(app: FastifyInstance, workItems: WorkItemService): void {

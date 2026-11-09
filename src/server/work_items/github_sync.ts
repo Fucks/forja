@@ -47,7 +47,7 @@ export async function syncGithubIssues(
     const at = deps.clock.now().toISOString();
     const project = await deps.projects.get(projectId);
     if (project.githubRepo === undefined) {
-        return { ...NOTHING_SYNCED, at, error: NO_GITHUB_REPO_ERROR };
+        return buildFailedSync(at, NO_GITHUB_REPO_ERROR);
     }
 
     try {
@@ -62,8 +62,12 @@ export async function syncGithubIssues(
         if (!(error instanceof GitHubError)) {
             throw error;
         }
-        return { ...NOTHING_SYNCED, at, error: error.message };
+        return buildFailedSync(at, error.message);
     }
+}
+
+export function buildFailedSync(at: string, error: string): SyncResult {
+    return { ...NOTHING_SYNCED, at, error };
 }
 
 async function importIssues(request: ImportRequest): Promise<SyncCounts> {

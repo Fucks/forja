@@ -12,6 +12,7 @@ import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 
 const PROJECT_ID = "prj_forja";
+const GITHUB_SYNC_INTERVAL_MS = 5 * 60_000;
 const GITHUB_PROJECT_ID = "prj_github";
 const GITHUB_REPO = "Fucks/forja";
 const OPEN_ISSUE_JSON = {
@@ -321,6 +322,25 @@ describe("work items routes", () => {
             const response = await syncProject("prj_desconhecido");
 
             expect(response.statusCode).toBe(404);
+        });
+    });
+
+    describe("periodic GitHub sync", () => {
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it("syncs the projects with a GitHub repository every five minutes once ready", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+            commands
+                .when("gh", (args) => args[0] === "issue" && args[1] === "list")
+                .returns({ stdout: "[]" });
+            await app.ready();
+
+            await vi.advanceTimersByTimeAsync(GITHUB_SYNC_INTERVAL_MS);
+
+            const listedRepos = commands.calls.map((call) => call.args[3]);
+            expect(listedRepos).toEqual([GITHUB_REPO]);
         });
     });
 });

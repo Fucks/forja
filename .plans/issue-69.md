@@ -33,5 +33,5 @@
 - [x] 8. Test + impl: `resolveGithubEnv` (credential or host gh) — `src/server/work_items/github_env.ts`
 - [x] 9. Test + impl: `POST /api/projects/:projectId/work-items/sync` answers with `SyncResult` — `work_items_routes.ts`
 - [x] 10. Test + impl: `createSyncScheduler` syncs every interval with FakeClock, keeps running after an error, stops — `sync_scheduler.ts`
-- [ ] 11. Start/stop the scheduler with Fastify hooks in `registerWorkItemsRoutes`
+- [x] 11. Start/stop the scheduler with Fastify hooks in `registerWorkItemsRoutes`
 - [ ] 12. Self-review checklist (section 5) and feedback loops (section 6)
