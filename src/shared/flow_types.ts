@@ -42,6 +42,17 @@ export const createFlowInput = z.object({
     graph: flowGraphSchema.optional(),
 });
 
+export interface FlowTemplateSummary {
+    id: string;
+    name: string;
+    description: string;
+}
+
+export const createFlowFromTemplateInput = z.object({
+    templateId: z.string().min(1),
+    name: flowNameSchema,
+});
+
 export const renameFlowInput = z.object({ name: flowNameSchema });
 
 export const listFlowsQuery = z.object({
