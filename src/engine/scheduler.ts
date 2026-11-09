@@ -47,6 +47,11 @@ import type { FlowGraph } from "@/shared/flow_graph.js";
 
 type NodeRunFailure = Extract<SchedulerEvent, { type: "node_run_failed" }>;
 
+const INTERRUPTED_BY_RESTART: NodeRunError = {
+    kind: "interrupted",
+    message: "Interrompido pelo reinício do servidor",
+};
+
 interface QueuedAgentOverBudget {
     nodeRun: NodeRunState;
     breach: BudgetBreach;
@@ -134,6 +139,9 @@ class DagScheduler implements Scheduler {
                 break;
             case "budget_raised":
                 this.raiseBudget(event.budget, event.at);
+                break;
+            case "node_run_interrupted":
+                this.interruptNodeRun(event.nodeRunId, event.at);
                 break;
             default:
                 assertNever(event);
@@ -476,6 +484,30 @@ class DagScheduler implements Scheduler {
 
         this.changeRun(transitionRun(this.run, "RUNNING", at));
         this.advance(at);
+    }
+
+    // Not a failed attempt: the same attempt starts over, on the same branch.
+    private interruptNodeRun(nodeRunId: string, at: Date): void {
+        const nodeRun = this.nodeRuns.get(nodeRunId);
+        if (nodeRun.status !== "RUNNING") {
+            return;
+        }
+
+        const error = INTERRUPTED_BY_RESTART;
+        const interrupted = transitionNodeRun(nodeRun, "INTERRUPTED", at, { error });
+        this.changeNodeRun(interrupted);
+        this.changeNodeRun(this.afterInterruption(interrupted, at));
+
+        this.advance(at);
+    }
+
+    // A run that is stopping starts nothing new, so the interrupted NodeRun ends there.
+    private afterInterruption(interrupted: NodeRunState, at: Date): NodeRunState {
+        if (this.stopOutcome) {
+            return transitionNodeRun(interrupted, "CANCELED", at);
+        }
+
+        return requeueSameAttempt(interrupted, at);
     }
 
     // Nothing new starts once the run is stopping; RUNNING NodeRuns are left to finish.

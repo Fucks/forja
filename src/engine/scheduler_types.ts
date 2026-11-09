@@ -44,7 +44,9 @@ export type SchedulerEvent =
     // May arrive before the node_run_succeeded of the same NodeRun.
     | { type: "usage_recorded"; nodeRunId: string; costUsd: number; tokens: number; at: Date }
     // The user raised the limits and resumes a run paused by the budget.
-    | { type: "budget_raised"; budget: RunBudget; at: Date };
+    | { type: "budget_raised"; budget: RunBudget; at: Date }
+    // The server restarted while the NodeRun was running; its process is gone.
+    | { type: "node_run_interrupted"; nodeRunId: string; at: Date };
 
 export type SchedulerCommand =
     | { type: "start_node_run"; nodeRun: NodeRunState; inputs: Record<string, unknown> }
