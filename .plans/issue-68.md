@@ -17,7 +17,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `parseBlockedBy` (inline, list, aliases, dedup, none) — `blocked_by_parser.ts`
+- [x] 1. Test + implement `parseBlockedBy` (inline, list, aliases, dedup, none) — `blocked_by_parser.ts`
 - [ ] 2. Interface, types and `GitHubError` — `github_provider.ts`
 - [ ] 3. Test + implement `listIssues` parsing gh JSON and body dependencies — `gh_cli_github_provider.ts`
 - [ ] 4. Test + implement native dependencies merge without duplicates and 404 tolerance
