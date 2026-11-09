@@ -3,15 +3,18 @@ import type { JSX, RefObject } from "react";
 
 import { LogLine } from "@/web/logs/log_line.js";
 import type { LogLine as LogLineEntry } from "@/web/logs/log_types.js";
+import type { ExpandedLines } from "@/web/logs/use_expanded_lines.js";
 
 export function LogLineList({
     lines,
     virtualizer,
     scrollElementRef,
+    expandedLines,
 }: {
     lines: LogLineEntry[];
     virtualizer: Virtualizer<HTMLDivElement, HTMLDivElement>;
     scrollElementRef: RefObject<HTMLDivElement | null>;
+    expandedLines: ExpandedLines;
 }): JSX.Element {
     return (
         <div
@@ -42,6 +45,8 @@ export function LogLineList({
                                 line={line}
                                 index={virtualRow.index}
                                 measureRef={virtualizer.measureElement}
+                                isExpanded={expandedLines.isExpanded(line.seq)}
+                                onToggleExpanded={expandedLines.toggle}
                             />
                         </div>
                     );

@@ -6,6 +6,7 @@ import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { LogLineList } from "@/web/logs/log_line_list.js";
 import type { LogLine } from "@/web/logs/log_types.js";
+import { useExpandedLines } from "@/web/logs/use_expanded_lines.js";
 import { useLogFollow } from "@/web/logs/use_log_follow.js";
 import { useLogVirtualizer } from "@/web/logs/use_log_virtualizer.js";
 
@@ -30,6 +31,7 @@ export function LogViewer({
 }: LogViewerProps): JSX.Element {
     const scrollElementRef = useRef<HTMLDivElement>(null);
     const virtualizer = useLogVirtualizer(lines, scrollElementRef);
+    const expandedLines = useExpandedLines();
     useLogFollow({ follow, onFollowChange, lineCount: lines.length, virtualizer });
 
     return (
@@ -52,6 +54,7 @@ export function LogViewer({
                 lines={lines}
                 virtualizer={virtualizer}
                 scrollElementRef={scrollElementRef}
+                expandedLines={expandedLines}
             />
         );
     }

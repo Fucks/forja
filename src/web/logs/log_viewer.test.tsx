@@ -1,12 +1,22 @@
 import { render, screen, within } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 
-import { buildLogLines } from "@/test/factories/log_line_factory.js";
+import { buildLogLine, buildLogLines } from "@/test/factories/log_line_factory.js";
 import { stubElementSizes } from "@/test/fakes/fake_element_size.js";
 import { LogViewer } from "@/web/logs/log_viewer.js";
 
 const VIEWPORT_HEIGHT_PX = 400;
 const ROW_HEIGHT_PX = 20;
 const MAX_MOUNTED_ROWS = 200;
+
+const READ_ARGUMENTS = '{ "file_path": "src/app.tsx" }';
+const READ_TOOL_CALL = buildLogLine({
+    seq: 1,
+    kind: "tool_call",
+    toolName: "Read",
+    text: "src/app.tsx",
+    detail: READ_ARGUMENTS,
+});
 
 describe("LogViewer", () => {
     beforeEach(() => {
@@ -45,5 +55,44 @@ describe("LogViewer", () => {
 
         expect(screen.getByRole("status", { name: "Carregando logs" })).toBeInTheDocument();
         expect(screen.queryByRole("log")).not.toBeInTheDocument();
+    });
+
+    it("expands the detail of a line by clicking it", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={[READ_TOOL_CALL]} />);
+
+        await user.click(screen.getByRole("button", { name: /Read/ }));
+
+        expect(screen.getByText(READ_ARGUMENTS)).toBeInTheDocument();
+    });
+
+    it("collapses an expanded line by clicking it again", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={[READ_TOOL_CALL]} />);
+        const toggle = screen.getByRole("button", { name: /Read/ });
+
+        await user.click(toggle);
+        await user.click(toggle);
+
+        expect(toggle).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByText(READ_ARGUMENTS)).not.toBeInTheDocument();
+    });
+
+    it("expands the detail of a line with the keyboard", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={[READ_TOOL_CALL]} />);
+        const toggle = screen.getByRole("button", { name: /Read/ });
+
+        toggle.focus();
+        await user.keyboard("{Enter}");
+
+        expect(toggle).toHaveAttribute("aria-expanded", "true");
+        expect(screen.getByText(READ_ARGUMENTS)).toBeInTheDocument();
+    });
+
+    it("does not offer to expand lines without detail", () => {
+        render(<LogViewer lines={buildLogLines(1)} />);
+
+        expect(screen.queryByRole("button", { expanded: false })).not.toBeInTheDocument();
     });
 });
