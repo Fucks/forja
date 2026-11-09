@@ -8,7 +8,7 @@
   (INTERRUPTED → CANCELED). Ignored when the NodeRun is no longer RUNNING (idempotent).
 - `requeueAfterUsageLimit` (usage_pause.ts) moves to `node_run_state.ts` as `requeueSameAttempt`,
   reused by the usage limit and the interruption; its tests move with it.
-- Stored snapshots are checked at the boundary by `isSchedulerSnapshot` in
+- Stored snapshots are checked at the boundary by `isSchedulerSnapshotOfRun` in
   `src/server/runtime/stored_snapshot.ts` (Zod, loose object, type guard — no cast).
 - `wakeupTimesOf(snapshot)` in `src/engine/scheduler_snapshot.ts`: usage-limit `resumeAt` and `queuedAt`
   of QUEUED NodeRuns — the timers that died with the previous process.
@@ -27,7 +27,7 @@
 - [x] 2. Test + implement `node_run_interrupted` requeues the same attempt — `scheduler_types.ts`, `scheduler.ts`, `scheduler.test.ts`, `scheduler_harness.ts`
 - [x] 3. Test + implement: a stopping run cancels the interrupted NodeRun — `scheduler.ts`, `scheduler.test.ts`
 - [x] 4. Test + implement `wakeupTimesOf` — `scheduler_snapshot.ts` (+ test)
-- [ ] 5. Test + implement `isSchedulerSnapshot` — `src/server/runtime/stored_snapshot.ts` (+ test)
+- [x] 5. Test + implement `isSchedulerSnapshotOfRun` — `src/server/runtime/stored_snapshot.ts` (+ test)
 - [ ] 6. Test + implement `resumeFromSnapshot` (interrupted Devs restart with the same attempt; run finishes) — `executor.ts`, `active_run.ts`, `executor.test.ts`
 - [ ] 7. Test + implement `recoverRuns` report: resumed, interrupted, still paused, failed, closed workspaces — `recovery.ts`, `recovery.test.ts`
 - [ ] 8. Test: paused run with future `resumeAt` stays paused and resumes on time; no NodeRun runs twice at once — `recovery.test.ts`
