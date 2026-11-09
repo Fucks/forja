@@ -29,7 +29,7 @@
       `UsageQuery`, `UsageAggregate` types
 - [x] 2. Test + implement `DEFAULT_MODEL_PRICES`, `priceFor`, `estimateCostUsd` — `src/server/usage/model_prices.ts` (+ `model_prices.test.ts`)
 - [x] 3. Migration `0650_usage.sql` and schema `src/server/db/schema/usage.ts`
-- [ ] 4. Test + implement `record` (cost from configured price, `priceEstimated`) and `forRun` — `usage_service.ts`, `usage_repository.ts`
+- [x] 4. Test + implement `record` (cost from configured price, `priceEstimated`) and `forRun` — `usage_service.ts`, `usage_repository.ts`
 - [ ] 5. Test + implement `aggregate` for every `groupBy` (+ `flowId` filter, period bounds, labels)
 - [ ] 6. Test + implement day grouping in the project timezone (`local_day`)
 - [ ] 7. Test + implement `todaySpent(projectId, timezone)`
