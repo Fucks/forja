@@ -3,7 +3,8 @@
 ## Decisions
 
 - Templates live in `src/server/flows/templates/`. Shared canvas helpers (320 px columns, map/loop group
-  frames, typed `createDefaultNode`) go in `template_layout.ts` (extra file) so both templates reuse them.
+  frames, typed `createDefaultNode`) go in `template_layout.ts`; shared node builders (trigger, Sandcastle
+  source, TL/Dev/Reviewer agents, open PR, outputs, `connect`) in `template_nodes.ts` (extra files).
 - `basic_factory` mirrors `buildCanonicalFlow()` from `src/test/factories/flow_graph_factory.ts` (same node
   ids, edges, groups and configs); the test compares the structure, not the positions or prompts.
 - Tool profile ids come from `CODEGRAPH_PRESET_ID` / `READONLY_PRESET_ID` (`tool_profile_presets.ts`).
@@ -23,11 +24,11 @@
 
 ## Tasks
 
-- [ ] 1. Prompts `tl_spec.md`, `developer.md`, `reviewer.md` and `loadPrompt`/`appendPromptSection` —
+- [x] 1. Prompts `tl_spec.md`, `developer.md`, `reviewer.md` and `loadPrompt`/`appendPromptSection` —
       `src/server/flows/templates/prompts/*.md`, `load_prompt.ts`
-- [ ] 2. Test: "Fábrica básica" is publishable and has the canonical structure (concurrency 1/3/1) —
+- [x] 2. Test: "Fábrica básica" is publishable and has the canonical structure (concurrency 1/3/1) —
       `flow_templates.test.ts`
-- [ ] 3. Implement `template_layout.ts` and `basic_factory.ts`
+- [x] 3. Implement `template_layout.ts` and `basic_factory.ts`
 - [ ] 4. Test: "Dev ↔ Review em loop" is publishable, loop max 3, `exhausted` → needs_human, map concurrency 2
 - [ ] 5. Implement `review_loop.ts`
 - [ ] 6. Test + implement `FLOW_TEMPLATES` / `findFlowTemplate` in `flow_template_registry.ts`
