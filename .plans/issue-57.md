@@ -6,7 +6,7 @@
   `containerId`, `containers`, `env`) instead of the issue's `ws` shape; it gains an optional
   `commits?: WorkspaceCommits` (absent for headless runs → `commits: []`).
 - `WorkspaceCommits` (`readHead`, `listCommitsSince`) runs `git rev-parse HEAD` / `git rev-list --reverse
-  <sha>..HEAD` on the host in the worktree — `src/integrations/agent_runtime/workspace_commits.ts`.
+<sha>..HEAD` on the host in the worktree — `src/integrations/agent_runtime/workspace_commits.ts`.
 - `createRunAgentInContainer({ clock })` returns the `RunAgentInContainer`. Timeouts use the injected
   `Clock` (not `AbortSignal.timeout`) so FakeClock tests can trigger them — `run_deadlines.ts`.
 - One iteration (exec + parser + failure mapping) lives in `claude_iteration.ts`; error mapping in
@@ -36,12 +36,12 @@
 - [x] 5. Test + implement: commands inside fenced code blocks are kept — `prompt_commands.ts`
 - [x] 6. Test + implement `jsonSchemaToZod` (primitives, enum, object, required, array) — `output_schema.ts`
 - [x] 7. `FakeContainerManager` with FakeClock delays — `src/test/fakes/fake_container_manager.ts`
-- [ ] 8. Test + implement single iteration: events in order, summary, usage, sessionId, prompt on stdin — `run_agent_in_container.ts`, `claude_iteration.ts`, `run_deadlines.ts`
-- [ ] 9. Test + implement structured output validation (`output` / `StructuredOutputError`)
-- [ ] 10. Test + implement iterations with `completionSignal` (stop on signal, usage sums, iteration note)
-- [ ] 11. Test + implement commits (`WorkspaceCommits`) and the no-signal `error_max_turns` repeat — `workspace_commits.ts`
-- [ ] 12. Test + implement failure mapping (usage limit, budget, generic) — `agent_failure.ts`
-- [ ] 13. Test + implement idle/total timeouts and user cancel
-- [ ] 14. Test + implement prompt command expansion in the runner (`expandPromptCommands` flag)
-- [ ] 15. Wire the adapter into `DockerAgentRuntime` (default runner, commits, remove `runAgentNotImplemented`)
+- [x] 8. Test + implement single iteration: events in order, summary, usage, sessionId, prompt on stdin — `run_agent_in_container.ts`, `claude_iteration.ts`, `run_deadlines.ts`
+- [x] 9. Test + implement structured output validation (`output` / `StructuredOutputError`)
+- [x] 10. Test + implement iterations with `completionSignal` (stop on signal, usage sums, iteration note)
+- [x] 11. Test + implement commits (`WorkspaceCommits`) and the no-signal `error_max_turns` repeat — `workspace_commits.ts`
+- [x] 12. Test + implement failure mapping (usage limit, budget, generic) — `agent_failure.ts`
+- [x] 13. Test + implement idle/total timeouts and user cancel
+- [x] 14. Test + implement prompt command expansion in the runner (`expandPromptCommands` flag)
+- [x] 15. Wire the adapter into `DockerAgentRuntime` (default runner, commits, remove `runAgentNotImplemented`)
 - [ ] 16. Self-review checklist (section 5) and feedback loops (section 6)

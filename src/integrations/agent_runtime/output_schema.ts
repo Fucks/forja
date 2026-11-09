@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { StructuredOutputError } from "@/integrations/agent_runtime/agent_errors.js";
+import type { ClaudeResult } from "@/integrations/agent_runtime/claude_result.js";
+
 type JsonSchemaNode = z.infer<typeof jsonSchemaNodeSchema>;
 type Primitive = string | number | boolean | null;
 
@@ -38,6 +41,23 @@ export function jsonSchemaToZod(schema: Record<string, unknown>): z.ZodType {
     return convert(node);
 }
 
+/**
+ * The CLI already validates against `--json-schema`; validating again guards against a CLI that
+ * changes or drops that check.
+ */
+export function readStructuredOutput(
+    schema: Record<string, unknown>,
+    result: ClaudeResult | undefined,
+): unknown {
+    const structuredOutput = result?.structuredOutput;
+    const parsed = jsonSchemaToZod(schema).safeParse(structuredOutput);
+    if (structuredOutput === undefined || !parsed.success) {
+        throw new StructuredOutputError(rawOutputOf(result));
+    }
+
+    return parsed.data;
+}
+
 function objectSchemaFrom(node: JsonSchemaNode): z.ZodType {
     const required = new Set(node.required);
     const shape = Object.fromEntries(
@@ -61,4 +81,12 @@ function enumSchemaFrom(values: unknown[]): z.ZodType {
 
 function isPrimitive(value: unknown): value is Primitive {
     return value === null || ["string", "number", "boolean"].includes(typeof value);
+}
+
+function rawOutputOf(result: ClaudeResult | undefined): string | undefined {
+    if (result?.structuredOutput === undefined) {
+        return result?.text;
+    }
+
+    return JSON.stringify(result.structuredOutput);
 }
