@@ -19,11 +19,11 @@
 
 - [x] 1. Test + implement `parseBlockedBy` (inline, list, aliases, dedup, none) — `blocked_by_parser.ts`
 - [x] 2. Interface, types and `GitHubError` — `github_provider.ts`
-- [ ] 3. Test + implement `listIssues` parsing gh JSON and body dependencies — `gh_cli_github_provider.ts`
-- [ ] 4. Test + implement native dependencies merge without duplicates and 404 tolerance
-- [ ] 5. Test + implement `getIssue`, `comment` (stdin), `closeIssue`
-- [ ] 6. Test + implement `createPullRequest` (stdin, --draft, view by URL)
-- [ ] 7. Test + implement `findPullRequestByHead` (merged via mergedAt, undefined when none)
-- [ ] 8. Test + implement gh failures become `GitHubError` with stderr
+- [x] 3. Test + implement `listIssues` parsing gh JSON and body dependencies — `gh_cli_github_provider.ts`
+- [x] 4. Test + implement native dependencies merge without duplicates and 404 tolerance
+- [x] 5. Test + implement `getIssue`, `comment` (stdin), `closeIssue`
+- [x] 6. Test + implement `createPullRequest` (stdin, --draft, view by URL)
+- [x] 7. Test + implement `findPullRequestByHead` (merged via mergedAt, undefined when none)
+- [x] 8. Test + implement gh failures become `GitHubError` with stderr
 - [ ] 9. In-memory fake — `src/test/fakes/fake_github_provider.ts`
 - [ ] 10. Self-review checklist and feedback loops
