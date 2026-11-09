@@ -13,8 +13,8 @@ export const GROUP_NODE_TYPE = "group";
 export const FLOW_EDGE_TYPE = "flow";
 
 // Type aliases (not interfaces) so they fit React Flow's Record<string, unknown> node data.
-export type FlowNodeData = { flowNode: FlowNode };
-export type GroupNodeData = { flowGroup: FlowGroup };
+type FlowNodeData = { flowNode: FlowNode };
+type GroupNodeData = { flowGroup: FlowGroup };
 
 export type FlowRFNode = Node<FlowNodeData, NodeType>;
 export type GroupRFNode = Node<GroupNodeData, typeof GROUP_NODE_TYPE>;

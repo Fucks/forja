@@ -78,12 +78,12 @@ function buildCanvasElements({
 }
 
 function withMeasuredSizes(sizes: MeasuredSizes, changes: NodeChange<RFNode>[]): MeasuredSizes {
-    const measurements = changes.flatMap((change) => {
+    const measurements = changes.flatMap((change): [string, Dimensions][] => {
         if (change.type !== "dimensions" || !change.dimensions) {
             return [];
         }
 
-        return [[change.id, change.dimensions] as const];
+        return [[change.id, change.dimensions]];
     });
     if (measurements.length === 0) {
         return sizes;

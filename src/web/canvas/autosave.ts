@@ -29,6 +29,20 @@ export function createAutosave(options: AutosaveOptions): Autosave {
     let savesInOrder: Promise<void> = Promise.resolve();
     let lastSavedRevision = 0;
 
+    function schedule(graph: FlowGraph, revision: number): void {
+        pendingChange = { graph, revision };
+        cancelTimer?.();
+        cancelTimer = options.setTimer(() => void flush(), options.delayMs);
+    }
+
+    function flush(): Promise<void> {
+        cancelTimer?.();
+        cancelTimer = undefined;
+        savesInOrder = savesInOrder.then(savePendingChange);
+
+        return savesInOrder;
+    }
+
     async function savePendingChange(): Promise<void> {
         if (!pendingChange) {
             return;
@@ -42,20 +56,6 @@ export function createAutosave(options: AutosaveOptions): Autosave {
         } catch (error) {
             reportFailure(error, options);
         }
-    }
-
-    function flush(): Promise<void> {
-        cancelTimer?.();
-        cancelTimer = undefined;
-        savesInOrder = savesInOrder.then(savePendingChange);
-
-        return savesInOrder;
-    }
-
-    function schedule(graph: FlowGraph, revision: number): void {
-        pendingChange = { graph, revision };
-        cancelTimer?.();
-        cancelTimer = options.setTimer(() => void flush(), options.delayMs);
     }
 
     return { schedule, flush };

@@ -12,7 +12,7 @@ import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import { GROUP_NODE_TYPE } from "@/web/canvas/graph_mapping.js";
 import type { FlowRFNode, GroupRFNode } from "@/web/canvas/graph_mapping.js";
 
-export const COMPACT_ZOOM_THRESHOLD = 0.5;
+const COMPACT_ZOOM_THRESHOLD = 0.5;
 
 // Every node type draws the same generic node until #31 adds one component per type.
 export const PROVISIONAL_NODE_TYPES: NodeTypes = {
