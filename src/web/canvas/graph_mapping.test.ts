@@ -143,7 +143,10 @@ describe("fromReactFlow", () => {
 
         const moved = fromReactFlow(moveNode(nodes, "tests", { x: 15, y: 25 }), edges, graph);
 
-        expect(findFlowNodePosition(moved, "tests")).toEqual({ x: before.x + 15, y: before.y + 25 });
+        expect(findFlowNodePosition(moved, "tests")).toEqual({
+            x: before.x + 15,
+            y: before.y + 25,
+        });
     });
 
     it("moves the nodes inside a group together with the group", () => {
