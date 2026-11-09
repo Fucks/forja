@@ -46,11 +46,17 @@ export interface AgentRunRequest {
     model: string;
     effort: Effort;
     maxIterations: number;
+    maxTurns?: number;
+    maxBudgetUsd?: number;
     idleTimeoutSeconds: number;
     timeoutMs: number;
     permissionMode: PermissionMode;
     outputSchema?: Record<string, unknown>;
     completionSignal?: string;
+    /** Tool and MCP flags for the `claude` command. */
+    toolArgs: string[];
+    /** Replaces each !`command` in the prompt with its output in the workspace. */
+    expandPromptCommands: boolean;
     env: Record<string, string>;
     signal: AbortSignal;
 }
