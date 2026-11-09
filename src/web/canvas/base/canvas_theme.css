@@ -1,0 +1,75 @@
+/*
+ * React Flow's own stylesheet is unlayered, so it wins over Tailwind utilities. The canvas is themed
+ * here through its --xy-* variables and plain classes instead.
+ */
+.react-flow {
+    --xy-background-color: var(--color-canvas);
+    --xy-background-pattern-dots-color: var(--color-canvas-dot);
+
+    --xy-edge-stroke: var(--color-border);
+    --xy-edge-stroke-width: 1.5;
+    --xy-edge-stroke-selected: var(--color-accent);
+    --xy-connectionline-stroke: var(--color-accent);
+    --xy-connectionline-stroke-width: 1.5;
+
+    --xy-handle-background-color: var(--color-steel);
+    --xy-handle-border-color: var(--color-steel);
+
+    --xy-selection-background-color: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    --xy-selection-border: 1px dashed var(--color-accent);
+
+    --xy-controls-box-shadow: none;
+    --xy-controls-button-background-color: var(--color-surface);
+    --xy-controls-button-background-color-hover: var(--color-surface-raised);
+    --xy-controls-button-color: var(--color-text);
+    --xy-controls-button-color-hover: var(--color-text);
+    --xy-controls-button-border-color: var(--color-border);
+
+    --xy-minimap-background-color: var(--color-surface);
+    --xy-minimap-mask-background-color: color-mix(in srgb, var(--color-canvas) 60%, transparent);
+    --xy-minimap-mask-stroke-color: var(--color-border);
+    --xy-minimap-node-background-color: var(--color-border);
+    --xy-minimap-node-stroke-color: var(--color-border);
+
+    --xy-attribution-background-color: transparent;
+}
+
+.react-flow__controls,
+.react-flow__minimap {
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.react-flow__handle.port-handle {
+    width: 10px;
+    height: 10px;
+    border-width: 1.5px;
+}
+
+.react-flow__handle.port-handle--optional {
+    background-color: var(--color-surface);
+}
+
+.react-flow__edge-path.flow-edge--flowing {
+    stroke: var(--status-running);
+    stroke-dasharray: 6 4;
+    animation: flow-edge-dash 0.6s linear infinite;
+}
+
+/* Declared after "flowing" so an invalid edge is red even while data flows through it. */
+.react-flow__edge-path.flow-edge--invalid {
+    stroke: var(--status-failed);
+}
+
+@keyframes flow-edge-dash {
+    to {
+        stroke-dashoffset: -10;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .react-flow__edge-path.flow-edge--flowing {
+        animation: none;
+    }
+}
