@@ -24,6 +24,14 @@ const OPEN_ISSUE_JSON = {
     state: "OPEN",
 };
 
+function isGhIssueList(args: string[]): boolean {
+    return args[0] === "issue" && args[1] === "list";
+}
+
+function repoArgumentOf(args: string[]): string | undefined {
+    return args[args.indexOf("--repo") + 1];
+}
+
 describe("work items routes", () => {
     let database: DatabaseHandle;
     let app: FastifyInstance;
@@ -286,7 +294,7 @@ describe("work items routes", () => {
 
         function scriptOpenIssueOnGithub(): void {
             commands
-                .when("gh", (args) => args[0] === "issue" && args[1] === "list")
+                .when("gh", isGhIssueList)
                 .returns({ stdout: JSON.stringify([OPEN_ISSUE_JSON]) });
             commands
                 .when("gh", (args) => args[0] === "api")
@@ -332,14 +340,12 @@ describe("work items routes", () => {
 
         it("syncs the projects with a GitHub repository every five minutes once ready", async () => {
             vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-            commands
-                .when("gh", (args) => args[0] === "issue" && args[1] === "list")
-                .returns({ stdout: "[]" });
+            commands.when("gh", isGhIssueList).returns({ stdout: "[]" });
             await app.ready();
 
             await vi.advanceTimersByTimeAsync(GITHUB_SYNC_INTERVAL_MS);
 
-            const listedRepos = commands.calls.map((call) => call.args[3]);
+            const listedRepos = commands.calls.map((call) => repoArgumentOf(call.args));
             expect(listedRepos).toEqual([GITHUB_REPO]);
         });
     });

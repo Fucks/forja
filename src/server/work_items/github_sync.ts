@@ -3,6 +3,7 @@ import type { GithubIssue, GitHubProvider } from "@/integrations/github/github_p
 import type { Clock } from "@/lib/clock.js";
 import type { ProjectService } from "@/server/projects/project_types.js";
 import type { WorkItemService } from "@/server/work_items/work_item_service.js";
+import type { WorkItem } from "@/shared/work_item_types.js";
 
 const DEFAULT_ISSUE_LIMIT = 200;
 const NO_GITHUB_REPO_ERROR = "Projeto sem repositório GitHub";
@@ -106,10 +107,20 @@ async function readIssuesOfUnlistedOpenItems(
 ): Promise<GithubIssue[]> {
     const listedNumbers = new Set(listedIssues.map((issue) => issue.number));
     const openItems = await deps.items.list(projectId, { state: "open" });
-    const unlistedNumbers = openItems
-        .filter((item) => item.source === "github")
-        .flatMap((item) => (item.number === undefined ? [] : [item.number]))
-        .filter((number) => !listedNumbers.has(number));
+    const unlistedNumbers = issueNumbersOf(openItems).filter(
+        (number) => !listedNumbers.has(number),
+    );
 
     return Promise.all(unlistedNumbers.map((number) => deps.github.getIssue(repo, number)));
+}
+
+function issueNumbersOf(items: WorkItem[]): number[] {
+    const numbers: number[] = [];
+    for (const item of items) {
+        if (item.source === "github" && item.number !== undefined) {
+            numbers.push(item.number);
+        }
+    }
+
+    return numbers;
 }
