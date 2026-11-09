@@ -13,6 +13,7 @@ import {
     SkeletonSamples,
     TabsSamples,
 } from "@/web/app/styleguide/content_samples.js";
+import { LogViewerSamples } from "@/web/app/styleguide/log_viewer_samples.js";
 import {
     DialogSamples,
     DrawerSamples,
@@ -48,6 +49,7 @@ export function StyleguidePage(): JSX.Element {
             <EmptyStateSamples />
             <SkeletonSamples />
             <KeyValueSamples />
+            <LogViewerSamples />
         </div>
     );
 }

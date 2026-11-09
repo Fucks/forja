@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
+import { stubElementSizes } from "@/test/fakes/fake_element_size.js";
 import { StyleguidePage } from "@/web/app/styleguide_page.js";
 import {
     EXECUTION_STATUS_STYLES,
@@ -25,6 +26,7 @@ const COMPONENT_SECTIONS = [
     "EmptyState",
     "Skeleton",
     "KeyValue",
+    "LogViewer",
 ];
 
 const ALL_STATUS_LABELS = EXECUTION_STATUSES.map((status) => EXECUTION_STATUS_STYLES[status].label);
@@ -41,6 +43,14 @@ describe("StyleguidePage", () => {
 
         const statusSection = screen.getByRole("region", { name: "StatusBadge" });
         expect(within(statusSection).getAllByText(statusLabel).length).toBeGreaterThan(0);
+    });
+
+    it("shows generated lines in the LogViewer sample", async () => {
+        stubElementSizes({ viewportHeightPx: 400, rowHeightPx: 20 });
+        renderStyleguide();
+
+        const logViewerSection = screen.getByRole("region", { name: "LogViewer" });
+        expect(await within(logViewerSection).findAllByRole("listitem")).not.toHaveLength(0);
     });
 
     it("opens the dialog sample", async () => {
