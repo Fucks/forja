@@ -1,5 +1,5 @@
 import type { RunState } from "@/engine/run_state.js";
-import type { SchedulerSnapshot } from "@/engine/scheduler_types.js";
+import { runningNodeRunIdsOf } from "@/engine/scheduler_snapshot.js";
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { Clock } from "@/lib/clock.js";
 import type { RunRecord, RunRepository } from "@/server/runs/run_repository.js";
@@ -66,7 +66,7 @@ async function recoverRun(run: RunRecord, deps: RecoveryDeps): Promise<RunRecove
     }
 
     return {
-        outcome: (await isPaused(run.id, deps.runs)) ? "still_paused" : "resumed",
+        outcome: await outcomeOfResumedRun(run.id, deps.runs),
         runId: run.id,
         interruptedNodeRunIds: runningNodeRunIdsOf(snapshot),
     };
@@ -86,15 +86,16 @@ function failedRunState(run: RunRecord, error: string, at: Date): RunState {
     return failed;
 }
 
-async function isPaused(runId: string, runs: RunRepository): Promise<boolean> {
+async function outcomeOfResumedRun(
+    runId: string,
+    runs: RunRepository,
+): Promise<"resumed" | "still_paused"> {
     const run = await runs.getRun(runId);
-    return run?.status === "PAUSED";
-}
+    if (run?.status === "PAUSED") {
+        return "still_paused";
+    }
 
-function runningNodeRunIdsOf(snapshot: SchedulerSnapshot): string[] {
-    return snapshot.nodeRuns
-        .filter((nodeRun) => nodeRun.status === "RUNNING")
-        .map((nodeRun) => nodeRun.id);
+    return "resumed";
 }
 
 function buildReport(recoveries: RunRecovery[], closedWorkspaces: string[]): RecoveryReport {

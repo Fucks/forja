@@ -493,8 +493,9 @@ class DagScheduler implements Scheduler {
             return;
         }
 
-        const error = INTERRUPTED_BY_RESTART;
-        const interrupted = transitionNodeRun(nodeRun, "INTERRUPTED", at, { error });
+        const interrupted = transitionNodeRun(nodeRun, "INTERRUPTED", at, {
+            error: INTERRUPTED_BY_RESTART,
+        });
         this.changeNodeRun(interrupted);
         this.changeNodeRun(this.afterInterruption(interrupted, at));
 

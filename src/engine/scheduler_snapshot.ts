@@ -40,6 +40,12 @@ export function wakeupTimesOf(snapshot: SchedulerSnapshot): Date[] {
     return [...usageLimitResumeTimesOf(run), ...queuedAtTimes];
 }
 
+export function runningNodeRunIdsOf(snapshot: SchedulerSnapshot): string[] {
+    return snapshot.nodeRuns
+        .filter((nodeRun) => nodeRun.status === "RUNNING")
+        .map((nodeRun) => nodeRun.id);
+}
+
 function runToJson(run: RunState): JsonDates<RunState> {
     return {
         ...run,

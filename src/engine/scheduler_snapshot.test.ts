@@ -1,4 +1,4 @@
-import { takeSnapshot, wakeupTimesOf } from "@/engine/scheduler_snapshot.js";
+import { runningNodeRunIdsOf, takeSnapshot, wakeupTimesOf } from "@/engine/scheduler_snapshot.js";
 import { buildNodeRunState } from "@/test/factories/node_run_state_factory.js";
 import { buildRunState } from "@/test/factories/run_state_factory.js";
 
@@ -39,5 +39,20 @@ describe("wakeupTimesOf", () => {
         });
 
         expect(wakeupTimesOf(snapshot)).toEqual([]);
+    });
+});
+
+describe("runningNodeRunIdsOf", () => {
+    it("lists only the NodeRuns that were running", () => {
+        const snapshot = takeSnapshot({
+            run: buildRunState({ status: "RUNNING" }),
+            nodeRuns: [
+                buildNodeRunState({ id: "running", status: "RUNNING" }),
+                buildNodeRunState({ id: "queued", status: "QUEUED", queuedAt: RETRY_AT }),
+                buildNodeRunState({ id: "done", status: "SUCCEEDED" }),
+            ],
+        });
+
+        expect(runningNodeRunIdsOf(snapshot)).toEqual(["running"]);
     });
 });
