@@ -24,11 +24,11 @@
 
 - [x] 1. Log types, `log_index` migration and Drizzle schema — `src/shared/log_types.ts`, `0610_log_index.sql`, `schema/log_index.ts`
 - [x] 2. Test + implement append/read in seq order with range — `log_store.ts`, `log_store.test.ts`
-- [ ] 3. Test + implement redaction of every text field (test reads the file) — `log_store.ts`
-- [ ] 4. Test concurrent appends keep `seq` continuous and lines intact — `log_store.test.ts`
-- [ ] 5. Test + implement `stats` from the index — `log_store.ts`
-- [ ] 6. Test + implement `deleteRun` — `log_store.ts`
-- [ ] 7. Test + implement `rawStream` returns the full NDJSON — `log_store.ts`
+- [x] 3. Test + implement redaction of every text field (test reads the file) — `log_store.ts`
+- [x] 4. Test concurrent appends keep `seq` continuous and lines intact — `log_store.test.ts`
+- [x] 5. Test + implement `stats` from the index — `log_store.ts`
+- [x] 6. Test + implement `deleteRun` — `log_store.ts`
+- [x] 7. Test + implement `rawStream` returns the full NDJSON — `log_store.ts`
 - [ ] 8. Test + implement the 250 ms `log.appended` announcer — `log_announcer.ts`, `log_announcer.test.ts`
 - [ ] 9. In-memory `FsLike` fake; `logs` in ExecutorDeps/ActiveRun/AppExecutor; executor test that events are stored and announced — `active_run.ts`, `node_run_execution.ts`, `node_executors.ts`, `run_events.ts`, `executor.ts`, `app_executor.ts`, test bed
 - [ ] 10. `AppDeps.logs` and `main.ts` (shared redactor, docker runtime) — `app.ts`, `main.ts`, `test_app_deps.ts`

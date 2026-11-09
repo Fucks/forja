@@ -1,6 +1,7 @@
 import { createReadStream } from "node:fs";
 import * as fsPromises from "node:fs/promises";
 import path from "node:path";
+import { Readable } from "node:stream";
 
 import { eq } from "drizzle-orm";
 
@@ -25,8 +26,13 @@ export interface LogStore {
     append(ref: NodeRunLogRef, event: AgentEvent): Promise<StoredLogEvent>;
     read(nodeRunId: string, opts: { fromSeq?: number; limit: number }): Promise<LogPage>;
     rawStream(nodeRunId: string): NodeJS.ReadableStream;
-    stats(nodeRunId: string): Promise<{ count: number; bytes: number }>;
+    stats(nodeRunId: string): Promise<LogStats>;
     deleteRun(runId: string): Promise<void>;
+}
+
+export interface LogStats {
+    count: number;
+    bytes: number;
 }
 
 export interface FsLike {
@@ -93,15 +99,23 @@ class NdjsonLogStore implements LogStore {
     }
 
     rawStream(nodeRunId: string): NodeJS.ReadableStream {
-        throw new Error(`Not implemented: ${nodeRunId}`);
+        const entry = this.findIndexEntry(nodeRunId);
+        if (!entry) {
+            return Readable.from([]);
+        }
+
+        return this.fs.createReadStream(this.filePathOf(entry));
     }
 
-    stats(nodeRunId: string): Promise<{ count: number; bytes: number }> {
-        throw new Error(`Not implemented: ${nodeRunId}`);
+    stats(nodeRunId: string): Promise<LogStats> {
+        const entry = this.findIndexEntry(nodeRunId);
+
+        return Promise.resolve({ count: entry?.count ?? 0, bytes: entry?.bytes ?? 0 });
     }
 
-    deleteRun(runId: string): Promise<void> {
-        throw new Error(`Not implemented: ${runId}`);
+    async deleteRun(runId: string): Promise<void> {
+        await this.fs.rm(path.join(this.deps.logsDir, runId), { recursive: true, force: true });
+        this.deps.db.delete(logIndex).where(eq(logIndex.runId, runId)).run();
     }
 
     private async appendNext(ref: NodeRunLogRef, event: AgentEvent): Promise<StoredLogEvent> {
@@ -135,7 +149,7 @@ class NdjsonLogStore implements LogStore {
         return this.deps.db.select().from(logIndex).where(eq(logIndex.nodeRunId, nodeRunId)).get();
     }
 
-    private saveIndexEntry(ref: NodeRunLogRef, totals: { count: number; bytes: number }): void {
+    private saveIndexEntry(ref: NodeRunLogRef, totals: LogStats): void {
         const updatedAt = this.deps.clock.now().toISOString();
         this.deps.db
             .insert(logIndex)

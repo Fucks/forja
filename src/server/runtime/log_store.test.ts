@@ -1,6 +1,9 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { text } from "node:stream/consumers";
 import { tmpdir } from "node:os";
 import path from "node:path";
+
+import { z } from "zod";
 
 import type { AgentEvent } from "@/integrations/agent_runtime/agent_runtime.js";
 import {
@@ -16,6 +19,8 @@ const RUN_ID = "run_entrega";
 const NODE_RUN_ID = "nrn_dev";
 const REF = { runId: RUN_ID, nodeRunId: NODE_RUN_ID };
 const EVENT_AT = new Date("2026-11-09T12:00:00Z");
+const SECRET = "sk-ant-api03-segredo-de-teste";
+const CONCURRENT_APPENDS = 50;
 
 function textEvent(text: string): AgentEvent {
     return { kind: "text", text, at: EVENT_AT, iteration: 1 };
@@ -133,6 +138,115 @@ describe("LogStore", () => {
                 { seq: 2, at: EVENT_AT.toISOString(), kind: "raw", line: "{}", iteration: 2 },
                 { seq: 3, at: EVENT_AT.toISOString(), kind: "system", message: "workspace pronto" },
             ]);
+        });
+    });
+
+    function logFileContent(): string {
+        return readFileSync(path.join(logsDir, RUN_ID, `${NODE_RUN_ID}.ndjson`), "utf8");
+    }
+
+    describe("redaction", () => {
+        it("never writes a registered secret to the file", async () => {
+            redactor.register(SECRET);
+
+            await logs.append(REF, textEvent(`a chave é ${SECRET}`));
+            await logs.append(REF, {
+                kind: "tool_call",
+                name: `tool ${SECRET}`,
+                args: `{"token":"${SECRET}"}`,
+                at: EVENT_AT,
+                iteration: 1,
+            });
+            await logs.append(REF, { kind: "raw", line: SECRET, at: EVENT_AT, iteration: 1 });
+            await logs.append(REF, { kind: "system", message: SECRET, at: EVENT_AT });
+
+            expect(logFileContent()).not.toContain(SECRET);
+        });
+
+        it("returns the masked event", async () => {
+            redactor.register(SECRET);
+
+            const stored = await logs.append(REF, textEvent(`a chave é ${SECRET}`));
+
+            expect(stored.text).toBe("a chave é ••••");
+        });
+    });
+
+    describe("concurrency", () => {
+        it("keeps seq continuous and every line whole when appends race", async () => {
+            const appends = Array.from({ length: CONCURRENT_APPENDS }, (_, index) =>
+                logs.append(REF, textEvent(`linha ${index} `.repeat(100))),
+            );
+
+            const stored = await Promise.all(appends);
+
+            const expectedSeqs = Array.from(
+                { length: CONCURRENT_APPENDS },
+                (_, index) => index + 1,
+            );
+            const lines = logFileContent().trimEnd().split("\n");
+            const seqsInFile = lines.map(
+                (line) => z.object({ seq: z.number() }).parse(JSON.parse(line)).seq,
+            );
+            expect(stored.map((event) => event.seq)).toEqual(expectedSeqs);
+            expect(seqsInFile).toEqual(expectedSeqs);
+        });
+    });
+
+    describe("stats", () => {
+        it("counts the events and the bytes of the file", async () => {
+            await appendTexts(3);
+
+            const stats = await logs.stats(NODE_RUN_ID);
+
+            expect(stats).toEqual({ count: 3, bytes: Buffer.byteLength(logFileContent()) });
+        });
+
+        it("reports zero for a NodeRun without logs", async () => {
+            const stats = await logs.stats("nrn_sem_logs");
+
+            expect(stats).toEqual({ count: 0, bytes: 0 });
+        });
+    });
+
+    describe("deleteRun", () => {
+        it("removes the files and the index of every NodeRun of the run", async () => {
+            await appendTexts(2);
+            await logs.append({ runId: RUN_ID, nodeRunId: "nrn_review" }, textEvent("review"));
+            await logs.append({ runId: "run_outra", nodeRunId: "nrn_outra" }, textEvent("fica"));
+
+            await logs.deleteRun(RUN_ID);
+
+            expect(existsSync(path.join(logsDir, RUN_ID))).toBe(false);
+            expect(await logs.stats(NODE_RUN_ID)).toEqual({ count: 0, bytes: 0 });
+            expect(await logs.stats("nrn_review")).toEqual({ count: 0, bytes: 0 });
+            expect((await logs.stats("nrn_outra")).count).toBe(1);
+        });
+
+        it("starts the seq again from 1 after the run is deleted", async () => {
+            await appendTexts(2);
+            await logs.deleteRun(RUN_ID);
+
+            const stored = await logs.append(REF, textEvent("de novo"));
+
+            expect(stored.seq).toBe(1);
+        });
+    });
+
+    describe("rawStream", () => {
+        it("streams the whole NDJSON file", async () => {
+            await appendTexts(3);
+
+            const raw = await text(logs.rawStream(NODE_RUN_ID));
+
+            expect(raw).toBe(logFileContent());
+            expect(raw.trimEnd().split("\n")).toHaveLength(3);
+        });
+
+        it("streams nothing for a NodeRun without logs", async () => {
+            const raw = await text(logs.rawStream("nrn_sem_logs"));
+
+            expect(raw).toBe("");
         });
     });
 });
