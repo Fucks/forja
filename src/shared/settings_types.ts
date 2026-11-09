@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { EFFORTS } from "@/shared/agent_types.js";
+import { modelPriceSchema } from "@/shared/usage_types.js";
 
 const SYSTEM_PROMPT_MAX_LENGTH = 20_000;
 const PROJECT_MAX_CONCURRENT_AGENTS = 16;
@@ -26,13 +27,6 @@ export const projectSettingsSchema = z.object({
 });
 
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
-
-const modelPriceSchema = z.object({
-    inputPerMTok: z.number(),
-    outputPerMTok: z.number(),
-    cacheReadPerMTok: z.number(),
-    cacheWritePerMTok: z.number(),
-});
 
 export const globalSettingsSchema = z.object({
     maxConcurrentAgents: z.number().int().min(1).max(GLOBAL_MAX_CONCURRENT_AGENTS).default(3),

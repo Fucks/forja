@@ -25,7 +25,7 @@
 
 ## Tasks
 
-- [ ] 1. Move `TokenUsage` and `modelPriceSchema` to `src/shared/usage_types.ts`; add `UsageRecord`,
+- [x] 1. Move `TokenUsage` and `modelPriceSchema` to `src/shared/usage_types.ts`; add `UsageRecord`,
       `UsageQuery`, `UsageAggregate` types
 - [ ] 2. Test + implement `DEFAULT_MODEL_PRICES`, `priceFor`, `estimateCostUsd` — `src/server/usage/model_prices.ts` (+ `model_prices.test.ts`)
 - [ ] 3. Migration `0650_usage.sql` and schema `src/server/db/schema/usage.ts`

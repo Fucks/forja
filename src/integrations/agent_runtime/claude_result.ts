@@ -1,5 +1,5 @@
-import type { TokenUsage } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { ResultMessage } from "@/integrations/agent_runtime/stream_json_messages.js";
+import type { TokenUsage } from "@/shared/usage_types.js";
 
 type KnownResultSubtype =
     | "success"
