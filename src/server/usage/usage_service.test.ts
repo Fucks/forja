@@ -195,6 +195,16 @@ describe("UsageService", () => {
             ]);
         });
 
+        it("groups by the day of the project time zone", async () => {
+            projectTimezone = "America/Sao_Paulo";
+            await recordAt(new Date("2026-11-10T01:30:00Z"), {});
+            await recordAt(new Date("2026-11-10T03:30:00Z"), {});
+
+            const groups = await aggregate("day");
+
+            expect(groups.map(({ key }) => key)).toEqual(["2026-11-09", "2026-11-10"]);
+        });
+
         it("counts only the usage from the start of the period up to before its end", async () => {
             await recordAt(WHOLE_NOVEMBER.from, { nodeRunId: "nrn_first" });
             await recordAt(new Date(WHOLE_NOVEMBER.to.getTime() - ONE_HOUR_MS), {
