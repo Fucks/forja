@@ -14,6 +14,7 @@ import type { FlowService } from "@/server/flows/flow_service.js";
 import type { ProjectService } from "@/server/projects/project_types.js";
 import type { RunRecord, RunRepository } from "@/server/runs/run_repository.js";
 import { ActiveRun } from "@/server/runtime/active_run.js";
+import { BUDGET_EXCEEDED_ACTION, loadDailyBudget } from "@/server/runtime/daily_budget.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import type { LogStore } from "@/server/runtime/log_store.js";
 import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
@@ -23,6 +24,7 @@ import {
     isSchedulerSnapshotOfRun,
 } from "@/server/runtime/stored_snapshot.js";
 import type { SettingsService } from "@/server/settings/settings_service.js";
+import type { UsageService } from "@/server/usage/usage_service.js";
 import type { FlowVersion } from "@/shared/flow_types.js";
 import type { Project } from "@/shared/project_types.js";
 import type { GlobalSettings, ProjectSettings } from "@/shared/settings_types.js";
@@ -66,13 +68,12 @@ export interface ExecutorDeps {
     runtime: AgentRuntime;
     events: EventBus;
     logs: LogStore;
+    usage: UsageService;
     clock: Clock;
     newId(prefix: IdPrefix): string;
     // Defaults to the registry; tests stand in for the node types that are not implemented yet.
     nodeExecutors?: NodeExecutorRegistry;
 }
-
-const BUDGET_EXCEEDED_ACTION = "pause";
 
 // Everything a run needs, loaded before it is created.
 interface RunSetup {
@@ -95,7 +96,7 @@ class RunExecutor implements Executor {
     async startRun(input: StartRunInput): Promise<RunRecord> {
         const setup = await this.loadRunSetup(input);
         const record = await this.createQueuedRun(input, setup.version.version);
-        const activeRun = this.activate(record, setup);
+        const activeRun = await this.activate(record, setup);
 
         const items = setup.items.map(({ id }) => ({ id }));
         await activeRun.deliver({ type: "start", items, at: this.now() });
@@ -139,7 +140,7 @@ class RunExecutor implements Executor {
         const settings = await this.deps.settings.getProjectSettings(activeRun.current.projectId);
         const budget: RunBudget = {
             onExceeded: BUDGET_EXCEEDED_ACTION,
-            ...dailyBudgetOf(settings),
+            ...(await loadDailyBudget(this.deps.usage, settings, activeRun.current)),
             run: runLimit,
         };
 
@@ -232,13 +233,19 @@ class RunExecutor implements Executor {
         return record;
     }
 
-    private activate(record: RunRecord, setup: RunSetup, restore?: SchedulerSnapshot): ActiveRun {
+    private async activate(
+        record: RunRecord,
+        setup: RunSetup,
+        restore?: SchedulerSnapshot,
+    ): Promise<ActiveRun> {
         const { deps } = this;
         const { version, projectSettings, globalSettings } = setup;
+        const dailyBudget = await loadDailyBudget(deps.usage, projectSettings, record);
         const activeRun = new ActiveRun({
             runs: deps.runs,
             events: deps.events,
             logs: deps.logs,
+            usage: deps.usage,
             runtime: deps.runtime,
             clock: deps.clock,
             newId: (prefix) => deps.newId(prefix),
@@ -250,7 +257,7 @@ class RunExecutor implements Executor {
             scheduler: createScheduler(
                 version.graph,
                 record,
-                this.schedulerOptionsOf(projectSettings, globalSettings),
+                this.schedulerOptionsOf(projectSettings, globalSettings, dailyBudget),
                 restore,
             ),
             nodeExecutors: deps.nodeExecutors ?? nodeExecutors,
@@ -261,13 +268,17 @@ class RunExecutor implements Executor {
         return activeRun;
     }
 
-    private schedulerOptionsOf(project: ProjectSettings, global: GlobalSettings): SchedulerOptions {
+    private schedulerOptionsOf(
+        project: ProjectSettings,
+        global: GlobalSettings,
+        dailyBudget: RunBudget | undefined,
+    ): SchedulerOptions {
         return {
             maxConcurrentAgents: Math.min(project.maxConcurrentAgents, global.maxConcurrentAgents),
             minStartIntervalMs: global.minStartIntervalMs,
             usageLimitMarginMinutes: global.usageLimitMarginMinutes,
             newId: () => this.deps.newId("nrn"),
-            budget: dailyBudgetOf(project),
+            budget: dailyBudget,
         };
     }
 
@@ -297,16 +308,4 @@ class RunExecutor implements Executor {
     private now(): Date {
         return this.deps.clock.now();
     }
-}
-
-// TODO(#59): report what the project already spent today.
-function dailyBudgetOf(settings: ProjectSettings): RunBudget | undefined {
-    if (settings.dailyBudgetUsd === null) {
-        return undefined;
-    }
-
-    return {
-        daily: { maxCostUsd: settings.dailyBudgetUsd, alreadySpentUsd: 0, alreadySpentTokens: 0 },
-        onExceeded: BUDGET_EXCEEDED_ACTION,
-    };
 }

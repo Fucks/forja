@@ -1,11 +1,5 @@
 import type { Effort, PermissionMode } from "@/shared/agent_types.js";
-
-export interface TokenUsage {
-    inputTokens: number;
-    outputTokens: number;
-    cacheReadInputTokens: number;
-    cacheCreationInputTokens: number;
-}
+import type { TokenUsage } from "@/shared/usage_types.js";
 
 export type AgentEvent =
     | { kind: "text"; text: string; at: Date; iteration: number }
