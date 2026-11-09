@@ -4,6 +4,7 @@ import type {
     AgentRunRequest,
     AgentRunResult,
     AgentRuntime,
+    ExecOptions,
     ExecResult,
     HeadlessSpec,
     OpenWorkspaceSummary,
@@ -20,7 +21,9 @@ import {
     type RunTarget,
     type ScriptedStep,
 } from "@/test/fakes/scripted_agent_run.js";
+import { playScriptedExec, type ScriptedExec } from "@/test/fakes/scripted_exec.js";
 
+export type { ScriptedExec } from "@/test/fakes/scripted_exec.js";
 export type {
     ScriptedError,
     ScriptedEvent,
@@ -49,7 +52,7 @@ interface ScriptedStepUsage {
 
 const DEFAULT_DURATION_MS = 1_000;
 const WORKSPACE_READY_MESSAGE = "workspace pronto";
-const SUCCESSFUL_EXEC: ExecResult = { exitCode: 0, stdoutTail: "" };
+const SUCCESSFUL_EXEC: ScriptedExec = { exitCode: 0, stdoutTail: "" };
 const FAKE_WORKTREES_DIR = "/fake/worktrees";
 
 export class FakeAgentRuntime implements AgentRuntime {
@@ -57,7 +60,7 @@ export class FakeAgentRuntime implements AgentRuntime {
     private readonly clock: FakeClock;
     private readonly defaultDurationMs: number;
     private readonly steps: ScriptedStepUsage[] = [];
-    private readonly execResults = new Map<string, ExecResult>();
+    private readonly scriptedExecs = new Map<string, ScriptedExec[]>();
     private readonly openWorkspaces = new Map<string, OpenWorkspaceSummary>();
     private readonly workspaceFiles = new Map<string, Map<string, string>>();
     private openedWorkspaceCount = 0;
@@ -81,8 +84,9 @@ export class FakeAgentRuntime implements AgentRuntime {
         return this;
     }
 
-    scriptExec(command: string, result: ExecResult): this {
-        this.execResults.set(command, result);
+    // Each call of the command plays the next execution; the last one repeats.
+    scriptExec(command: string, ...executions: ScriptedExec[]): this {
+        this.scriptedExecs.set(command, executions);
         return this;
     }
 
@@ -150,7 +154,7 @@ export class FakeAgentRuntime implements AgentRuntime {
             branch: spec.branch,
             root: `${FAKE_WORKTREES_DIR}/${id}`,
             runAgent: (request, hooks) => this.runAgent("run", { request, hooks, workItemId }),
-            exec: (command) => this.exec(command, workItemId),
+            exec: (command, options) => this.exec(command, options, workItemId),
             diff: () => Promise.resolve(""),
             writeFiles: (files) => {
                 this.storeFiles(id, files);
@@ -202,10 +206,20 @@ export class FakeAgentRuntime implements AgentRuntime {
         return usage.step;
     }
 
-    private exec(command: string, workItemId: string): Promise<ExecResult> {
+    private exec(command: string, options: ExecOptions, workItemId: string): Promise<ExecResult> {
         this.record({ kind: "exec", workItemId });
 
-        return Promise.resolve(this.execResults.get(command) ?? SUCCESSFUL_EXEC);
+        return playScriptedExec(this.clock, this.takeScriptedExec(command), options);
+    }
+
+    private takeScriptedExec(command: string): ScriptedExec {
+        const executions = this.scriptedExecs.get(command) ?? [];
+        const [next, ...later] = executions;
+        if (later.length > 0) {
+            this.scriptedExecs.set(command, later);
+        }
+
+        return next ?? SUCCESSFUL_EXEC;
     }
 
     private storeFiles(workspaceId: string, files: WorkspaceFile[]): void {

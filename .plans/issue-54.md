@@ -18,7 +18,7 @@
 
 ## Tasks
 
-- [ ] 1. Fake: scripted exec sequence, output lines and timeout — `src/test/fakes/fake_agent_runtime.ts`, `scripted_exec.ts`, test
+- [x] 1. Fake: scripted exec sequence, output lines and timeout — `src/test/fakes/fake_agent_runtime.ts`, `scripted_exec.ts`, test
 - [ ] 2. Factory `buildNodeExecutionContext` and `runItems` in the context — `node_executors.ts`, `node_run_execution.ts`, `active_run.ts`
 - [ ] 3. Trigger executor outputs the run items — `executors/trigger_executor.ts`, `deterministic_executors.test.ts`
 - [ ] 4. Script exit 1 gives `result.exitCode = 1` without failing — `executors/script_executor.ts`, `item_workspace.ts`
