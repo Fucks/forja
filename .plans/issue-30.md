@@ -27,10 +27,10 @@
 - [x] 1. Test + implement `toReactFlow` (relative positions, groups with parentId, nested groups, edges) — `src/web/canvas/graph_mapping.ts`
 - [x] 2. Test + implement `fromReactFlow` round trip (canonical + loop flows, moved node inside nested group) — `src/web/canvas/graph_mapping.ts`
 - [x] 3. Test + implement `createEditorStore` (`load`, `applyGraph` immutable + dirty, `select`, save states) — `src/web/canvas/editor_store.ts`
-- [ ] 4. Test + implement `createAutosave` debounce — `src/web/canvas/autosave.ts`
-- [ ] 5. Test + implement autosave serial saves with returned revision — `src/web/canvas/autosave.ts`
-- [ ] 6. Test + implement autosave conflict and error reporting — `src/web/canvas/autosave.ts`
-- [ ] 7. Test + implement autosave `flush` — `src/web/canvas/autosave.ts`
+- [x] 4. Test + implement `createAutosave` debounce — `src/web/canvas/autosave.ts`
+- [x] 5. Test + implement autosave serial saves with returned revision — `src/web/canvas/autosave.ts`
+- [x] 6. Test + implement autosave conflict and error reporting — `src/web/canvas/autosave.ts`
+- [x] 7. Test + implement autosave `flush` — `src/web/canvas/autosave.ts`
 - [ ] 8. Provisional node and group components + node type labels — `src/web/canvas/provisional_nodes.tsx`, `src/web/canvas/base/node_type_labels.ts`
 - [ ] 9. Test + implement `FlowCanvas` rendering the canonical flow's nodes (Background, MiniMap, Controls, zoom 25–200%, fitView, compact below 50%) — `src/web/canvas/flow_canvas.tsx`, `src/web/canvas/use_canvas_elements.ts`
 - [ ] 10. Implement `useFlowDraft` (load, autosave wiring, flush on beforeunload/unmount, reload) — `src/web/canvas/use_flow_draft.ts`
