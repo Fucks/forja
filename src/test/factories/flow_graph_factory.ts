@@ -3,6 +3,7 @@ import {
     type FlowGraph,
     type FlowGroup,
     type FlowNode,
+    isNodeOfType,
     LOOP_EXHAUSTED_PORT,
     type NodeOfType,
     type NodeType,
@@ -300,7 +301,7 @@ function frameColumns(
     };
 }
 
-function createNodeOfType<Type extends NodeType>(
+export function createNodeOfType<Type extends NodeType>(
     type: Type,
     id: string,
     position: Position,
@@ -311,10 +312,6 @@ function createNodeOfType<Type extends NodeType>(
     }
 
     return node;
-}
-
-function isNodeOfType<Type extends NodeType>(node: FlowNode, type: Type): node is NodeOfType<Type> {
-    return node.type === type;
 }
 
 function gridPosition(column: number, row = 0): Position {

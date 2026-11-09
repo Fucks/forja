@@ -1,13 +1,13 @@
 import { type AgentNode, renderPrompt } from "@/engine/prompt_template.js";
-import { AgentRuntimeError } from "@/integrations/agent_runtime/agent_errors.js";
 import type {
     AgentRunHooks,
     AgentRunRequest,
     AgentRunResult,
 } from "@/integrations/agent_runtime/agent_runtime.js";
 import { assertNever } from "@/lib/assert_never.js";
+import { acquireItemWorkspace } from "@/server/runtime/executors/item_workspace.js";
+import { asNodeOfType } from "@/server/runtime/executors/node_of_type.js";
 import type { NodeExecutionContext, NodeExecutionResult } from "@/server/runtime/node_executors.js";
-import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
 import { buildHeadlessSpec, buildPromptContext } from "@/server/runtime/run_context.js";
 import { resolveAgentDefaults } from "@/server/settings/resolve_agent_defaults.js";
 import type { PermissionMode } from "@/shared/agent_types.js";
@@ -23,7 +23,7 @@ const TOOL_ARGS: string[] = [];
 export async function executeAgentNode(
     context: NodeExecutionContext,
 ): Promise<NodeExecutionResult> {
-    const node = asAgentNode(context.node);
+    const node = asNodeOfType(context.node, "agent");
     const request = buildAgentRunRequest(context, node);
     const result = await runAgent(context, node, request);
 
@@ -31,14 +31,6 @@ export async function executeAgentNode(
         outputs: { result: result.output, summary: result.summary },
         usage: { model: request.model, tokens: result.usage },
     };
-}
-
-function asAgentNode(node: NodeExecutionContext["node"]): AgentNode {
-    if (node.type !== "agent") {
-        throw new UnsupportedNodeTypeError(node.type);
-    }
-
-    return node;
 }
 
 function buildAgentRunRequest(context: NodeExecutionContext, node: AgentNode): AgentRunRequest {
@@ -103,14 +95,7 @@ async function runAgentInItemWorkspace(
     request: AgentRunRequest,
     hooks: AgentRunHooks,
 ): Promise<AgentRunResult> {
-    if (!context.item) {
-        throw new AgentRuntimeError('Um nó com workspace "item" precisa de um item de trabalho');
-    }
-
-    const workspace = await context.workspaces.acquire(context.item, {
-        hooks,
-        signal: context.signal,
-    });
+    const workspace = await acquireItemWorkspace(context, hooks);
 
     return workspace.runAgent(request, hooks);
 }

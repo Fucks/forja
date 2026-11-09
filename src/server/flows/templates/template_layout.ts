@@ -1,11 +1,12 @@
-import type {
-    FlowGroup,
-    FlowNode,
-    LoopConfig,
-    MapConfig,
-    NodeOfType,
-    NodeType,
-    Position,
+import {
+    type FlowGroup,
+    type FlowNode,
+    isNodeOfType,
+    type LoopConfig,
+    type MapConfig,
+    type NodeOfType,
+    type NodeType,
+    type Position,
 } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 
@@ -94,8 +95,4 @@ function frameColumns(
 
 function cellPosition({ column, row = 0 }: CanvasCell): Position {
     return { x: column * COLUMN_WIDTH_PX, y: row * ROW_HEIGHT_PX };
-}
-
-function isNodeOfType<Type extends NodeType>(node: FlowNode, type: Type): node is NodeOfType<Type> {
-    return node.type === type;
 }

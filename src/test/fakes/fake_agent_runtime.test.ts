@@ -463,6 +463,110 @@ describe("FakeAgentRuntime", () => {
             expect(lint).toEqual({ exitCode: 1, stdoutTail: "2 problems" });
         });
 
+        it("plays the scripted executions of a command in order, repeating the last", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock }).scriptExec(
+                "npm test",
+                { exitCode: 1, stdoutTail: "1 failed" },
+                { exitCode: 0, stdoutTail: "all passed" },
+            );
+            const workspace = await runtime.openWorkspace(
+                workspaceSpec("issue-4"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+
+            const exitCodes = [];
+            for (let call = 0; call < 3; call += 1) {
+                exitCodes.push((await workspace.exec("npm test", execOptions())).exitCode);
+            }
+
+            expect(exitCodes).toEqual([1, 0, 0]);
+        });
+
+        it("sends the scripted output lines of exec to onOutput", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock }).scriptExec("npm test", {
+                exitCode: 0,
+                stdoutTail: "",
+                outputLines: ["PASS a.test.ts", "PASS b.test.ts"],
+            });
+            const workspace = await runtime.openWorkspace(
+                workspaceSpec("issue-4"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+            const lines: string[] = [];
+
+            await workspace.exec("npm test", {
+                ...execOptions(),
+                onOutput: (line) => lines.push(line),
+            });
+
+            expect(lines).toEqual(["PASS a.test.ts", "PASS b.test.ts"]);
+        });
+
+        it("resolves exec only after the scripted duration has passed", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock }).scriptExec("npm test", {
+                exitCode: 0,
+                stdoutTail: "ok",
+                durationMs: 5_000,
+            });
+            const workspace = await runtime.openWorkspace(
+                workspaceSpec("issue-4"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+
+            const execution = workspace.exec("npm test", execOptions());
+            clock.advance(5_000);
+
+            await expect(execution).resolves.toEqual({ exitCode: 0, stdoutTail: "ok" });
+        });
+
+        it("times out an exec that lasts longer than its timeoutMs", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock }).scriptExec("npm test", {
+                exitCode: 0,
+                stdoutTail: "",
+                durationMs: 120_000,
+            });
+            const workspace = await runtime.openWorkspace(
+                workspaceSpec("issue-4"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+
+            const execution = workspace.exec("npm test", execOptions());
+            clock.advance(60_000);
+
+            await expect(execution).rejects.toEqual(new AgentTimeoutError("total"));
+        });
+
+        it("cancels a running exec when its signal is aborted", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock }).scriptExec("npm test", {
+                exitCode: 0,
+                stdoutTail: "",
+                durationMs: 5_000,
+            });
+            const workspace = await runtime.openWorkspace(
+                workspaceSpec("issue-4"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+            const controller = new AbortController();
+
+            const execution = workspace.exec("npm test", {
+                ...execOptions(),
+                signal: controller.signal,
+            });
+            controller.abort();
+
+            await expect(execution).rejects.toBeInstanceOf(AgentCanceledError);
+        });
+
         it("keeps the spec files and the written files in memory, the latest content winning", async () => {
             const clock = new FakeClock(START);
             const runtime = new FakeAgentRuntime({ clock });
