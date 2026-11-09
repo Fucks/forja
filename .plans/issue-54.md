@@ -21,9 +21,9 @@
 - [x] 1. Fake: scripted exec sequence, output lines and timeout — `src/test/fakes/fake_agent_runtime.ts`, `scripted_exec.ts`, test
 - [x] 2. Factory `buildNodeExecutionContext` and `runItems` in the context — `node_executors.ts`, `node_run_execution.ts`, `active_run.ts`
 - [x] 3. Trigger executor outputs the run items — `executors/trigger_executor.ts`, `deterministic_executors.test.ts`
-- [ ] 4. Script exit 1 gives `result.exitCode = 1` without failing — `executors/script_executor.ts`, `item_workspace.ts`
-- [ ] 5. Script lines become `raw` agent events — `script_executor.ts`
-- [ ] 6. Script stdoutTail keeps the last 200 lines — `script_executor.ts`
+- [x] 4. Script exit 1 gives `result.exitCode = 1` without failing — `executors/script_executor.ts`, `item_workspace.ts`
+- [x] 5. Script lines become `raw` agent events — `script_executor.ts`
+- [x] 6. Script stdoutTail keeps the last 200 lines — `script_executor.ts`
 - [ ] 7. Condition sends the value to the chosen port — `executors/condition_executor.ts`
 - [ ] 8. Output records the `item_outcome` artifact — `executors/output_executor.ts`
 - [ ] 9. Register executors; drop the output stub in the test bed — `node_executors.ts`, `executor_test_bed.ts`
