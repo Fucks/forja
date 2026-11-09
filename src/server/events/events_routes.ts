@@ -106,7 +106,7 @@ function streamEvents(stream: EventStream): EndStream {
     };
 }
 
-function openEventStream(response: ServerResponse): void {
+export function openEventStream(response: ServerResponse): void {
     response.writeHead(HTTP_OK, EVENT_STREAM_HEADERS);
     response.flushHeaders();
 }

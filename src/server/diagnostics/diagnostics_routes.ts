@@ -2,7 +2,13 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
 import { systemClock } from "@/lib/clock.js";
-import { DIAGNOSTIC_CHECKS } from "@/server/diagnostics/diagnostic_checks.js";
+import { createAgentImageLookups } from "@/server/agent_images/agent_image_lookups.js";
+import type { AgentImageLookups } from "@/server/agent_images/agent_image_lookups.js";
+import {
+    createAgentImageCheck,
+    DIAGNOSTIC_CHECKS,
+} from "@/server/diagnostics/diagnostic_checks.js";
+import type { DiagnosticCheck } from "@/server/diagnostics/diagnostic_checks.js";
 import { createDiagnosticService } from "@/server/diagnostics/diagnostic_service.js";
 import type { RouteModule } from "@/server/route_modules.js";
 
@@ -12,8 +18,9 @@ const FORCE_FLAG = "1";
 const diagnosticsQuerySchema = z.object({ force: z.literal(FORCE_FLAG).optional() });
 
 export const registerDiagnosticsRoutes: RouteModule = (app, deps) => {
+    const agentImages = createAgentImageLookups(deps.db);
     const diagnostics = createDiagnosticService({
-        checks: DIAGNOSTIC_CHECKS,
+        listChecks: () => listChecks(agentImages),
         commands: deps.commands,
         clock: systemClock,
     });
@@ -24,3 +31,8 @@ export const registerDiagnosticsRoutes: RouteModule = (app, deps) => {
         (request) => diagnostics.run(request.query.force === FORCE_FLAG),
     );
 };
+
+function listChecks(agentImages: AgentImageLookups): DiagnosticCheck[] {
+    const agentImageChecks = agentImages.listImagesInUse().map(createAgentImageCheck);
+    return [...DIAGNOSTIC_CHECKS, ...agentImageChecks];
+}

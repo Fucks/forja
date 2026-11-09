@@ -4,6 +4,7 @@ import { useParams } from "react-router";
 
 import type { GlobalSettings, ProjectSettings } from "@/shared/settings_types.js";
 import { PageTitle } from "@/web/app/page_title.js";
+import { AgentImagePanel } from "@/web/app/projects/agent_image_panel.js";
 import { GlobalSettingsForm } from "@/web/app/projects/global_settings_form.js";
 import { ProjectSettingsForm } from "@/web/app/projects/project_settings_form.js";
 import {
@@ -103,6 +104,7 @@ function SettingsEditor({
             <ProjectSettingsForm
                 draft={projectDraft ?? toProjectSettingsDraft(savedProjectSettings)}
                 onChange={setProjectDraft}
+                containerPanel={<AgentImagePanel projectId={projectId} />}
             />
             <GlobalSettingsForm
                 draft={globalDraft ?? toGlobalSettingsDraft(savedGlobalSettings)}
