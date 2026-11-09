@@ -5,7 +5,7 @@ import type { FastifyInstance } from "fastify";
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import { createDockerAgentRuntime } from "@/integrations/agent_runtime/docker_agent_runtime.js";
 import { UnavailableAgentRuntime } from "@/integrations/agent_runtime/unavailable_agent_runtime.js";
-import type { HostUser } from "@/integrations/agent_runtime/workspace_layout.js";
+import { currentHostUser } from "@/integrations/agent_runtime/workspace_layout.js";
 import { CliGitProvider } from "@/integrations/git/cli_git_provider.js";
 import type { CommandRunner } from "@/integrations/process/command_runner.js";
 import { ExecaCommandRunner } from "@/integrations/process/execa_command_runner.js";
@@ -113,15 +113,6 @@ function createAgentRuntime({ env, paths }: ServerDeps, commands: CommandRunner)
         default:
             return assertNever(env.FORJA_AGENT_RUNTIME);
     }
-}
-
-// Windows has no uid/gid; Docker Desktop maps the owner of the mounted files by itself there.
-function currentHostUser(): HostUser | null {
-    if (!process.getuid || !process.getgid) {
-        return null;
-    }
-
-    return { uid: process.getuid(), gid: process.getgid() };
 }
 
 // Before the routes exist, so no request sees a run still active from the previous process.

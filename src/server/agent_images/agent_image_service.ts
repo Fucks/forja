@@ -5,11 +5,8 @@ import { z } from "zod";
 import type { HostUser } from "@/integrations/agent_runtime/workspace_layout.js";
 import { commandSucceeded } from "@/integrations/process/command_runner.js";
 import type { CommandRunner } from "@/integrations/process/command_runner.js";
-import type {
-    AgentImageLookups,
-    AgentImageTarget,
-} from "@/server/agent_images/agent_image_lookups.js";
-import { NotFoundError } from "@/server/errors.js";
+import { findTargetOrThrow } from "@/server/agent_images/agent_image_lookups.js";
+import type { AgentImageLookups } from "@/server/agent_images/agent_image_lookups.js";
 import type {
     AgentImageBuildResult,
     AgentImageSource,
@@ -51,15 +48,6 @@ const imageDetailsSchema = z.object({ Created: z.string(), Size: z.number() });
 const imageInspectionSchema = z.tuple([imageDetailsSchema], imageDetailsSchema);
 
 export function createAgentImageService(deps: AgentImageServiceDeps): AgentImageService {
-    function findTargetOrThrow(projectId: string): AgentImageTarget {
-        const target = deps.lookups.findTarget(projectId);
-        if (!target) {
-            throw new NotFoundError(`Projeto ${projectId} não encontrado.`);
-        }
-
-        return target;
-    }
-
     function chooseDockerfile(repoPath: string): DockerfileChoice {
         const projectDockerfile = path.join(repoPath, ...PROJECT_DOCKERFILE_SEGMENTS);
         if (deps.fileExists(projectDockerfile)) {
@@ -71,7 +59,7 @@ export function createAgentImageService(deps: AgentImageServiceDeps): AgentImage
 
     return {
         async status(projectId) {
-            const target = findTargetOrThrow(projectId);
+            const target = findTargetOrThrow(deps.lookups, projectId);
             const { source } = chooseDockerfile(target.repoPath);
             const inspection = await inspectImage(deps.commands, target.image);
 
@@ -79,7 +67,7 @@ export function createAgentImageService(deps: AgentImageServiceDeps): AgentImage
         },
 
         async build(projectId, onLine, signal) {
-            const target = findTargetOrThrow(projectId);
+            const target = findTargetOrThrow(deps.lookups, projectId);
             const { dockerfile } = chooseDockerfile(target.repoPath);
             const agentUser = deps.hostUser ?? DEFAULT_AGENT_USER;
             const result = await deps.commands.run(

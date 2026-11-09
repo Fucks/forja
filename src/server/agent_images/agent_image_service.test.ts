@@ -154,10 +154,12 @@ describe("AgentImageService", () => {
         });
 
         it("sends every stdout and stderr line of the build and reports success", async () => {
-            commands.when("docker", (args) => args[0] === "build").returns({
-                stdout: "Successfully tagged forja-agent:latest",
-                stderr: "#1 [internal] load build definition\n#2 DONE 0.1s",
-            });
+            commands
+                .when("docker", (args) => args[0] === "build")
+                .returns({
+                    stdout: "Successfully tagged forja-agent:latest",
+                    stderr: "#1 [internal] load build definition\n#2 DONE 0.1s",
+                });
             const service = createService();
             const lines: string[] = [];
 
@@ -176,7 +178,9 @@ describe("AgentImageService", () => {
         });
 
         it("reports a failed build with its exit code", async () => {
-            commands.when("docker", (args) => args[0] === "build").returns({ exitCode: FAILED_BUILD_EXIT_CODE });
+            commands
+                .when("docker", (args) => args[0] === "build")
+                .returns({ exitCode: FAILED_BUILD_EXIT_CODE });
             const service = createService();
 
             const result = await service.build(PROJECT_ID, () => {}, new AbortController().signal);

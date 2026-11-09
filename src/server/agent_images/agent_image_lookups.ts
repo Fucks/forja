@@ -1,4 +1,5 @@
 import type { ForjaDb } from "@/server/db/client.js";
+import { NotFoundError } from "@/server/errors.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
@@ -36,4 +37,14 @@ export function createAgentImageLookups(db: ForjaDb): AgentImageLookups {
             return [...new Set(images)];
         },
     };
+}
+
+/** @throws NotFoundError when the project does not exist */
+export function findTargetOrThrow(lookups: AgentImageLookups, projectId: string): AgentImageTarget {
+    const target = lookups.findTarget(projectId);
+    if (!target) {
+        throw new NotFoundError(`Projeto ${projectId} não encontrado.`);
+    }
+
+    return target;
 }
