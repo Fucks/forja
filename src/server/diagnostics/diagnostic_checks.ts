@@ -1,5 +1,6 @@
 import { commandSucceeded } from "@/integrations/process/command_runner.js";
 import type { CommandResult, CommandRunner } from "@/integrations/process/command_runner.js";
+import { formatDuration } from "@/lib/format.js";
 import type { DiagnosticItem } from "@/shared/diagnostic_types.js";
 
 interface DiagnosticCheckDeps {
@@ -17,7 +18,6 @@ interface DiagnosticCommand {
 }
 
 const COMMAND_TIMEOUT_MS = 10_000;
-const MS_PER_SECOND = 1000;
 const MINIMUM_NODE_MAJOR_VERSION = 22;
 
 const NODE_ITEM: ItemIdentity = { id: "node", label: "Node.js" };
@@ -153,12 +153,11 @@ function runDiagnosticCommand(
 
 function reportTimeout(identity: ItemIdentity, command: DiagnosticCommand): DiagnosticItem {
     const commandLine = [command.command, ...command.args].join(" ");
-    const timeoutSeconds = COMMAND_TIMEOUT_MS / MS_PER_SECOND;
 
     return {
         ...identity,
         status: "error",
-        detail: `${commandLine} não respondeu em ${timeoutSeconds} s`,
+        detail: `${commandLine} não respondeu em ${formatDuration(COMMAND_TIMEOUT_MS)}`,
         fix: "Confira se o programa não está travado ou esperando uma resposta e verifique de novo",
     };
 }
