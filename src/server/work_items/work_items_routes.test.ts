@@ -7,19 +7,34 @@ import { WorkItemRepository } from "@/server/work_items/work_item_repository.js"
 import type { LocalItemInput, WorkItem } from "@/shared/work_item_types.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildWorkItem } from "@/test/factories/work_item_factory.js";
+import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 
 const PROJECT_ID = "prj_forja";
+const GITHUB_PROJECT_ID = "prj_github";
+const GITHUB_REPO = "Fucks/forja";
+const OPEN_ISSUE_JSON = {
+    number: 17,
+    title: "Sincronizar issues",
+    body: "",
+    url: "https://github.com/Fucks/forja/issues/17",
+    labels: [{ name: "forja" }],
+    state: "OPEN",
+};
 
 describe("work items routes", () => {
     let database: DatabaseHandle;
     let app: FastifyInstance;
+    let commands: FakeCommandRunner;
 
     beforeEach(async () => {
         database = createTestDb();
-        new ProjectRepository(database.db).insert(buildProject({ id: PROJECT_ID }));
-        app = await buildApp(createTestAppDeps(database.db));
+        const projects = new ProjectRepository(database.db);
+        projects.insert(buildProject({ id: PROJECT_ID }));
+        projects.insert(buildProject({ id: GITHUB_PROJECT_ID, githubRepo: GITHUB_REPO }));
+        commands = new FakeCommandRunner();
+        app = await buildApp(createTestAppDeps(database.db, { commands }));
     });
 
     afterEach(async () => {
@@ -257,6 +272,55 @@ describe("work items routes", () => {
             });
 
             expect(response.statusCode).toBe(409);
+        });
+    });
+
+    describe("POST /api/projects/:projectId/work-items/sync", () => {
+        function syncProject(projectId: string, query = ""): ReturnType<FastifyInstance["inject"]> {
+            return app.inject({
+                method: "POST",
+                url: `/api/projects/${projectId}/work-items/sync${query}`,
+            });
+        }
+
+        function scriptOpenIssueOnGithub(): void {
+            commands
+                .when("gh", (args) => args[0] === "issue" && args[1] === "list")
+                .returns({ stdout: JSON.stringify([OPEN_ISSUE_JSON]) });
+            commands
+                .when("gh", (args) => args[0] === "api")
+                .returns({ exitCode: 1, stderr: "gh: Not Found (HTTP 404)" });
+        }
+
+        it("answers with the result of importing the open issues of the project", async () => {
+            scriptOpenIssueOnGithub();
+
+            const response = await syncProject(GITHUB_PROJECT_ID);
+
+            expect(response.statusCode).toBe(200);
+            expect(response.json()).toMatchObject({ created: 1, updated: 0, closed: 0 });
+        });
+
+        it("lists only the issues with the label of the query", async () => {
+            scriptOpenIssueOnGithub();
+
+            await syncProject(GITHUB_PROJECT_ID, "?label=forja");
+
+            const [listCall] = commands.calls;
+            expect(listCall?.args).toEqual(expect.arrayContaining(["--label", "forja"]));
+        });
+
+        it("answers with the error when the project has no GitHub repository", async () => {
+            const response = await syncProject(PROJECT_ID);
+
+            expect(response.statusCode).toBe(200);
+            expect(response.json()).toMatchObject({ error: "Projeto sem repositório GitHub" });
+        });
+
+        it("answers 404 for an unknown project", async () => {
+            const response = await syncProject("prj_desconhecido");
+
+            expect(response.statusCode).toBe(404);
         });
     });
 });

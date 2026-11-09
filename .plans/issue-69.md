@@ -30,8 +30,8 @@
 - [x] 5. Test + impl: project without GitHub returns the error in the result
 - [x] 6. Test + impl: provider failure ends in the result's `error`
 - [x] 7. Test + impl: label filter and limit are forwarded to the provider
-- [ ] 8. Test + impl: `resolveGithubEnv` (credential or host gh) — `src/server/work_items/github_env.ts`
-- [ ] 9. Test + impl: `POST /api/projects/:projectId/work-items/sync` answers with `SyncResult` — `work_items_routes.ts`
+- [x] 8. Test + impl: `resolveGithubEnv` (credential or host gh) — `src/server/work_items/github_env.ts`
+- [x] 9. Test + impl: `POST /api/projects/:projectId/work-items/sync` answers with `SyncResult` — `work_items_routes.ts`
 - [ ] 10. Test + impl: `createSyncScheduler` syncs every interval with FakeClock, keeps running after an error, stops — `sync_scheduler.ts`
 - [ ] 11. Start/stop the scheduler with Fastify hooks in `registerWorkItemsRoutes`
 - [ ] 12. Self-review checklist (section 5) and feedback loops (section 6)
