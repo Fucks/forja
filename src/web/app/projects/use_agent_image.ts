@@ -103,7 +103,10 @@ async function streamAgentImageBuild(
 
     let result: AgentImageBuildResult | undefined;
     await readServerSentEvents(response.body, (event) => {
-        result = handleBuildEvent(event, onLine) ?? result;
+        const doneResult = handleBuildEvent(event, onLine);
+        if (doneResult) {
+            result = doneResult;
+        }
     });
     if (!result) {
         throw new Error("O servidor encerrou o build sem informar o resultado.");

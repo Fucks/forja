@@ -1,13 +1,13 @@
 import { Hammer, Square } from "lucide-react";
 import type { JSX } from "react";
 
+import { assertNever } from "@/lib/assert_never.js";
 import type { AgentImageSource, AgentImageStatus } from "@/shared/agent_image_types.js";
 import { useAgentImageBuild, useAgentImageStatus } from "@/web/app/projects/use_agent_image.js";
 import type {
     AgentImageBuild,
     AgentImageBuildOutcome,
 } from "@/web/app/projects/use_agent_image.js";
-import { assertNever } from "@/lib/assert_never.js";
 import { Button } from "@/web/components/ui/button.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
@@ -68,7 +68,7 @@ function AgentImageStatusView({ status }: { status: AgentImageStatus }): JSX.Ele
 }
 
 function describeImage(status: AgentImageStatus): string {
-    const source = `Construída a partir do ${SOURCE_LABELS[status.source]}`;
+    const source = `Fonte: ${SOURCE_LABELS[status.source]}`;
     if (!status.exists) {
         return `Imagem não encontrada. ${source}.`;
     }
@@ -76,7 +76,7 @@ function describeImage(status: AgentImageStatus): string {
         return `${source}.`;
     }
 
-    return `${source}, ${status.sizeMb} MB.`;
+    return `${source}. ${status.sizeMb} MB.`;
 }
 
 function BuildButton({ build }: { build: AgentImageBuild }): JSX.Element {

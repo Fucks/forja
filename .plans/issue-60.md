@@ -38,4 +38,4 @@
 - [x] 10. Test+impl: SSE reader for fetch bodies — `src/web/api/server_sent_events(.test).ts`
 - [x] 11. Hooks `use_agent_image.ts` + panel `agent_image_panel.tsx` (status badge, build/cancel, live log)
 - [x] 12. Wire the panel in the Container section — `project_settings_form.tsx`, `project_settings_page.tsx` (+ page test)
-- [ ] 13. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 13. Self-review checklist and feedback loops (typecheck, lint, test)

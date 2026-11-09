@@ -156,7 +156,7 @@ describe("ProjectSettingsPage agent image panel", () => {
         expect(await within(container).findByText("forja-agent:latest")).toBeInTheDocument();
         expect(within(container).getByText("Falha")).toBeInTheDocument();
         expect(
-            within(container).getByText(/Construída a partir do Dockerfile padrão da Forja/),
+            within(container).getByText(/Fonte: Dockerfile padrão da Forja/),
         ).toBeInTheDocument();
     });
 
