@@ -92,10 +92,10 @@ export function createGhCliGitHubProvider(deps: GhCliGitHubProviderDeps): GitHub
     };
 }
 
-function listIssuesArgs(repo: string, opts: ListIssuesOptions): string[] {
-    const args = ["issue", "list", "--repo", repo, "--state", opts.state];
-    const fields = ["--limit", String(opts.limit), "--json", GH_ISSUE_FIELDS];
-    const labelFilter = opts.label === undefined ? [] : ["--label", opts.label];
+function listIssuesArgs(repo: string, options: ListIssuesOptions): string[] {
+    const args = ["issue", "list", "--repo", repo, "--state", options.state];
+    const fields = ["--limit", String(options.limit), "--json", GH_ISSUE_FIELDS];
+    const labelFilter = options.label === undefined ? [] : ["--label", options.label];
     return [...args, ...fields, ...labelFilter];
 }
 
@@ -148,7 +148,11 @@ async function readNativeBlockedBy(
     }
 
     assertGhSucceeded(result, args);
-    return result.stdout
+    return issueNumbersPerLine(result.stdout);
+}
+
+function issueNumbersPerLine(text: string): number[] {
+    return text
         .split(LINE_BREAK)
         .filter((line) => line.trim() !== "")
         .map(Number);

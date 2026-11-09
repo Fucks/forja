@@ -29,7 +29,7 @@ export const ghPullRequestSchema = z.object({
 });
 
 export type GhIssue = z.infer<typeof ghIssueSchema>;
-export type GhPullRequest = z.infer<typeof ghPullRequestSchema>;
+type GhPullRequest = z.infer<typeof ghPullRequestSchema>;
 
 const ISSUE_STATES: Record<GhIssue["state"], GithubIssueState> = {
     OPEN: "open",
