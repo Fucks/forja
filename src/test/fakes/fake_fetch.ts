@@ -2,7 +2,7 @@ import type { MockInstance } from "vitest";
 
 import type { ApiErrorBody } from "@/shared/api_types.js";
 
-type FakeRouteResponder = () => Response | Promise<Response>;
+type FakeRouteResponder = (init: RequestInit | undefined) => Response | Promise<Response>;
 
 /** Keys are `"<METHOD> <path>"`, e.g. `"GET /api/projects"`. */
 export type FakeRoutes = Record<string, FakeRouteResponder>;
@@ -23,7 +23,7 @@ export function stubFetchRoutes(routes: FakeRoutes): MockInstance<typeof fetch> 
             return Promise.resolve(answerRouteNotFound());
         }
 
-        return Promise.resolve(respond());
+        return Promise.resolve(respond(init));
     });
 }
 
