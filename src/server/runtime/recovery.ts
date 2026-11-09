@@ -16,9 +16,7 @@ export interface RecoveryReport {
 
 export interface RecoveryDeps {
     runs: RunRepository;
-    executor: Executor & {
-        resumeFromSnapshot(run: RunRecord, snapshot: unknown): Promise<void>;
-    };
+    executor: Executor;
     runtime: AgentRuntime;
     clock: Clock;
     log(message: string): void;
@@ -31,7 +29,6 @@ type RunRecovery =
 const RUN_STATE_LOST = "estado perdido no reinício";
 const RESUME_FAILED = "não foi possível retomar a run após o reinício";
 
-// Runs on boot, before the server accepts requests.
 export async function recoverRuns(deps: RecoveryDeps): Promise<RecoveryReport> {
     const closedWorkspaces = await closeWorkspacesLeftOpen(deps.runtime);
     const activeRuns = await deps.runs.listActiveRuns();
@@ -90,8 +87,8 @@ function failedRunState(run: RunRecord, error: string, at: Date): RunState {
 }
 
 async function isPaused(runId: string, runs: RunRepository): Promise<boolean> {
-    const resumed = await runs.getRun(runId);
-    return resumed?.status === "PAUSED";
+    const run = await runs.getRun(runId);
+    return run?.status === "PAUSED";
 }
 
 function runningNodeRunIdsOf(snapshot: SchedulerSnapshot): string[] {

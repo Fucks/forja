@@ -32,4 +32,4 @@
 - [x] 7. Test + implement `recoverRuns` report: resumed, interrupted, still paused, failed, closed workspaces — `recovery.ts`, `recovery.test.ts`
 - [x] 8. Test: paused run with future `resumeAt` stays paused and resumes on time; no NodeRun runs twice at once — `recovery.test.ts`
 - [x] 9. Recovery log line + call `recoverRuns` at boot before listening — `recovery.ts`, `main.ts`
-- [ ] 10. Self-review checklist and feedback loops
+- [x] 10. Self-review checklist and feedback loops
