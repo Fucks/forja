@@ -18,6 +18,16 @@ const READ_TOOL_CALL = buildLogLine({
     detail: READ_ARGUMENTS,
 });
 
+const SEARCHABLE_LINES = buildLogLines(1_000).map((line) => {
+    if (line.seq === 1) {
+        return { ...line, text: "Compilar o projeto" };
+    }
+    if (line.seq === 200 || line.seq === 400) {
+        return { ...line, text: `${line.text} compilar` };
+    }
+    return line;
+});
+
 describe("LogViewer", () => {
     beforeEach(() => {
         stubElementSizes({ viewportHeightPx: VIEWPORT_HEIGHT_PX, rowHeightPx: ROW_HEIGHT_PX });
@@ -139,6 +149,79 @@ describe("LogViewer", () => {
         render(<LogViewer lines={buildLogLines(1_000)} follow={false} />);
 
         expect(screen.getByText("Linha 1")).toBeInTheDocument();
+    });
+
+    it("focuses the search field with Ctrl+F inside the viewer", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={buildLogLines(10)} />);
+
+        screen.getByRole("log").focus();
+        await user.keyboard("{Control>}f{/Control}");
+
+        expect(screen.getByRole("searchbox", { name: "Buscar nos logs" })).toHaveFocus();
+    });
+
+    it("focuses the search field with Cmd+F inside the viewer", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={buildLogLines(10)} />);
+
+        screen.getByRole("log").focus();
+        await user.keyboard("{Meta>}f{/Meta}");
+
+        expect(screen.getByRole("searchbox", { name: "Buscar nos logs" })).toHaveFocus();
+    });
+
+    it("counts the lines that match the search", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={SEARCHABLE_LINES} />);
+
+        await user.type(screen.getByRole("searchbox"), "compilar");
+
+        expect(screen.getByText("3 ocorrências")).toBeInTheDocument();
+    });
+
+    it("goes to the first match with Enter and highlights it", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={SEARCHABLE_LINES} />);
+
+        await user.type(screen.getByRole("searchbox"), "compilar{Enter}");
+
+        expect(screen.getByText("1 de 3")).toBeInTheDocument();
+        expect(screen.getByText("Compilar", { selector: "mark" })).toBeInTheDocument();
+    });
+
+    it("goes back to the previous match with Shift+Enter, wrapping to the last one", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={SEARCHABLE_LINES} />);
+
+        await user.type(screen.getByRole("searchbox"), "compilar{Enter}{Shift>}{Enter}{/Shift}");
+
+        expect(screen.getByText("3 de 3")).toBeInTheDocument();
+        expect(await screen.findByRole("listitem", { current: true })).toHaveTextContent(
+            "Linha 400 compilar",
+        );
+    });
+
+    it("expands a line whose detail matches when going to it", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={[READ_TOOL_CALL, ...buildLogLines(5).slice(1)]} />);
+
+        await user.type(screen.getByRole("searchbox"), "file_path{Enter}");
+
+        expect(screen.getByRole("button", { name: /Read/ })).toHaveAttribute(
+            "aria-expanded",
+            "true",
+        );
+    });
+
+    it("stops following the end when going to a match", async () => {
+        const onFollowChange = vi.fn();
+        const user = userEvent.setup();
+        render(<LogViewer lines={SEARCHABLE_LINES} onFollowChange={onFollowChange} />);
+
+        await user.type(screen.getByRole("searchbox"), "compilar{Enter}");
+
+        expect(onFollowChange).toHaveBeenCalledWith(false);
     });
 });
 

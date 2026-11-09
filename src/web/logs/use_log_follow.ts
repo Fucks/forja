@@ -38,6 +38,10 @@ export function useLogFollow({
     }, [isFollowing, lineCount, virtualizer]);
 
     function setFollowing(nextIsFollowing: boolean): void {
+        if (nextIsFollowing === isFollowing) {
+            return;
+        }
+
         setUncontrolledFollow(nextIsFollowing);
         onFollowChange?.(nextIsFollowing);
     }

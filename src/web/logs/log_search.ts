@@ -1,5 +1,9 @@
 import type { LogLine } from "@/web/logs/log_types.js";
 
+export type MatchDirection = "next" | "previous";
+
+const POSITION_STEP: Record<MatchDirection, number> = { next: 1, previous: -1 };
+
 export interface TextSegment {
     text: string;
     isMatch: boolean;
@@ -12,6 +16,22 @@ export function findMatches(lines: LogLine[], query: string): number[] {
     }
 
     return lines.filter((line) => lineContains(line, normalizedQuery)).map((line) => line.seq);
+}
+
+export function findAdjacentMatch(
+    matchSeqs: number[],
+    selectedSeq: number | null,
+    direction: MatchDirection,
+): number | null {
+    const selectedPosition = selectedSeq === null ? -1 : matchSeqs.indexOf(selectedSeq);
+    if (selectedPosition === -1) {
+        const startPosition = direction === "next" ? 0 : matchSeqs.length - 1;
+        return matchSeqs[startPosition] ?? null;
+    }
+
+    const adjacentPosition =
+        (selectedPosition + POSITION_STEP[direction] + matchSeqs.length) % matchSeqs.length;
+    return matchSeqs[adjacentPosition] ?? null;
 }
 
 export function splitByQuery(text: string, query: string): TextSegment[] {

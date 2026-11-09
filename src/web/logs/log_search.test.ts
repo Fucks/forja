@@ -1,4 +1,9 @@
-import { detailContainsQuery, findMatches, splitByQuery } from "@/web/logs/log_search.js";
+import {
+    detailContainsQuery,
+    findAdjacentMatch,
+    findMatches,
+    splitByQuery,
+} from "@/web/logs/log_search.js";
 import type { LogLine } from "@/web/logs/log_types.js";
 
 const READ_TOOL_CALL: LogLine = {
@@ -69,5 +74,33 @@ describe("detailContainsQuery", () => {
 
     it("ignores matches that are only in the visible text", () => {
         expect(detailContainsQuery(READ_TOOL_CALL, "read")).toBe(false);
+    });
+});
+
+describe("findAdjacentMatch", () => {
+    const MATCH_SEQS = [3, 8, 15];
+
+    it("starts at the first match when going forward with nothing selected", () => {
+        expect(findAdjacentMatch(MATCH_SEQS, null, "next")).toBe(3);
+    });
+
+    it("starts at the last match when going backward with nothing selected", () => {
+        expect(findAdjacentMatch(MATCH_SEQS, null, "previous")).toBe(15);
+    });
+
+    it("moves to the following match", () => {
+        expect(findAdjacentMatch(MATCH_SEQS, 8, "next")).toBe(15);
+    });
+
+    it("wraps around to the first match after the last one", () => {
+        expect(findAdjacentMatch(MATCH_SEQS, 15, "next")).toBe(3);
+    });
+
+    it("wraps around to the last match before the first one", () => {
+        expect(findAdjacentMatch(MATCH_SEQS, 3, "previous")).toBe(15);
+    });
+
+    it("returns null when there are no matches", () => {
+        expect(findAdjacentMatch([], null, "next")).toBeNull();
     });
 });

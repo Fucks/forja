@@ -12,12 +12,16 @@ export function LogLineList({
     scrollElementRef,
     expandedLines,
     onScroll,
+    searchQuery,
+    selectedMatchSeq,
 }: {
     lines: LogLineEntry[];
     virtualizer: Virtualizer<HTMLDivElement, HTMLDivElement>;
     scrollElementRef: RefObject<HTMLDivElement | null>;
     expandedLines: ExpandedLines;
     onScroll: (position: ScrollPosition) => void;
+    searchQuery: string;
+    selectedMatchSeq: number | null;
 }): JSX.Element {
     return (
         <div
@@ -51,6 +55,8 @@ export function LogLineList({
                                 measureRef={virtualizer.measureElement}
                                 isExpanded={expandedLines.isExpanded(line.seq)}
                                 onToggleExpanded={expandedLines.toggle}
+                                searchQuery={searchQuery}
+                                isSelectedMatch={line.seq === selectedMatchSeq}
                             />
                         </div>
                     );

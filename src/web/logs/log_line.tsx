@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import type { JSX, Ref } from "react";
 
 import { formatRelativeOffset } from "@/lib/format.js";
+import { HighlightedText } from "@/web/logs/highlighted_text.js";
 import type { LogLine as LogLineEntry, LogLineKind } from "@/web/logs/log_types.js";
 
 const KIND_TEXT_CLASSES: Record<LogLineKind, string> = {
@@ -20,31 +21,38 @@ export function LogLine({
     measureRef,
     isExpanded,
     onToggleExpanded,
+    searchQuery,
+    isSelectedMatch,
 }: {
     line: LogLineEntry;
     index: number;
     measureRef: Ref<HTMLDivElement>;
     isExpanded: boolean;
     onToggleExpanded: (seq: number) => void;
+    searchQuery: string;
+    isSelectedMatch: boolean;
 }): JSX.Element {
     return (
         <div
             ref={measureRef}
             role="listitem"
             data-index={index}
+            aria-current={isSelectedMatch || undefined}
             className={clsx(
                 "flex gap-3 border-l-2 px-3",
                 line.kind === "error" ? "border-status-failed" : "border-transparent",
+                isSelectedMatch && "bg-surface-raised",
             )}
         >
             <span className="shrink-0 text-muted">{formatRelativeOffset(line.offsetMs)}</span>
             <div className={clsx("min-w-0 flex-1", KIND_TEXT_CLASSES[line.kind])}>
                 {line.detail === undefined ? (
-                    <LineSummary line={line} />
+                    <LineSummary line={line} searchQuery={searchQuery} />
                 ) : (
                     <ExpandableLine
                         line={line}
                         detail={line.detail}
+                        searchQuery={searchQuery}
                         isExpanded={isExpanded}
                         onToggle={() => onToggleExpanded(line.seq)}
                     />
@@ -57,11 +65,13 @@ export function LogLine({
 function ExpandableLine({
     line,
     detail,
+    searchQuery,
     isExpanded,
     onToggle,
 }: {
     line: LogLineEntry;
     detail: string;
+    searchQuery: string;
     isExpanded: boolean;
     onToggle: () => void;
 }): JSX.Element {
@@ -80,7 +90,7 @@ function ExpandableLine({
                         isExpanded && "rotate-90",
                     )}
                 />
-                <LineSummary line={line} />
+                <LineSummary line={line} searchQuery={searchQuery} />
             </button>
             {isExpanded && (
                 <pre className="py-1 pl-4.5 break-words whitespace-pre-wrap text-muted">
@@ -91,12 +101,18 @@ function ExpandableLine({
     );
 }
 
-function LineSummary({ line }: { line: LogLineEntry }): JSX.Element {
+function LineSummary({
+    line,
+    searchQuery,
+}: {
+    line: LogLineEntry;
+    searchQuery: string;
+}): JSX.Element {
     return (
         <span className="min-w-0 break-words whitespace-pre-wrap">
             {line.kind === "error" && <span className="sr-only">Erro: </span>}
             {line.toolName && <span className="mr-2 font-medium text-steel">{line.toolName}</span>}
-            {line.text}
+            <HighlightedText text={line.text} query={searchQuery} />
         </span>
     );
 }
