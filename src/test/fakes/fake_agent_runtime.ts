@@ -31,6 +31,8 @@ export interface FakeAgentRuntimeOptions {
     clock: FakeClock;
     steps?: ScriptedStep[];
     defaultDurationMs?: number;
+    // Left open by a previous server process, like containers that survive a restart.
+    openWorkspaces?: OpenWorkspaceSummary[];
 }
 
 export interface RuntimeCall {
@@ -66,10 +68,12 @@ export class FakeAgentRuntime implements AgentRuntime {
         clock,
         steps = [],
         defaultDurationMs = DEFAULT_DURATION_MS,
+        openWorkspaces = [],
     }: FakeAgentRuntimeOptions) {
         this.clock = clock;
         this.defaultDurationMs = defaultDurationMs;
         steps.forEach((step) => this.script(step));
+        openWorkspaces.forEach((workspace) => this.openWorkspaces.set(workspace.id, workspace));
     }
 
     script(step: ScriptedStep): this {
@@ -100,8 +104,7 @@ export class FakeAgentRuntime implements AgentRuntime {
             return Promise.reject(new AgentCanceledError());
         }
 
-        this.openedWorkspaceCount += 1;
-        const id = `workspace-${this.openedWorkspaceCount}`;
+        const id = this.nextWorkspaceId();
         this.openWorkspaces.set(id, { id, runId: spec.runId, workItemId: spec.workItemId });
         this.storeFiles(id, spec.files);
         hooks.onEvent({ kind: "system", message: WORKSPACE_READY_MESSAGE, at: this.clock.now() });
@@ -126,6 +129,17 @@ export class FakeAgentRuntime implements AgentRuntime {
         this.openWorkspaces.delete(id);
 
         return Promise.resolve();
+    }
+
+    // Skips the ids of the workspaces left open by a previous process.
+    private nextWorkspaceId(): string {
+        let id: string;
+        do {
+            this.openedWorkspaceCount += 1;
+            id = `workspace-${this.openedWorkspaceCount}`;
+        } while (this.openWorkspaces.has(id));
+
+        return id;
     }
 
     private createWorkspace(id: string, spec: WorkspaceSpec): Workspace {

@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL } from "@/engine/run_state.js";
+import type { OpenWorkspaceSummary } from "@/integrations/agent_runtime/agent_runtime.js";
 import { newId } from "@/lib/ids.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { FlowRepository } from "@/server/flows/flow_repository.js";
@@ -44,19 +45,35 @@ export type JournalEntry =
     | { kind: "saved"; nodeRuns: NodeRunState[]; runStatus?: string }
     | { kind: "published"; event: ForjaEvent };
 
+// What a restarted server finds: the database and the workspaces the previous process left open.
+interface PreviousProcess {
+    database: DatabaseHandle;
+    stoppedAt: Date;
+    openWorkspaces: OpenWorkspaceSummary[];
+}
+
 export class ExecutorTestBed {
-    readonly clock = new FakeClock();
-    readonly runtime = new FakeAgentRuntime({ clock: this.clock });
-    readonly events: EventBus = createEventBus(this.clock);
+    readonly clock: FakeClock;
+    readonly runtime: FakeAgentRuntime;
+    readonly events: EventBus;
     readonly journal: JournalEntry[] = [];
     readonly runs: JournalingRunRepository;
     readonly flows: FlowService;
     readonly settings: SettingsService;
     readonly executor: Executor;
-    private readonly database: DatabaseHandle = createTestDb();
+    private readonly database: DatabaseHandle;
 
-    constructor(private readonly items: WorkItemSnapshot[]) {
-        new ProjectRepository(this.database.db).insert(buildProject({ id: TEST_PROJECT_ID }));
+    constructor(
+        private readonly items: WorkItemSnapshot[],
+        previous?: PreviousProcess,
+    ) {
+        this.clock = new FakeClock(previous?.stoppedAt);
+        this.runtime = new FakeAgentRuntime({
+            clock: this.clock,
+            openWorkspaces: previous?.openWorkspaces,
+        });
+        this.events = createEventBus(this.clock);
+        this.database = previous?.database ?? createDatabaseWithProject();
         this.runs = new JournalingRunRepository(this.database, this.clock, this.journal);
         this.flows = this.createFlowService();
         this.settings = this.createSettingsService();
@@ -68,6 +85,15 @@ export class ExecutorTestBed {
 
     close(): void {
         this.database.close();
+    }
+
+    // The old executor is abandoned with its clock, so nothing it started ever reports back.
+    async restartServer(): Promise<ExecutorTestBed> {
+        return new ExecutorTestBed(this.items, {
+            database: this.database,
+            stoppedAt: this.clock.now(),
+            openWorkspaces: await this.runtime.listOpenWorkspaces(),
+        });
     }
 
     async publishFlow(graph: FlowGraph): Promise<string> {
@@ -207,6 +233,13 @@ class JournalingRunRepository extends SqliteRunRepository {
             runStatus: transition.run?.status,
         });
     }
+}
+
+function createDatabaseWithProject(): DatabaseHandle {
+    const database = createTestDb();
+    new ProjectRepository(database.db).insert(buildProject({ id: TEST_PROJECT_ID }));
+
+    return database;
 }
 
 export function buildIssueSnapshot(number: number): WorkItemSnapshot {

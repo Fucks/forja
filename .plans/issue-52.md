@@ -28,7 +28,7 @@
 - [x] 3. Test + implement: a stopping run cancels the interrupted NodeRun — `scheduler.ts`, `scheduler.test.ts`
 - [x] 4. Test + implement `wakeupTimesOf` — `scheduler_snapshot.ts` (+ test)
 - [x] 5. Test + implement `isSchedulerSnapshotOfRun` — `src/server/runtime/stored_snapshot.ts` (+ test)
-- [ ] 6. Test + implement `resumeFromSnapshot` (interrupted Devs restart with the same attempt; run finishes) — `executor.ts`, `active_run.ts`, `executor.test.ts`
+- [x] 6. Test + implement `resumeFromSnapshot` (interrupted Devs restart with the same attempt; run finishes) — `executor.ts`, `active_run.ts`, `executor.test.ts`
 - [ ] 7. Test + implement `recoverRuns` report: resumed, interrupted, still paused, failed, closed workspaces — `recovery.ts`, `recovery.test.ts`
 - [ ] 8. Test: paused run with future `resumeAt` stays paused and resumes on time; no NodeRun runs twice at once — `recovery.test.ts`
 - [ ] 9. Recovery log line + call `recoverRuns` at boot before listening — `recovery.ts`, `main.ts`

@@ -384,6 +384,25 @@ describe("FakeAgentRuntime", () => {
             ]);
         });
 
+        it("starts with the workspaces a previous process left open", async () => {
+            const leftOpen = { id: "workspace-1", runId: "run-1", workItemId: "issue-1" };
+            const runtime = new FakeAgentRuntime({
+                clock: new FakeClock(START),
+                openWorkspaces: [leftOpen],
+            });
+
+            const opened = await runtime.openWorkspace(
+                workspaceSpec("issue-2"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+
+            expect(await runtime.listOpenWorkspaces()).toEqual([
+                leftOpen,
+                { id: opened.id, runId: "run-1", workItemId: "issue-2" },
+            ]);
+        });
+
         it("announces the ready workspace as a system event", async () => {
             const clock = new FakeClock(START);
             const runtime = new FakeAgentRuntime({ clock });

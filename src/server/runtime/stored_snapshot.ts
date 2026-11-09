@@ -23,6 +23,13 @@ const storedSnapshotSchema = z.looseObject({
     ),
 });
 
+export class InvalidRunSnapshotError extends Error {
+    constructor(readonly runId: string) {
+        super(`The stored snapshot of run ${runId} cannot be restored`);
+        this.name = "InvalidRunSnapshotError";
+    }
+}
+
 export function isSchedulerSnapshotOfRun(
     stored: unknown,
     runId: string,
