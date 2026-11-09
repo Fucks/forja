@@ -71,6 +71,13 @@ export const flowNodeSchema = z.discriminatedUnion("type", [
 export type FlowNode = z.infer<typeof flowNodeSchema>;
 export type NodeOfType<Type extends NodeType> = Extract<FlowNode, { type: Type }>;
 
+export function isNodeOfType<Type extends NodeType>(
+    node: FlowNode,
+    type: Type,
+): node is NodeOfType<Type> {
+    return node.type === type;
+}
+
 const portReferenceSchema = z.object({ nodeId: z.string(), port: z.string() });
 
 // The port of a loop group that its items leave through when the loop reaches maxIterations.

@@ -23,6 +23,7 @@ const ISSUE_1 = buildIssueSnapshot(1);
 const ISSUE_2 = buildIssueSnapshot(2);
 const TEST_COMMAND = "npm run test";
 const STDOUT_TAIL_MAX_LINES = 200;
+const EXTRA_STDOUT_LINES = 50;
 const REVIEW_PROMPT = "Revise a issue";
 const APPROVED_REVIEW = { approved: true, notes: "ok" };
 const PASSING_TESTS: ScriptedExec = { exitCode: 0, stdoutTail: "all passed" };
@@ -61,11 +62,11 @@ describe("deterministic executors", () => {
 
     describe("script", () => {
         it("succeeds with the exit code of a failing command as its result", async () => {
-            const context = buildScriptContext({ exitCode: 1, stdoutTail: "1 failed" });
+            const context = buildScriptContext(FAILING_TESTS);
 
             const result = await executeScriptNode(context);
 
-            expect(result.outputs).toEqual({ result: { exitCode: 1, stdoutTail: "1 failed" } });
+            expect(result.outputs).toEqual({ result: FAILING_TESTS });
         });
 
         it("sends each output line of the command as a raw agent event", async () => {
@@ -82,7 +83,10 @@ describe("deterministic executors", () => {
         });
 
         it("keeps only the last 200 lines of the stdout tail", async () => {
-            const lines = Array.from({ length: 250 }, (_, index) => `linha ${index + 1}`);
+            const lines = Array.from(
+                { length: STDOUT_TAIL_MAX_LINES + EXTRA_STDOUT_LINES },
+                (_, index) => `linha ${index + 1}`,
+            );
             const context = buildScriptContext({ exitCode: 0, stdoutTail: lines.join("\n") });
 
             const result = await executeScriptNode(context);
@@ -96,12 +100,11 @@ describe("deterministic executors", () => {
 
     describe("condition", () => {
         it("sends the input value to the true port when the condition holds", async () => {
-            const value = { approved: true, notes: "ok" };
-            const context = buildConditionContext(value);
+            const context = buildConditionContext(APPROVED_REVIEW);
 
             const result = await executeConditionNode(context);
 
-            expect(result.outputs).toEqual({ true: value });
+            expect(result.outputs).toEqual({ true: APPROVED_REVIEW });
         });
 
         it("sends the input value to the false port when the condition does not hold", async () => {
@@ -171,7 +174,7 @@ describe("deterministic executors", () => {
 
             const tests = await bed.findNodeRun(runId, "tests");
             expect(tests.status).toBe("SUCCEEDED");
-            expect(tests.outputs).toEqual({ result: { exitCode: 1, stdoutTail: "1 failed" } });
+            expect(tests.outputs).toEqual({ result: FAILING_TESTS });
         });
 
         it("fails a script that runs past its timeout with timeout_total", async () => {
@@ -228,10 +231,7 @@ describe("deterministic executors", () => {
             const testsResults = (await bed.nodeRunsOf(runId, "tests")).map(
                 (nodeRun) => nodeRun.outputs?.result,
             );
-            expect(testsResults).toEqual([
-                { exitCode: 1, stdoutTail: "1 failed" },
-                { exitCode: 0, stdoutTail: "all passed" },
-            ]);
+            expect(testsResults).toEqual([FAILING_TESTS, PASSING_TESTS]);
             expect((await bed.findRun(runId)).status).toBe("SUCCEEDED");
         });
     });
