@@ -8,14 +8,13 @@ import {
     agentImageBuildResultSchema,
 } from "@/shared/agent_image_types.js";
 import type { AgentImageBuildResult, AgentImageStatus } from "@/shared/agent_image_types.js";
-import { apiClient } from "@/web/api/api_client.js";
+import { apiClient, toApiUrl } from "@/web/api/api_client.js";
 import type { ApiError } from "@/web/api/api_client.js";
 import { readServerSentEvents } from "@/web/api/server_sent_events.js";
 import type { ServerSentEvent } from "@/web/api/server_sent_events.js";
 import type { LogLine } from "@/web/logs/log_types.js";
 
 const AGENT_IMAGE_QUERY_KEY = ["agent-image"];
-const API_PREFIX = "/api";
 
 export type AgentImageBuildOutcome =
     | { kind: "finished"; result: AgentImageBuildResult }
@@ -32,7 +31,7 @@ export interface AgentImageBuild {
 
 export function useAgentImageStatus(projectId: string): UseQueryResult<AgentImageStatus, ApiError> {
     return useQuery({
-        queryKey: [...AGENT_IMAGE_QUERY_KEY, projectId],
+        queryKey: agentImageQueryKey(projectId),
         queryFn: () => apiClient.get<AgentImageStatus>(agentImagePath(projectId)),
     });
 }
@@ -48,18 +47,18 @@ export function useAgentImageBuild(projectId: string): AgentImageBuild {
 
     async function runBuild(): Promise<void> {
         const cancellation = new AbortController();
-        const startedAtMs = Date.now();
         cancellationRef.current = cancellation;
         setLines([]);
         setOutcome(undefined);
         setIsBuilding(true);
 
+        const startedAtMs = Date.now();
         const appendLine = (text: string): void =>
             setLines((previous) => [...previous, toLogLine(text, previous.length, startedAtMs)]);
         setOutcome(await buildAgentImage(projectId, appendLine, cancellation.signal));
-
         setIsBuilding(false);
-        await queryClient.invalidateQueries({ queryKey: [...AGENT_IMAGE_QUERY_KEY, projectId] });
+
+        await queryClient.invalidateQueries({ queryKey: agentImageQueryKey(projectId) });
     }
 
     return {
@@ -93,7 +92,7 @@ async function streamAgentImageBuild(
     onLine: (line: string) => void,
     signal: AbortSignal,
 ): Promise<AgentImageBuildResult> {
-    const response = await fetch(`${API_PREFIX}${agentImagePath(projectId)}/build`, {
+    const response = await fetch(toApiUrl(`${agentImagePath(projectId)}/build`), {
         method: "POST",
         signal,
     });
@@ -139,4 +138,8 @@ function describeFailure(error: unknown): string {
 
 function agentImagePath(projectId: string): string {
     return `/projects/${projectId}/agent-image`;
+}
+
+function agentImageQueryKey(projectId: string): string[] {
+    return [...AGENT_IMAGE_QUERY_KEY, projectId];
 }
