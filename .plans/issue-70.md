@@ -25,12 +25,12 @@
 
 ## Tasks
 
-- [ ] 1. Test + impl: excludes closed items (`closed`) — `select_source_items.ts`, `source_executor.test.ts`
-- [ ] 2. Test + impl: excludes items without the label (`label`)
-- [ ] 3. Test + impl: excludes items blocked by an open item when `skipBlocked` (`blocked`), keeps them otherwise
-- [ ] 4. Test + impl: excludes items in other active runs (`in_other_run`) and with open PR (`has_open_pr`)
-- [ ] 5. Test + impl: sorts by issue number / local `createdAt` and cuts at `limit` (`limit`)
-- [ ] 6. Test + impl: starts from `requestedIds` (no label filter, still drops blocked)
+- [x] 1. Test + impl: excludes closed items (`closed`) — `select_source_items.ts`, `source_executor.test.ts`
+- [x] 2. Test + impl: excludes items without the label (`label`)
+- [x] 3. Test + impl: excludes items blocked by an open item when `skipBlocked` (`blocked`), keeps them otherwise
+- [x] 4. Test + impl: excludes items in other active runs (`in_other_run`) and with open PR (`has_open_pr`)
+- [x] 5. Test + impl: sorts by issue number / local `createdAt` and cuts at `limit` (`limit`)
+- [x] 6. Test + impl: starts from `requestedIds` (no label filter, still drops blocked)
 - [ ] 7. Test + impl: `RunRepository.listItemIdsWithArtifact` (sqlite + in-memory) — `sqlite_run_repository.test.ts`
 - [ ] 8. Test + impl: executor with local provider outputs snapshots and the `source_selection` artifact — `source_executor.ts`
 - [ ] 9. Test + impl: executor excludes items of other active runs of the project

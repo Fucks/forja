@@ -228,7 +228,7 @@ function matchesListOptions(item: WorkItem, options: ListWorkItemsOptions): bool
     return isVisible && hasState && hasLabel;
 }
 
-function isBlockedByOpenItem(item: WorkItem, itemsById: Map<string, WorkItem>): boolean {
+export function isBlockedByOpenItem(item: WorkItem, itemsById: Map<string, WorkItem>): boolean {
     return item.blockedBy.some((blockerId) => itemsById.get(blockerId)?.state === "open");
 }
 
