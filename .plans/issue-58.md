@@ -22,8 +22,8 @@
 
 ## Tasks
 
-- [ ] 1. Log types, `log_index` migration and Drizzle schema — `src/shared/log_types.ts`, `0610_log_index.sql`, `schema/log_index.ts`
-- [ ] 2. Test + implement append/read in seq order with range — `log_store.ts`, `log_store.test.ts`
+- [x] 1. Log types, `log_index` migration and Drizzle schema — `src/shared/log_types.ts`, `0610_log_index.sql`, `schema/log_index.ts`
+- [x] 2. Test + implement append/read in seq order with range — `log_store.ts`, `log_store.test.ts`
 - [ ] 3. Test + implement redaction of every text field (test reads the file) — `log_store.ts`
 - [ ] 4. Test concurrent appends keep `seq` continuous and lines intact — `log_store.test.ts`
 - [ ] 5. Test + implement `stats` from the index — `log_store.ts`
