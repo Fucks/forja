@@ -22,8 +22,8 @@
 
 ## Tasks
 
-- [ ] 1. `decidePolicy` pure with tests — `src/server/triggers/concurrency_policy.ts`, `concurrency_policy.test.ts`
-- [ ] 2. Trigger types and input schemas — `src/shared/trigger_types.ts`, `src/shared/node_configs/trigger_config.ts`
+- [x] 1. `decidePolicy` pure with tests — `src/server/triggers/concurrency_policy.ts`, `concurrency_policy.test.ts`
+- [x] 2. Trigger types and input schemas — `src/shared/trigger_types.ts`, `src/shared/node_configs/trigger_config.ts`
 - [ ] 3. Migration and Drizzle schema — `src/server/db/migrations/0800_triggers.sql`, `src/server/db/schema/triggers.ts`
 - [ ] 4. Repository for triggers, fires and the pause flag — `src/server/triggers/trigger_repository.ts`
 - [ ] 5. Service CRUD (create validates project and flow, update, remove, list by kind) with tests and `FakeRunStarter` — `trigger_service.ts`, `trigger_service.test.ts`, `src/test/fakes/fake_run_starter.ts`

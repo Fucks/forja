@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const TRIGGER_KINDS = ["manual", "schedule", "event", "webhook", "board_column"] as const;
+import { TRIGGER_KINDS } from "@/shared/trigger_types.js";
 
 export const triggerConfigSchema = z.object({ kind: z.enum(TRIGGER_KINDS) });
 export type TriggerConfig = z.infer<typeof triggerConfigSchema>;
