@@ -4,11 +4,8 @@ import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js
 import type { GitProvider } from "@/integrations/git/git_provider.js";
 import type { Clock } from "@/lib/clock.js";
 import { newId } from "@/lib/ids.js";
-import { CredentialRepository } from "@/server/credentials/credential_repository.js";
 import type { ForjaDb } from "@/server/db/client.js";
-import { FlowRepository } from "@/server/flows/flow_repository.js";
-import { createFlowService } from "@/server/flows/flow_service.js";
-import { buildValidationContext } from "@/server/flows/flow_validation_context.js";
+import { createAppFlowService } from "@/server/flows/app_flow_service.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { createProjectService } from "@/server/projects/project_service.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
@@ -30,16 +27,9 @@ export interface AppExecutorDeps {
 
 // The executor of the app, over the same database and event bus as the routes.
 export function createAppExecutor({ db, events, git, runtime, clock }: AppExecutorDeps): Executor {
-    const credentials = new CredentialRepository(db);
-
     return createExecutor({
         runs: new SqliteRunRepository(db, clock),
-        flows: createFlowService({
-            repo: new FlowRepository(db),
-            events,
-            clock,
-            validationContext: () => buildValidationContext(credentials),
-        }),
+        flows: createAppFlowService({ db, events, clock }),
         projects: createProjectService({
             repo: new ProjectRepository(db),
             git,

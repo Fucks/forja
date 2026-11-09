@@ -4,6 +4,7 @@ import type { NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL } from "@/engine/run_state.js";
 import type { OpenWorkspaceSummary } from "@/integrations/agent_runtime/agent_runtime.js";
 import { newId } from "@/lib/ids.js";
+import type { AppDeps } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { FlowRepository } from "@/server/flows/flow_repository.js";
 import { createFlowService, type FlowService } from "@/server/flows/flow_service.js";
@@ -25,6 +26,7 @@ import { buildProject } from "@/test/factories/project_factory.js";
 import { FakeAgentRuntime } from "@/test/fakes/fake_agent_runtime.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { FakeGitProvider } from "@/test/fakes/fake_git_provider.js";
+import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 
 export const TEST_PROJECT_ID = "prj_forja";
@@ -85,6 +87,14 @@ export class ExecutorTestBed {
 
     close(): void {
         this.database.close();
+    }
+
+    // The app over the same database, executor and events, so the test drives it with the clock.
+    buildAppDeps(): AppDeps {
+        return createTestAppDeps(this.database.db, {
+            executor: this.executor,
+            events: this.events,
+        });
     }
 
     // The old executor is abandoned with its clock, so nothing it started ever reports back.
