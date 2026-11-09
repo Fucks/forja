@@ -4,7 +4,8 @@ import type { DiagnosticCheck } from "@/server/diagnostics/diagnostic_checks.js"
 import type { DiagnosticReport } from "@/shared/diagnostic_types.js";
 
 export interface DiagnosticServiceDeps {
-    checks: DiagnosticCheck[];
+    /** Read on every check, so items that depend on the projects follow their changes. */
+    listChecks: () => DiagnosticCheck[];
     commands: CommandRunner;
     clock: Clock;
     cacheMs?: number;
@@ -17,7 +18,7 @@ export interface DiagnosticService {
 const DEFAULT_CACHE_MS = 30_000;
 
 export function createDiagnosticService({
-    checks,
+    listChecks,
     commands,
     clock,
     cacheMs = DEFAULT_CACHE_MS,
@@ -31,7 +32,9 @@ export function createDiagnosticService({
 
     async function runChecks(): Promise<DiagnosticReport> {
         const nodeVersion = process.versions.node;
-        const items = await Promise.all(checks.map((check) => check({ commands, nodeVersion })));
+        const items = await Promise.all(
+            listChecks().map((check) => check({ commands, nodeVersion })),
+        );
         return { checkedAt: clock.now().toISOString(), items };
     }
 

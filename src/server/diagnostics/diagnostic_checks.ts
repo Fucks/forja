@@ -25,6 +25,7 @@ const GIT_ITEM: ItemIdentity = { id: "git", label: "git" };
 const DOCKER_ITEM: ItemIdentity = { id: "docker", label: "Docker" };
 const GH_ITEM: ItemIdentity = { id: "gh", label: "GitHub CLI (gh)" };
 const GH_AUTH_ITEM: ItemIdentity = { id: "gh-auth", label: "Autenticação do gh" };
+const AGENT_IMAGE_LABEL = "Imagem do agente";
 
 const GIT_VERSION: DiagnosticCommand = { command: "git", args: ["--version"] };
 const DOCKER_CLIENT_VERSION: DiagnosticCommand = { command: "docker", args: ["--version"] };
@@ -45,6 +46,31 @@ export const DIAGNOSTIC_CHECKS: DiagnosticCheck[] = [
     checkGhInstalled,
     checkGhAuthenticated,
 ];
+
+export function createAgentImageCheck(image: string): DiagnosticCheck {
+    const identity: ItemIdentity = { id: `agent-image:${image}`, label: AGENT_IMAGE_LABEL };
+    const inspectImage: DiagnosticCommand = {
+        command: "docker",
+        args: ["image", "inspect", image],
+    };
+
+    return async function checkAgentImage({ commands }) {
+        const result = await runDiagnosticCommand(commands, inspectImage);
+        if (result.timedOut) {
+            return reportTimeout(identity, inspectImage);
+        }
+        if (!commandSucceeded(result)) {
+            return {
+                ...identity,
+                status: "error",
+                detail: `Imagem ${image} não encontrada`,
+                fix: "Construir imagem",
+            };
+        }
+
+        return { ...identity, status: "ok", detail: `Imagem ${image} pronta` };
+    };
+}
 
 export function checkNodeVersion({ nodeVersion }: DiagnosticCheckDeps): Promise<DiagnosticItem> {
     if (readMajorVersion(nodeVersion) < MINIMUM_NODE_MAJOR_VERSION) {
