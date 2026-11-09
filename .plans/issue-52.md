@@ -26,7 +26,7 @@
 - [x] 1. Refactor: move `requeueAfterUsageLimit` to `node_run_state.ts` as `requeueSameAttempt` (+ tests)
 - [x] 2. Test + implement `node_run_interrupted` requeues the same attempt — `scheduler_types.ts`, `scheduler.ts`, `scheduler.test.ts`, `scheduler_harness.ts`
 - [x] 3. Test + implement: a stopping run cancels the interrupted NodeRun — `scheduler.ts`, `scheduler.test.ts`
-- [ ] 4. Test + implement `wakeupTimesOf` — `scheduler_snapshot.ts` (+ test)
+- [x] 4. Test + implement `wakeupTimesOf` — `scheduler_snapshot.ts` (+ test)
 - [ ] 5. Test + implement `isSchedulerSnapshot` — `src/server/runtime/stored_snapshot.ts` (+ test)
 - [ ] 6. Test + implement `resumeFromSnapshot` (interrupted Devs restart with the same attempt; run finishes) — `executor.ts`, `active_run.ts`, `executor.test.ts`
 - [ ] 7. Test + implement `recoverRuns` report: resumed, interrupted, still paused, failed, closed workspaces — `recovery.ts`, `recovery.test.ts`
