@@ -25,5 +25,5 @@
 - [x] 6. Test + implement `createPullRequest` (stdin, --draft, view by URL)
 - [x] 7. Test + implement `findPullRequestByHead` (merged via mergedAt, undefined when none)
 - [x] 8. Test + implement gh failures become `GitHubError` with stderr
-- [ ] 9. In-memory fake — `src/test/fakes/fake_github_provider.ts`
+- [x] 9. In-memory fake — `src/test/fakes/fake_github_provider.ts`
 - [ ] 10. Self-review checklist and feedback loops
