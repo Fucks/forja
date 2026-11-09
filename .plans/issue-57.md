@@ -30,8 +30,8 @@
 ## Tasks
 
 - [x] 1. `AgentRunRequest` gains `maxTurns?`, `maxBudgetUsd?`, `toolArgs`, `expandPromptCommands`; executor and test helpers fill them — `agent_runtime.ts`, `agent_executor.ts`
-- [ ] 2. Test + implement `buildClaudeArgs` base flags (stream-json, model, effort, permission mode, no prompt) — `claude_command.ts`
-- [ ] 3. Test + implement optional flags (max turns, budget, json schema, tool args, resume) — `claude_command.ts`
+- [x] 2. Test + implement `buildClaudeArgs` base flags (stream-json, model, effort, permission mode, no prompt) — `claude_command.ts`
+- [x] 3. Test + implement optional flags (max turns, budget, json schema, tool args, resume) — `claude_command.ts`
 - [ ] 4. Test + implement `expandPromptCommands` substitution and failure text — `prompt_commands.ts`
 - [ ] 5. Test + implement: commands inside fenced code blocks are kept — `prompt_commands.ts`
 - [ ] 6. Test + implement `jsonSchemaToZod` (primitives, enum, object, required, array) — `output_schema.ts`
