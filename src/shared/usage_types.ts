@@ -55,3 +55,15 @@ export interface UsageAggregate {
     costUsd: number;
     nodeRuns: number;
 }
+
+export const usageQueryParams = z
+    .object({
+        from: z.coerce.date(),
+        to: z.coerce.date(),
+        groupBy: z.enum(USAGE_GROUP_BYS),
+        flowId: z.string().min(1).optional(),
+    })
+    .refine(({ from, to }) => from < to, {
+        message: "O início do período precisa ser antes do fim.",
+        path: ["from"],
+    });
