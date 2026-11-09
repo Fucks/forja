@@ -214,6 +214,15 @@ describe("LogViewer", () => {
         );
     });
 
+    it("highlights matches inside an expanded detail", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={[READ_TOOL_CALL]} />);
+
+        await user.type(screen.getByRole("searchbox"), "file_path{Enter}");
+
+        expect(screen.getByText("file_path", { selector: "mark" })).toBeInTheDocument();
+    });
+
     it("stops following the end when going to a match", async () => {
         const onFollowChange = vi.fn();
         const user = userEvent.setup();

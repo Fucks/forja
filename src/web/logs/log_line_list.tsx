@@ -1,10 +1,10 @@
-import type { Virtualizer } from "@tanstack/react-virtual";
 import type { JSX, RefObject, UIEvent } from "react";
 
 import { LogLine } from "@/web/logs/log_line.js";
 import type { LogLine as LogLineEntry } from "@/web/logs/log_types.js";
 import type { ExpandedLines } from "@/web/logs/use_expanded_lines.js";
 import type { ScrollPosition } from "@/web/logs/use_log_follow.js";
+import type { LogVirtualizer } from "@/web/logs/use_log_virtualizer.js";
 
 export function LogLineList({
     lines,
@@ -16,7 +16,7 @@ export function LogLineList({
     selectedMatchSeq,
 }: {
     lines: LogLineEntry[];
-    virtualizer: Virtualizer<HTMLDivElement, HTMLDivElement>;
+    virtualizer: LogVirtualizer;
     scrollElementRef: RefObject<HTMLDivElement | null>;
     expandedLines: ExpandedLines;
     onScroll: (position: ScrollPosition) => void;

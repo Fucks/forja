@@ -4,6 +4,7 @@ import type { JSX, KeyboardEvent, RefObject } from "react";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { Input } from "@/web/components/ui/input.js";
 import { Switch } from "@/web/components/ui/switch.js";
+import { isBlankQuery } from "@/web/logs/log_search.js";
 import type { MatchDirection } from "@/web/logs/log_search.js";
 import type { LogSearch } from "@/web/logs/use_log_search.js";
 
@@ -82,7 +83,7 @@ export function LogToolbar({
 }
 
 function describeMatches({ query, matchSeqs, selectedMatchSeq }: LogSearch): string | null {
-    if (query.trim() === "") {
+    if (isBlankQuery(query)) {
         return null;
     }
 

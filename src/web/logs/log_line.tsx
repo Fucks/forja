@@ -102,7 +102,7 @@ function ExpandableLine({
             </button>
             {isExpanded && (
                 <pre className="py-1 pl-4.5 break-words whitespace-pre-wrap text-muted">
-                    {detail}
+                    <HighlightedText text={detail} query={searchQuery} />
                 </pre>
             )}
         </>

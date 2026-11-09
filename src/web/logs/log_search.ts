@@ -65,6 +65,10 @@ export function detailContainsQuery(line: LogLine, query: string): boolean {
     return line.detail.toLowerCase().includes(normalizedQuery);
 }
 
+export function isBlankQuery(query: string): boolean {
+    return normalizeQuery(query) === "";
+}
+
 function normalizeQuery(query: string): string {
     return query.trim().toLowerCase();
 }

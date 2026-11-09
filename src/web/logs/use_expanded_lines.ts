@@ -12,7 +12,9 @@ export function useExpandedLines(): ExpandedLines {
     function toggle(seq: number): void {
         setExpandedSeqs((current) => {
             const next = new Set(current);
-            if (!next.delete(seq)) {
+            if (next.has(seq)) {
+                next.delete(seq);
+            } else {
                 next.add(seq);
             }
             return next;
