@@ -19,13 +19,13 @@
 
 ## Tasks
 
-- [ ] 1. Shared types — `src/shared/diagnostic_types.ts`
-- [ ] 2. Test + impl: all items `ok` with a fake simulating a healthy machine — `diagnostic_service.test.ts`, `diagnostic_checks.ts`, `diagnostic_service.ts`
-- [ ] 3. Test + impl: node < 22 is an error — `diagnostic_checks.ts`
-- [ ] 4. Test + impl: Docker absent and Docker without daemon are errors with documented fix
-- [ ] 5. Test + impl: gh absent and gh without auth are warnings
-- [ ] 6. Test + impl: timed-out command becomes an error and every command gets the 10 s timeout
-- [ ] 7. Test + impl: cache for 30 s, `force` and expiry
+- [x] 1. Shared types — `src/shared/diagnostic_types.ts`
+- [x] 2. Test + impl: all items `ok` with a fake simulating a healthy machine — `diagnostic_service.test.ts`, `diagnostic_checks.ts`, `diagnostic_service.ts`
+- [x] 3. Test + impl: node < 22 is an error — `diagnostic_checks.ts`
+- [x] 4. Test + impl: Docker absent and Docker without daemon are errors with documented fix
+- [x] 5. Test + impl: gh absent and gh without auth are warnings
+- [x] 6. Test + impl: timed-out command becomes an error and every command gets the 10 s timeout
+- [x] 7. Test + impl: cache for 30 s, `force` and expiry
 - [ ] 8. Route `GET /api/diagnostics?force=1` — `diagnostics_routes.ts`
 - [ ] 9. Test + impl: page shows summary and items — `diagnostics_page.tsx`, `use_diagnostics.ts`, `diagnostics_page.test.tsx`
 - [ ] 10. Test + impl: "Verificar de novo" refetches with `force=1`
