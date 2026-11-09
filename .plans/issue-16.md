@@ -29,5 +29,5 @@
 - [x] 5. Test + implement follow-the-end (follows new lines, scrolling up turns off, "Ir para o fim") — `use_log_follow.ts`
 - [x] 6. Test + implement toolbar search: Ctrl/Cmd+F focus, Enter/Shift+Enter navigation, highlight — `log_toolbar.tsx`, `use_log_search.ts`
 - [x] 7. Test + implement copy line, copy all and download — `log_clipboard.ts`, `log_toolbar.tsx`, `log_line.tsx`
-- [ ] 8. Styleguide LogViewer section with 10k generated lines — `src/web/app/styleguide/log_viewer_samples.tsx`, `styleguide_page.tsx`, test
+- [x] 8. Styleguide LogViewer section with 10k generated lines — `src/web/app/styleguide/log_viewer_samples.tsx`, `styleguide_page.tsx`, test
 - [ ] 9. Self-review checklist and feedback loops (typecheck, lint, test)

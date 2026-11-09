@@ -19,6 +19,7 @@ import {
     ToastSamples,
     TooltipSamples,
 } from "@/web/app/styleguide/overlay_samples.js";
+import { LogViewerSamples } from "@/web/app/styleguide/log_viewer_samples.js";
 import { StatusBadgeSamples } from "@/web/app/styleguide/status_badge_samples.js";
 import { SelectSamples, TextFieldSamples } from "@/web/app/styleguide/text_field_samples.js";
 
@@ -48,6 +49,7 @@ export function StyleguidePage(): JSX.Element {
             <EmptyStateSamples />
             <SkeletonSamples />
             <KeyValueSamples />
+            <LogViewerSamples />
         </div>
     );
 }
