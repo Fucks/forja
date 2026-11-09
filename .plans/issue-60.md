@@ -26,8 +26,8 @@
 
 ## Tasks
 
-- [ ] 1. Default Dockerfile — `assets/agent-image/Dockerfile`
-- [ ] 2. Shared types — `src/shared/agent_image_types.ts`
+- [x] 1. Default Dockerfile — `assets/agent-image/Dockerfile`
+- [x] 2. Shared types — `src/shared/agent_image_types.ts`
 - [ ] 3. Test+impl: status picks the project `.sandcastle/Dockerfile` or the Forja default — `agent_image_service(.test).ts`
 - [ ] 4. Test+impl: status reports exists/createdAt/sizeMb from `docker image inspect`, and missing image
 - [ ] 5. Test+impl: build runs docker build with the contract args (host UID/GID, 1000 without host user, timeout)
