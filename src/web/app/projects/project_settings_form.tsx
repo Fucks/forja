@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 
 import { EFFORTS } from "@/shared/agent_types.js";
 import type { Effort } from "@/shared/agent_types.js";
@@ -36,9 +36,11 @@ const EFFORT_OPTIONS = EFFORTS.map((effort) => ({ value: effort, label: effort }
 export function ProjectSettingsForm({
     draft,
     onChange,
+    containerPanel,
 }: {
     draft: ProjectSettingsDraft;
     onChange: (draft: ProjectSettingsDraft) => void;
+    containerPanel: ReactNode;
 }): JSX.Element {
     const changeField: ChangeProjectField = (field, fieldValue) =>
         onChange({ ...draft, [field]: fieldValue });
@@ -47,7 +49,9 @@ export function ProjectSettingsForm({
         <>
             <AgentsSection draft={draft} onFieldChange={changeField} />
             <ExecutionSection draft={draft} onFieldChange={changeField} />
-            <ContainerSection draft={draft} onFieldChange={changeField} />
+            <ContainerSection draft={draft} onFieldChange={changeField}>
+                {containerPanel}
+            </ContainerSection>
         </>
     );
 }
@@ -202,7 +206,11 @@ function ExecutionSection({ draft, onFieldChange }: ProjectSectionProps): JSX.El
     );
 }
 
-function ContainerSection({ draft, onFieldChange }: ProjectSectionProps): JSX.Element {
+function ContainerSection({
+    draft,
+    onFieldChange,
+    children,
+}: ProjectSectionProps & { children: ReactNode }): JSX.Element {
     return (
         <SettingsSection title="Container">
             <SettingField
@@ -212,6 +220,7 @@ function ContainerSection({ draft, onFieldChange }: ProjectSectionProps): JSX.El
                 defaultLabel={DEFAULT_PROJECT_SETTINGS.agentImage}
                 onChange={(fieldText) => onFieldChange("agentImage", fieldText)}
             />
+            {children}
         </SettingsSection>
     );
 }

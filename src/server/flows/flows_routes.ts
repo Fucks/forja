@@ -3,6 +3,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
 import { systemClock } from "@/lib/clock.js";
+import { describeAttachment } from "@/server/attachment_header.js";
 import { createAppFlowService } from "@/server/flows/app_flow_service.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
 import { flowFileName, flowToYaml } from "@/server/flows/flow_yaml.js";
@@ -205,8 +206,4 @@ function passTextBodyThrough(
     done: (error: null, body: string) => void,
 ): void {
     done(null, body);
-}
-
-function describeAttachment(fileName: string): string {
-    return `attachment; filename="${fileName}"`;
 }

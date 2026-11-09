@@ -8,12 +8,14 @@ import type {
     SchedulerEvent,
     SchedulerSnapshot,
 } from "@/engine/scheduler_types.js";
-import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
+import type { AgentEvent, AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { CancelTimeout, Clock } from "@/lib/clock.js";
 import type { IdPrefix } from "@/lib/ids.js";
 import type { RunRecord, RunRepository } from "@/server/runs/run_repository.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import { createLogAnnouncer, type LogAnnouncer } from "@/server/runtime/log_announcer.js";
+import type { LogStore } from "@/server/runtime/log_store.js";
 import { NodeRunExecution } from "@/server/runtime/node_run_execution.js";
 import type { NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
 import { limitRecordedInputs } from "@/server/runtime/recorded_inputs.js";
@@ -27,6 +29,7 @@ import {
     usageLimitResetEvent,
 } from "@/server/runtime/run_events.js";
 import { createWorkspacePool, type WorkspacePool } from "@/server/runtime/workspace_pool.js";
+import type { UsageService } from "@/server/usage/usage_service.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
@@ -43,6 +46,8 @@ export interface ActiveRunDeps {
     scheduler: Scheduler;
     runs: RunRepository;
     events: EventBus;
+    logs: LogStore;
+    usage: UsageService;
     runtime: AgentRuntime;
     clock: Clock;
     nodeExecutors: NodeExecutorRegistry;
@@ -58,7 +63,7 @@ export class ActiveRun {
     private readonly workspaces: WorkspacePool;
     private readonly runningExecutions = new Map<string, NodeRunExecution>();
     private readonly pendingWakeups = new Set<CancelTimeout>();
-    private readonly logSequenceByNodeRun = new Map<string, number>();
+    private readonly logAnnouncer: LogAnnouncer;
 
     constructor(private readonly deps: ActiveRunDeps) {
         this.record = deps.record;
@@ -69,6 +74,11 @@ export class ActiveRun {
                     { run: this.record, project: deps.project, settings: deps.settings },
                     item,
                 ),
+        });
+        this.logAnnouncer = createLogAnnouncer({
+            clock: deps.clock,
+            publish: (nodeRunId, range) =>
+                deps.events.publish(logAppendedEvent(this.record, nodeRunId, range)),
         });
     }
 
@@ -162,9 +172,10 @@ export class ActiveRun {
             clock: deps.clock,
             runs: deps.runs,
             events: deps.events,
+            usage: deps.usage,
             nodeExecutors: deps.nodeExecutors,
             newId: (prefix) => deps.newId(prefix),
-            announceAgentEvent: () => this.announceLogLine(nodeRun.id),
+            recordAgentEvent: (event) => this.recordAgentEvent(nodeRun.id, event),
             deliver: (event) => this.deliver(event),
         });
         this.runningExecutions.set(nodeRun.id, execution);
@@ -173,11 +184,13 @@ export class ActiveRun {
         );
     }
 
-    // TODO(#58): the sequence will come from the NodeRun log file.
-    private announceLogLine(nodeRunId: string): void {
-        const sequence = (this.logSequenceByNodeRun.get(nodeRunId) ?? 0) + 1;
-        this.logSequenceByNodeRun.set(nodeRunId, sequence);
-        this.deps.events.publish(logAppendedEvent(this.record, nodeRunId, sequence));
+    private recordAgentEvent(nodeRunId: string, event: AgentEvent): void {
+        this.inBackground(this.appendToLog(nodeRunId, event));
+    }
+
+    private async appendToLog(nodeRunId: string, event: AgentEvent): Promise<void> {
+        const stored = await this.deps.logs.append({ runId: this.record.id, nodeRunId }, event);
+        this.logAnnouncer.announce(nodeRunId, stored.seq);
     }
 
     private async saveNodeRun(nodeRun: NodeRunState): Promise<void> {

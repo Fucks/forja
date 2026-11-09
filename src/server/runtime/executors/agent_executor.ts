@@ -27,7 +27,10 @@ export async function executeAgentNode(
     const request = buildAgentRunRequest(context, node);
     const result = await runAgent(context, node, request);
 
-    return { outputs: { result: result.output, summary: result.summary }, usage: result.usage };
+    return {
+        outputs: { result: result.output, summary: result.summary },
+        usage: { model: request.model, tokens: result.usage },
+    };
 }
 
 function buildAgentRunRequest(context: NodeExecutionContext, node: AgentNode): AgentRunRequest {

@@ -1,4 +1,8 @@
-import { checkNodeVersion, DIAGNOSTIC_CHECKS } from "@/server/diagnostics/diagnostic_checks.js";
+import {
+    checkNodeVersion,
+    createAgentImageCheck,
+    DIAGNOSTIC_CHECKS,
+} from "@/server/diagnostics/diagnostic_checks.js";
 import { createDiagnosticService } from "@/server/diagnostics/diagnostic_service.js";
 import type { DiagnosticItem } from "@/shared/diagnostic_types.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
@@ -9,6 +13,8 @@ const CACHE_MS = 30_000;
 const COMMAND_TIMEOUT_MS = 10_000;
 const COMMAND_NOT_FOUND = 127;
 const DOCKER_SERVER_VERSION_ARGS = ["version", "--format", "{{.Server.Version}}"];
+const AGENT_IMAGE = "forja-agent:latest";
+const IMAGE_NOT_FOUND = 1;
 
 function scriptHealthyMachine(commands: FakeCommandRunner): void {
     commands.when("git", ["--version"]).returns({ stdout: "git version 2.47.1" });
@@ -33,7 +39,7 @@ describe("DiagnosticService", () => {
     });
 
     function createService(): ReturnType<typeof createDiagnosticService> {
-        return createDiagnosticService({ checks: DIAGNOSTIC_CHECKS, commands, clock });
+        return createDiagnosticService({ listChecks: () => DIAGNOSTIC_CHECKS, commands, clock });
     }
 
     it("reports every item as ok when the whole toolchain is ready", async () => {
@@ -143,6 +149,21 @@ describe("DiagnosticService", () => {
         expect(report.checkedAt).toBe(clock.now().toISOString());
     });
 
+    it("runs the checks listed at the time of each check", async () => {
+        const listedChecks = [...DIAGNOSTIC_CHECKS];
+        const service = createDiagnosticService({
+            listChecks: () => listedChecks,
+            commands,
+            clock,
+        });
+        await service.run();
+        listedChecks.push(createAgentImageCheck(AGENT_IMAGE));
+
+        const report = await service.run(true);
+
+        expect(findItem(report.items, `agent-image:${AGENT_IMAGE}`)).toBeDefined();
+    });
+
     it("checks again when forced even if the cache is fresh", async () => {
         const service = createService();
         await service.run();
@@ -167,5 +188,41 @@ describe("checkNodeVersion", () => {
         const item = await checkNodeVersion({ commands, nodeVersion: "20.11.1" });
 
         expect(item).toMatchObject({ status: "error", fix: "Instale o Node 22 ou mais recente" });
+    });
+});
+
+describe("createAgentImageCheck", () => {
+    let commands: FakeCommandRunner;
+
+    beforeEach(() => {
+        commands = new FakeCommandRunner();
+    });
+
+    function checkAgentImage(): Promise<DiagnosticItem> {
+        return createAgentImageCheck(AGENT_IMAGE)({ commands, nodeVersion: "22.0.0" });
+    }
+
+    it("reports a missing image as an error with the fix to build it", async () => {
+        commands.when("docker", ["image", "inspect", AGENT_IMAGE]).returns({
+            exitCode: IMAGE_NOT_FOUND,
+        });
+
+        const item = await checkAgentImage();
+
+        expect(item).toEqual({
+            id: `agent-image:${AGENT_IMAGE}`,
+            label: "Imagem do agente",
+            status: "error",
+            detail: "Imagem forja-agent:latest não encontrada",
+            fix: "Construir imagem",
+        });
+    });
+
+    it("accepts an image that docker image inspect finds", async () => {
+        commands.when("docker", ["image", "inspect", AGENT_IMAGE]).returns({ stdout: "[{}]" });
+
+        const item = await checkAgentImage();
+
+        expect(item).toMatchObject({ status: "ok", detail: "Imagem forja-agent:latest pronta" });
     });
 });

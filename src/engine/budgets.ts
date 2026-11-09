@@ -1,3 +1,5 @@
+import type { TokenUsage } from "@/shared/usage_types.js";
+
 export interface BudgetLimit {
     maxCostUsd?: number;
     maxTokens?: number;
@@ -55,6 +57,10 @@ export function checkBudget(budget: RunBudget, totals: BudgetTotals, nodeId: str
     }
 
     return { allowed: false, scope: reached.scope, limit: reached.limit };
+}
+
+export function budgetTokensOf(usage: TokenUsage): number {
+    return usage.inputTokens + usage.outputTokens;
 }
 
 export function addUsage(first: UsageTotals, second: UsageTotals): UsageTotals {

@@ -172,7 +172,7 @@ async function findUnfinishedRunOrThrow(runs: RunRepository, runId: string): Pro
     return run;
 }
 
-async function findRunOrThrow(runs: RunRepository, runId: string): Promise<RunRecord> {
+export async function findRunOrThrow(runs: RunRepository, runId: string): Promise<RunRecord> {
     const run = await runs.getRun(runId);
     if (!run) {
         throw new NotFoundError(`A run ${runId} não existe.`);
@@ -181,7 +181,10 @@ async function findRunOrThrow(runs: RunRepository, runId: string): Promise<RunRe
     return run;
 }
 
-async function findNodeRunOrThrow(runs: RunRepository, nodeRunId: string): Promise<NodeRunState> {
+export async function findNodeRunOrThrow(
+    runs: RunRepository,
+    nodeRunId: string,
+): Promise<NodeRunState> {
     const nodeRun = await runs.getNodeRun(nodeRunId);
     if (!nodeRun) {
         throw new NotFoundError(`A execução de nó ${nodeRunId} não existe.`);

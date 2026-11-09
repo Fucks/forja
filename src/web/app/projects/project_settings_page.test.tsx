@@ -4,6 +4,8 @@ import { userEvent } from "@testing-library/user-event";
 import { TOOL_PROFILE_PRESETS } from "@/server/tool_profiles/tool_profile_presets.js";
 import { DEFAULT_GLOBAL_SETTINGS, DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
 import type { GlobalSettings, ProjectSettings } from "@/shared/settings_types.js";
+import type { AgentImageStatus } from "@/shared/agent_image_types.js";
+import { stubElementSizes } from "@/test/fakes/fake_element_size.js";
 import { listSentWrites, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
@@ -11,6 +13,21 @@ import { renderAppAt } from "@/test/render_app_at.js";
 const SETTINGS_PAGE_PATH = "/projects/prj_forja/settings";
 const PROJECT_SETTINGS_URL = "/api/projects/prj_forja/settings";
 const GLOBAL_SETTINGS_URL = "/api/settings";
+const AGENT_IMAGE_URL = "/api/projects/prj_forja/agent-image";
+const BUILD_URL = `${AGENT_IMAGE_URL}/build`;
+const LOG_VIEWPORT_HEIGHT_PX = 320;
+const LOG_ROW_HEIGHT_PX = 20;
+const MISSING_IMAGE: AgentImageStatus = {
+    image: "forja-agent:latest",
+    exists: false,
+    source: "forja_default",
+};
+const BUILT_IMAGE: AgentImageStatus = {
+    ...MISSING_IMAGE,
+    exists: true,
+    createdAt: "2026-11-09T12:00:00Z",
+    sizeMb: 2048,
+};
 
 const SAVED_PROJECT_CHANGES: Partial<ProjectSettings> = { defaultEffort: "max" };
 const SAVED_GLOBAL_CHANGES: Partial<GlobalSettings> = { logRetentionDays: 7 };
@@ -24,6 +41,7 @@ function fakeSettingsApi(): FakeRoutes {
     return {
         [`GET ${PROJECT_SETTINGS_URL}`]: () => Response.json(projectSettings),
         [`GET ${GLOBAL_SETTINGS_URL}`]: () => Response.json(globalSettings),
+        [`GET ${AGENT_IMAGE_URL}`]: () => Response.json(MISSING_IMAGE),
         "GET /api/credentials": () => Response.json([]),
         "GET /api/tool-profiles": () => Response.json(TOOL_PROFILE_PRESETS),
         [`PUT ${PROJECT_SETTINGS_URL}`]: () => {
@@ -108,5 +126,89 @@ describe("ProjectSettingsPage", () => {
 
         expect(screen.getByRole("radio", { name: "high" })).toBeChecked();
         expect(screen.queryByRole("button", { name: "Salvar" })).not.toBeInTheDocument();
+    });
+});
+
+function encodeBuildEvent(event: string, payload: unknown): Uint8Array {
+    return new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
+}
+
+function respondWithEventStream(start: (controller: ReadableStreamDefaultController) => void) {
+    return new Response(new ReadableStream({ start }), {
+        headers: { "content-type": "text/event-stream" },
+    });
+}
+
+describe("ProjectSettingsPage agent image panel", () => {
+    beforeEach(() => {
+        stubElementSizes({
+            viewportHeightPx: LOG_VIEWPORT_HEIGHT_PX,
+            rowHeightPx: LOG_ROW_HEIGHT_PX,
+        });
+    });
+
+    it("shows that the agent image is missing and where it would be built from", async () => {
+        stubFetchRoutes(fakeSettingsApi());
+
+        renderAppAt(SETTINGS_PAGE_PATH);
+
+        const container = await screen.findByRole("region", { name: "Container" });
+        expect(await within(container).findByText("forja-agent:latest")).toBeInTheDocument();
+        expect(within(container).getByText("Falha")).toBeInTheDocument();
+        expect(
+            within(container).getByText(/Fonte: Dockerfile padrão da Forja/),
+        ).toBeInTheDocument();
+    });
+
+    it("streams the build log and shows the image as ready when the build ends", async () => {
+        const user = userEvent.setup();
+        let imageStatus = MISSING_IMAGE;
+        stubFetchRoutes({
+            ...fakeSettingsApi(),
+            [`GET ${AGENT_IMAGE_URL}`]: () => Response.json(imageStatus),
+            [`POST ${BUILD_URL}`]: () =>
+                respondWithEventStream((controller) => {
+                    controller.enqueue(
+                        encodeBuildEvent("line", { line: "#1 load build definition" }),
+                    );
+                    imageStatus = BUILT_IMAGE;
+                    controller.enqueue(encodeBuildEvent("done", { ok: true, exitCode: 0 }));
+                    controller.close();
+                }),
+        });
+        renderAppAt(SETTINGS_PAGE_PATH);
+
+        await user.click(await screen.findByRole("button", { name: "Construir imagem" }));
+
+        expect(await screen.findByText("#1 load build definition")).toBeInTheDocument();
+        expect(await screen.findByText("Imagem construída.")).toBeInTheDocument();
+        expect(await screen.findByText("Sucesso")).toBeInTheDocument();
+        expect(screen.getByText(/2048 MB/)).toBeInTheDocument();
+    });
+
+    it("turns the button into Cancelar during the build and aborts the request on click", async () => {
+        const user = userEvent.setup();
+        let buildSignal: AbortSignal | null | undefined;
+        stubFetchRoutes({
+            ...fakeSettingsApi(),
+            [`POST ${BUILD_URL}`]: (init) =>
+                respondWithEventStream((controller) => {
+                    buildSignal = init?.signal;
+                    controller.enqueue(
+                        encodeBuildEvent("line", { line: "#1 load build definition" }),
+                    );
+                    buildSignal?.addEventListener("abort", () =>
+                        controller.error(new DOMException("Aborted", "AbortError")),
+                    );
+                }),
+        });
+        renderAppAt(SETTINGS_PAGE_PATH);
+        await user.click(await screen.findByRole("button", { name: "Construir imagem" }));
+
+        await user.click(await screen.findByRole("button", { name: "Cancelar" }));
+
+        expect(buildSignal?.aborted).toBe(true);
+        expect(await screen.findByText("Build cancelado.")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Construir imagem" })).toBeInTheDocument();
     });
 });

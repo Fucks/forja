@@ -1,6 +1,7 @@
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL, type RunState } from "@/engine/run_state.js";
 import type { SchedulerCommand } from "@/engine/scheduler_types.js";
+import type { AppendedLogRange } from "@/server/runtime/log_announcer.js";
 import type { ForjaEvent } from "@/shared/events.js";
 
 type GroupProgressCommand = Extract<SchedulerCommand, { type: "group_progress" }>;
@@ -91,14 +92,18 @@ export function usageRecordedEvent(
     };
 }
 
-export function logAppendedEvent(run: RunState, nodeRunId: string, sequence: number): ForjaEvent {
+export function logAppendedEvent(
+    run: RunState,
+    nodeRunId: string,
+    { fromSeq, toSeq }: AppendedLogRange,
+): ForjaEvent {
     return {
         type: "log.appended",
         runId: run.id,
         projectId: run.projectId,
         nodeRunId,
-        fromSeq: sequence,
-        toSeq: sequence,
+        fromSeq,
+        toSeq,
     };
 }
 

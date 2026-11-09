@@ -44,6 +44,10 @@ export const apiClient: ApiClient = {
     delete: (path, schema) => sendRequest({ method: "DELETE", path, schema }),
 };
 
+export function toApiUrl(path: string): string {
+    return `${API_PREFIX}${path}`;
+}
+
 interface ApiRequest<T> {
     method: HttpMethod;
     path: string;
@@ -52,7 +56,7 @@ interface ApiRequest<T> {
 }
 
 async function sendRequest<T>(request: ApiRequest<T>): Promise<T> {
-    const response = await fetch(`${API_PREFIX}${request.path}`, buildRequestInit(request));
+    const response = await fetch(toApiUrl(request.path), buildRequestInit(request));
     if (!response.ok) {
         throw await readApiError(response);
     }

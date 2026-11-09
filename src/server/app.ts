@@ -15,6 +15,7 @@ import { registerErrorHandler } from "@/server/errors.js";
 import { routeModules } from "@/server/route_modules.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import type { Executor } from "@/server/runtime/executor.js";
+import type { LogStore } from "@/server/runtime/log_store.js";
 import { registerStaticRoutes } from "@/server/static/static_routes.js";
 
 const API_PREFIX = "/api";
@@ -38,6 +39,7 @@ export interface AppDeps {
     git: GitProvider;
     secrets: SecretBox;
     redactor: SecretRedactor;
+    logs: LogStore;
     agentRuntime: AgentRuntime;
     executor: Executor;
 }

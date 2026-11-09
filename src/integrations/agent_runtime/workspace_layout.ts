@@ -82,6 +82,15 @@ export function toContainerPath(hostPath: string): string {
     return `/${drive.toLowerCase()}/${rest.replace(WINDOWS_PATH_SEPARATOR, "/")}`;
 }
 
+// Windows has no uid/gid; Docker Desktop maps the owner of the mounted files by itself there.
+export function currentHostUser(): HostUser | null {
+    if (!process.getuid || !process.getgid) {
+        return null;
+    }
+
+    return { uid: process.getuid(), gid: process.getgid() };
+}
+
 /** Without a host user (Windows) the container keeps the image's default user. */
 export function containerUserFor(hostUser: HostUser | null): string | undefined {
     return hostUser ? `${hostUser.uid}:${hostUser.gid}` : undefined;

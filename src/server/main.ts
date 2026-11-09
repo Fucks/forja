@@ -3,12 +3,16 @@ import * as fs from "node:fs";
 import type { FastifyInstance } from "fastify";
 
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
+import { createDockerAgentRuntime } from "@/integrations/agent_runtime/docker_agent_runtime.js";
 import { UnavailableAgentRuntime } from "@/integrations/agent_runtime/unavailable_agent_runtime.js";
+import { currentHostUser } from "@/integrations/agent_runtime/workspace_layout.js";
 import { CliGitProvider } from "@/integrations/git/cli_git_provider.js";
+import type { CommandRunner } from "@/integrations/process/command_runner.js";
 import { ExecaCommandRunner } from "@/integrations/process/execa_command_runner.js";
 import { loadOrCreateMasterKey } from "@/integrations/secrets/master_key.js";
 import { createSecretBox } from "@/integrations/secrets/secret_box.js";
 import { createSecretRedactor } from "@/integrations/secrets/secret_redactor.js";
+import { assertNever } from "@/lib/assert_never.js";
 import { systemClock } from "@/lib/clock.js";
 import { buildApp } from "@/server/app.js";
 import type { AppDeps } from "@/server/app.js";
@@ -18,13 +22,22 @@ import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import { createAppExecutor } from "@/server/runtime/app_executor.js";
 import { createEventBus } from "@/server/runtime/event_bus.js";
 import type { Executor } from "@/server/runtime/executor.js";
+import { createLogStore } from "@/server/runtime/log_store.js";
 import { recoverRuns } from "@/server/runtime/recovery.js";
 
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 
 export type ServerDeps = Omit<
     AppDeps,
-    "db" | "events" | "commands" | "git" | "secrets" | "redactor" | "agentRuntime" | "executor"
+    | "db"
+    | "events"
+    | "commands"
+    | "git"
+    | "secrets"
+    | "redactor"
+    | "logs"
+    | "agentRuntime"
+    | "executor"
 >;
 
 export async function startServer(deps: ServerDeps): Promise<FastifyInstance> {
@@ -44,11 +57,18 @@ async function buildAppOwningDatabase(
     const commands = new ExecaCommandRunner();
     const events = createEventBus(systemClock);
     const git = new CliGitProvider(commands);
-    // TODO(#58): use the Docker runtime; #71 adds the demo runtime for --seed-demo.
-    const agentRuntime = new UnavailableAgentRuntime();
+    const redactor = createSecretRedactor();
+    const logs = createLogStore({
+        logsDir: deps.paths.logs,
+        db: database.db,
+        redactor,
+        clock: systemClock,
+    });
+    const agentRuntime = createAgentRuntime(deps, commands);
     const executor = createAppExecutor({
         db: database.db,
         events,
+        logs,
         git,
         runtime: agentRuntime,
         clock: systemClock,
@@ -62,7 +82,8 @@ async function buildAppOwningDatabase(
             commands,
             git,
             secrets: createSecretBox(loadOrCreateMasterKey(deps.paths.masterKey, fs)),
-            redactor: createSecretRedactor(),
+            redactor,
+            logs,
             agentRuntime,
             executor,
         });
@@ -74,6 +95,23 @@ async function buildAppOwningDatabase(
     } catch (error) {
         database.close();
         throw error;
+    }
+}
+
+function createAgentRuntime({ env, paths }: ServerDeps, commands: CommandRunner): AgentRuntime {
+    switch (env.FORJA_AGENT_RUNTIME) {
+        case "docker":
+            return createDockerAgentRuntime({
+                commands,
+                paths,
+                clock: systemClock,
+                hostUser: currentHostUser(),
+            });
+        case "fake":
+            // TODO(#71): the demo runtime for --seed-demo.
+            return new UnavailableAgentRuntime();
+        default:
+            return assertNever(env.FORJA_AGENT_RUNTIME);
     }
 }
 
