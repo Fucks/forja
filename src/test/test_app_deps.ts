@@ -9,6 +9,7 @@ import { FakeAgentRuntime } from "@/test/fakes/fake_agent_runtime.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
 import { FakeGitProvider } from "@/test/fakes/fake_git_provider.js";
+import { createTestLogStore } from "@/test/test_log_store.js";
 import { createTestSecretBox } from "@/test/test_secrets.js";
 
 export const TEST_PATHS = resolvePaths("/srv/forja dados", "/home/ana");
@@ -18,6 +19,8 @@ export function createTestAppDeps(db: ForjaDb, overrides: Partial<AppDeps> = {})
     const events = createEventBus(clock);
     const git = new FakeGitProvider();
     const agentRuntime = new FakeAgentRuntime({ clock });
+    const redactor = createSecretRedactor();
+    const logs = createTestLogStore(db, clock, redactor);
 
     return {
         env: loadEnv({ FORJA_LOG_LEVEL: "error" }),
@@ -28,9 +31,10 @@ export function createTestAppDeps(db: ForjaDb, overrides: Partial<AppDeps> = {})
         commands: new FakeCommandRunner(),
         git,
         secrets: createTestSecretBox(),
-        redactor: createSecretRedactor(),
+        redactor,
+        logs,
         agentRuntime,
-        executor: createAppExecutor({ db, events, git, runtime: agentRuntime, clock }),
+        executor: createAppExecutor({ db, events, logs, git, runtime: agentRuntime, clock }),
         ...overrides,
     };
 }

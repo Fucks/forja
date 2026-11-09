@@ -14,6 +14,7 @@ import type { RunRecord, RunTransition } from "@/server/runs/run_repository.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import { createEventBus, type EventBus } from "@/server/runtime/event_bus.js";
 import { createExecutor, type Executor, type ItemSource } from "@/server/runtime/executor.js";
+import type { LogStore } from "@/server/runtime/log_store.js";
 import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
@@ -28,6 +29,7 @@ import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { FakeGitProvider } from "@/test/fakes/fake_git_provider.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
+import { createTestLogStore } from "@/test/test_log_store.js";
 
 export const TEST_PROJECT_ID = "prj_forja";
 export const PROJECT_SYSTEM_PROMPT = "Escreva testes antes do código.";
@@ -58,6 +60,7 @@ export class ExecutorTestBed {
     readonly clock: FakeClock;
     readonly runtime: FakeAgentRuntime;
     readonly events: EventBus;
+    readonly logs: LogStore;
     readonly journal: JournalEntry[] = [];
     readonly runs: JournalingRunRepository;
     readonly flows: FlowService;
@@ -76,6 +79,7 @@ export class ExecutorTestBed {
         });
         this.events = createEventBus(this.clock);
         this.database = previous?.database ?? createDatabaseWithProject();
+        this.logs = createTestLogStore(this.database.db, this.clock);
         this.runs = new JournalingRunRepository(this.database, this.clock, this.journal);
         this.flows = this.createFlowService();
         this.settings = this.createSettingsService();
@@ -94,6 +98,7 @@ export class ExecutorTestBed {
         return createTestAppDeps(this.database.db, {
             executor: this.executor,
             events: this.events,
+            logs: this.logs,
         });
     }
 
@@ -219,6 +224,7 @@ export class ExecutorTestBed {
             items,
             runtime: this.runtime,
             events: this.events,
+            logs: this.logs,
             clock: this.clock,
             newId,
             nodeExecutors: { ...nodeExecutors, ...NOT_YET_IMPLEMENTED_EXECUTORS },

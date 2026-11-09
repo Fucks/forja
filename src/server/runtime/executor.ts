@@ -15,6 +15,7 @@ import type { ProjectService } from "@/server/projects/project_types.js";
 import type { RunRecord, RunRepository } from "@/server/runs/run_repository.js";
 import { ActiveRun } from "@/server/runtime/active_run.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import type { LogStore } from "@/server/runtime/log_store.js";
 import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
 import { runLifecycleEvent } from "@/server/runtime/run_events.js";
 import {
@@ -64,6 +65,7 @@ export interface ExecutorDeps {
     items: ItemSource;
     runtime: AgentRuntime;
     events: EventBus;
+    logs: LogStore;
     clock: Clock;
     newId(prefix: IdPrefix): string;
     // Defaults to the registry; tests stand in for the node types that are not implemented yet.
@@ -236,6 +238,7 @@ class RunExecutor implements Executor {
         const activeRun = new ActiveRun({
             runs: deps.runs,
             events: deps.events,
+            logs: deps.logs,
             runtime: deps.runtime,
             clock: deps.clock,
             newId: (prefix) => deps.newId(prefix),

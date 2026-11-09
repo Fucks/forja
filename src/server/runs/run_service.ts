@@ -181,7 +181,10 @@ async function findRunOrThrow(runs: RunRepository, runId: string): Promise<RunRe
     return run;
 }
 
-async function findNodeRunOrThrow(runs: RunRepository, nodeRunId: string): Promise<NodeRunState> {
+export async function findNodeRunOrThrow(
+    runs: RunRepository,
+    nodeRunId: string,
+): Promise<NodeRunState> {
     const nodeRun = await runs.getNodeRun(nodeRunId);
     if (!nodeRun) {
         throw new NotFoundError(`A execução de nó ${nodeRunId} não existe.`);
