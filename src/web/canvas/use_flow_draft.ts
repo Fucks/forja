@@ -23,7 +23,7 @@ export interface FlowDraftEditor {
     store: EditorStore;
     isLoading: boolean;
     loadError: ApiError | null;
-    reload(): void;
+    reload: () => void;
 }
 
 export function useFlowDraft(flowId: string, clock: Clock = systemClock): FlowDraftEditor {
