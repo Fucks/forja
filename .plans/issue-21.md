@@ -27,6 +27,6 @@
 - [x] 6. Test + impl: timed-out command becomes an error and every command gets the 10 s timeout
 - [x] 7. Test + impl: cache for 30 s, `force` and expiry
 - [x] 8. Route `GET /api/diagnostics?force=1` — `diagnostics_routes.ts`
-- [ ] 9. Test + impl: page shows summary and items — `diagnostics_page.tsx`, `use_diagnostics.ts`, `diagnostics_page.test.tsx`
-- [ ] 10. Test + impl: "Verificar de novo" refetches with `force=1`
+- [x] 9. Test + impl: page shows summary and items — `diagnostics_page.tsx`, `use_diagnostics.ts`, `diagnostics_page.test.tsx`
+- [x] 10. Test + impl: "Verificar de novo" refetches with `force=1`
 - [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)
