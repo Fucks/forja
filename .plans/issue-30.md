@@ -2,8 +2,9 @@
 
 ## Decisions
 
-- `graph_mapping.ts`: RF node types `"flowNode"` (provisional, data `{ flowNode }`) and `"group"`
-  (data `{ flowGroup }`, fixed `width`/`height` from `group.size`). Groups come first, parents before
+- `graph_mapping.ts`: a flow node becomes an RF node whose `type` is the `NodeType` (data
+  `{ flowNode }`; #31 only has to register per-type components) and a group an RF node of type
+  `"group"` (data `{ flowGroup }`, fixed `width`/`height` from `group.size`). Groups come first, parents before
   children. `fromReactFlow` keeps the previous graph's order and configs, drops ids missing from React
   Flow, converts relative → absolute positions and reads group sizes from `width`/`height`.
 - `editor_store.ts` follows the contract and adds `markSaving()` and `markSaveFailed()` (needed for the
@@ -23,8 +24,8 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `toReactFlow` (relative positions, groups with parentId, nested groups, edges) — `src/web/canvas/graph_mapping.ts`
-- [ ] 2. Test + implement `fromReactFlow` round trip (canonical + loop flows, moved node inside nested group) — `src/web/canvas/graph_mapping.ts`
+- [x] 1. Test + implement `toReactFlow` (relative positions, groups with parentId, nested groups, edges) — `src/web/canvas/graph_mapping.ts`
+- [x] 2. Test + implement `fromReactFlow` round trip (canonical + loop flows, moved node inside nested group) — `src/web/canvas/graph_mapping.ts`
 - [ ] 3. Test + implement `createEditorStore` (`load`, `applyGraph` immutable + dirty, `select`, save states) — `src/web/canvas/editor_store.ts`
 - [ ] 4. Test + implement `createAutosave` debounce — `src/web/canvas/autosave.ts`
 - [ ] 5. Test + implement autosave serial saves with returned revision — `src/web/canvas/autosave.ts`
