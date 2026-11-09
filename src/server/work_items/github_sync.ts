@@ -73,7 +73,7 @@ export function buildFailedSync(at: string, error: string): SyncResult {
 async function importIssues(request: ImportRequest): Promise<SyncCounts> {
     const { deps, projectId } = request;
     const listedIssues = await listOpenIssues(request);
-    const unlistedIssues = await readUnlistedOpenItems(request, listedIssues);
+    const unlistedIssues = await readIssuesOfUnlistedOpenItems(request, listedIssues);
     const stillOpenIssues = unlistedIssues.filter((issue) => issue.state === "open");
     const closedIssues = unlistedIssues.filter((issue) => issue.state === "closed");
 
@@ -100,7 +100,7 @@ function listOpenIssues({ deps, repo, options }: ImportRequest): Promise<GithubI
 
 // The listing only brings open issues, so an item that is open here and missing from it may have
 // been closed on GitHub (or just lost the label, or fell beyond the limit).
-async function readUnlistedOpenItems(
+async function readIssuesOfUnlistedOpenItems(
     { deps, projectId, repo }: ImportRequest,
     listedIssues: GithubIssue[],
 ): Promise<GithubIssue[]> {
