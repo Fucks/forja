@@ -35,7 +35,7 @@
 - [x] 7. Move `currentHostUser` to `workspace_layout.ts`; lookups `agent_image_lookups.ts`
 - [x] 8. Test+impl: routes GET status and POST build SSE (lines + done, 404) — `agent_images_routes(.test).ts`
 - [x] 9. Test+impl: diagnostic item per agent image in use — `diagnostic_checks.ts`, `diagnostic_service.ts`, `diagnostics_routes.ts`
-- [ ] 10. Test+impl: SSE reader for fetch bodies — `src/web/api/server_sent_events(.test).ts`
+- [x] 10. Test+impl: SSE reader for fetch bodies — `src/web/api/server_sent_events(.test).ts`
 - [ ] 11. Hooks `use_agent_image.ts` + panel `agent_image_panel.tsx` (status badge, build/cancel, live log)
 - [ ] 12. Wire the panel in the Container section — `project_settings_form.tsx`, `project_settings_page.tsx` (+ page test)
 - [ ] 13. Self-review checklist and feedback loops (typecheck, lint, test)
