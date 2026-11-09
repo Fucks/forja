@@ -134,7 +134,7 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
 
         try {
             return await runAgentInContainer(
-                { containerId, containers, env: spec.env },
+                headlessContainer(containerId, spec.env),
                 request,
                 hooks,
             );
@@ -228,6 +228,10 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
     async function removeContainersOf(workspaceId: string): Promise<void> {
         const found = await containers.list({ [WORKSPACE_LABEL]: workspaceId });
         await Promise.all(found.map((container) => containers.stop(container.id)));
+    }
+
+    function headlessContainer(containerId: string, env: Record<string, string>): AgentContainer {
+        return { containerId, containers, env };
     }
 
     function workspaceContainer(opened: OpenedWorkspace): AgentContainer {

@@ -8,7 +8,7 @@ export interface WorkspaceCommits {
     listCommitsSince(sha: string): Promise<{ sha: string }[]>;
 }
 
-const GIT_LOG_TIMEOUT_MS = 30_000;
+const GIT_COMMAND_TIMEOUT_MS = 30_000;
 
 export function createWorkspaceCommits(
     commands: CommandRunner,
@@ -17,7 +17,7 @@ export function createWorkspaceCommits(
     async function runGit(args: string[], failureMessage: string): Promise<string> {
         const result = await commands.run("git", args, {
             cwd: worktreePath,
-            timeoutMs: GIT_LOG_TIMEOUT_MS,
+            timeoutMs: GIT_COMMAND_TIMEOUT_MS,
         });
         assertCommandSucceeded(result, failureMessage);
 
