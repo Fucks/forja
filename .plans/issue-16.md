@@ -22,7 +22,7 @@
 
 ## Tasks
 
-- [ ] 1. `log_types.ts` + `findMatches` tests (case-insensitive, `detail`, empty query) and implementation — `src/web/logs/log_search.ts`, `log_search.test.ts`
+- [x] 1. `log_types.ts` + `findMatches` tests (case-insensitive, `detail`, empty query) and implementation — `src/web/logs/log_search.ts`, `log_search.test.ts`
 - [ ] 2. Test infra: `scrollTo` polyfill and `fake_element_size.ts` — `src/test/fakes/`
 - [ ] 3. Test + implement virtualized rendering (< 200 row elements with 100k lines), loading and empty states — `log_viewer.tsx`, `log_line.tsx`, `log_viewer.test.tsx`
 - [ ] 4. Test + implement expand/collapse by click and keyboard — `log_line.tsx`
