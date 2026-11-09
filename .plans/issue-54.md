@@ -30,4 +30,4 @@
 - [x] 10. E2E: script timeout fails the NodeRun with `timeout_total`; script exit 1 NodeRun SUCCEEDED
 - [x] 11. E2E: condition skips the other branch
 - [x] 12. E2E: loop exits on iteration 2 when tests pass — `deterministic_executors.test.ts`
-- [ ] 13. Self-review checklist and feedback loops
+- [x] 13. Self-review checklist and feedback loops
