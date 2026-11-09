@@ -1,25 +1,24 @@
+import { buildLogLine } from "@/test/factories/log_line_factory.js";
 import {
     detailContainsQuery,
     findAdjacentMatch,
     findMatches,
     splitByQuery,
 } from "@/web/logs/log_search.js";
-import type { LogLine } from "@/web/logs/log_types.js";
 
-const READ_TOOL_CALL: LogLine = {
+const READ_TOOL_CALL = buildLogLine({
     seq: 2,
-    offsetMs: 500,
     kind: "tool_call",
     text: "Read",
     toolName: "Read",
     detail: "src/App.tsx",
-};
+});
 
-const LINES: LogLine[] = [
-    { seq: 1, offsetMs: 0, kind: "system", text: "Iniciando container" },
+const LINES = [
+    buildLogLine({ seq: 1, kind: "system", text: "Iniciando container" }),
     READ_TOOL_CALL,
-    { seq: 3, offsetMs: 900, kind: "text", text: "Lendo o arquivo app.tsx" },
-    { seq: 4, offsetMs: 1_200, kind: "error", text: "Falha ao compilar" },
+    buildLogLine({ seq: 3, text: "Lendo o arquivo app.tsx" }),
+    buildLogLine({ seq: 4, kind: "error", text: "Falha ao compilar" }),
 ];
 
 describe("findMatches", () => {

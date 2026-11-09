@@ -20,7 +20,7 @@ describe("formatLineForClipboard", () => {
 });
 
 describe("formatLinesForClipboard", () => {
-    it("copies one line per entry, with the detail only of expanded lines", () => {
+    it("copies one line per entry, leaving out the detail of collapsed lines", () => {
         const text = formatLinesForClipboard([BASH_CALL, PLAIN_LINE], () => false);
 
         expect(text).toBe("+00:42 Bash npm test\n+00:43 Testes passaram");
