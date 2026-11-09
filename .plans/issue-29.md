@@ -36,7 +36,7 @@
 - [x] 5. Implement `review_loop.ts`
 - [x] 6. Test + implement `FLOW_TEMPLATES` / `findFlowTemplate` in `flow_template_registry.ts`
       (every template valid with `checkPromptVariables`, unique ids)
-- [ ] 7. Test + implement `GET /api/flow-templates` — `flows_routes.ts`, `flow_types.ts`
-- [ ] 8. Test + implement `POST /api/projects/:projectId/flows/from-template` (creates a draft that publishes;
+- [x] 7. Test + implement `GET /api/flow-templates` — `flows_routes.ts`, `flow_types.ts`
+- [x] 8. Test + implement `POST /api/projects/:projectId/flows/from-template` (creates a draft that publishes;
       404 for unknown template)
 - [ ] 9. Self-review checklist (section 5) and feedback loops (section 6)

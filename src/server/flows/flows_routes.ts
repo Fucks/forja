@@ -9,8 +9,14 @@ import { createFlowService } from "@/server/flows/flow_service.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
 import { buildValidationContext } from "@/server/flows/flow_validation_context.js";
 import { flowFileName, flowToYaml } from "@/server/flows/flow_yaml.js";
+import {
+    FLOW_TEMPLATES,
+    findFlowTemplateOrThrow,
+} from "@/server/flows/templates/flow_template_registry.js";
+import type { FlowTemplate } from "@/server/flows/templates/flow_template_registry.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import {
+    createFlowFromTemplateInput,
     createFlowInput,
     exportFlowQuery,
     listFlowsQuery,
@@ -18,9 +24,12 @@ import {
     renameFlowInput,
     saveFlowDraftInput,
 } from "@/shared/flow_types.js";
+import type { FlowTemplateSummary } from "@/shared/flow_types.js";
 
 const PROJECT_FLOWS_PATH = "/projects/:projectId/flows";
 const PROJECT_FLOWS_IMPORT_PATH = `${PROJECT_FLOWS_PATH}/import`;
+const PROJECT_FLOWS_FROM_TEMPLATE_PATH = `${PROJECT_FLOWS_PATH}/from-template`;
+const FLOW_TEMPLATES_PATH = "/flow-templates";
 const FLOW_PATH = "/flows/:flowId";
 const FLOW_ARCHIVE_PATH = `${FLOW_PATH}/archive`;
 const FLOW_DEFAULT_PATH = `${FLOW_PATH}/default`;
@@ -55,6 +64,7 @@ export const registerFlowsRoutes: RouteModule = (app, deps) => {
     registerDraftRoutes(app, flows);
     registerVersionRoutes(app, flows);
     registerYamlFileRoutes(app, flows);
+    registerTemplateRoutes(app, flows);
 };
 
 function registerProjectFlowsRoutes(app: FastifyInstance, flows: FlowService): void {
@@ -172,6 +182,30 @@ function registerYamlFileRoutes(app: FastifyInstance, flows: FlowService): void 
             return reply.code(HTTP_CREATED).send(flow);
         },
     );
+}
+
+function registerTemplateRoutes(app: FastifyInstance, flows: FlowService): void {
+    const typedApp = app.withTypeProvider<ZodTypeProvider>();
+
+    typedApp.get(FLOW_TEMPLATES_PATH, () => FLOW_TEMPLATES.map(summarizeTemplate));
+
+    typedApp.post(
+        PROJECT_FLOWS_FROM_TEMPLATE_PATH,
+        { schema: { params: projectParamsSchema, body: createFlowFromTemplateInput } },
+        async (request, reply) => {
+            const { templateId, name } = request.body;
+            const template = findFlowTemplateOrThrow(templateId);
+            const flow = await flows.create(request.params.projectId, {
+                name,
+                graph: template.build(),
+            });
+            return reply.code(HTTP_CREATED).send(flow);
+        },
+    );
+}
+
+function summarizeTemplate(template: FlowTemplate): FlowTemplateSummary {
+    return { id: template.id, name: template.name, description: template.description };
 }
 
 function passTextBodyThrough(
