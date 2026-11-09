@@ -31,8 +31,8 @@
 - [x] 5. Test + implement autosave serial saves with returned revision — `src/web/canvas/autosave.ts`
 - [x] 6. Test + implement autosave conflict and error reporting — `src/web/canvas/autosave.ts`
 - [x] 7. Test + implement autosave `flush` — `src/web/canvas/autosave.ts`
-- [ ] 8. Provisional node and group components + node type labels — `src/web/canvas/provisional_nodes.tsx`, `src/web/canvas/base/node_type_labels.ts`
-- [ ] 9. Test + implement `FlowCanvas` rendering the canonical flow's nodes (Background, MiniMap, Controls, zoom 25–200%, fitView, compact below 50%) — `src/web/canvas/flow_canvas.tsx`, `src/web/canvas/use_canvas_elements.ts`
+- [x] 8. Provisional node and group components + node type labels — `src/web/canvas/provisional_nodes.tsx`, `src/web/canvas/base/node_type_labels.ts`
+- [x] 9. Test + implement `FlowCanvas` rendering the canonical flow's nodes (Background, MiniMap, Controls, zoom 25–200%, fitView, compact below 50%) — `src/web/canvas/flow_canvas.tsx`, `src/web/canvas/use_canvas_elements.ts`
 - [ ] 10. Implement `useFlowDraft` (load, autosave wiring, flush on beforeunload/unmount, reload) — `src/web/canvas/use_flow_draft.ts`
 - [ ] 11. Test + implement `FlowEditorPage` (top bar with name and save state, conflict banner with reload, side panels) — `src/web/app/flows/flow_editor_page.tsx`, `src/web/app/flows/use_flow_summary.ts`
 - [ ] 12. Self-review checklist and feedback loops (typecheck, lint, test)
