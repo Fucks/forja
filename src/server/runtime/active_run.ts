@@ -153,6 +153,7 @@ export class ActiveRun {
             nodeRun,
             inputs,
             item: deps.items.find((item) => item.id === nodeRun.workItemId),
+            runItems: deps.items,
             graph: deps.graph,
             project: deps.project,
             settings: deps.settings,

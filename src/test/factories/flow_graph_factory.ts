@@ -300,7 +300,7 @@ function frameColumns(
     };
 }
 
-function createNodeOfType<Type extends NodeType>(
+export function createNodeOfType<Type extends NodeType>(
     type: Type,
     id: string,
     position: Position,

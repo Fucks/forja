@@ -20,6 +20,7 @@ export interface NodeExecutionContext {
     graph: FlowGraph;
     inputs: Record<string, unknown>;
     item?: WorkItemSnapshot;
+    runItems: WorkItemSnapshot[];
     project: Project;
     settings: ProjectSettings;
     workspaces: WorkspacePool;
