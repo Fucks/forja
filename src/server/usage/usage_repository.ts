@@ -21,11 +21,17 @@ import type {
     UsageGroupBy,
     UsageQuery,
     UsageRecord,
+    UsageSpent,
 } from "@/shared/usage_types.js";
 
 export type UsageTotals = Omit<UsageAggregate, "label">;
 
 export const NO_ITEM_KEY = "";
+
+const NOTHING_SPENT: UsageSpent = { costUsd: 0, tokens: 0 };
+
+// Cache tokens do not count for the budgets.
+const BUDGET_TOKENS = sql`${usageRecords.inputTokens} + ${usageRecords.outputTokens}`;
 
 const GROUP_KEYS: Record<UsageGroupBy, (timeZone: string) => SQL<string>> = {
     day: (timeZone) => localDayOfRecord(timeZone),
@@ -73,6 +79,19 @@ export class UsageRepository {
             .all();
     }
 
+    spentOnDay(projectId: string, timeZone: string, day: string): UsageSpent {
+        const spent = this.db
+            .select({
+                costUsd: sumOf(usageRecords.costUsd),
+                tokens: sumOf(BUDGET_TOKENS),
+            })
+            .from(usageRecords)
+            .where(and(eq(usageRecords.projectId, projectId), eq(localDayOfRecord(timeZone), day)))
+            .get();
+
+        return spent ?? NOTHING_SPENT;
+    }
+
     findFlowNames(flowIds: string[]): Map<string, string> {
         const rows = this.db
             .select({ id: flows.id, name: flows.name })
@@ -98,8 +117,9 @@ function localDayOfRecord(timeZone: string): SQL<string> {
     return sql<string>`${sql.raw(LOCAL_DAY_FUNCTION)}(${usageRecords.at}, ${timeZone})`;
 }
 
-function sumOf(column: AnyColumn): SQL<number> {
-    return sql<number>`sum(${column})`;
+// A sum over no rows is null in SQL.
+function sumOf(amount: AnyColumn | SQL): SQL<number> {
+    return sql<number>`coalesce(sum(${amount}), 0)`;
 }
 
 function whereQueryMatches(query: UsageQuery): SQL | undefined {

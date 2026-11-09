@@ -1,5 +1,6 @@
 import type { Clock } from "@/lib/clock.js";
 import type { IdPrefix } from "@/lib/ids.js";
+import { localDayOf } from "@/lib/local_day.js";
 import { resolveWith } from "@/lib/resolve_with.js";
 import { estimateCostUsd, priceFor } from "@/server/usage/model_prices.js";
 import {
@@ -49,7 +50,8 @@ export function createUsageService(deps: UsageServiceDeps): UsageService {
     return {
         record: (input) => recordUsage(deps, input),
         aggregate: (query) => aggregateUsage(deps, query),
-        todaySpent: () => Promise.resolve({ costUsd: 0, tokens: 0 }),
+        todaySpent: (projectId, timezone) =>
+            resolveWith(() => spentToday(deps, projectId, timezone)),
         forRun: (runId) => resolveWith(() => deps.repo.listByRun(runId)),
     };
 }
@@ -92,12 +94,16 @@ function findLabels(
         return new Map();
     }
 
-    return lookUpLabels(
-        repo,
-        groups.map(({ key }) => key),
-    );
+    const keys = groups.map(({ key }) => key);
+    return lookUpLabels(repo, keys);
 }
 
 function fallbackLabelOf(key: string): string {
     return key === NO_ITEM_KEY ? NO_ITEM_LABEL : key;
+}
+
+function spentToday(deps: UsageServiceDeps, projectId: string, timezone: string): UsageSpent {
+    const today = localDayOf(deps.clock.now(), timezone);
+
+    return deps.repo.spentOnDay(projectId, timezone, today);
 }

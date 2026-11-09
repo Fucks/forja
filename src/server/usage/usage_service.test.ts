@@ -242,6 +242,51 @@ describe("UsageService", () => {
         });
     });
 
+    describe("todaySpent", () => {
+        const NOW_IN_SAO_PAULO_EVENING = new Date("2026-11-10T01:30:00Z");
+
+        it("sums the cost and the input and output tokens of today in the time zone", async () => {
+            clock.set(new Date("2026-11-09T02:59:00Z"));
+            await service.record(buildNewUsageRecord({ usage: ONLY_INPUT_TOKENS }));
+            clock.set(new Date("2026-11-09T03:00:00Z"));
+            const sinceMidnight = await service.record(buildNewUsageRecord());
+            clock.set(NOW_IN_SAO_PAULO_EVENING);
+            const thisEvening = await service.record(buildNewUsageRecord());
+
+            const spent = await service.todaySpent(PROJECT_ID, "America/Sao_Paulo");
+
+            const tokensOfEach = buildTokenUsage().inputTokens + buildTokenUsage().outputTokens;
+            expect(spent.tokens).toBe(2 * tokensOfEach);
+            expect(spent.costUsd).toBeCloseTo(sinceMidnight.costUsd + thisEvening.costUsd);
+        });
+
+        it("leaves out the cache tokens and the other projects", async () => {
+            clock.set(NOW_IN_SAO_PAULO_EVENING);
+            await service.record(
+                buildNewUsageRecord({
+                    usage: buildTokenUsage({
+                        inputTokens: 10,
+                        outputTokens: 5,
+                        cacheReadInputTokens: 1_000,
+                        cacheCreationInputTokens: 1_000,
+                    }),
+                }),
+            );
+            await service.record(buildNewUsageRecord({ projectId: "prj_outro" }));
+
+            const spent = await service.todaySpent(PROJECT_ID, "America/Sao_Paulo");
+
+            expect(spent.tokens).toBe(15);
+        });
+
+        it("answers nothing spent on a day without usage", async () => {
+            await expect(service.todaySpent(PROJECT_ID, "UTC")).resolves.toEqual({
+                costUsd: 0,
+                tokens: 0,
+            });
+        });
+    });
+
     function insertFlow(id: string, name: string): void {
         insertProject();
         new FlowRepository(database.db).insert({

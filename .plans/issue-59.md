@@ -32,7 +32,7 @@
 - [x] 4. Test + implement `record` (cost from configured price, `priceEstimated`) and `forRun` — `usage_service.ts`, `usage_repository.ts`
 - [x] 5. Test + implement `aggregate` for every `groupBy` (+ `flowId` filter, period bounds, labels)
 - [x] 6. Test + implement day grouping in the project timezone (`local_day`)
-- [ ] 7. Test + implement `todaySpent(projectId, timezone)`
+- [x] 7. Test + implement `todaySpent(projectId, timezone)`
 - [ ] 8. Executor: agent result carries model + tokens; NodeRunExecution records via `UsageService`, publishes `usage.recorded` with the computed cost and delivers `usage_recorded` — executor tests
 - [ ] 9. Executor: daily budget gets the spending of today (`daily_budget.ts`) — executor test
 - [ ] 10. Wire `UsageService` in `app_executor.ts` and the executor test bed
