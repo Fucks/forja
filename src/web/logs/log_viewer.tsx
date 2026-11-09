@@ -5,6 +5,7 @@ import type { JSX, KeyboardEvent } from "react";
 import { Button } from "@/web/components/ui/button.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
+import { copyToClipboard, formatLinesForClipboard } from "@/web/logs/log_clipboard.js";
 import { LogLineList } from "@/web/logs/log_line_list.js";
 import { LogToolbar } from "@/web/logs/log_toolbar.js";
 import type { LogLine } from "@/web/logs/log_types.js";
@@ -31,6 +32,7 @@ export function LogViewer({
     lines,
     follow,
     onFollowChange,
+    onDownloadRaw,
     emptyLabel = DEFAULT_EMPTY_LABEL,
     loading = false,
 }: LogViewerProps): JSX.Element {
@@ -46,6 +48,10 @@ export function LogViewer({
     });
     const search = useLogSearch(lines);
     const goToMatch = useMatchNavigation({ lines, search, following, expandedLines, virtualizer });
+
+    function copyAllLines(): void {
+        void copyToClipboard(formatLinesForClipboard(lines, expandedLines.isExpanded));
+    }
 
     function focusSearchOnFindShortcut(event: KeyboardEvent<HTMLDivElement>): void {
         if (!isFindShortcut(event)) {
@@ -68,6 +74,8 @@ export function LogViewer({
                 onGoToMatch={goToMatch}
                 isFollowing={following.isFollowing}
                 onFollowChange={following.setFollowing}
+                onCopyAll={copyAllLines}
+                onDownloadRaw={onDownloadRaw}
             />
             {renderBody()}
         </div>

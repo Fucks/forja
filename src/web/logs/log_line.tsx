@@ -1,8 +1,10 @@
 import { clsx } from "clsx";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Copy } from "lucide-react";
 import type { JSX, Ref } from "react";
 
 import { formatRelativeOffset } from "@/lib/format.js";
+import { IconButton } from "@/web/components/ui/icon_button.js";
+import { copyToClipboard, formatLineForClipboard } from "@/web/logs/log_clipboard.js";
 import { HighlightedText } from "@/web/logs/highlighted_text.js";
 import type { LogLine as LogLineEntry, LogLineKind } from "@/web/logs/log_types.js";
 
@@ -39,7 +41,7 @@ export function LogLine({
             data-index={index}
             aria-current={isSelectedMatch || undefined}
             className={clsx(
-                "flex gap-3 border-l-2 px-3",
+                "group flex gap-3 border-l-2 px-3 hover:bg-surface",
                 line.kind === "error" ? "border-status-failed" : "border-transparent",
                 isSelectedMatch && "bg-surface-raised",
             )}
@@ -58,6 +60,12 @@ export function LogLine({
                     />
                 )}
             </div>
+            <IconButton
+                label="Copiar linha"
+                icon={Copy}
+                onClick={() => void copyToClipboard(formatLineForClipboard(line))}
+                className="h-5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+            />
         </div>
     );
 }

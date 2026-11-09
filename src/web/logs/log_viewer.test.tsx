@@ -223,6 +223,42 @@ describe("LogViewer", () => {
 
         expect(onFollowChange).toHaveBeenCalledWith(false);
     });
+
+    it("copies a line from its copy button", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={buildLogLines(1)} />);
+
+        await user.click(screen.getByRole("button", { name: "Copiar linha" }));
+
+        expect(await navigator.clipboard.readText()).toBe("+00:00 Linha 1");
+    });
+
+    it("copies every line of the log", async () => {
+        const user = userEvent.setup();
+        render(<LogViewer lines={buildLogLines(3)} />);
+
+        await user.click(screen.getByRole("button", { name: "Copiar tudo" }));
+
+        expect(await navigator.clipboard.readText()).toBe(
+            "+00:00 Linha 1\n+00:00 Linha 2\n+00:00 Linha 3",
+        );
+    });
+
+    it("asks the parent for the raw log from the download button", async () => {
+        const onDownloadRaw = vi.fn();
+        const user = userEvent.setup();
+        render(<LogViewer lines={buildLogLines(3)} onDownloadRaw={onDownloadRaw} />);
+
+        await user.click(screen.getByRole("button", { name: "Baixar log bruto" }));
+
+        expect(onDownloadRaw).toHaveBeenCalledOnce();
+    });
+
+    it("hides the download button when the parent cannot provide the raw log", () => {
+        render(<LogViewer lines={buildLogLines(3)} />);
+
+        expect(screen.queryByRole("button", { name: "Baixar log bruto" })).not.toBeInTheDocument();
+    });
 });
 
 function scrollLogTo(scrollTopPx: number): void {

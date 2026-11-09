@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Download, Search } from "lucide-react";
 import type { JSX, KeyboardEvent, RefObject } from "react";
 
 import { IconButton } from "@/web/components/ui/icon_button.js";
@@ -13,12 +13,16 @@ export function LogToolbar({
     onGoToMatch,
     isFollowing,
     onFollowChange,
+    onCopyAll,
+    onDownloadRaw,
 }: {
     search: LogSearch;
     searchInputRef: RefObject<HTMLInputElement | null>;
     onGoToMatch: (direction: MatchDirection) => void;
     isFollowing: boolean;
     onFollowChange: (isFollowing: boolean) => void;
+    onCopyAll: () => void;
+    onDownloadRaw: (() => void) | undefined;
 }): JSX.Element {
     const matchSummary = describeMatches(search);
 
@@ -68,6 +72,10 @@ export function LogToolbar({
             />
             <div className="ml-auto flex items-center gap-2">
                 <Switch label="Seguir o fim" checked={isFollowing} onChange={onFollowChange} />
+                <IconButton label="Copiar tudo" icon={Copy} onClick={onCopyAll} />
+                {onDownloadRaw && (
+                    <IconButton label="Baixar log bruto" icon={Download} onClick={onDownloadRaw} />
+                )}
             </div>
         </div>
     );
