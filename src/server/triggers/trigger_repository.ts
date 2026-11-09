@@ -24,10 +24,15 @@ const itemSelectionSchema = z.enum(ITEM_SELECTIONS);
 const outcomeSchema = z.enum(TRIGGER_FIRE_OUTCOMES);
 const itemIdsSchema = z.array(z.string());
 
-// What a fire needs to start later, when it waits in the queue.
-export interface StoredTriggerFire extends TriggerFire {
+// What a fire needs to start a run, kept so a queued fire can start later.
+export interface FireRequest {
     reason: string;
     itemIds: string[];
+}
+
+export interface QueuedFire {
+    fire: TriggerFire;
+    request: FireRequest;
 }
 
 export class TriggerRepository {
@@ -85,14 +90,18 @@ export class TriggerRepository {
             .map(toTrigger);
     }
 
-    insertFire(fire: StoredTriggerFire): void {
-        this.db.insert(triggerFires).values(toTriggerFireRow(fire)).run();
+    insertFire(fire: TriggerFire, request: FireRequest): void {
+        this.db.insert(triggerFires).values(toTriggerFireRow(fire, request)).run();
     }
 
-    updateFire(fire: StoredTriggerFire): void {
+    updateFireOutcome(fire: TriggerFire): void {
         this.db
             .update(triggerFires)
-            .set(toTriggerFireRow(fire))
+            .set({
+                outcome: fire.outcome,
+                runId: fire.runId ?? null,
+                message: fire.message ?? null,
+            })
             .where(eq(triggerFires.id, fire.id))
             .run();
     }
@@ -105,11 +114,10 @@ export class TriggerRepository {
             .orderBy(desc(triggerFires.at), desc(triggerFires.id))
             .limit(limit)
             .all()
-            .map(toStoredTriggerFire)
             .map(toTriggerFire);
     }
 
-    findOldestQueuedFireOfFlow(flowId: string): StoredTriggerFire | undefined {
+    findOldestQueuedFireOfFlow(flowId: string): QueuedFire | undefined {
         const row = this.db
             .select({ fire: triggerFires })
             .from(triggerFires)
@@ -117,7 +125,7 @@ export class TriggerRepository {
             .where(and(eq(triggers.flowId, flowId), eq(triggerFires.outcome, "queued")))
             .orderBy(asc(triggerFires.at), asc(triggerFires.id))
             .get();
-        return row && toStoredTriggerFire(row.fire);
+        return row && { fire: toTriggerFire(row.fire), request: toFireRequest(row.fire) };
     }
 
     listFlowIdsWithQueuedFires(): string[] {
@@ -180,7 +188,7 @@ function toTrigger(row: TriggerRow): Trigger {
     };
 }
 
-function toTriggerFireRow(fire: StoredTriggerFire): TriggerFireRow {
+function toTriggerFireRow(fire: TriggerFire, request: FireRequest): TriggerFireRow {
     return {
         id: fire.id,
         triggerId: fire.triggerId,
@@ -188,12 +196,12 @@ function toTriggerFireRow(fire: StoredTriggerFire): TriggerFireRow {
         outcome: fire.outcome,
         runId: fire.runId ?? null,
         message: fire.message ?? null,
-        reason: fire.reason,
-        itemIdsJson: JSON.stringify(fire.itemIds),
+        reason: request.reason,
+        itemIdsJson: JSON.stringify(request.itemIds),
     };
 }
 
-function toStoredTriggerFire(row: TriggerFireRow): StoredTriggerFire {
+function toTriggerFire(row: TriggerFireRow): TriggerFire {
     return {
         id: row.id,
         triggerId: row.triggerId,
@@ -201,12 +209,9 @@ function toStoredTriggerFire(row: TriggerFireRow): StoredTriggerFire {
         outcome: outcomeSchema.parse(row.outcome),
         runId: row.runId ?? undefined,
         message: row.message ?? undefined,
-        reason: row.reason,
-        itemIds: itemIdsSchema.parse(JSON.parse(row.itemIdsJson)),
     };
 }
 
-function toTriggerFire(fire: StoredTriggerFire): TriggerFire {
-    const { id, triggerId, at, outcome, runId, message } = fire;
-    return { id, triggerId, at, outcome, runId, message };
+function toFireRequest(row: TriggerFireRow): FireRequest {
+    return { reason: row.reason, itemIds: itemIdsSchema.parse(JSON.parse(row.itemIdsJson)) };
 }

@@ -26,7 +26,7 @@
 - [x] 2. Trigger types and input schemas — `src/shared/trigger_types.ts`, `src/shared/node_configs/trigger_config.ts`
 - [x] 3. Migration and Drizzle schema — `src/server/db/migrations/0800_triggers.sql`, `src/server/db/schema/triggers.ts`
 - [x] 4. Repository for triggers, fires and the pause flag — `src/server/triggers/trigger_repository.ts`
-- [ ] 5. Service CRUD (create validates project and flow, update, remove, list by kind) with tests and `FakeRunStarter` — `trigger_service.ts`, `trigger_service.test.ts`, `src/test/fakes/fake_run_starter.ts`
+- [x] 5. Service CRUD (create validates project and flow, update, remove, list by kind) with tests and `FakeRunStarter` — `trigger_service.ts`, `trigger_service.test.ts`, `src/test/fakes/fake_run_starter.ts`
 - [ ] 6. `fire` of a manual trigger starts a run with `triggerId`, publishes `trigger.fired`, shows in `history`
 - [ ] 7. `fire` of a disabled trigger or under global pause records `skipped` (except manual); `setAllPaused`/`isAllPaused`
 - [ ] 8. Policy `skip` records `skipped` with an active run; `parallel` starts another run
