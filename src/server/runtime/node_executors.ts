@@ -7,6 +7,10 @@ import type {
 import type { Clock } from "@/lib/clock.js";
 import type { ArtifactRecord, RunRecord } from "@/server/runs/run_repository.js";
 import { executeAgentNode } from "@/server/runtime/executors/agent_executor.js";
+import { executeConditionNode } from "@/server/runtime/executors/condition_executor.js";
+import { executeOutputNode } from "@/server/runtime/executors/output_executor.js";
+import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
+import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.js";
 import type { WorkspacePool } from "@/server/runtime/workspace_pool.js";
 import type { FlowGraph, FlowNode, NodeType } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
@@ -43,7 +47,11 @@ export type NodeExecutor = (context: NodeExecutionContext) => Promise<NodeExecut
 
 export type NodeExecutorRegistry = Partial<Record<NodeType, NodeExecutor>>;
 
-// Each node type gets its executor in its own issue: #54 → #70 → #79 → #81.
+// The source, git and gate nodes get their executors in #70, #79 and #81.
 export const nodeExecutors: NodeExecutorRegistry = {
+    trigger: executeTriggerNode,
     agent: executeAgentNode,
+    script: executeScriptNode,
+    condition: executeConditionNode,
+    output: executeOutputNode,
 };

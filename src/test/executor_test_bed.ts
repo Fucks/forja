@@ -35,11 +35,10 @@ export const PROJECT_SYSTEM_PROMPT = "Escreva testes antes do código.";
 const TIME_STEP_MS = 1_000;
 const MAX_DRIVEN_MS = 6 * 60 * 60 * 1_000;
 
-// The source, git and output nodes get their executors in #70, #79 and #54.
+// The source and git nodes get their executors in #70 and #79.
 const NOT_YET_IMPLEMENTED_EXECUTORS: NodeExecutorRegistry = {
     source: (context) => Promise.resolve({ outputs: { items: context.inputs.trigger } }),
     git: () => Promise.resolve({ outputs: { result: {} } }),
-    output: () => Promise.resolve({ outputs: {} }),
 };
 
 // What the run saved and what it published, in the order it happened.
