@@ -32,6 +32,6 @@
 - [x] 8. Test + implement the 250 ms `log.appended` announcer — `log_announcer.ts`, `log_announcer.test.ts`
 - [x] 9. In-memory `FsLike` fake; `logs` in ExecutorDeps/ActiveRun/AppExecutor; executor test that events are stored and announced — `active_run.ts`, `node_run_execution.ts`, `node_executors.ts`, `run_events.ts`, `executor.ts`, `app_executor.ts`, test bed
 - [x] 10. `AppDeps.logs` and `main.ts` (shared redactor, docker runtime) — `app.ts`, `main.ts`, `test_app_deps.ts`
-- [ ] 11. Test + implement `GET /api/node-runs/:id/logs` paging — `logs_routes.ts`, `logs_routes.test.ts`
-- [ ] 12. Test + implement `GET /api/node-runs/:id/logs/raw` download — `logs_routes.ts`
+- [x] 11. Test + implement `GET /api/node-runs/:id/logs` paging — `logs_routes.ts`, `logs_routes.test.ts`
+- [x] 12. Test + implement `GET /api/node-runs/:id/logs/raw` download — `logs_routes.ts`
 - [ ] 13. Self-review checklist and feedback loops
