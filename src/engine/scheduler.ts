@@ -11,6 +11,7 @@ import {
     NODE_RUN_TERMINAL,
     type NodeRunError,
     type NodeRunState,
+    requeueSameAttempt,
     transitionNodeRun,
 } from "@/engine/node_run_state.js";
 import { NodeRunTimeouts, TIMEOUT_TOTAL_ERROR } from "@/engine/node_run_timeouts.js";
@@ -39,7 +40,7 @@ import {
     TRIGGER_ITEMS_PORT,
     type WorkItemRef,
 } from "@/engine/scheduler_types.js";
-import { computeResumeAt, requeueAfterUsageLimit } from "@/engine/usage_pause.js";
+import { computeResumeAt } from "@/engine/usage_pause.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
@@ -439,7 +440,7 @@ class DagScheduler implements Scheduler {
 
     private requeueNodeRunsWaitingForLimit(at: Date): void {
         for (const waiting of this.nodeRuns.withStatus("WAITING_LIMIT")) {
-            this.changeNodeRun(requeueAfterUsageLimit(waiting, at));
+            this.changeNodeRun(requeueSameAttempt(waiting, at));
         }
     }
 

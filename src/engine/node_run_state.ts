@@ -103,6 +103,16 @@ export function createNextAttempt(previous: NodeRunState, id: string): NodeRunSt
     };
 }
 
+// Same NodeRun and attempt, after a usage limit or a server restart: the agent starts over on the
+// same branch, where the commits made before still are. The timeout counts again from the new start.
+export function requeueSameAttempt(waiting: NodeRunState, at: Date): NodeRunState {
+    const requeued = transitionNodeRun(waiting, "QUEUED", at);
+    delete requeued.startedAt;
+    delete requeued.error;
+
+    return requeued;
+}
+
 function timestampsOnEntering(
     nodeRun: NodeRunState,
     to: NodeRunStatusName,

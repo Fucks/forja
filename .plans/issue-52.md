@@ -23,7 +23,7 @@
 
 ## Tasks
 
-- [ ] 1. Refactor: move `requeueAfterUsageLimit` to `node_run_state.ts` as `requeueSameAttempt` (+ tests)
+- [x] 1. Refactor: move `requeueAfterUsageLimit` to `node_run_state.ts` as `requeueSameAttempt` (+ tests)
 - [ ] 2. Test + implement `node_run_interrupted` requeues the same attempt — `scheduler_types.ts`, `scheduler.ts`, `scheduler.test.ts`, `scheduler_harness.ts`
 - [ ] 3. Test + implement: a stopping run cancels the interrupted NodeRun — `scheduler.ts`, `scheduler.test.ts`
 - [ ] 4. Test + implement `wakeupTimesOf` — `scheduler_snapshot.ts` (+ test)
