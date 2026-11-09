@@ -18,7 +18,8 @@ import { TOOL_PROFILE_PRESETS } from "@/server/tool_profiles/tool_profile_preset
 import { LOOP_EXHAUSTED_PORT } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import type { FlowSummary } from "@/shared/flow_types.js";
-import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import { buildCanonicalFlow, connect } from "@/test/factories/flow_graph_factory.js";
+import { addEdges, updateNode } from "@/test/factories/flow_graph_variations.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
@@ -72,7 +73,13 @@ describe("Fábrica básica template", () => {
     it("has the nodes, edges and groups of the canonical flow", () => {
         const graph = basicFactoryTemplate.build();
 
-        expect(structureOf(graph)).toEqual(structureOf(buildCanonicalFlow()));
+        expect(structureOf(graph)).toEqual(structureOf(canonicalFlowWithDoneAfterPullRequest()));
+    });
+
+    it("moves an item to done only after its pull request is opened", () => {
+        const graph = basicFactoryTemplate.build();
+
+        expect(graph.edges.map((edge) => edge.id)).toContain("open_pr.result->output.pullRequest");
     });
 
     it("specifies one item at a time, develops three and reviews one", () => {
@@ -147,6 +154,12 @@ describe("Dev ↔ Review em loop com testes template", () => {
             ]),
         );
         expect(findNode(graph, "output")).toMatchObject({ config: { moveItemTo: "done" } });
+    });
+
+    it("does not ask the developer for review notes, which are empty in the first round", () => {
+        const graph = reviewLoopTemplate.build();
+
+        expect(agentPromptOf(graph, "dev")).not.toContain("{{inputs.notes}}");
     });
 
     it("gives the reviewer the result of the tests", () => {
@@ -257,6 +270,16 @@ function publishErrorsOf(graph: FlowGraph): string[] {
     return validateFlowGraph(graph, PUBLISH_CONTEXT)
         .filter((issue) => issue.level === "error")
         .map((issue) => issue.message);
+}
+
+// The canonical fixture leaves the done output unconnected; the template makes it wait for the PR.
+function canonicalFlowWithDoneAfterPullRequest(): FlowGraph {
+    const canonicalFlow = updateNode(buildCanonicalFlow(), "output", (output) => ({
+        ...output,
+        inputs: [...output.inputs, { name: "pullRequest", type: "json", required: false }],
+    }));
+
+    return addEdges(canonicalFlow, [connect(["open_pr", "result"], ["output", "pullRequest"])]);
 }
 
 // Positions and prompts belong to the template; what the engine runs must match the canonical flow.

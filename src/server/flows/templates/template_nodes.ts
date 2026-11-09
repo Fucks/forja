@@ -21,6 +21,12 @@ const SANDCASTLE_LABEL = "Sandcastle";
 const COMPLETION_SIGNAL = "<promise>COMPLETE</promise>";
 const DEVELOPER_MAX_ITERATIONS = 50;
 const SUMMARY_PORT = "summary";
+const OPEN_PULL_REQUEST_NODE_ID = "open_pr";
+const DONE_OUTPUT_NODE_ID = "output";
+
+// Edges are the only ordering between nodes: this input makes the item wait for its pull request,
+// so an item that was never approved is not moved to done.
+const PULL_REQUEST_INPUT: Port = { name: "pullRequest", type: "json", required: false };
 
 const TECH_LEAD_OUTPUT_SCHEMA = {
     type: "object",
@@ -111,13 +117,26 @@ export function buildReviewerAgent(spec: AgentNodeSpec): FlowNode {
 }
 
 export function buildOpenPullRequest(cell: CanvasCell): FlowNode {
-    const openPullRequest = createTemplateNode("git", "open_pr", cell);
+    const openPullRequest = createTemplateNode("git", OPEN_PULL_REQUEST_NODE_ID, cell);
 
     return {
         ...openPullRequest,
         label: "Abrir PR",
         config: { ...openPullRequest.config, action: "open_pr", bodyFrom: SUMMARY_PORT },
     };
+}
+
+export function buildDoneOutput(cell: CanvasCell): FlowNode {
+    const output = buildOutput({ id: DONE_OUTPUT_NODE_ID, cell, moveItemTo: "done" });
+
+    return { ...output, inputs: [...output.inputs, PULL_REQUEST_INPUT] };
+}
+
+export function connectPullRequestToDoneOutput(): FlowEdge {
+    return connect(
+        [OPEN_PULL_REQUEST_NODE_ID, "result"],
+        [DONE_OUTPUT_NODE_ID, PULL_REQUEST_INPUT.name],
+    );
 }
 
 export function buildOutput(spec: {

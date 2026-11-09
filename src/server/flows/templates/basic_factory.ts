@@ -2,13 +2,14 @@ import type { FlowTemplate } from "@/server/flows/templates/flow_template_regist
 import { buildMapGroup, placeInGroup } from "@/server/flows/templates/template_layout.js";
 import {
     buildDeveloperAgent,
+    buildDoneOutput,
     buildManualTrigger,
     buildOpenPullRequest,
-    buildOutput,
     buildReviewerAgent,
     buildSandcastleIssuesSource,
     buildTechLeadAgent,
     connect,
+    connectPullRequestToDoneOutput,
 } from "@/server/flows/templates/template_nodes.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 
@@ -60,7 +61,7 @@ function buildBasicFactory(): FlowGraph {
             placeInGroup(buildSpecifiedDeveloper(), developGroup),
             placeInGroup(buildReviewer(), reviewGroup),
             placeInGroup(buildOpenPullRequest({ column: 4, row: 1 }), reviewGroup),
-            placeInGroup(buildDoneOutput(), reviewGroup),
+            placeInGroup(buildDoneOutput({ column: 4, row: 2 }), reviewGroup),
         ],
         edges: [
             connect(["trigger", "items"], ["source", "trigger"]),
@@ -68,6 +69,7 @@ function buildBasicFactory(): FlowGraph {
             connect(["tl", "summary"], ["dev", "spec"]),
             connect(["dev", "summary"], ["reviewer", "context"]),
             connect(["reviewer", "summary"], ["open_pr", "body"]),
+            connectPullRequestToDoneOutput(),
         ],
         groups: [specifyGroup, developGroup, reviewGroup],
     };
@@ -89,8 +91,4 @@ function buildSpecifiedDeveloper(): FlowNode {
 
 function buildReviewer(): FlowNode {
     return buildReviewerAgent({ id: "reviewer", label: "Reviewer", cell: { column: 4 } });
-}
-
-function buildDoneOutput(): FlowNode {
-    return buildOutput({ id: "output", cell: { column: 4, row: 2 }, moveItemTo: "done" });
 }

@@ -39,4 +39,4 @@
 - [x] 7. Test + implement `GET /api/flow-templates` — `flows_routes.ts`, `flow_types.ts`
 - [x] 8. Test + implement `POST /api/projects/:projectId/flows/from-template` (creates a draft that publishes;
       404 for unknown template)
-- [ ] 9. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 9. Self-review checklist (section 5) and feedback loops (section 6)

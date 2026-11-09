@@ -9,10 +9,12 @@ import {
     buildDeveloperAgent,
     buildManualTrigger,
     buildOpenPullRequest,
+    buildDoneOutput,
     buildOutput,
     buildReviewerAgent,
     buildSandcastleIssuesSource,
     connect,
+    connectPullRequestToDoneOutput,
 } from "@/server/flows/templates/template_nodes.js";
 import { LOOP_EXHAUSTED_PORT } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, FlowNode, Port } from "@/shared/flow_graph.js";
@@ -37,16 +39,15 @@ const TEST_RESULT_SECTION = {
 // the carried value is empty on the first round, so the developer's prompt cannot use it.
 const REVIEW_NOTES_INPUT: Port = { name: "notes", type: "text", required: false };
 const TEST_RESULT_INPUT: Port = { name: "tests", type: "json", required: true };
-// Inputs that only order the steps: the tests wait for the developer's changes, and the item waits
-// for its pull request, so an exhausted item is never moved to done.
+// Only orders the steps: the tests wait for the developer's changes.
 const DEVELOPER_CHANGES_INPUT: Port = { name: "changes", type: "text", required: false };
-const PULL_REQUEST_INPUT: Port = { name: "pullRequest", type: "json", required: false };
 
 export const reviewLoopTemplate: FlowTemplate = {
     id: "review_loop",
     name: "Dev ↔ Review em loop com testes",
     description:
-        "Para cada issue, o Dev implementa, os testes rodam e o Reviewer revisa, até 3 rodadas. " +
+        "Para cada issue, o Dev implementa, os testes rodam e o Reviewer revisa, " +
+        `até ${MAX_REVIEW_ROUNDS} rodadas. ` +
         "Aprovada, abre o PR; sem aprovação, vai para “precisa de humano”.",
     build: buildReviewLoop,
 };
@@ -69,7 +70,7 @@ function buildReviewLoop(): FlowGraph {
             placeInGroup(buildTestsScript(), reviewLoop),
             placeInGroup(buildReviewer(), reviewLoop),
             placeInGroup(buildOpenPullRequest({ column: 5 }), itemsGroup),
-            placeInGroup(buildDoneOutput(), itemsGroup),
+            placeInGroup(buildDoneOutput({ column: 5, row: 1 }), itemsGroup),
             placeInGroup(buildNeedsHumanOutput(), itemsGroup),
         ],
         edges: [
@@ -80,7 +81,7 @@ function buildReviewLoop(): FlowGraph {
             connect(["tests", "result"], ["review", "tests"]),
             connect(["review", "summary"], ["dev", "notes"]),
             connect(["review", "summary"], ["open_pr", "body"]),
-            connect(["open_pr", "result"], ["output", PULL_REQUEST_INPUT.name]),
+            connectPullRequestToDoneOutput(),
             connect([reviewLoop.id, LOOP_EXHAUSTED_PORT], ["needs_human", "item"]),
         ],
         groups: [itemsGroup, reviewLoop],
@@ -129,12 +130,6 @@ function buildReviewer(): FlowNode {
         extraInput: TEST_RESULT_INPUT,
         promptSection: TEST_RESULT_SECTION,
     });
-}
-
-function buildDoneOutput(): FlowNode {
-    const output = buildOutput({ id: "output", cell: { column: 5, row: 1 }, moveItemTo: "done" });
-
-    return { ...output, inputs: [...output.inputs, PULL_REQUEST_INPUT] };
 }
 
 function buildNeedsHumanOutput(): FlowNode {
