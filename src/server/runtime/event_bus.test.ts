@@ -35,6 +35,14 @@ describe("createEventBus", () => {
         expect(second.at).toBe("2026-03-10T12:00:01.000Z");
     });
 
+    it("tells the id of the last published event, or 0 before any", () => {
+        const beforeAny = bus.lastEventId();
+        publishRuns(3);
+
+        expect(beforeAny).toBe(0);
+        expect(bus.lastEventId()).toBe(3);
+    });
+
     it("delivers envelopes to subscribers in the order they were published", () => {
         const received: string[] = [];
         bus.subscribe((envelope) => received.push(`a:${envelope.id}`));

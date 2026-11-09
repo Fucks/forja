@@ -3,11 +3,8 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
 import { systemClock } from "@/lib/clock.js";
-import { CredentialRepository } from "@/server/credentials/credential_repository.js";
-import { FlowRepository } from "@/server/flows/flow_repository.js";
-import { createFlowService } from "@/server/flows/flow_service.js";
+import { createAppFlowService } from "@/server/flows/app_flow_service.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
-import { buildValidationContext } from "@/server/flows/flow_validation_context.js";
 import { flowFileName, flowToYaml } from "@/server/flows/flow_yaml.js";
 import {
     FLOW_TEMPLATES,
@@ -51,13 +48,7 @@ const versionParamsSchema = flowParamsSchema.extend({
 });
 
 export const registerFlowsRoutes: RouteModule = (app, deps) => {
-    const credentials = new CredentialRepository(deps.db);
-    const flows = createFlowService({
-        repo: new FlowRepository(deps.db),
-        events: deps.events,
-        clock: systemClock,
-        validationContext: () => buildValidationContext(credentials),
-    });
+    const flows = createAppFlowService({ db: deps.db, events: deps.events, clock: systemClock });
 
     registerProjectFlowsRoutes(app, flows);
     registerFlowRoutes(app, flows);
