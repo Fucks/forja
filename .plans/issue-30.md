@@ -26,7 +26,7 @@
 
 - [x] 1. Test + implement `toReactFlow` (relative positions, groups with parentId, nested groups, edges) — `src/web/canvas/graph_mapping.ts`
 - [x] 2. Test + implement `fromReactFlow` round trip (canonical + loop flows, moved node inside nested group) — `src/web/canvas/graph_mapping.ts`
-- [ ] 3. Test + implement `createEditorStore` (`load`, `applyGraph` immutable + dirty, `select`, save states) — `src/web/canvas/editor_store.ts`
+- [x] 3. Test + implement `createEditorStore` (`load`, `applyGraph` immutable + dirty, `select`, save states) — `src/web/canvas/editor_store.ts`
 - [ ] 4. Test + implement `createAutosave` debounce — `src/web/canvas/autosave.ts`
 - [ ] 5. Test + implement autosave serial saves with returned revision — `src/web/canvas/autosave.ts`
 - [ ] 6. Test + implement autosave conflict and error reporting — `src/web/canvas/autosave.ts`
