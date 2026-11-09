@@ -3,7 +3,9 @@ import { validateFlowGraph } from "@/engine/graph_validation.js";
 import type { ValidationContext } from "@/engine/graph_validation.js";
 import { checkPromptVariables } from "@/engine/prompt_template.js";
 import { basicFactoryTemplate } from "@/server/flows/templates/basic_factory.js";
+import { reviewLoopTemplate } from "@/server/flows/templates/review_loop.js";
 import { TOOL_PROFILE_PRESETS } from "@/server/tool_profiles/tool_profile_presets.js";
+import { LOOP_EXHAUSTED_PORT } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 
@@ -39,6 +41,77 @@ describe("Fábrica básica template", () => {
 
         expect(agentPromptOf(graph, "tl")).toContain("{{item.body}}");
         expect(agentPromptOf(graph, "dev")).toContain("{{inputs.spec}}");
+    });
+});
+
+describe("Dev ↔ Review em loop com testes template", () => {
+    it("builds a graph that publishes without errors", () => {
+        const graph = reviewLoopTemplate.build();
+
+        expect(publishErrorsOf(graph)).toEqual([]);
+    });
+
+    it("works on two items at a time", () => {
+        const graph = reviewLoopTemplate.build();
+
+        expect(mapConcurrencyOf(graph, "items")).toBe(2);
+    });
+
+    it("repeats develop, test and review at most three times until the review approves", () => {
+        const graph = reviewLoopTemplate.build();
+
+        expect(findGroup(graph, "review_loop")).toMatchObject({
+            kind: "loop",
+            parentGroupId: "items",
+            config: {
+                maxIterations: 3,
+                until: { op: "eq", path: "revisar.result.approved", value: true },
+                carry: ["notes"],
+            },
+        });
+        expect(graph.nodes.filter((node) => node.parentGroupId === "review_loop")).toMatchObject([
+            { id: "dev", type: "agent", label: "Desenvolver" },
+            { id: "tests", type: "script", config: { command: "npm run test" } },
+            { id: "review", type: "agent", label: "Revisar" },
+        ]);
+    });
+
+    it("runs the tests after the developer and reviews after the tests", () => {
+        const graph = reviewLoopTemplate.build();
+
+        expect(graph.edges.map((edge) => edge.id)).toEqual(
+            expect.arrayContaining(["dev.summary->tests.changes", "tests.result->review.tests"]),
+        );
+    });
+
+    it("sends the items of an exhausted loop to a human", () => {
+        const graph = reviewLoopTemplate.build();
+
+        const exhaustedEdge = graph.edges.find(
+            (edge) => edge.from.nodeId === "review_loop" && edge.from.port === LOOP_EXHAUSTED_PORT,
+        );
+        expect(findNode(graph, exhaustedEdge?.to.nodeId ?? "")).toMatchObject({
+            type: "output",
+            config: { moveItemTo: "needs_human" },
+        });
+    });
+
+    it("opens a pull request for approved items before moving them to done", () => {
+        const graph = reviewLoopTemplate.build();
+
+        expect(graph.edges.map((edge) => edge.id)).toEqual(
+            expect.arrayContaining([
+                "review.summary->open_pr.body",
+                "open_pr.result->output.pullRequest",
+            ]),
+        );
+        expect(findNode(graph, "output")).toMatchObject({ config: { moveItemTo: "done" } });
+    });
+
+    it("gives the reviewer the result of the tests", () => {
+        const graph = reviewLoopTemplate.build();
+
+        expect(agentPromptOf(graph, "review")).toContain("{{inputs.tests}}");
     });
 });
 

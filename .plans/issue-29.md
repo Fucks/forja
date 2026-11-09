@@ -17,6 +17,9 @@
   prompt does not use `{{inputs.notes}}` (empty on iteration 1). The reviewer records its notes in a commit
   (`RALPH: review notes for #N`) that the Dev sees through the `git log` context command.
   `carry: ["notes"]` stays as in the contract.
+- Ordering-only optional inputs (edges are the only ordering): `tests.changes` ← `dev.summary` and the
+  done `output.pullRequest` ← `open_pr.result`, so tests wait for the Dev and exhausted items never go
+  to done.
 - Loop `until` path is `revisar.result.approved` (`nodeSlug("Revisar")` + the agent `result` port).
 - API: `GET /api/flow-templates` → `FlowTemplateSummary[]` (`id`, `name`, `description`);
   `POST /api/projects/:projectId/flows/from-template` `{ templateId, name }` → 201 `FlowSummary`; unknown
@@ -29,8 +32,8 @@
 - [x] 2. Test: "Fábrica básica" is publishable and has the canonical structure (concurrency 1/3/1) —
       `flow_templates.test.ts`
 - [x] 3. Implement `template_layout.ts` and `basic_factory.ts`
-- [ ] 4. Test: "Dev ↔ Review em loop" is publishable, loop max 3, `exhausted` → needs_human, map concurrency 2
-- [ ] 5. Implement `review_loop.ts`
+- [x] 4. Test: "Dev ↔ Review em loop" is publishable, loop max 3, `exhausted` → needs_human, map concurrency 2
+- [x] 5. Implement `review_loop.ts`
 - [ ] 6. Test + implement `FLOW_TEMPLATES` / `findFlowTemplate` in `flow_template_registry.ts`
       (every template valid with `checkPromptVariables`, unique ids)
 - [ ] 7. Test + implement `GET /api/flow-templates` — `flows_routes.ts`, `flow_types.ts`
