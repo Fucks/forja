@@ -28,10 +28,10 @@
 
 - [x] 1. Default Dockerfile — `assets/agent-image/Dockerfile`
 - [x] 2. Shared types — `src/shared/agent_image_types.ts`
-- [ ] 3. Test+impl: status picks the project `.sandcastle/Dockerfile` or the Forja default — `agent_image_service(.test).ts`
-- [ ] 4. Test+impl: status reports exists/createdAt/sizeMb from `docker image inspect`, and missing image
-- [ ] 5. Test+impl: build runs docker build with the contract args (host UID/GID, 1000 without host user, timeout)
-- [ ] 6. Test+impl: build streams lines, returns ok/exitCode, passes the abort signal (cancel)
+- [x] 3. Test+impl: status picks the project `.sandcastle/Dockerfile` or the Forja default — `agent_image_service(.test).ts`
+- [x] 4. Test+impl: status reports exists/createdAt/sizeMb from `docker image inspect`, and missing image
+- [x] 5. Test+impl: build runs docker build with the contract args (host UID/GID, 1000 without host user, timeout)
+- [x] 6. Test+impl: build streams lines, returns ok/exitCode, passes the abort signal (cancel)
 - [ ] 7. Move `currentHostUser` to `workspace_layout.ts`; lookups `agent_image_lookups.ts`
 - [ ] 8. Test+impl: routes GET status and POST build SSE (lines + done, 404) — `agent_images_routes(.test).ts`
 - [ ] 9. Test+impl: diagnostic item per agent image in use — `diagnostic_checks.ts`, `diagnostic_service.ts`, `diagnostics_routes.ts`
