@@ -20,7 +20,7 @@ const projectParamsSchema = z.object({ projectId: z.string().min(1) });
 const runParamsSchema = z.object({ runId: z.string().min(1) });
 const nodeRunParamsSchema = z.object({ nodeRunId: z.string().min(1) });
 
-type Action = (id: string) => Promise<void>;
+type ActionOnTarget = (id: string) => Promise<void>;
 
 export const registerRunsRoutes: RouteModule = (app, deps) => {
     const runs = createRunService({
@@ -61,7 +61,7 @@ function registerRunRoutes(app: FastifyInstance, runs: RunService): void {
         runs.getRunView(request.params.runId),
     );
 
-    const runActions: Record<string, Action> = {
+    const runActions: Record<string, ActionOnTarget> = {
         pause: (runId) => runs.pauseRun(runId),
         resume: (runId) => runs.resumeRun(runId),
         cancel: (runId) => runs.cancelRun(runId),
@@ -94,7 +94,7 @@ function registerNodeRunRoutes(app: FastifyInstance, runs: RunService): void {
         runs.getNodeRun(request.params.nodeRunId),
     );
 
-    const nodeRunActions: Record<string, Action> = {
+    const nodeRunActions: Record<string, ActionOnTarget> = {
         cancel: (nodeRunId) => runs.cancelNodeRun(nodeRunId),
         retry: (nodeRunId) => runs.retryNodeRun(nodeRunId),
     };

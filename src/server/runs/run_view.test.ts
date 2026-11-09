@@ -11,12 +11,7 @@ const NO_PROGRESS = { queued: 0, running: 0, succeeded: 0, failed: 0 };
 
 let nextNodeRunNumber = 0;
 
-function nodeRunOf(
-    nodeId: string,
-    workItemId: string,
-    status: NodeRunStatusName,
-    attempt = 1,
-): NodeRunState {
+function nodeRunOf(nodeId: string, workItemId: string, status: NodeRunStatusName): NodeRunState {
     nextNodeRunNumber += 1;
     return buildNodeRunState({
         id: `nrn_${nextNodeRunNumber}`,
@@ -24,7 +19,6 @@ function nodeRunOf(
         nodeId,
         workItemId,
         status,
-        attempt,
     });
 }
 
@@ -65,8 +59,8 @@ describe("buildRunView", () => {
 
     it("counts only the latest attempt of a retried NodeRun", () => {
         const nodeRuns = [
-            nodeRunOf("dev", "itm_1", "FAILED", 1),
-            nodeRunOf("dev", "itm_1", "RUNNING", 2),
+            nodeRunOf("dev", "itm_1", "FAILED"),
+            { ...nodeRunOf("dev", "itm_1", "RUNNING"), attempt: 2 },
         ];
 
         const view = buildRunView(RUN, nodeRuns, GRAPH, "Entrega", 0);

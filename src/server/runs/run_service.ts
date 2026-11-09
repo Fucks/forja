@@ -145,6 +145,7 @@ async function cancelNodeRun(deps: RunServiceDeps, nodeRunId: string): Promise<v
 async function retryNodeRun(deps: RunServiceDeps, nodeRunId: string): Promise<void> {
     const nodeRun = await findNodeRunOrThrow(deps.runs, nodeRunId);
     const run = await findRunOrThrow(deps.runs, nodeRun.runId);
+    // Whether the run is stopping lives only in the scheduler, which checks it again on delivery.
     if (!canRetryOnRequest(nodeRun.status, { status: run.status, isStopping: false })) {
         throw new ConflictError(CANNOT_RETRY_MESSAGE);
     }

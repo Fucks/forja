@@ -50,7 +50,7 @@ describe("run service", () => {
         return run;
     }
 
-    async function finishedRunWithFailedDev(): Promise<RunRecord> {
+    async function startFinishedRunWithFailedDev(): Promise<RunRecord> {
         bed.runtime.script({
             match: { promptIncludes: DEV_PROMPT, workItemId: ISSUE_2.id },
             times: DEV_ATTEMPTS,
@@ -177,7 +177,7 @@ describe("run service", () => {
 
     describe("NodeRuns", () => {
         it("retries a failed NodeRun of a finished run, reopening the run", async () => {
-            const run = await finishedRunWithFailedDev();
+            const run = await startFinishedRunWithFailedDev();
             const lastFailedDev = await bed.findNodeRun(
                 run.id,
                 "dev",
@@ -192,7 +192,7 @@ describe("run service", () => {
         });
 
         it("refuses to retry an attempt that was already retried", async () => {
-            const run = await finishedRunWithFailedDev();
+            const run = await startFinishedRunWithFailedDev();
             const firstFailedDev = await bed.findNodeRun(
                 run.id,
                 "dev",
