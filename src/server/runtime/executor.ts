@@ -23,6 +23,7 @@ import {
     isSchedulerSnapshotOfRun,
 } from "@/server/runtime/stored_snapshot.js";
 import type { SettingsService } from "@/server/settings/settings_service.js";
+import type { UsageService } from "@/server/usage/usage_service.js";
 import type { FlowVersion } from "@/shared/flow_types.js";
 import type { Project } from "@/shared/project_types.js";
 import type { GlobalSettings, ProjectSettings } from "@/shared/settings_types.js";
@@ -66,6 +67,7 @@ export interface ExecutorDeps {
     runtime: AgentRuntime;
     events: EventBus;
     logs: LogStore;
+    usage: UsageService;
     clock: Clock;
     newId(prefix: IdPrefix): string;
     // Defaults to the registry; tests stand in for the node types that are not implemented yet.
@@ -239,6 +241,7 @@ class RunExecutor implements Executor {
             runs: deps.runs,
             events: deps.events,
             logs: deps.logs,
+            usage: deps.usage,
             runtime: deps.runtime,
             clock: deps.clock,
             newId: (prefix) => deps.newId(prefix),

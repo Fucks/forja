@@ -8,6 +8,7 @@ import type { ArtifactRecord, RunRecord, RunRepository } from "@/server/runs/run
 import { mapAgentError, usageLimitResetAtOf } from "@/server/runtime/error_mapping.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import type {
+    ModelUsage,
     NodeArtifact,
     NodeExecutionContext,
     NodeExecutionResult,
@@ -17,12 +18,11 @@ import type {
 import { usageRecordedEvent } from "@/server/runtime/run_events.js";
 import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
 import type { WorkspacePool } from "@/server/runtime/workspace_pool.js";
+import type { UsageService } from "@/server/usage/usage_service.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
-
-type NodeUsage = NonNullable<NodeExecutionResult["usage"]>;
 
 type ExecutionOutcome = { ok: true; result: NodeExecutionResult } | { ok: false; error: unknown };
 
@@ -39,6 +39,7 @@ export interface NodeRunExecutionDeps {
     clock: Clock;
     runs: RunRepository;
     events: EventBus;
+    usage: UsageService;
     nodeExecutors: NodeExecutorRegistry;
     newId(prefix: IdPrefix): string;
     recordAgentEvent(event: AgentEvent): void;
@@ -160,18 +161,26 @@ export class NodeRunExecution {
         };
     }
 
-    // TODO(#59): persist the usage and estimate its cost from the model prices.
-    private async recordUsage(usage: NodeUsage): Promise<void> {
+    private async recordUsage({ model, tokens }: ModelUsage): Promise<void> {
         const { run, nodeRun, events, clock } = this.deps;
-        const costUsd = usage.costUsd ?? 0;
-        events.publish(usageRecordedEvent(run, nodeRun.id, { ...usage, costUsd }));
+        const record = await this.deps.usage.record({
+            projectId: run.projectId,
+            runId: run.id,
+            flowId: run.flowId,
+            nodeId: nodeRun.nodeId,
+            nodeRunId: nodeRun.id,
+            workItemId: nodeRun.workItemId,
+            iteration: nodeRun.iteration,
+            model,
+            usage: tokens,
+        });
+        events.publish(usageRecordedEvent(run, nodeRun.id, { ...tokens, costUsd: record.costUsd }));
 
-        const tokens = usage.inputTokens + usage.outputTokens;
         await this.deps.deliver({
             type: "usage_recorded",
             nodeRunId: nodeRun.id,
-            costUsd,
-            tokens,
+            costUsd: record.costUsd,
+            tokens: tokens.inputTokens + tokens.outputTokens,
             at: clock.now(),
         });
     }

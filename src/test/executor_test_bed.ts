@@ -19,6 +19,8 @@ import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService, type SettingsService } from "@/server/settings/settings_service.js";
+import { createAppUsageService } from "@/server/usage/app_usage_service.js";
+import type { UsageService } from "@/server/usage/usage_service.js";
 import type { ForjaEvent } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
@@ -65,6 +67,7 @@ export class ExecutorTestBed {
     readonly runs: JournalingRunRepository;
     readonly flows: FlowService;
     readonly settings: SettingsService;
+    readonly usage: UsageService;
     readonly executor: Executor;
     private readonly database: DatabaseHandle;
 
@@ -83,6 +86,11 @@ export class ExecutorTestBed {
         this.runs = new JournalingRunRepository(this.database, this.clock, this.journal);
         this.flows = this.createFlowService();
         this.settings = this.createSettingsService();
+        this.usage = createAppUsageService({
+            db: this.database.db,
+            settings: this.settings,
+            clock: this.clock,
+        });
         this.events.subscribe((envelope) => {
             this.journal.push({ kind: "published", event: envelope.event });
         });
@@ -225,6 +233,7 @@ export class ExecutorTestBed {
             runtime: this.runtime,
             events: this.events,
             logs: this.logs,
+            usage: this.usage,
             clock: this.clock,
             newId,
             nodeExecutors: { ...nodeExecutors, ...NOT_YET_IMPLEMENTED_EXECUTORS },

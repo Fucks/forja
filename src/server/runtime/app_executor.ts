@@ -15,6 +15,7 @@ import type { LogStore } from "@/server/runtime/log_store.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService } from "@/server/settings/settings_service.js";
+import { createAppUsageService } from "@/server/usage/app_usage_service.js";
 import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
 import { createWorkItemService } from "@/server/work_items/work_item_service.js";
 
@@ -36,6 +37,12 @@ export function createAppExecutor({
     runtime,
     clock,
 }: AppExecutorDeps): Executor {
+    const settings = createSettingsService({
+        repo: new SettingsRepository(db),
+        lookups: createSettingsLookups(db),
+        clock,
+    });
+
     return createExecutor({
         runs: new SqliteRunRepository(db, clock),
         flows: createAppFlowService({ db, events, clock }),
@@ -45,15 +52,12 @@ export function createAppExecutor({
             fileExists: existsSync,
             clock,
         }),
-        settings: createSettingsService({
-            repo: new SettingsRepository(db),
-            lookups: createSettingsLookups(db),
-            clock,
-        }),
+        settings,
         items: createItemSource(db, events, clock),
         runtime,
         events,
         logs,
+        usage: createAppUsageService({ db, settings, clock }),
         clock,
         newId,
     });

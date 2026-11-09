@@ -28,10 +28,16 @@ export interface NodeExecutionContext {
 
 export type NodeArtifact = Omit<ArtifactRecord, "id" | "nodeRunId" | "runId" | "createdAt">;
 
+export interface ModelUsage {
+    model: string;
+    tokens: TokenUsage;
+}
+
 export interface NodeExecutionResult {
     outputs: Record<string, unknown>;
     artifacts?: NodeArtifact[];
-    usage?: TokenUsage & { costUsd?: number };
+    // Only agents spend tokens.
+    usage?: ModelUsage;
 }
 
 export type NodeExecutor = (context: NodeExecutionContext) => Promise<NodeExecutionResult>;

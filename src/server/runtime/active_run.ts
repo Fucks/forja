@@ -29,6 +29,7 @@ import {
     usageLimitResetEvent,
 } from "@/server/runtime/run_events.js";
 import { createWorkspacePool, type WorkspacePool } from "@/server/runtime/workspace_pool.js";
+import type { UsageService } from "@/server/usage/usage_service.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
@@ -46,6 +47,7 @@ export interface ActiveRunDeps {
     runs: RunRepository;
     events: EventBus;
     logs: LogStore;
+    usage: UsageService;
     runtime: AgentRuntime;
     clock: Clock;
     nodeExecutors: NodeExecutorRegistry;
@@ -169,6 +171,7 @@ export class ActiveRun {
             clock: deps.clock,
             runs: deps.runs,
             events: deps.events,
+            usage: deps.usage,
             nodeExecutors: deps.nodeExecutors,
             newId: (prefix) => deps.newId(prefix),
             recordAgentEvent: (event) => this.recordAgentEvent(nodeRun.id, event),
