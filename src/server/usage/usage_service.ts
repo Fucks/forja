@@ -2,14 +2,29 @@ import type { Clock } from "@/lib/clock.js";
 import type { IdPrefix } from "@/lib/ids.js";
 import { resolveWith } from "@/lib/resolve_with.js";
 import { estimateCostUsd, priceFor } from "@/server/usage/model_prices.js";
-import type { UsageRepository } from "@/server/usage/usage_repository.js";
+import {
+    NO_ITEM_KEY,
+    type UsageRepository,
+    type UsageTotals,
+} from "@/server/usage/usage_repository.js";
 import type {
     ModelPrice,
     UsageAggregate,
+    UsageGroupBy,
     UsageQuery,
     UsageRecord,
     UsageSpent,
 } from "@/shared/usage_types.js";
+
+type LabelLookup = (repo: UsageRepository, keys: string[]) => Map<string, string>;
+
+const NO_ITEM_LABEL = "Sem item";
+
+// The other groups are labeled by their own key.
+const LABEL_LOOKUPS: Partial<Record<UsageGroupBy, LabelLookup>> = {
+    flow: (repo, flowIds) => repo.findFlowNames(flowIds),
+    item: (repo, workItemIds) => repo.findWorkItemTitles(workItemIds),
+};
 
 export type NewUsageRecord = Omit<UsageRecord, "id" | "costUsd" | "priceEstimated" | "at">;
 
@@ -33,7 +48,7 @@ export interface UsageServiceDeps {
 export function createUsageService(deps: UsageServiceDeps): UsageService {
     return {
         record: (input) => recordUsage(deps, input),
-        aggregate: () => Promise.resolve([]),
+        aggregate: (query) => aggregateUsage(deps, query),
         todaySpent: () => Promise.resolve({ costUsd: 0, tokens: 0 }),
         forRun: (runId) => resolveWith(() => deps.repo.listByRun(runId)),
     };
@@ -51,4 +66,38 @@ async function recordUsage(deps: UsageServiceDeps, input: NewUsageRecord): Promi
     deps.repo.insert(record);
 
     return record;
+}
+
+async function aggregateUsage(
+    deps: UsageServiceDeps,
+    query: UsageQuery,
+): Promise<UsageAggregate[]> {
+    const timeZone = await deps.timezoneOf(query.projectId);
+    const groups = deps.repo.totalsByGroup(query, timeZone);
+    const labels = findLabels(deps.repo, query.groupBy, groups);
+
+    return groups.map((totals) => ({
+        ...totals,
+        label: labels.get(totals.key) ?? fallbackLabelOf(totals.key),
+    }));
+}
+
+function findLabels(
+    repo: UsageRepository,
+    groupBy: UsageGroupBy,
+    groups: UsageTotals[],
+): Map<string, string> {
+    const lookUpLabels = LABEL_LOOKUPS[groupBy];
+    if (!lookUpLabels) {
+        return new Map();
+    }
+
+    return lookUpLabels(
+        repo,
+        groups.map(({ key }) => key),
+    );
+}
+
+function fallbackLabelOf(key: string): string {
+    return key === NO_ITEM_KEY ? NO_ITEM_LABEL : key;
 }

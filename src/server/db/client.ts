@@ -4,6 +4,7 @@ import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 
 import { runtimeAssetPath } from "@/lib/paths.js";
 import { applyMigrations, loadMigrations } from "@/server/db/migrate.js";
+import { registerSqlFunctions } from "@/server/db/sql_functions.js";
 
 export const IN_MEMORY_DATABASE = ":memory:";
 const BUSY_TIMEOUT_MS = 5000;
@@ -40,4 +41,5 @@ function configureConnection(sqlite: Database.Database, filePath: string): void 
     }
     sqlite.pragma("foreign_keys = ON");
     sqlite.pragma(`busy_timeout = ${BUSY_TIMEOUT_MS}`);
+    registerSqlFunctions(sqlite);
 }
