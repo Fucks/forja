@@ -4,8 +4,16 @@ import { executeOutputNode } from "@/server/runtime/executors/output_executor.js
 import type { NodeExecutionContext } from "@/server/runtime/node_executors.js";
 import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
 import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.js";
-import { buildIssueSnapshot } from "@/test/executor_test_bed.js";
-import { createNodeOfType } from "@/test/factories/flow_graph_factory.js";
+import type { Condition } from "@/shared/conditions.js";
+import type { FlowEdge, FlowGraph, FlowNode, Port } from "@/shared/flow_graph.js";
+import { buildIssueSnapshot, ExecutorTestBed } from "@/test/executor_test_bed.js";
+import { buildLoopFlow, connect, createNodeOfType } from "@/test/factories/flow_graph_factory.js";
+import {
+    buildMapGroup,
+    updateAgentConfig,
+    updateGroup,
+    updateNode,
+} from "@/test/factories/flow_graph_variations.js";
 import { buildNodeExecutionContext } from "@/test/factories/node_execution_context_factory.js";
 import { FakeAgentRuntime, type ScriptedExec } from "@/test/fakes/fake_agent_runtime.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
@@ -15,6 +23,29 @@ const ISSUE_1 = buildIssueSnapshot(1);
 const ISSUE_2 = buildIssueSnapshot(2);
 const TEST_COMMAND = "npm run test";
 const STDOUT_TAIL_MAX_LINES = 200;
+const REVIEW_PROMPT = "Revise a issue";
+const APPROVED_REVIEW = { approved: true, notes: "ok" };
+const PASSING_TESTS: ScriptedExec = { exitCode: 0, stdoutTail: "all passed" };
+const FAILING_TESTS: ScriptedExec = { exitCode: 1, stdoutTail: "1 failed" };
+const SCRIPT_LINES = ["PASS a.test.ts", "PASS b.test.ts"];
+const WORKSPACE_READY_LOG_LINES = 1;
+const ONE_MINUTE = 1;
+const TWO_MINUTES_MS = 120_000;
+const ITEMS_GROUP_ID = "items";
+const APPROVED: Condition = { op: "eq", path: "approved", value: true };
+const REVIEW_OUTPUT_SCHEMA = {
+    type: "object",
+    properties: { approved: { type: "boolean" } },
+    required: ["approved"],
+};
+const DEV_PROMPT_WITHOUT_NOTES = "Implemente a issue #{{item.number}}";
+const TESTS_PASSED_AND_REVIEW_APPROVED: Condition = {
+    op: "and",
+    conditions: [
+        { op: "eq", path: "revisar.result.approved", value: true },
+        { op: "eq", path: "testes.result.exitCode", value: 0 },
+    ],
+};
 
 describe("deterministic executors", () => {
     describe("trigger", () => {
@@ -40,14 +71,14 @@ describe("deterministic executors", () => {
         it("sends each output line of the command as a raw agent event", async () => {
             const events: AgentEvent[] = [];
             const context = buildScriptContext(
-                { exitCode: 0, stdoutTail: "", outputLines: ["PASS a.test.ts", "PASS b.test.ts"] },
+                { ...PASSING_TESTS, outputLines: SCRIPT_LINES },
                 { onAgentEvent: (event) => events.push(event) },
             );
 
             await executeScriptNode(context);
 
             const rawLines = events.flatMap((event) => (event.kind === "raw" ? [event.line] : []));
-            expect(rawLines).toEqual(["PASS a.test.ts", "PASS b.test.ts"]);
+            expect(rawLines).toEqual(SCRIPT_LINES);
         });
 
         it("keeps only the last 200 lines of the stdout tail", async () => {
@@ -64,8 +95,6 @@ describe("deterministic executors", () => {
     });
 
     describe("condition", () => {
-        const APPROVED = { op: "eq", path: "approved", value: true } as const;
-
         it("sends the input value to the true port when the condition holds", async () => {
             const value = { approved: true, notes: "ok" };
             const context = buildConditionContext(value);
@@ -111,7 +140,182 @@ describe("deterministic executors", () => {
             });
         });
     });
+
+    describe("in a run", () => {
+        let bed: ExecutorTestBed;
+
+        beforeEach(() => {
+            bed = new ExecutorTestBed([ISSUE_1]);
+            bed.runtime.script({
+                match: { promptIncludes: REVIEW_PROMPT },
+                durationMs: 1_000,
+                result: { output: APPROVED_REVIEW },
+            });
+        });
+
+        afterEach(() => {
+            bed.close();
+        });
+
+        async function runToTheEnd(graph: FlowGraph): Promise<string> {
+            const started = await bed.startRun(await bed.publishFlow(graph));
+            await bed.runUntilFinished(started.id);
+
+            return started.id;
+        }
+
+        it("finishes a script that exits with 1 as SUCCEEDED with its exit code", async () => {
+            bed.runtime.scriptExec(TEST_COMMAND, FAILING_TESTS);
+
+            const runId = await runToTheEnd(buildRunnableLoopFlow());
+
+            const tests = await bed.findNodeRun(runId, "tests");
+            expect(tests.status).toBe("SUCCEEDED");
+            expect(tests.outputs).toEqual({ result: { exitCode: 1, stdoutTail: "1 failed" } });
+        });
+
+        it("fails a script that runs past its timeout with timeout_total", async () => {
+            bed.runtime.scriptExec(TEST_COMMAND, { ...PASSING_TESTS, durationMs: TWO_MINUTES_MS });
+
+            const runId = await runToTheEnd(
+                withTestsTimeoutMinutes(buildRunnableLoopFlow(), ONE_MINUTE),
+            );
+
+            const tests = await bed.findNodeRun(runId, "tests");
+            expect(tests.status).toBe("FAILED");
+            expect(tests.error?.kind).toBe("timeout_total");
+        });
+
+        it("announces the workspace opening and each script line as log lines", async () => {
+            bed.runtime.scriptExec(TEST_COMMAND, { ...PASSING_TESTS, outputLines: SCRIPT_LINES });
+
+            const runId = await runToTheEnd(buildTestsOnlyFlow());
+
+            const tests = await bed.findNodeRun(runId, "tests");
+            const testsLogLines = bed
+                .publishedEventsOf("log.appended")
+                .filter((event) => "nodeRunId" in event && event.nodeRunId === tests.id);
+            expect(testsLogLines).toHaveLength(WORKSPACE_READY_LOG_LINES + SCRIPT_LINES.length);
+        });
+
+        it("runs the branch the condition chose and skips the other", async () => {
+            const runId = await runToTheEnd(buildReviewDecisionFlow());
+
+            expect((await bed.findNodeRun(runId, "done")).status).toBe("SUCCEEDED");
+            expect((await bed.findNodeRun(runId, "needs_human")).status).toBe("SKIPPED");
+        });
+
+        it("saves the item_outcome artifact of the output node", async () => {
+            const runId = await runToTheEnd(buildReviewDecisionFlow());
+
+            const done = await bed.findNodeRun(runId, "done");
+            const artifacts = await bed.runs.listArtifacts(done.id);
+            expect(artifacts).toContainEqual(
+                expect.objectContaining({
+                    name: "item_outcome",
+                    kind: "json",
+                    value: { moveItemTo: "done" },
+                }),
+            );
+        });
+
+        it("repeats the loop while the tests fail and leaves it when they pass", async () => {
+            bed.runtime.scriptExec(TEST_COMMAND, FAILING_TESTS, PASSING_TESTS);
+            const graph = withLoopUntil(buildRunnableLoopFlow(), TESTS_PASSED_AND_REVIEW_APPROVED);
+
+            const runId = await runToTheEnd(graph);
+
+            const testsResults = (await bed.nodeRunsOf(runId, "tests")).map(
+                (nodeRun) => nodeRun.outputs?.result,
+            );
+            expect(testsResults).toEqual([
+                { exitCode: 1, stdoutTail: "1 failed" },
+                { exitCode: 0, stdoutTail: "all passed" },
+            ]);
+            expect((await bed.findRun(runId)).status).toBe("SUCCEEDED");
+        });
+    });
 });
+
+// The notes of the review only exist from the second iteration on, so the first Dev could not
+// render a prompt that reads them.
+function buildRunnableLoopFlow(): FlowGraph {
+    return updateAgentConfig(buildLoopFlow(), "dev", { prompt: DEV_PROMPT_WITHOUT_NOTES });
+}
+
+// trigger → source → per item: tests
+function buildTestsOnlyFlow(): FlowGraph {
+    const tests = createNodeOfType("script", "tests", POSITION);
+
+    return buildPerItemFlow(
+        [{ ...tests, config: { ...tests.config, command: TEST_COMMAND } }],
+        [connect(["source", "items"], ["tests", "item"])],
+    );
+}
+
+// trigger → source → per item: review → check(approved?) → true: done; false: needs_human
+// The outputs take the item of their map, so they only receive the decision.
+function buildReviewDecisionFlow(): FlowGraph {
+    const review = createNodeOfType("agent", "review", POSITION);
+    const check = createNodeOfType("condition", "check", POSITION);
+    const done = createNodeOfType("output", "done", POSITION);
+    const needsHuman = createNodeOfType("output", "needs_human", POSITION);
+
+    return buildPerItemFlow(
+        [
+            {
+                ...review,
+                config: {
+                    ...review.config,
+                    prompt: `${REVIEW_PROMPT} #{{item.number}}`,
+                    outputSchema: REVIEW_OUTPUT_SCHEMA,
+                },
+            },
+            { ...check, config: { condition: APPROVED } },
+            { ...done, inputs: [decisionPort("approved")] },
+            {
+                ...needsHuman,
+                inputs: [decisionPort("rejected")],
+                config: { ...needsHuman.config, moveItemTo: "needs_human" },
+            },
+        ],
+        [
+            connect(["source", "items"], ["review", "item"]),
+            connect(["review", "result"], ["check", "value"]),
+            connect(["check", "true"], ["done", "approved"]),
+            connect(["check", "false"], ["needs_human", "rejected"]),
+        ],
+    );
+}
+
+function buildPerItemFlow(itemNodes: FlowNode[], itemEdges: FlowEdge[]): FlowGraph {
+    return {
+        schemaVersion: 1,
+        nodes: [
+            createNodeOfType("trigger", "trigger", POSITION),
+            createNodeOfType("source", "source", POSITION),
+            ...itemNodes.map((node) => ({ ...node, parentGroupId: ITEMS_GROUP_ID })),
+        ],
+        edges: [connect(["trigger", "items"], ["source", "trigger"]), ...itemEdges],
+        groups: [buildMapGroup(ITEMS_GROUP_ID)],
+    };
+}
+
+function decisionPort(name: string): Port {
+    return { name, type: "any", required: true };
+}
+
+function withLoopUntil(graph: FlowGraph, until: Condition): FlowGraph {
+    return updateGroup(graph, "review_loop", (group) =>
+        group.kind === "loop" ? { ...group, config: { ...group.config, until } } : group,
+    );
+}
+
+function withTestsTimeoutMinutes(graph: FlowGraph, timeoutMinutes: number): FlowGraph {
+    return updateNode(graph, "tests", (node) =>
+        node.type === "script" ? { ...node, config: { ...node.config, timeoutMinutes } } : node,
+    );
+}
 
 function buildScriptContext(
     execution: ScriptedExec,

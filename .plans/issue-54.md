@@ -27,7 +27,7 @@
 - [x] 7. Condition sends the value to the chosen port — `executors/condition_executor.ts`
 - [x] 8. Output records the `item_outcome` artifact — `executors/output_executor.ts`
 - [x] 9. Register executors; drop the output stub in the test bed — `node_executors.ts`, `executor_test_bed.ts`
-- [ ] 10. E2E: script timeout fails the NodeRun with `timeout_total`; script exit 1 NodeRun SUCCEEDED
-- [ ] 11. E2E: condition skips the other branch
-- [ ] 12. E2E: loop exits on iteration 2 when tests pass — `deterministic_executors.test.ts`
+- [x] 10. E2E: script timeout fails the NodeRun with `timeout_total`; script exit 1 NodeRun SUCCEEDED
+- [x] 11. E2E: condition skips the other branch
+- [x] 12. E2E: loop exits on iteration 2 when tests pass — `deterministic_executors.test.ts`
 - [ ] 13. Self-review checklist and feedback loops
