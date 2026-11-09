@@ -10,6 +10,7 @@ export interface EventBus {
     publish(event: ForjaEvent): EventEnvelope;
     subscribe(listener: EnvelopeListener): Unsubscribe;
     since(lastId: number): EventEnvelope[];
+    lastEventId(): number;
 }
 
 export function createEventBus(clock: TimeSource): EventBus {
@@ -40,6 +41,10 @@ class InMemoryEventBus implements EventBus {
 
     since(lastId: number): EventEnvelope[] {
         return this.recentEnvelopes.filter((envelope) => envelope.id > lastId);
+    }
+
+    lastEventId(): number {
+        return this.lastPublishedId;
     }
 
     private remember(envelope: EventEnvelope): void {

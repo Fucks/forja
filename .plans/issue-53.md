@@ -27,9 +27,9 @@
 
 ## Tasks
 
-- [ ] 1. Shared run types and inputs — `src/shared/run_types.ts`
-- [ ] 2. Test + implement `buildRunView` (run, nodeRuns, graph, lastEventId, map progress) — `src/server/runs/run_view.ts`, `run_view.test.ts`
-- [ ] 3. `EventBus.lastEventId()` — `src/server/runtime/event_bus.ts` (+ test)
+- [x] 1. Shared run types and inputs — `src/shared/run_types.ts`
+- [x] 2. Test + implement `buildRunView` (run, nodeRuns, graph, lastEventId, map progress) — `src/server/runs/run_view.ts`, `run_view.test.ts`
+- [x] 3. `EventBus.lastEventId()` — `src/server/runtime/event_bus.ts` (+ test)
 - [ ] 4. Test + implement `RunService.startRun` / `listRuns` (422 message) — `run_service.ts`, `run_service.test.ts`, `executor.ts`
 - [ ] 5. Test + implement pause / resume / cancel with 409 on invalid transitions — `run_service.ts`
 - [ ] 6. Test + implement `getRunView` (graph of the run's version, not the draft) — `run_service.ts`
