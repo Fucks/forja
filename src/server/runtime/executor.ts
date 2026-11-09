@@ -1,4 +1,5 @@
-import type { RunBudget } from "@/engine/budgets.js";
+import type { BudgetLimit, RunBudget } from "@/engine/budgets.js";
+import { RUN_TERMINAL } from "@/engine/run_state.js";
 import { createScheduler } from "@/engine/scheduler.js";
 import type {
     SchedulerEvent,
@@ -46,7 +47,10 @@ export interface Executor {
     pauseRun(runId: string): Promise<void>;
     resumeRun(runId: string): Promise<void>;
     cancelNodeRun(nodeRunId: string): Promise<void>;
+    // A finished run is taken back from its snapshot, so the retry reopens it.
     retryNodeRun(nodeRunId: string): Promise<void>;
+    // Keeps the daily budget of the project; resumes the run when the budget had paused it.
+    raiseRunBudget(runId: string, runLimit: BudgetLimit | undefined): Promise<void>;
     // Takes over a run the previous server process left active.
     resumeFromSnapshot(run: RunRecord, snapshot: unknown): Promise<void>;
     activeRunIds(): string[];
@@ -65,6 +69,8 @@ export interface ExecutorDeps {
     // Defaults to the registry; tests stand in for the node types that are not implemented yet.
     nodeExecutors?: NodeExecutorRegistry;
 }
+
+const BUDGET_EXCEEDED_ACTION = "pause";
 
 // Everything a run needs, loaded before it is created.
 interface RunSetup {
@@ -118,6 +124,7 @@ class RunExecutor implements Executor {
 
     async retryNodeRun(nodeRunId: string): Promise<void> {
         const runId = await this.findRunIdOfNodeRun(nodeRunId);
+        await this.reactivateIfFinished(runId);
         await this.deliverTo(runId, {
             type: "retry_node_run_requested",
             nodeRunId,
@@ -125,23 +132,58 @@ class RunExecutor implements Executor {
         });
     }
 
+    async raiseRunBudget(runId: string, runLimit: BudgetLimit | undefined): Promise<void> {
+        const activeRun = this.findActiveRun(runId);
+        const settings = await this.deps.settings.getProjectSettings(activeRun.current.projectId);
+        const budget: RunBudget = {
+            onExceeded: BUDGET_EXCEEDED_ACTION,
+            ...dailyBudgetOf(settings),
+            run: runLimit,
+        };
+
+        await activeRun.deliver({ type: "budget_raised", budget, at: this.now() });
+    }
+
     async resumeFromSnapshot(run: RunRecord, snapshot: unknown): Promise<void> {
         if (!isSchedulerSnapshotOfRun(snapshot, run.id)) {
             throw new InvalidRunSnapshotError(run.id);
         }
 
+        const activeRun = await this.restore(run, snapshot);
+        await activeRun.resumeAfterRestart(snapshot);
+    }
+
+    activeRunIds(): string[] {
+        return [...this.activeRuns.keys()];
+    }
+
+    private async reactivateIfFinished(runId: string): Promise<void> {
+        if (this.activeRuns.has(runId)) {
+            return;
+        }
+
+        const run = await this.deps.runs.getRun(runId);
+        if (!run || !RUN_TERMINAL.has(run.status)) {
+            return;
+        }
+
+        const snapshot = await this.deps.runs.getSnapshot(runId);
+        if (!isSchedulerSnapshotOfRun(snapshot, runId)) {
+            throw new InvalidRunSnapshotError(runId);
+        }
+
+        await this.restore(run, snapshot);
+    }
+
+    private async restore(run: RunRecord, snapshot: SchedulerSnapshot): Promise<ActiveRun> {
         const setup = await this.loadRunSetup({
             projectId: run.projectId,
             flowId: run.flowId,
             version: run.flowVersion,
             itemIds: run.itemIds,
         });
-        const activeRun = this.activate(run, setup, snapshot);
-        await activeRun.resumeAfterRestart(snapshot);
-    }
 
-    activeRunIds(): string[] {
-        return [...this.activeRuns.keys()];
+        return this.activate(run, setup, snapshot);
     }
 
     private async loadRunSetup(input: StartRunInput): Promise<RunSetup> {
@@ -164,7 +206,7 @@ class RunExecutor implements Executor {
 
         const latest = (await this.deps.flows.listVersions(flowId)).at(-1);
         if (!latest) {
-            throw new DomainValidationError("O fluxo ainda não tem uma versão publicada.");
+            throw new DomainValidationError("Publique o fluxo antes de executar.");
         }
 
         return this.deps.flows.getVersion(flowId, latest.version);
@@ -228,12 +270,16 @@ class RunExecutor implements Executor {
 
     // Only runs of this server are active; a finished run is no longer in memory.
     private async deliverTo(runId: string, event: SchedulerEvent): Promise<void> {
+        await this.findActiveRun(runId).deliver(event);
+    }
+
+    private findActiveRun(runId: string): ActiveRun {
         const activeRun = this.activeRuns.get(runId);
         if (!activeRun) {
             throw new NotFoundError(`A run ${runId} não está em andamento.`);
         }
 
-        await activeRun.deliver(event);
+        return activeRun;
     }
 
     private async findRunIdOfNodeRun(nodeRunId: string): Promise<string> {
@@ -258,6 +304,6 @@ function dailyBudgetOf(settings: ProjectSettings): RunBudget | undefined {
 
     return {
         daily: { maxCostUsd: settings.dailyBudgetUsd, alreadySpentUsd: 0, alreadySpentTokens: 0 },
-        onExceeded: "pause",
+        onExceeded: BUDGET_EXCEEDED_ACTION,
     };
 }
