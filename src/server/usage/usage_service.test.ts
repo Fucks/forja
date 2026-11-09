@@ -9,9 +9,9 @@ import { WorkItemRepository } from "@/server/work_items/work_item_repository.js"
 import type { ModelPrice, UsageGroupBy, UsageQuery } from "@/shared/usage_types.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { buildProject } from "@/test/factories/project_factory.js";
+import { buildNewUsageRecord, buildTokenUsage } from "@/test/factories/usage_record_factory.js";
 import { buildWorkItem } from "@/test/factories/work_item_factory.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
-import { buildNewUsageRecord, buildTokenUsage } from "@/test/factories/usage_record_factory.js";
 import { createTestDb } from "@/test/test_db.js";
 
 const ONE_MILLION = 1_000_000;

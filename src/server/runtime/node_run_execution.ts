@@ -164,8 +164,7 @@ export class NodeRunExecution {
 
     private async recordUsage(modelUsage: ModelUsage): Promise<void> {
         const { run, nodeRun, events, clock } = this.deps;
-        const record = await this.deps.usage.record(this.usageRecordOf(modelUsage));
-        const { usage, costUsd } = record;
+        const { usage, costUsd } = await this.deps.usage.record(this.usageRecordOf(modelUsage));
         events.publish(usageRecordedEvent(run, nodeRun.id, { ...usage, costUsd }));
 
         await this.deps.deliver({

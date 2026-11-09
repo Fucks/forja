@@ -31,8 +31,8 @@ export const NO_ITEM_KEY = "";
 // budgetTokensOf in SQL: cache tokens do not count for the budgets.
 const BUDGET_TOKENS = sql`${usageRecords.inputTokens} + ${usageRecords.outputTokens}`;
 
-const GROUP_KEYS: Record<UsageGroupBy, (timeZone: string) => SQL<string>> = {
-    day: (timeZone) => localDayOfRecord(timeZone),
+const GROUP_KEYS: Record<UsageGroupBy, (timezone: string) => SQL<string>> = {
+    day: (timezone) => localDayOfRecord(timezone),
     flow: () => sql<string>`${usageRecords.flowId}`,
     node: () => sql<string>`${usageRecords.nodeId}`,
     model: () => sql<string>`${usageRecords.model}`,
@@ -58,8 +58,8 @@ export class UsageRepository {
     }
 
     // The period includes `from` and excludes `to`; days are those of the time zone.
-    totalsByGroup(query: UsageQuery, timeZone: string): GroupTotals[] {
-        const groupKey = GROUP_KEYS[query.groupBy](timeZone);
+    totalsByGroup(query: UsageQuery, timezone: string): GroupTotals[] {
+        const groupKey = GROUP_KEYS[query.groupBy](timezone);
 
         return this.db
             .select({
@@ -77,14 +77,14 @@ export class UsageRepository {
             .all();
     }
 
-    spentOnDay(projectId: string, timeZone: string, day: string): UsageTotals {
+    spentOnDay(projectId: string, timezone: string, day: string): UsageTotals {
         const spent = this.db
             .select({
                 costUsd: sumOf(usageRecords.costUsd),
                 tokens: sumOf(BUDGET_TOKENS),
             })
             .from(usageRecords)
-            .where(and(eq(usageRecords.projectId, projectId), eq(localDayOfRecord(timeZone), day)))
+            .where(and(eq(usageRecords.projectId, projectId), eq(localDayOfRecord(timezone), day)))
             .get();
 
         return spent ?? NO_USAGE;
@@ -111,8 +111,8 @@ export class UsageRepository {
     }
 }
 
-function localDayOfRecord(timeZone: string): SQL<string> {
-    return sql<string>`${sql.raw(LOCAL_DAY_FUNCTION)}(${usageRecords.at}, ${timeZone})`;
+function localDayOfRecord(timezone: string): SQL<string> {
+    return sql<string>`${sql.raw(LOCAL_DAY_FUNCTION)}(${usageRecords.at}, ${timezone})`;
 }
 
 // A sum over no rows is null in SQL.

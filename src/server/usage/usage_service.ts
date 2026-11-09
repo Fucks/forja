@@ -5,9 +5,9 @@ import { localDayOf } from "@/lib/local_day.js";
 import { resolveWith } from "@/lib/resolve_with.js";
 import { estimateCostUsd, priceFor } from "@/server/usage/model_prices.js";
 import {
+    type GroupTotals,
     NO_ITEM_KEY,
     type UsageRepository,
-    type GroupTotals,
 } from "@/server/usage/usage_repository.js";
 import type {
     ModelPrice,
@@ -74,8 +74,8 @@ async function aggregateUsage(
     deps: UsageServiceDeps,
     query: UsageQuery,
 ): Promise<UsageAggregate[]> {
-    const timeZone = await deps.timezoneOf(query.projectId);
-    const groups = deps.repo.totalsByGroup(query, timeZone);
+    const timezone = await deps.timezoneOf(query.projectId);
+    const groups = deps.repo.totalsByGroup(query, timezone);
     const labels = findLabels(deps.repo, query.groupBy, groups);
 
     return groups.map((totals) => ({

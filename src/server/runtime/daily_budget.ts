@@ -7,6 +7,7 @@ import {
 } from "@/engine/budgets.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
+import type { UsageRecord } from "@/shared/usage_types.js";
 
 export const BUDGET_EXCEEDED_ACTION = "pause";
 
@@ -47,15 +48,16 @@ async function spentTodayByOtherRuns(
         usage.todaySpent(run.projectId, timezone),
         usage.forRun(run.id),
     ]);
-    const spentByRun = recordsOfRun
-        .map((record) => ({
-            costUsd: record.costUsd,
-            tokens: budgetTokensOf(record.usage),
-        }))
-        .reduce(addUsage, NO_USAGE);
+    const spentByRun = totalSpentBy(recordsOfRun);
 
     return {
         costUsd: Math.max(0, spentToday.costUsd - spentByRun.costUsd),
         tokens: Math.max(0, spentToday.tokens - spentByRun.tokens),
     };
+}
+
+function totalSpentBy(records: UsageRecord[]): UsageTotals {
+    return records
+        .map((record) => ({ costUsd: record.costUsd, tokens: budgetTokensOf(record.usage) }))
+        .reduce(addUsage, NO_USAGE);
 }
