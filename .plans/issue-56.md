@@ -11,10 +11,10 @@
 
 ## Tasks
 
-- [ ] 1. Fixtures with the documented messages and variations — `src/test/fixtures/usage_limit_messages.ts`
-- [ ] 2. Test + implement detection (`isLimit` true/false, no resetAt) — parser + test
-- [ ] 3. Test + implement epoch reset — parser + test
-- [ ] 4. Test + implement time-of-day reset (zone in message, default zone, today/tomorrow) — parser + test
-- [ ] 5. Test + implement month/day reset (this year / next year) — parser + test
-- [ ] 6. Test + implement invalid zone fallback — parser + test
-- [ ] 7. Self-review checklist and feedback loops
+- [x] 1. Fixtures with the documented messages and variations — `src/test/fixtures/usage_limit_messages.ts`
+- [x] 2. Test + implement detection (`isLimit` true/false, no resetAt) — parser + test
+- [x] 3. Test + implement epoch reset — parser + test
+- [x] 4. Test + implement time-of-day reset (zone in message, default zone, today/tomorrow) — parser + test
+- [x] 5. Test + implement month/day reset (this year / next year) — parser + test
+- [x] 6. Test + implement invalid zone fallback — parser + test
+- [x] 7. Self-review checklist and feedback loops
