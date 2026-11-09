@@ -34,4 +34,4 @@
 - [x] 10. `AppDeps.logs` and `main.ts` (shared redactor, docker runtime) — `app.ts`, `main.ts`, `test_app_deps.ts`
 - [x] 11. Test + implement `GET /api/node-runs/:id/logs` paging — `logs_routes.ts`, `logs_routes.test.ts`
 - [x] 12. Test + implement `GET /api/node-runs/:id/logs/raw` download — `logs_routes.ts`
-- [ ] 13. Self-review checklist and feedback loops
+- [x] 13. Self-review checklist and feedback loops

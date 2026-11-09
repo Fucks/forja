@@ -14,8 +14,6 @@ import { logIndex, type LogIndexRow } from "@/server/db/schema/log_index.js";
 import { SerialQueueByKey } from "@/server/runtime/serial_queue_by_key.js";
 import { storedLogEventSchema, type LogPage, type StoredLogEvent } from "@/shared/log_types.js";
 
-export type { StoredLogEvent } from "@/shared/log_types.js";
-
 export interface NodeRunLogRef {
     runId: string;
     nodeRunId: string;
