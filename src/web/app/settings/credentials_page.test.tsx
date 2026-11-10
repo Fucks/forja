@@ -9,6 +9,7 @@ import { renderAppAt } from "@/test/render_app_at.js";
 const CREDENTIALS_PAGE_PATH = "/settings/credentials";
 const HTTP_CREATED = 201;
 const HTTP_NO_CONTENT = 204;
+const CHECKED_AT = "2026-06-03T09:00:00.000Z";
 
 const ANTHROPIC_KEY: CredentialSummary = {
     id: "cred_anthropic",
@@ -59,6 +60,45 @@ describe("CredentialsPage", () => {
         expect(within(anthropicRow).getByText("Nunca testada")).toBeInTheDocument();
         const githubRow = await findCredentialRow("GitHub");
         expect(within(githubRow).getByText(/^OK/)).toBeInTheDocument();
+    });
+
+    it("tests a credential and shows the result in its row", async () => {
+        const user = userEvent.setup();
+        const checkedKey = { ...ANTHROPIC_KEY, lastCheckedAt: CHECKED_AT, lastCheckOk: true };
+        let isChecked = false;
+        const fetchSpy = stubFetchRoutes({
+            "GET /api/credentials": () =>
+                Response.json([isChecked ? checkedKey : ANTHROPIC_KEY, GITHUB_TOKEN]),
+            "POST /api/credentials/cred_anthropic/check": () => {
+                isChecked = true;
+                return Response.json({ ok: true, message: "Credencial válida" });
+            },
+        });
+        renderAppAt(CREDENTIALS_PAGE_PATH);
+
+        const row = await findCredentialRow("Anthropic pessoal");
+        await user.click(within(row).getByRole("button", { name: "Testar Anthropic pessoal" }));
+
+        expect(await within(row).findByText("Credencial válida")).toBeInTheDocument();
+        expect(await within(row).findByText(/^OK ·/)).toBeInTheDocument();
+        expect(listSentWrites(fetchSpy)).toEqual([
+            { method: "POST", url: "/api/credentials/cred_anthropic/check", body: undefined },
+        ]);
+    });
+
+    it("shows the error of the agent when the test fails", async () => {
+        const user = userEvent.setup();
+        stubFetchRoutes({
+            "GET /api/credentials": () => Response.json([ANTHROPIC_KEY]),
+            "POST /api/credentials/cred_anthropic/check": () =>
+                Response.json({ ok: false, message: "Invalid API key" }),
+        });
+        renderAppAt(CREDENTIALS_PAGE_PATH);
+
+        const row = await findCredentialRow("Anthropic pessoal");
+        await user.click(within(row).getByRole("button", { name: "Testar Anthropic pessoal" }));
+
+        expect(await within(row).findByText("Invalid API key")).toHaveClass("text-status-failed");
     });
 
     it("offers to create the first credential when there are none", async () => {

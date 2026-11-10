@@ -4,7 +4,12 @@ import type { AgentRunRequest } from "@/integrations/agent_runtime/agent_runtime
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { updateAgentConfig } from "@/test/factories/flow_graph_variations.js";
 import { buildProject } from "@/test/factories/project_factory.js";
-import { buildIssueSnapshot, ExecutorTestBed, TEST_PROJECT_ID } from "@/test/executor_test_bed.js";
+import {
+    buildIssueSnapshot,
+    ExecutorTestBed,
+    TEST_CLAUDE_API_KEY,
+    TEST_PROJECT_ID,
+} from "@/test/executor_test_bed.js";
 
 const ISSUE_1 = buildIssueSnapshot(1);
 const GITHUB_TOKEN = "ghp_super-secret-token";
@@ -121,7 +126,10 @@ describe("executor tool profiles", () => {
         const runId = await runToTheEnd(flow);
 
         const developer = await requestOf(runId, "dev");
-        expect(developer.env).toEqual({ BOT_GITHUB_TOKEN: GITHUB_TOKEN });
+        expect(developer.env).toEqual({
+            BOT_GITHUB_TOKEN: GITHUB_TOKEN,
+            ANTHROPIC_API_KEY: TEST_CLAUDE_API_KEY,
+        });
         expect(developer.permissionMode).toBe("acceptEdits");
         expect([...bed.runtime.runtimeFiles.values()].join("\n")).not.toContain(GITHUB_TOKEN);
     });

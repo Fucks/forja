@@ -16,6 +16,7 @@ import type {
     NodeExecutor,
     NodeExecutorRegistry,
 } from "@/server/runtime/node_executors.js";
+import type { RunCredentials } from "@/server/runtime/run_credentials.js";
 import { usageRecordedEvent } from "@/server/runtime/run_events.js";
 import type { RunToolProfiles } from "@/server/runtime/run_tool_profiles.js";
 import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
@@ -38,6 +39,7 @@ export interface NodeRunExecutionDeps {
     project: Project;
     settings: ProjectSettings;
     toolProfiles: RunToolProfiles;
+    credentials: RunCredentials;
     workspaces: WorkspacePool;
     runtime: AgentRuntime;
     clock: Clock;
@@ -113,6 +115,7 @@ export class NodeRunExecution {
             project: deps.project,
             settings: deps.settings,
             toolProfiles: deps.toolProfiles,
+            credentials: deps.credentials,
             workspaces: deps.workspaces,
             runtime: deps.runtime,
             clock: deps.clock,

@@ -10,11 +10,16 @@ import type {
 } from "@/server/credentials/credential_repository.js";
 import { DomainValidationError, NotFoundError } from "@/server/errors.js";
 import { ENV_VAR_BY_KIND, GENERIC_ENV_VAR_REQUIRED_MESSAGE } from "@/shared/credential_types.js";
-import type { CredentialInput, CredentialSummary } from "@/shared/credential_types.js";
+import type {
+    CredentialInput,
+    CredentialKind,
+    CredentialSummary,
+} from "@/shared/credential_types.js";
 
 type LastCheck = Pick<CredentialSummary, "lastCheckedAt" | "lastCheckOk">;
 
 export interface RuntimeCredential {
+    kind: CredentialKind;
     envVar: string;
     value: string;
 }
@@ -121,7 +126,11 @@ function removeCredential(repo: CredentialRepository, id: string): void {
 function revealCredential(deps: CredentialServiceDeps, id: string): RuntimeCredential {
     const credential = findCredentialOrThrow(deps.repo, id);
 
-    return { envVar: credential.envVar, value: deps.secrets.open(credential.sealedValue) };
+    return {
+        kind: credential.kind,
+        envVar: credential.envVar,
+        value: deps.secrets.open(credential.sealedValue),
+    };
 }
 
 function recordCredentialCheck(

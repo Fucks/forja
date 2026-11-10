@@ -86,6 +86,7 @@ export function createAppExecutor({
             redactor,
             clock,
         }),
+        redactor,
         fileExists: existsSync,
         clock,
         newId,

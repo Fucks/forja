@@ -23,6 +23,7 @@ const groupPathSchema = z.array(
 const nodeRunErrorSchema = z.object({
     kind: z.enum(NODE_RUN_ERROR_KINDS),
     message: z.string(),
+    isRetryable: z.literal(false).optional(),
 });
 
 type RunStateColumns = Omit<RunRow, "triggerId" | "itemIdsJson" | "failedItemIdsJson">;

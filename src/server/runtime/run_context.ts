@@ -6,6 +6,8 @@ import type {
     SetupCommand,
     WorkspaceSpec,
 } from "@/integrations/agent_runtime/agent_runtime.js";
+import { buildAgentEnv } from "@/integrations/agent_runtime/agent_env.js";
+import type { RunCredentials } from "@/server/runtime/run_credentials.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
@@ -39,6 +41,7 @@ export interface RunPlace {
     run: RunState;
     project: Project;
     settings: ProjectSettings;
+    credentials: RunCredentials;
 }
 
 export function buildWorkspaceSpec(
@@ -55,9 +58,9 @@ export function buildWorkspaceSpec(
     };
 }
 
-// TODO(#62): pass the credentials of the node as env.
+// Only the GitHub token: the Claude credential belongs to each agent, so it goes in its request.
 export function buildHeadlessSpec(
-    { run, project, settings }: RunPlace,
+    { run, project, settings, credentials }: RunPlace,
     item: WorkItemSnapshot | undefined,
 ): HeadlessSpec {
     return {
@@ -67,7 +70,7 @@ export function buildHeadlessSpec(
         repoPath: project.repoPath,
         baseBranch: project.baseBranch,
         image: settings.agentImage,
-        env: {},
+        env: buildAgentEnv({ github: credentials.githubToken, extra: {} }),
         setupCommands: [],
     };
 }

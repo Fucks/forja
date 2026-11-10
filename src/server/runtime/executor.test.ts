@@ -1,4 +1,5 @@
 import type { NodeRunState } from "@/engine/node_run_state.js";
+import type { AgentRunRequest } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { RuntimeCall } from "@/test/fakes/fake_agent_runtime.js";
 import { DomainValidationError, NotFoundError } from "@/server/errors.js";
 import { InvalidRunSnapshotError } from "@/server/runtime/stored_snapshot.js";
@@ -11,6 +12,7 @@ import {
     type JournalEntry,
     PROJECT_SYSTEM_PROMPT,
     peakOverlapOf,
+    TEST_CLAUDE_API_KEY,
     TEST_PROJECT_ID,
 } from "@/test/executor_test_bed.js";
 
@@ -25,6 +27,8 @@ const AGENT_TEXTS = ["Lendo a issue", "Escrevendo o teste", "Pronto"];
 // Short enough for every event to land within one announcement window.
 const AGENT_EVENTS_DURATION_MS = 200;
 const LOG_PAGE_SIZE = 100;
+const CLAUDE_OAUTH_TOKEN = "sk-ant-oat01-abcdefghijklmnopqrstuvwxyz-c3d4";
+const GITHUB_TOKEN = "ghp_abcdefghijklmnopqrstuvwxyz0123456789";
 
 describe("executor", () => {
     let bed: ExecutorTestBed;
@@ -105,6 +109,97 @@ describe("executor", () => {
 
             const techLeadIds = (await bed.nodeRunsOf(started.id, "tl")).map(({ id }) => id);
             expect(nodeRunIdsOf(callsOf("headless")).sort()).toEqual(techLeadIds.sort());
+        });
+    });
+
+    describe("credentials", () => {
+        function devRequests(): AgentRunRequest[] {
+            return bed.runtime.requests.filter((request) => request.prompt.includes(DEV_PROMPT));
+        }
+
+        it("runs every agent with the Claude credential of the project", async () => {
+            const started = await bed.startRun(flowId);
+
+            await bed.runUntilFinished(started.id);
+
+            const envs = bed.runtime.requests.map((request) => request.env);
+            expect(envs.length).toBeGreaterThan(0);
+            envs.forEach((env) => expect(env).toEqual({ ANTHROPIC_API_KEY: TEST_CLAUDE_API_KEY }));
+        });
+
+        it("runs a node with its own OAuth token and without the project's API key", async () => {
+            const oauthToken = await bed.credentials.create({
+                name: "Assinatura",
+                kind: "claude_oauth_token",
+                value: CLAUDE_OAUTH_TOKEN,
+            });
+            const oauthFlow = updateAgentConfig(buildCanonicalFlow(), "dev", {
+                credentialId: oauthToken.id,
+            });
+            const started = await bed.startRun(await bed.publishFlow(oauthFlow));
+
+            await bed.runUntilFinished(started.id);
+
+            const envs = devRequests().map((request) => request.env);
+            expect(envs).toHaveLength(FOUR_ISSUES.length);
+            envs.forEach((env) =>
+                expect(env).toEqual({ CLAUDE_CODE_OAUTH_TOKEN: CLAUDE_OAUTH_TOKEN }),
+            );
+        });
+
+        it("passes the GitHub token of the project to the workspaces and the agents", async () => {
+            const githubToken = await bed.credentials.create({
+                name: "GitHub",
+                kind: "github_token",
+                value: GITHUB_TOKEN,
+            });
+            await bed.changeProjectSettings({ githubCredentialId: githubToken.id });
+            const started = await bed.startRun(flowId);
+
+            await bed.runUntilFinished(started.id);
+
+            const githubEnv = { GH_TOKEN: GITHUB_TOKEN, GITHUB_TOKEN: GITHUB_TOKEN };
+            expect(bed.runtime.openedSpecs).toHaveLength(FOUR_ISSUES.length);
+            expect(devRequests()).toHaveLength(FOUR_ISSUES.length);
+            bed.runtime.openedSpecs.forEach((spec) => expect(spec.env).toEqual(githubEnv));
+            devRequests().forEach((request) => expect(request.env).toMatchObject(githubEnv));
+        });
+
+        it("fails an agent without a Claude credential, with no retry and no workspace", async () => {
+            await bed.changeProjectSettings({ defaultCredentialId: null });
+            const started = await bed.startRun(flowId);
+
+            await bed.runUntilFinished(started.id);
+
+            const techLeads = await bed.nodeRunsOf(started.id, "tl");
+            expect(techLeads.map((nodeRun) => nodeRun.error)).toEqual(
+                FOUR_ISSUES.map(() => ({
+                    kind: "workspace",
+                    message: "Configure uma credencial do Claude no projeto",
+                    isRetryable: false,
+                })),
+            );
+            expect(callsOf("headless")).toEqual([]);
+            expect(callsOf("open")).toEqual([]);
+        });
+
+        it("masks the Claude credential the agent prints in its log", async () => {
+            bed.runtime.script({
+                match: { workItemId: ISSUE_2.id, promptIncludes: DEV_PROMPT },
+                durationMs: AGENT_EVENTS_DURATION_MS,
+                events: [{ kind: "text", text: `chave ${TEST_CLAUDE_API_KEY}`, iteration: 1 }],
+            });
+            const started = await bed.startRun(flowId);
+
+            await bed.runUntilFinished(started.id);
+
+            const dev = await bed.findNodeRun(
+                started.id,
+                "dev",
+                (nodeRun) => nodeRun.workItemId === ISSUE_2.id,
+            );
+            const log = await bed.logs.read(dev.id, { limit: LOG_PAGE_SIZE });
+            expect(JSON.stringify(log.events)).not.toContain(TEST_CLAUDE_API_KEY);
         });
     });
 

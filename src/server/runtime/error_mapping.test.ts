@@ -1,4 +1,5 @@
 import { PromptRenderError } from "@/engine/prompt_template.js";
+import { MissingCredentialError } from "@/integrations/agent_runtime/agent_env.js";
 import {
     AgentCanceledError,
     AgentRuntimeError,
@@ -25,6 +26,16 @@ describe("mapAgentError", () => {
         const mapped = mapAgentError(error);
 
         expect(mapped).toEqual({ kind, message: error.message });
+    });
+
+    it("maps a missing Claude credential to a workspace failure that is not retried", () => {
+        const mapped = mapAgentError(new MissingCredentialError());
+
+        expect(mapped).toEqual({
+            kind: "workspace",
+            message: "Configure uma credencial do Claude no projeto",
+            isRetryable: false,
+        });
     });
 
     it("hides the message of an unexpected error behind a generic one", () => {

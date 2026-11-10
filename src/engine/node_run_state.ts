@@ -18,6 +18,8 @@ export type NodeRunErrorKind = (typeof NODE_RUN_ERROR_KINDS)[number];
 export interface NodeRunError {
     kind: NodeRunErrorKind;
     message: string;
+    // Absent: the retry policy of the kind decides.
+    isRetryable?: false;
 }
 
 export interface GroupPathSegment {

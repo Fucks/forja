@@ -4,11 +4,13 @@ import { createSecretRedactor } from "@/integrations/secrets/secret_redactor.js"
 import { buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import type { CredentialSummary } from "@/shared/credential_types.js";
+import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 
 const API_KEY = "sk-ant-api03-abcdefghijklmnopqrstuvwxyz-a1b2";
 const NEW_API_KEY = "sk-ant-api03-zyxwvutsrqponmlkjihgfedcba-z9y8";
+const GITHUB_TOKEN = "ghp_abcdefghijklmnopqrstuvwxyz0123456789";
 
 describe("credentials routes", () => {
     let database: DatabaseHandle;
@@ -173,4 +175,44 @@ describe("credentials routes", () => {
 
         expect(bootRedactor.redact(API_KEY)).toBe("••••");
     });
+
+    describe("POST /api/credentials/:id/check", () => {
+        it("checks the credential and records when it was checked", async () => {
+            const commands = new FakeCommandRunner();
+            commands.when("gh", ["auth", "status"]).returns({ exitCode: 0 });
+            await app.close();
+            app = await buildApp(createTestAppDeps(database.db, { commands }));
+            const created = await createGithubToken();
+
+            const response = await app.inject({
+                method: "POST",
+                url: `/api/credentials/${created.id}/check`,
+            });
+
+            expect(response.statusCode).toBe(200);
+            expect(response.json()).toEqual({ ok: true, message: "Credencial válida" });
+            const listed = await app.inject({ method: "GET", url: "/api/credentials" });
+            const [checked] = listed.json<CredentialSummary[]>();
+            expect(checked?.lastCheckOk).toBe(true);
+            expect(checked?.lastCheckedAt).toBeDefined();
+        });
+
+        it("answers 404 for an unknown credential", async () => {
+            const response = await app.inject({
+                method: "POST",
+                url: "/api/credentials/cred_desconhecida/check",
+            });
+
+            expect(response.statusCode).toBe(404);
+        });
+    });
+
+    async function createGithubToken(): Promise<CredentialSummary> {
+        const response = await app.inject({
+            method: "POST",
+            url: "/api/credentials",
+            payload: { name: "GitHub", kind: "github_token", value: GITHUB_TOKEN },
+        });
+        return response.json<CredentialSummary>();
+    }
 });

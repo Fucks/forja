@@ -25,32 +25,32 @@ describe("decideRetry", () => {
             [4, 240 * SECOND_MS],
             [5, 480 * SECOND_MS],
         ])("retries attempt %i after %i ms while within maxRetries", (attempt, delayMs) => {
-            const decision = decideRetry(kind, attempt, 5);
+            const decision = decideRetry({ kind }, attempt, 5);
 
             expect(decision).toEqual({ retry: true, delayMs, countsAsAttempt: true });
         });
 
         it("caps the backoff at 10 minutes", () => {
-            const decision = decideRetry(kind, 6, 10);
+            const decision = decideRetry({ kind }, 6, 10);
 
             expect(decision.delayMs).toBe(10 * MINUTE_MS);
         });
 
         it("stops retrying once the attempt goes past maxRetries", () => {
-            const decision = decideRetry(kind, 2, 1);
+            const decision = decideRetry({ kind }, 2, 1);
 
             expect(decision.retry).toBe(false);
             expect(decision.countsAsAttempt).toBe(true);
         });
 
         it("never retries when maxRetries is 0", () => {
-            expect(decideRetry(kind, 1, 0).retry).toBe(false);
+            expect(decideRetry({ kind }, 1, 0).retry).toBe(false);
         });
     });
 
     describe("for workspace", () => {
         it.each([1, 2])("retries attempt %i after 2 minutes even with maxRetries 0", (attempt) => {
-            const decision = decideRetry("workspace", attempt, 0);
+            const decision = decideRetry({ kind: "workspace" }, attempt, 0);
 
             expect(decision).toEqual({
                 retry: true,
@@ -60,12 +60,18 @@ describe("decideRetry", () => {
         });
 
         it("stops after 2 retries even with a higher maxRetries", () => {
-            expect(decideRetry("workspace", 3, 5).retry).toBe(false);
+            expect(decideRetry({ kind: "workspace" }, 3, 5).retry).toBe(false);
+        });
+
+        it("never retries a workspace failure that retrying cannot fix", () => {
+            const decision = decideRetry({ kind: "workspace", isRetryable: false }, 1, 5);
+
+            expect(decision).toEqual({ retry: false, delayMs: 0, countsAsAttempt: true });
         });
     });
 
     it.each<FailureKind>(["canceled", "budget"])("never retries %s", (kind) => {
-        const decision = decideRetry(kind, 1, 5);
+        const decision = decideRetry({ kind }, 1, 5);
 
         expect(decision).toEqual({ retry: false, delayMs: 0, countsAsAttempt: true });
     });
@@ -73,7 +79,7 @@ describe("decideRetry", () => {
     it.each<FailureKind>(["usage_limit", "interrupted"])(
         "leaves %s to its own handling without counting an attempt",
         (kind) => {
-            const decision = decideRetry(kind, 1, 5);
+            const decision = decideRetry({ kind }, 1, 5);
 
             expect(decision).toEqual({ retry: false, delayMs: 0, countsAsAttempt: false });
         },

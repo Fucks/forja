@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:f
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { buildAgentEnv } from "@/integrations/agent_runtime/agent_env.js";
 import {
     AgentCanceledError,
     AgentRuntimeError,
@@ -30,6 +31,7 @@ const BRANCH = "forja/issue-7";
 const CONTAINER_ID = "c0ffee";
 const WORKSPACE_ID = "forja-9t0v1w2x-9taaaaaa";
 const SECRET_TOKEN = "sk-ant-super-secret";
+const GITHUB_SECRET_TOKEN = "ghp_super-secret";
 const SILENT_HOOKS: AgentRunHooks = { onEvent: () => undefined };
 const AGENT_RESULT: AgentRunResult = {
     summary: "feito",
@@ -542,6 +544,31 @@ describe("DockerAgentRuntime workspace", () => {
         expect(result).toMatchObject({ summary: "feito", commits: [{ sha: "sha1" }] });
         const gitLogCall = commands.calls.find((call) => call.args[0] === "rev-list");
         expect(gitLogCall?.options.cwd).toBe(worktreePath);
+    });
+
+    it("passes the agent credentials to claude only through the env of docker exec", async () => {
+        const commands = new FakeCommandRunner();
+        const { workspace } = await openWorkspace(commands);
+        commands.when("docker", isDockerExecOf("claude")).returns({ stdout: resultLine() });
+        commands.when("git", ["rev-parse", "HEAD"]).returns({ stdout: "base\n" });
+        commands.when("git", ["rev-list", "--reverse", "base..HEAD"]).returns({});
+        const env = buildAgentEnv({
+            claude: { kind: "claude_oauth_token", value: SECRET_TOKEN },
+            github: GITHUB_SECRET_TOKEN,
+            extra: {},
+        });
+
+        await workspace.runAgent(runRequest({ env }), SILENT_HOOKS);
+
+        const everyArgument = commands.calls.flatMap((call) => call.args).join(" ");
+        expect(everyArgument).not.toContain(SECRET_TOKEN);
+        expect(everyArgument).not.toContain(GITHUB_SECRET_TOKEN);
+        const claudeCall = commands.calls.find((call) => isDockerExecOf("claude")(call.args));
+        expect(claudeCall?.options.env).toMatchObject({
+            CLAUDE_CODE_OAUTH_TOKEN: SECRET_TOKEN,
+            GH_TOKEN: GITHUB_SECRET_TOKEN,
+        });
+        expect(claudeCall?.options.env).not.toHaveProperty("ANTHROPIC_API_KEY");
     });
 
     it("removes the container and the worktree on close but keeps the branch", async () => {

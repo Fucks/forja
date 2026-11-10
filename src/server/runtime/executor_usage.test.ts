@@ -94,10 +94,7 @@ describe("executor usage", () => {
 
     describe("daily budget", () => {
         async function useDailyBudgetUsd(dailyBudgetUsd: number): Promise<void> {
-            await bed.settings.saveProjectSettings(TEST_PROJECT_ID, {
-                ...DEFAULT_PROJECT_SETTINGS,
-                dailyBudgetUsd,
-            });
+            await bed.changeProjectSettings({ dailyBudgetUsd });
         }
 
         async function runUntilPaused(runId: string): Promise<void> {

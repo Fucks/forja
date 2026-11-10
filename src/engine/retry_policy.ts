@@ -1,9 +1,15 @@
-import { NODE_RUN_TERMINAL, type NodeRunState } from "@/engine/node_run_state.js";
+import {
+    NODE_RUN_TERMINAL,
+    type NodeRunError,
+    type NodeRunState,
+} from "@/engine/node_run_state.js";
 import { canReopenRun } from "@/engine/run_state.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { NodeRunStatusName, RunStatusName } from "@/shared/events.js";
 
 export type FailureKind = NonNullable<NodeRunState["error"]>["kind"];
+
+export type RecordedFailure = Pick<NodeRunError, "kind" | "isRetryable">;
 
 export interface RetryDecision {
     retry: boolean;
@@ -39,7 +45,15 @@ const RECALCULATED_AFTER_RETRY: ReadonlySet<NodeRunStatusName> = new Set<NodeRun
 ]);
 
 // The attempt is the one that just failed, starting at 1.
-export function decideRetry(kind: FailureKind, attempt: number, maxRetries: number): RetryDecision {
+export function decideRetry(
+    { kind, isRetryable }: RecordedFailure,
+    attempt: number,
+    maxRetries: number,
+): RetryDecision {
+    if (isRetryable === false) {
+        return GIVE_UP;
+    }
+
     switch (kind) {
         case "structured_output":
         case "timeout_idle":
