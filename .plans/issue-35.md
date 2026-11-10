@@ -31,7 +31,7 @@
 - [x] 8. Git inspector (action, base branch, draft, PR body port) + test — `git_inspector.tsx`
 - [x] 9. Output inspector (move item to, comment on issue) + test — `output_inspector.tsx`
 - [x] 10. Trigger inspector (read-only kind + "Configurar gatilhos" link) + test — `trigger_inspector.tsx`, `navigation.ts`
-- [ ] 11. Upstream condition path suggestions — `condition_suggestions.ts` + test
+- [x] 11. Upstream condition path suggestions (`listUpstreamOutputPaths`) — `condition_suggestions.ts` + test
 - [ ] 12. Condition rules conversion — `condition_rules.ts` + test
 - [ ] 13. `ConditionEditor` builds an `and` of two rules + test — `condition_editor.tsx`
 - [ ] 14. Condition inspector + test — `condition_inspector.tsx`
