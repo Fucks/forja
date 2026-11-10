@@ -4,6 +4,7 @@ import { buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
+import type { BoardView } from "@/shared/board_types.js";
 import type { LocalItemInput, WorkItem } from "@/shared/work_item_types.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildWorkItem } from "@/test/factories/work_item_factory.js";
@@ -328,6 +329,43 @@ describe("work items routes", () => {
 
         it("answers 404 for an unknown project", async () => {
             const response = await syncProject("prj_desconhecido");
+
+            expect(response.statusCode).toBe(404);
+        });
+    });
+
+    describe("GET /api/projects/:projectId/board", () => {
+        it("shows the items in the backlog of the fixed columns while no flow is published", async () => {
+            const item = await createItem();
+
+            const response = await app.inject({
+                method: "GET",
+                url: `/api/projects/${PROJECT_ID}/board`,
+            });
+
+            expect(response.statusCode).toBe(200);
+            const board = response.json<BoardView>();
+            expect(board.columns.map((column) => column.id)).toEqual([
+                "backlog",
+                "blocked",
+                "needs_human",
+                "done",
+            ]);
+            expect(board.cards).toEqual([{ item, columnId: "backlog" }]);
+        });
+
+        it("shows an empty board for a project without items", async () => {
+            const response = await app.inject({
+                method: "GET",
+                url: `/api/projects/${PROJECT_ID}/board`,
+            });
+
+            expect(response.statusCode).toBe(200);
+            expect(response.json<BoardView>().cards).toEqual([]);
+        });
+
+        it("answers 404 for an unknown project", async () => {
+            const response = await app.inject({ method: "GET", url: "/api/projects/nope/board" });
 
             expect(response.statusCode).toBe(404);
         });

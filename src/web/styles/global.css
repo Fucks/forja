@@ -48,6 +48,7 @@
     --ease-out: var(--ease-out);
 
     --animate-ember: ember 2s var(--ease-out) infinite alternate;
+    --animate-card-enter: card-enter 160ms var(--ease-out);
 }
 
 @keyframes ember {
@@ -60,8 +61,16 @@
     }
 }
 
+@keyframes card-enter {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .animate-ember {
+    .animate-ember,
+    .animate-card-enter {
         animation: none;
     }
 }

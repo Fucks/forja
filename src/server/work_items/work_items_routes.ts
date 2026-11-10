@@ -3,7 +3,16 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
 import { systemClock } from "@/lib/clock.js";
+import type { AppDeps } from "@/server/app.js";
+import { createAppFlowService } from "@/server/flows/app_flow_service.js";
 import type { RouteModule } from "@/server/route_modules.js";
+import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
+import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
+import { SettingsRepository } from "@/server/settings/settings_repository.js";
+import { createSettingsService } from "@/server/settings/settings_service.js";
+import { createAppUsageService } from "@/server/usage/app_usage_service.js";
+import { createBoardService } from "@/server/work_items/board_service.js";
+import type { BoardService } from "@/server/work_items/board_service.js";
 import { createProjectGithubSync } from "@/server/work_items/project_github_sync.js";
 import type { SyncProject } from "@/server/work_items/project_github_sync.js";
 import type { SyncScheduler } from "@/server/work_items/sync_scheduler.js";
@@ -19,6 +28,7 @@ import {
 
 const PROJECT_WORK_ITEMS_PATH = "/projects/:projectId/work-items";
 const PROJECT_WORK_ITEMS_SYNC_PATH = `${PROJECT_WORK_ITEMS_PATH}/sync`;
+const PROJECT_BOARD_PATH = "/projects/:projectId/board";
 const WORK_ITEM_PATH = "/work-items/:id";
 const WORK_ITEM_COLUMN_PATH = `${WORK_ITEM_PATH}/column`;
 const WORK_ITEM_ARCHIVE_PATH = `${WORK_ITEM_PATH}/archive`;
@@ -39,6 +49,7 @@ export const registerWorkItemsRoutes: RouteModule = (app, deps) => {
 
     registerProjectWorkItemsRoutes(app, workItems);
     registerSyncRoute(app, githubSync.syncProject);
+    registerBoardRoute(app, createAppBoardService(deps, workItems));
     registerWorkItemRoutes(app, workItems);
     runWhileAppIsUp(app, githubSync.scheduler);
 };
@@ -78,6 +89,30 @@ function registerSyncRoute(app: FastifyInstance, syncProject: SyncProject): void
         PROJECT_WORK_ITEMS_SYNC_PATH,
         { schema: { params: projectParamsSchema, querystring: syncQuerySchema } },
         (request) => syncProject(request.params.projectId, { label: request.query.label }),
+    );
+}
+
+function createAppBoardService(deps: AppDeps, workItems: WorkItemService): BoardService {
+    const settings = createSettingsService({
+        repo: new SettingsRepository(deps.db),
+        lookups: createSettingsLookups(deps.db),
+        clock: systemClock,
+    });
+
+    return createBoardService({
+        workItems,
+        flows: createAppFlowService({ db: deps.db, events: deps.events, clock: systemClock }),
+        runs: new SqliteRunRepository(deps.db, systemClock),
+        usage: createAppUsageService({ db: deps.db, settings, clock: systemClock }),
+        clock: systemClock,
+    });
+}
+
+function registerBoardRoute(app: FastifyInstance, board: BoardService): void {
+    app.withTypeProvider<ZodTypeProvider>().get(
+        PROJECT_BOARD_PATH,
+        { schema: { params: projectParamsSchema } },
+        (request) => board.getBoard(request.params.projectId),
     );
 }
 
