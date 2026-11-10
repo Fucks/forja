@@ -139,7 +139,7 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         await createRuntimeDir(runtimeDir);
         try {
             await writeRuntimeFiles(runtimeDir, request.runtimeFiles);
-            return await runInEphemeralContainer(spec, request, hooks, runtimeDir);
+            return await runInEphemeralContainer(spec, request, hooks);
         } finally {
             await removeRuntimeDir(runtimeDir);
         }
@@ -149,8 +149,8 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         spec: HeadlessSpec,
         request: AgentRunRequest,
         hooks: AgentRunHooks,
-        runtimeDir: RuntimeDir,
     ): Promise<AgentRunResult> {
+        const runtimeDir = headlessRuntimeDir(spec.runId, request.nodeRunId);
         const containerId = await startPreparedContainer(
             {
                 name: headlessContainerNameFor(spec.runId, request.nodeRunId),

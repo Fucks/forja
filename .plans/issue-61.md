@@ -41,4 +41,4 @@
 - [x] 7. Server: `run_tool_profiles.ts` + ExecutorDeps wiring (executor, active_run, node_run_execution, app_executor, test bed, context factory)
 - [x] 8. Agent executor uses the node profile (`toolArgs`, `permissionMode`, `env`, `runtimeFiles`) — test in `executor.test.ts`: two nodes of an item get different `toolArgs`
 - [x] 9. Workspace setup from the item's agent node profiles — test in `executor.test.ts`
-- [ ] 10. Self-review checklist and feedback loops
+- [x] 10. Self-review checklist and feedback loops

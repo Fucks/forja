@@ -2,10 +2,10 @@ import { DEFAULT_PRESET_ID, findPresetById } from "@/server/tool_profiles/tool_p
 import type { RunToolProfiles } from "@/server/runtime/run_tool_profiles.js";
 import type { ToolProfile } from "@/shared/tool_profile_types.js";
 
-// Every node gets the given profile, and no credential exists.
-export function buildRunToolProfiles(profile: ToolProfile = defaultPreset()): RunToolProfiles {
+// Every node gets the default preset, and no credential exists.
+export function buildRunToolProfiles(): RunToolProfiles {
     return {
-        profileOf: () => profile,
+        profileOf: defaultPreset,
         credentialEnv: () => undefined,
         hasPackageJson: false,
         workspaceSetupCommands: [],
