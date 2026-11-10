@@ -18,6 +18,11 @@ import { BUDGET_EXCEEDED_ACTION, loadDailyBudget } from "@/server/runtime/daily_
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import type { LogStore } from "@/server/runtime/log_store.js";
 import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
+import {
+    loadRunCredentials,
+    type RunCredentials,
+    type RunCredentialsDeps,
+} from "@/server/runtime/run_credentials.js";
 import { runLifecycleEvent } from "@/server/runtime/run_events.js";
 import {
     loadRunToolProfiles,
@@ -64,7 +69,7 @@ export interface Executor {
     activeRunIds(): string[];
 }
 
-export interface ExecutorDeps extends RunToolProfilesDeps {
+export interface ExecutorDeps extends RunToolProfilesDeps, RunCredentialsDeps {
     runs: RunRepository;
     flows: FlowService;
     projects: ProjectService;
@@ -87,6 +92,7 @@ interface RunSetup {
     projectSettings: ProjectSettings;
     globalSettings: GlobalSettings;
     toolProfiles: RunToolProfiles;
+    credentials: RunCredentials;
     items: WorkItemSnapshot[];
 }
 
@@ -204,12 +210,20 @@ class RunExecutor implements Executor {
             deps.settings.getGlobalSettings(),
             deps.items.getItems(input.projectId, input.itemIds),
         ]);
-        const toolProfiles = await loadRunToolProfiles(
-            { graph: version.graph, project, settings: projectSettings },
-            deps,
-        );
+        const [toolProfiles, credentials] = await Promise.all([
+            loadRunToolProfiles({ graph: version.graph, project, settings: projectSettings }, deps),
+            loadRunCredentials({ graph: version.graph, settings: projectSettings }, deps),
+        ]);
 
-        return { version, project, projectSettings, globalSettings, toolProfiles, items };
+        return {
+            version,
+            project,
+            projectSettings,
+            globalSettings,
+            toolProfiles,
+            credentials,
+            items,
+        };
     }
 
     private async findPublishedVersion(flowId: string, version?: number): Promise<FlowVersion> {
@@ -264,6 +278,7 @@ class RunExecutor implements Executor {
             project: setup.project,
             settings: projectSettings,
             toolProfiles: setup.toolProfiles,
+            credentials: setup.credentials,
             items: setup.items,
             scheduler: createScheduler(
                 version.graph,

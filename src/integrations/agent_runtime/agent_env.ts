@@ -26,6 +26,10 @@ export class MissingCredentialError extends WorkspaceError {
     }
 }
 
+const CLAUDE_CREDENTIAL_KINDS: readonly CredentialKind[] = [
+    "anthropic_api_key",
+    "claude_oauth_token",
+];
 const CLAUDE_ENV_VARS: ReadonlySet<string> = new Set([
     ENV_VAR_BY_KIND.anthropic_api_key,
     ENV_VAR_BY_KIND.claude_oauth_token,
@@ -39,6 +43,10 @@ export function buildAgentEnv(input: AgentEnvInput): Record<string, string> {
         ...claudeEnvOf(input.claude),
         ...githubEnvOf(input.github),
     };
+}
+
+export function isClaudeCredentialKind(kind: CredentialKind): kind is ClaudeCredentialKind {
+    return CLAUDE_CREDENTIAL_KINDS.includes(kind);
 }
 
 // In `claude -p` an API key always wins over the subscription, so only one of them may be set.

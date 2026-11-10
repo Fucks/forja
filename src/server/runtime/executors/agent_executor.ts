@@ -1,4 +1,5 @@
 import { type AgentNode, renderPrompt } from "@/engine/prompt_template.js";
+import { buildAgentEnv, type ClaudeCredential } from "@/integrations/agent_runtime/agent_env.js";
 import type {
     AgentRunHooks,
     AgentRunRequest,
@@ -26,12 +27,19 @@ interface AgentRunTarget {
     run(request: AgentRunRequest): Promise<AgentRunResult>;
 }
 
+interface AgentRunSetup {
+    runtimeDir: RuntimeDir;
+    claude: ClaudeCredential;
+}
+
 export async function executeAgentNode(
     context: NodeExecutionContext,
 ): Promise<NodeExecutionResult> {
     const node = asNodeOfType(context.node, "agent");
+    // Before the target, so a node without a credential fails without opening a workspace.
+    const claude = context.credentials.claudeCredentialOf(node);
     const target = await prepareRunTarget(context, node);
-    const request = buildAgentRunRequest(context, node, target.runtimeDir);
+    const request = buildAgentRunRequest(context, node, { runtimeDir: target.runtimeDir, claude });
     const result = await target.run(request);
 
     return {
@@ -78,7 +86,7 @@ function headlessTarget(context: NodeExecutionContext, hooks: AgentRunHooks): Ag
 function buildAgentRunRequest(
     context: NodeExecutionContext,
     node: AgentNode,
-    runtimeDir: RuntimeDir,
+    { runtimeDir, claude }: AgentRunSetup,
 ): AgentRunRequest {
     const { config } = node;
     const defaults = resolveAgentDefaults(context.settings, config);
@@ -100,7 +108,11 @@ function buildAgentRunRequest(
         toolArgs: toolProfile.toolArgs,
         runtimeFiles: [toolProfile.mcpConfigFile],
         expandPromptCommands: config.expandPromptCommands,
-        env: toolProfile.env,
+        env: buildAgentEnv({
+            claude,
+            github: context.credentials.githubToken,
+            extra: toolProfile.env,
+        }),
         signal: context.signal,
     };
 }

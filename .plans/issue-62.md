@@ -34,10 +34,10 @@
 - [x] 4. Test+impl: `decideRetry` gives up on a failure marked not retryable — `retry_policy.ts`, `node_run_state.ts`, `scheduler.ts`, `run_rows.ts`
 - [x] 5. Test+impl: `mapAgentError` maps `MissingCredentialError` to a not-retryable workspace failure — `error_mapping.ts`, `agent_env.ts`
 - [x] 6. Test+impl: `revealForRuntime` returns the credential kind — `credential_service.ts`
-- [ ] 7. Test bed seeds a default Claude credential; redactor in executor deps — `executor_test_bed.ts`, `executor.ts`, `app_executor.ts`
-- [ ] 8. Test+impl: agent request env carries the node's Claude credential (OAuth case) — `run_credentials.ts`, `executor.ts`, `active_run.ts`, `node_executors.ts`, `node_run_execution.ts`, `agent_executor.ts`, `executor.test.ts`
-- [ ] 9. Test+impl: GitHub token in workspace spec env and request env — `run_context.ts`, `active_run.ts`, `executor.test.ts`
-- [ ] 10. Test+impl: node without Claude credential fails with the message and no retries — `agent_executor.ts`, `executor.test.ts`
+- [x] 7. Test bed seeds a default Claude credential; redactor in executor deps — `executor_test_bed.ts`, `executor.ts`, `app_executor.ts`
+- [x] 8. Test+impl: agent request env carries the node's Claude credential (OAuth case) — `run_credentials.ts`, `executor.ts`, `active_run.ts`, `node_executors.ts`, `node_run_execution.ts`, `agent_executor.ts`, `executor.test.ts`
+- [x] 9. Test+impl: GitHub token in workspace spec env and request env — `run_context.ts`, `active_run.ts`, `executor.test.ts`
+- [x] 10. Test+impl: node without Claude credential fails with the message and no retries — `agent_executor.ts`, `executor.test.ts`
 - [ ] 11. Test: no secret in docker argv (FakeCommandRunner) — `docker_agent_runtime.test.ts`
 - [ ] 12. Test+impl: `checkCredential` Claude success records ok — `credential_check.ts`, `credential_check.test.ts`
 - [ ] 13. Test+impl: `checkCredential` Claude failure returns the agent error, records failure — `credential_check.ts`

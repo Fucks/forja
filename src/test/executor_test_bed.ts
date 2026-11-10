@@ -3,7 +3,11 @@ import { existsSync } from "node:fs";
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL } from "@/engine/run_state.js";
 import type { OpenWorkspaceSummary } from "@/integrations/agent_runtime/agent_runtime.js";
-import { createSecretRedactor } from "@/integrations/secrets/secret_redactor.js";
+import {
+    createSecretRedactor,
+    maskSecret,
+    type SecretRedactor,
+} from "@/integrations/secrets/secret_redactor.js";
 import { newId } from "@/lib/ids.js";
 import type { AppDeps } from "@/server/app.js";
 import { CredentialRepository } from "@/server/credentials/credential_repository.js";
@@ -34,7 +38,8 @@ import { createAppUsageService } from "@/server/usage/app_usage_service.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
 import type { ForjaEvent } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
-import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
+import { ENV_VAR_BY_KIND } from "@/shared/credential_types.js";
+import { DEFAULT_PROJECT_SETTINGS, type ProjectSettings } from "@/shared/settings_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { FakeAgentRuntime } from "@/test/fakes/fake_agent_runtime.js";
@@ -47,6 +52,10 @@ import { createTestSecretBox } from "@/test/test_secrets.js";
 
 export const TEST_PROJECT_ID = "prj_forja";
 export const PROJECT_SYSTEM_PROMPT = "Escreva testes antes do código.";
+export const TEST_CLAUDE_API_KEY = "sk-ant-api03-test-bed-abcdefghijklmnop-a1b2";
+
+const TEST_CLAUDE_CREDENTIAL_ID = "cred_test_bed_claude";
+const SEEDED_AT = "2026-01-01T00:00:00.000Z";
 
 const TIME_STEP_MS = 1_000;
 const MAX_DRIVEN_MS = 6 * 60 * 60 * 1_000;
@@ -81,6 +90,7 @@ export class ExecutorTestBed {
     readonly usage: UsageService;
     readonly toolProfiles: ToolProfileService;
     readonly credentials: CredentialService;
+    readonly redactor: SecretRedactor = createSecretRedactor();
     // The repository of the test project has a package.json only when a test says so.
     readonly existingFiles = new Set<string>();
     readonly executor: Executor;
@@ -97,7 +107,7 @@ export class ExecutorTestBed {
         });
         this.events = createEventBus(this.clock);
         this.database = previous?.database ?? createDatabaseWithProject();
-        this.logs = createTestLogStore(this.database.db, this.clock);
+        this.logs = createTestLogStore(this.database.db, this.clock, this.redactor);
         this.runs = new JournalingRunRepository(this.database, this.clock, this.journal);
         this.flows = this.createFlowService();
         this.settings = this.createSettingsService();
@@ -113,7 +123,7 @@ export class ExecutorTestBed {
         this.credentials = createCredentialService({
             repo: new CredentialRepository(this.database.db),
             secrets: createTestSecretBox(),
-            redactor: createSecretRedactor(),
+            redactor: this.redactor,
             clock: this.clock,
         });
         this.events.subscribe((envelope) => {
@@ -151,11 +161,13 @@ export class ExecutorTestBed {
         return flow.id;
     }
 
-    async useProjectSystemPrompt(systemPrompt: string): Promise<void> {
-        await this.settings.saveProjectSettings(TEST_PROJECT_ID, {
-            ...DEFAULT_PROJECT_SETTINGS,
-            systemPrompt,
-        });
+    useProjectSystemPrompt(systemPrompt: string): Promise<void> {
+        return this.changeProjectSettings({ systemPrompt });
+    }
+
+    async changeProjectSettings(changes: Partial<ProjectSettings>): Promise<void> {
+        const current = await this.settings.getProjectSettings(TEST_PROJECT_ID);
+        await this.settings.saveProjectSettings(TEST_PROJECT_ID, { ...current, ...changes });
     }
 
     startRun(flowId: string): Promise<RunRecord> {
@@ -261,6 +273,7 @@ export class ExecutorTestBed {
             usage: this.usage,
             toolProfiles: this.toolProfiles,
             credentials: this.credentials,
+            redactor: this.redactor,
             fileExists: (filePath) => this.existingFiles.has(filePath),
             clock: this.clock,
             newId,
@@ -291,8 +304,28 @@ class JournalingRunRepository extends SqliteRunRepository {
 function createDatabaseWithProject(): DatabaseHandle {
     const database = createTestDb();
     new ProjectRepository(database.db).insert(buildProject({ id: TEST_PROJECT_ID }));
+    configureDefaultClaudeCredential(database);
 
     return database;
+}
+
+// An agent node fails without a Claude credential, so the project starts with one.
+function configureDefaultClaudeCredential({ db }: DatabaseHandle): void {
+    new CredentialRepository(db).insert({
+        id: TEST_CLAUDE_CREDENTIAL_ID,
+        name: "Claude",
+        kind: "anthropic_api_key",
+        envVar: ENV_VAR_BY_KIND.anthropic_api_key,
+        sealedValue: createTestSecretBox().seal(TEST_CLAUDE_API_KEY),
+        masked: maskSecret(TEST_CLAUDE_API_KEY),
+        createdAt: SEEDED_AT,
+        updatedAt: SEEDED_AT,
+    });
+    new SettingsRepository(db).saveProjectSettings(
+        TEST_PROJECT_ID,
+        { ...DEFAULT_PROJECT_SETTINGS, defaultCredentialId: TEST_CLAUDE_CREDENTIAL_ID },
+        SEEDED_AT,
+    );
 }
 
 export function buildIssueSnapshot(number: number): WorkItemSnapshot {

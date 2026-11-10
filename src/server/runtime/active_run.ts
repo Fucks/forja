@@ -20,6 +20,7 @@ import { NodeRunExecution } from "@/server/runtime/node_run_execution.js";
 import type { NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
 import { limitRecordedInputs } from "@/server/runtime/recorded_inputs.js";
 import { buildWorkspaceSpec } from "@/server/runtime/run_context.js";
+import type { RunCredentials } from "@/server/runtime/run_credentials.js";
 import {
     groupProgressEvent,
     logAppendedEvent,
@@ -44,6 +45,7 @@ export interface ActiveRunDeps {
     project: Project;
     settings: ProjectSettings;
     toolProfiles: RunToolProfiles;
+    credentials: RunCredentials;
     items: WorkItemSnapshot[];
     scheduler: Scheduler;
     runs: RunRepository;
@@ -73,7 +75,12 @@ export class ActiveRun {
             runtime: deps.runtime,
             specOf: (item) =>
                 buildWorkspaceSpec(
-                    { run: this.record, project: deps.project, settings: deps.settings },
+                    {
+                        run: this.record,
+                        project: deps.project,
+                        settings: deps.settings,
+                        credentials: deps.credentials,
+                    },
                     item,
                     deps.toolProfiles.workspaceSetupCommands,
                 ),
@@ -171,6 +178,7 @@ export class ActiveRun {
             project: deps.project,
             settings: deps.settings,
             toolProfiles: deps.toolProfiles,
+            credentials: deps.credentials,
             workspaces: this.workspaces,
             runtime: deps.runtime,
             clock: deps.clock,
