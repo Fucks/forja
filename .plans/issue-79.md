@@ -26,10 +26,10 @@
 
 ## Tasks
 
-- [ ] 1. `CliGitProvider.aheadBehind` counts commits ahead/behind — `cli_git_provider.ts`, `git_provider.ts`, test
-- [ ] 2. `CliGitProvider.push` uses `--force-with-lease` with the env and throws `GitCommandError` on failure — same files
-- [ ] 3. `FakeGitProvider` records pushes and answers `aheadBehind` from scripted counts — `fake_git_provider.ts`
-- [ ] 4. `FakeGitHubProvider.comment` accepts pull request numbers — `fake_github_provider.ts`, test
+- [x] 1. `CliGitProvider.aheadBehind` counts commits ahead/behind — `cli_git_provider.ts`, `git_provider.ts`, test
+- [x] 2. `CliGitProvider.push` uses `--force-with-lease` with the env and throws `GitCommandError` on failure — same files
+- [x] 3. `FakeGitProvider` records pushes and answers `aheadBehind` from scripted counts — `fake_git_provider.ts`
+- [x] 4. `FakeGitHubProvider.comment` accepts pull request numbers — `fake_github_provider.ts`, test
 - [ ] 5. Rebaser prompt adapted from `.sandcastle/rebase-prompt.md` — `executors/prompts/rebase.md`
 - [ ] 6. `buildRebaserNode` + `nodesThatRunAgents`, used by `loadRunCredentials` and `loadRunToolProfiles` — `rebaser_node.ts`, test
 - [ ] 7. Test + impl: rebase without conflicts does not call the agent and outputs `{ branch, pushed: false }` — `git_executor.ts`, `git_executor.test.ts`, `src/lib/shell_quote.ts`

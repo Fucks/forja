@@ -1,5 +1,5 @@
 import { CliGitProvider, parseGithubRepo } from "@/integrations/git/cli_git_provider.js";
-import { NotARepoError } from "@/integrations/git/git_provider.js";
+import { GitCommandError, NotARepoError } from "@/integrations/git/git_provider.js";
 import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
 
 const REPO_ROOT = "/repos/forja";
@@ -123,5 +123,75 @@ describe("CliGitProvider.branchExists", () => {
         const exists = await new CliGitProvider(commands).branchExists(REPO_ROOT, "development");
 
         expect(exists).toBe(false);
+    });
+});
+
+describe("CliGitProvider.aheadBehind", () => {
+    it("counts the commits of the branch ahead of and behind the base", async () => {
+        const commands = new FakeCommandRunner();
+        commands
+            .when("git", ["rev-list", "--left-right", "--count", "origin/main...forja/issue-7"])
+            .returns({ stdout: "2\t5\n" });
+
+        const counts = await new CliGitProvider(commands).aheadBehind(
+            REPO_ROOT,
+            "forja/issue-7",
+            "origin/main",
+        );
+
+        expect(counts).toEqual({ ahead: 5, behind: 2 });
+    });
+
+    it("rejects with GitCommandError when git cannot compare the branches", async () => {
+        const commands = new FakeCommandRunner();
+        commands
+            .when("git", ["rev-list", "--left-right", "--count", "origin/main...forja/issue-7"])
+            .returns({ exitCode: 128, stderr: "fatal: ambiguous argument" });
+
+        const counting = new CliGitProvider(commands).aheadBehind(
+            REPO_ROOT,
+            "forja/issue-7",
+            "origin/main",
+        );
+
+        await expect(counting).rejects.toThrow(GitCommandError);
+    });
+});
+
+describe("CliGitProvider.push", () => {
+    it("pushes the branch to origin with --force-with-lease and the given env", async () => {
+        const commands = new FakeCommandRunner();
+        commands
+            .when("git", ["push", "--force-with-lease", "origin", "forja/issue-7"])
+            .returns({ exitCode: 0 });
+
+        await new CliGitProvider(commands).push(REPO_ROOT, "forja/issue-7", { GH_TOKEN: "ghp_x" });
+
+        expect(commands.calls[0]).toMatchObject({
+            args: ["push", "--force-with-lease", "origin", "forja/issue-7"],
+            options: { cwd: REPO_ROOT, env: { GH_TOKEN: "ghp_x" } },
+        });
+    });
+
+    it("never pushes with a plain --force", async () => {
+        const commands = new FakeCommandRunner();
+        commands
+            .when("git", ["push", "--force-with-lease", "origin", "forja/issue-7"])
+            .returns({ exitCode: 0 });
+
+        await new CliGitProvider(commands).push(REPO_ROOT, "forja/issue-7", {});
+
+        expect(commands.calls.flatMap((call) => call.args)).not.toContain("--force");
+    });
+
+    it("rejects with GitCommandError carrying the reason when the push fails", async () => {
+        const commands = new FakeCommandRunner();
+        commands
+            .when("git", ["push", "--force-with-lease", "origin", "forja/issue-7"])
+            .returns({ exitCode: 1, stderr: "! [rejected] (stale info)" });
+
+        const pushing = new CliGitProvider(commands).push(REPO_ROOT, "forja/issue-7", {});
+
+        await expect(pushing).rejects.toThrow(/stale info/);
     });
 });

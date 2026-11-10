@@ -56,7 +56,9 @@ export class FakeGitHubProvider implements GitHubProvider {
 
     comment(repo: string, number: number, body: string): Promise<void> {
         return resolveWith(() => {
-            this.findIssue(repo, number);
+            if (!this.hasPullRequest(repo, number)) {
+                this.findIssue(repo, number);
+            }
             this.comments.push({ repo, issueNumber: number, body });
         });
     }
@@ -90,6 +92,12 @@ export class FakeGitHubProvider implements GitHubProvider {
         const closedIssue: GithubIssue = { ...this.findIssue(repo, number), state: "closed" };
         this.issues = this.issues.map((stored) =>
             isIssue(stored, repo, number) ? { repo, issue: closedIssue } : stored,
+        );
+    }
+
+    private hasPullRequest(repo: string, number: number): boolean {
+        return this.pullRequests.some(
+            (stored) => stored.repo === repo && stored.pullRequest.number === number,
         );
     }
 

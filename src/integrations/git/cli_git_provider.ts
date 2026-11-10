@@ -1,13 +1,15 @@
-import { NotARepoError } from "@/integrations/git/git_provider.js";
-import type { GitProvider, RepoInfo } from "@/integrations/git/git_provider.js";
+import { GitCommandError, NotARepoError } from "@/integrations/git/git_provider.js";
+import type { CommitCounts, GitProvider, RepoInfo } from "@/integrations/git/git_provider.js";
 import { commandSucceeded } from "@/integrations/process/command_runner.js";
 import type { CommandResult, CommandRunner } from "@/integrations/process/command_runner.js";
 
 const GIT_TIMEOUT_MS = 10_000;
+const PUSH_TIMEOUT_MS = 120_000;
 const FALLBACK_DEFAULT_BRANCH = "main";
 const ORIGIN_HEAD_REF = "refs/remotes/origin/HEAD";
 const ORIGIN_BRANCH_PREFIX = "refs/remotes/origin/";
 const LOCAL_BRANCH_PREFIX = "refs/heads/";
+const COUNTS_SEPARATOR = /\s+/;
 const GITHUB_REMOTE_PATTERN =
     /^(?:https:\/\/github\.com\/|git@github\.com:)([^/]+)\/([^/]+?)(?:\.git)?\/?$/;
 
@@ -42,6 +44,33 @@ export class CliGitProvider implements GitProvider {
         ]);
 
         return isLocal || isOnOrigin;
+    }
+
+    // A rebased branch no longer contains its remote copy, so the push has to be forced; the lease
+    // keeps it from overwriting commits someone else pushed meanwhile.
+    async push(root: string, branch: string, env: Record<string, string>): Promise<void> {
+        const result = await this.commands.run(
+            "git",
+            ["push", "--force-with-lease", "origin", branch],
+            { cwd: root, env, timeoutMs: PUSH_TIMEOUT_MS },
+        );
+        if (!commandSucceeded(result)) {
+            throw new GitCommandError(`Não foi possível enviar o branch ${branch}`, result.stderr);
+        }
+    }
+
+    async aheadBehind(root: string, branch: string, base: string): Promise<CommitCounts> {
+        const range = `${base}...${branch}`;
+        const result = await this.runGit(root, ["rev-list", "--left-right", "--count", range]);
+        if (!commandSucceeded(result)) {
+            throw new GitCommandError(
+                `Não foi possível comparar ${branch} com ${base}`,
+                result.stderr,
+            );
+        }
+
+        const [behind = 0, ahead = 0] = result.stdout.trim().split(COUNTS_SEPARATOR).map(Number);
+        return { ahead, behind };
     }
 
     private async findRepoRoot(path: string): Promise<string> {
