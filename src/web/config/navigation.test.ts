@@ -1,4 +1,4 @@
-import { switchProjectPath } from "@/web/config/navigation.js";
+import { switchProjectPath, triggersPath } from "@/web/config/navigation.js";
 
 describe("switchProjectPath", () => {
     it.each([
@@ -9,5 +9,11 @@ describe("switchProjectPath", () => {
         { from: "/", to: "/projects/outro" },
     ])("goes from $from to $to", ({ from, to }) => {
         expect(switchProjectPath(from, "outro")).toBe(to);
+    });
+});
+
+describe("triggersPath", () => {
+    it("points to the triggers area of the project", () => {
+        expect(triggersPath("forja")).toBe("/projects/forja/triggers");
     });
 });

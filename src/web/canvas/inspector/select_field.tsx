@@ -9,6 +9,8 @@ interface SelectFieldOption<T extends string> {
     label: string;
 }
 
+const EMPTY_OPTION_VALUE = "__empty__";
+
 export function SelectField<T extends string>({
     label,
     value,
@@ -29,9 +31,42 @@ export function SelectField<T extends string>({
     );
 }
 
+// The extra option stands for "no value", so choosing it reports undefined.
+export function OptionalSelectField<T extends string>({
+    label,
+    value,
+    options,
+    emptyLabel,
+    onChange,
+}: {
+    label: string;
+    value: T | undefined;
+    options: SelectFieldOption<T>[];
+    emptyLabel: string;
+    onChange: (value: T | undefined) => void;
+}): JSX.Element {
+    const emptyOption = { value: EMPTY_OPTION_VALUE, label: emptyLabel };
+
+    return (
+        <SelectField<string>
+            label={label}
+            value={value ?? EMPTY_OPTION_VALUE}
+            options={[emptyOption, ...options]}
+            onChange={(selected) => onChange(findOptionValue(options, selected))}
+        />
+    );
+}
+
 export function toSelectOptions<T extends string>(
     values: readonly T[],
     labels: Record<T, string>,
 ): SelectFieldOption<T>[] {
     return values.map((value) => ({ value, label: labels[value] }));
+}
+
+function findOptionValue<T extends string>(
+    options: SelectFieldOption<T>[],
+    selected: string,
+): T | undefined {
+    return options.find((option) => option.value === selected)?.value;
 }
