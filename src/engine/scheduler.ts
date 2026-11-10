@@ -18,7 +18,7 @@ import { NodeRunTimeouts, TIMEOUT_TOTAL_ERROR } from "@/engine/node_run_timeouts
 import {
     canRetryOnRequest,
     decideRetry,
-    type FailureKind,
+    type RecordedFailure,
     shouldRecalculateAfterRetry,
 } from "@/engine/retry_policy.js";
 import {
@@ -46,6 +46,9 @@ import type { NodeRunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 
 type NodeRunFailure = Extract<SchedulerEvent, { type: "node_run_failed" }>;
+
+// A failure event that brings no error is treated as a runtime failure.
+const UNREPORTED_FAILURE: RecordedFailure = { kind: "runtime" };
 
 const INTERRUPTED_BY_RESTART: NodeRunError = {
     kind: "interrupted",
@@ -261,11 +264,11 @@ class DagScheduler implements Scheduler {
     private recordFailure(nodeRunId: string, error: NodeRunError | undefined, at: Date): void {
         const nodeRun = this.nodeRuns.get(nodeRunId);
         const recordedError = this.recordedErrorOf(nodeRun, error);
-        const failureKind: FailureKind = recordedError?.kind ?? "runtime";
-        const status = failureKind === "canceled" ? "CANCELED" : "FAILED";
+        const failure: RecordedFailure = recordedError ?? UNREPORTED_FAILURE;
+        const status = failure.kind === "canceled" ? "CANCELED" : "FAILED";
         const failed = transitionNodeRun(nodeRun, status, at, { error: recordedError });
         this.changeNodeRun(failed);
-        this.retryOrGiveUp(failed, failureKind, at);
+        this.retryOrGiveUp(failed, failure, at);
     }
 
     // The cancel the scheduler asked for an overdue NodeRun comes back as a plain cancel.
@@ -280,8 +283,8 @@ class DagScheduler implements Scheduler {
         return error;
     }
 
-    private retryOrGiveUp(failed: NodeRunState, failureKind: FailureKind, at: Date): void {
-        const retryDelayMs = this.findRetryDelayMs(failed, failureKind);
+    private retryOrGiveUp(failed: NodeRunState, failure: RecordedFailure, at: Date): void {
+        const retryDelayMs = this.findRetryDelayMs(failed, failure);
         if (retryDelayMs === undefined) {
             this.giveUpOn(failed, at);
             return;
@@ -291,13 +294,13 @@ class DagScheduler implements Scheduler {
     }
 
     // Undefined when the NodeRun fails for good.
-    private findRetryDelayMs(failed: NodeRunState, failureKind: FailureKind): number | undefined {
+    private findRetryDelayMs(failed: NodeRunState, failure: RecordedFailure): number | undefined {
         if (this.stopOutcome) {
             return undefined;
         }
 
         const maxRetries = this.plan.maxRetriesOf(failed.nodeId);
-        const decision = decideRetry(failureKind, failed.attempt, maxRetries);
+        const decision = decideRetry(failure, failed.attempt, maxRetries);
 
         return decision.retry ? decision.delayMs : undefined;
     }
@@ -707,7 +710,7 @@ class DagScheduler implements Scheduler {
     private failBeforeStart(queued: NodeRunState, error: NodeRunError, at: Date): void {
         const failed = transitionNodeRun(queued, "FAILED", at, { error });
         this.changeNodeRun(failed);
-        this.retryOrGiveUp(failed, error.kind, at);
+        this.retryOrGiveUp(failed, error, at);
     }
 
     private startQueuedNodeRuns(now: Date): void {

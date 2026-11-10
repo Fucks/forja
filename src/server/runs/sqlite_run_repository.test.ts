@@ -163,6 +163,18 @@ describe.each(IMPLEMENTATIONS)("$name", ({ open }) => {
             expect(await repository.getNodeRun(nodeRun.id)).toEqual(nodeRun);
         });
 
+        it("keeps the error of a NodeRun that retrying cannot fix", async () => {
+            await repository.createRun(buildRunRecord());
+            const nodeRun = buildNodeRunState({
+                status: "FAILED",
+                error: { kind: "workspace", message: "Sem credencial", isRetryable: false },
+            });
+
+            await repository.saveTransition({ nodeRuns: [nodeRun] });
+
+            expect((await repository.getNodeRun(nodeRun.id))?.error).toEqual(nodeRun.error);
+        });
+
         it("updates a NodeRun saved again without changing its position", async () => {
             await repository.createRun(buildRunRecord());
             const first = buildNodeRunState({ id: "node-run-1" });
