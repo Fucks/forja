@@ -45,6 +45,18 @@ describe("FakeGitHubProvider", () => {
         expect((await github.getIssue(REPO, 7)).state).toBe("closed");
     });
 
+    it("records comments on pull requests, which GitHub numbers like issues", async () => {
+        const github = new FakeGitHubProvider();
+        const input = { head: "feature", base: "main", title: "T", body: "B", draft: false };
+        const pullRequest = await github.createPullRequest(REPO, input);
+
+        await github.comment(REPO, pullRequest.number, "Atualizado");
+
+        expect(github.comments).toEqual([
+            { repo: REPO, issueNumber: pullRequest.number, body: "Atualizado" },
+        ]);
+    });
+
     it("rejects reading an unknown issue with a GitHubError", async () => {
         const github = new FakeGitHubProvider();
 

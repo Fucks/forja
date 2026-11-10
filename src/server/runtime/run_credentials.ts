@@ -9,8 +9,9 @@ import type {
     CredentialService,
     RuntimeCredential,
 } from "@/server/credentials/credential_service.js";
+import { nodesThatRunAgents } from "@/server/runtime/executors/rebaser_node.js";
 import { resolveAgentDefaults } from "@/server/settings/resolve_agent_defaults.js";
-import { isNodeOfType, type FlowGraph } from "@/shared/flow_graph.js";
+import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
 
 /** The credentials the agents of a run need, revealed once when the run is set up. */
@@ -36,8 +37,9 @@ export async function loadRunCredentials(
     { graph, settings }: RunCredentialsSource,
     deps: RunCredentialsDeps,
 ): Promise<RunCredentials> {
-    const agentNodes = graph.nodes.filter((node) => isNodeOfType(node, "agent"));
-    const agentCredentialIds = agentNodes.map((node) => credentialIdOf(node, settings));
+    const agentCredentialIds = nodesThatRunAgents(graph).map((node) =>
+        credentialIdOf(node, settings),
+    );
     const [claudeCredentials, github] = await Promise.all([
         revealClaudeCredentials(agentCredentialIds, deps),
         revealOptionalCredential(settings.githubCredentialId, deps),

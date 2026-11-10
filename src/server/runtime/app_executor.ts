@@ -94,6 +94,7 @@ export function createAppExecutor({
             workItems,
             runs,
             projects,
+            git,
             clock,
             githubOf: createGithubOfProject({ db, commands, secrets, redactor, clock }),
         }),

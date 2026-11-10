@@ -9,9 +9,10 @@ import {
 } from "@/integrations/agent_runtime/tool_profile_materializer.js";
 import type { CredentialService } from "@/server/credentials/credential_service.js";
 import { NotFoundError } from "@/server/errors.js";
+import { nodesThatRunAgents } from "@/server/runtime/executors/rebaser_node.js";
 import { resolveAgentDefaults } from "@/server/settings/resolve_agent_defaults.js";
 import type { ToolProfileService } from "@/server/tool_profiles/tool_profile_service.js";
-import { isNodeOfType, type FlowGraph } from "@/shared/flow_graph.js";
+import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
 import type { ToolProfile } from "@/shared/tool_profile_types.js";
@@ -45,7 +46,7 @@ export async function loadRunToolProfiles(
     source: RunToolProfilesSource,
     deps: RunToolProfilesDeps,
 ): Promise<RunToolProfiles> {
-    const agentNodes = source.graph.nodes.filter((node) => isNodeOfType(node, "agent"));
+    const agentNodes = nodesThatRunAgents(source.graph);
     const profileIdOf = (node: AgentNode): string =>
         resolveAgentDefaults(source.settings, node.config).toolProfileId;
     const profiles = await loadProfiles(agentNodes.map(profileIdOf), deps);
