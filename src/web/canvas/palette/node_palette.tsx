@@ -22,20 +22,7 @@ export function NodePalette({ store }: { store: EditorStore }): JSX.Element {
 
     return (
         <div className="flex min-h-0 flex-1 flex-col gap-2 px-2 pb-2">
-            <div className="relative">
-                <Search
-                    aria-hidden
-                    className="pointer-events-none absolute top-2 left-2 size-4 text-muted"
-                />
-                <Input
-                    type="search"
-                    aria-label="Buscar nós"
-                    placeholder="Buscar nós"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    className="pl-8"
-                />
-            </div>
+            <PaletteSearchField query={query} onQueryChange={setQuery} />
             {visibleItems.length === 0 && (
                 <p className="px-1 text-sm text-muted">Nenhum nó encontrado</p>
             )}
@@ -50,6 +37,31 @@ export function NodePalette({ store }: { store: EditorStore }): JSX.Element {
                     </li>
                 ))}
             </ul>
+        </div>
+    );
+}
+
+function PaletteSearchField({
+    query,
+    onQueryChange,
+}: {
+    query: string;
+    onQueryChange: (query: string) => void;
+}): JSX.Element {
+    return (
+        <div className="relative">
+            <Search
+                aria-hidden
+                className="pointer-events-none absolute top-2 left-2 size-4 text-muted"
+            />
+            <Input
+                type="search"
+                aria-label="Buscar nós"
+                placeholder="Buscar nós"
+                value={query}
+                onChange={(event) => onQueryChange(event.target.value)}
+                className="pl-8"
+            />
         </div>
     );
 }
