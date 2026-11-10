@@ -32,13 +32,13 @@
 - [x] 4. `FakeGitHubProvider.comment` accepts pull request numbers — `fake_github_provider.ts`, test
 - [x] 5. Rebaser prompt adapted from `.sandcastle/rebase-prompt.md` — `executors/prompts/rebase.md`
 - [x] 6. `buildRebaserNode` + `nodesThatRunAgents`, used by `loadRunCredentials` and `loadRunToolProfiles` — `rebaser_node.ts`, test
-- [ ] 7. Test + impl: rebase without conflicts does not call the agent and outputs `{ branch, pushed: false }` — `git_executor.ts`, `git_executor.test.ts`, `src/lib/shell_quote.ts`
-- [ ] 8. Test + impl: rebase with conflict runs the rebaser agent (prompt, maxIterations 20) — same
-- [ ] 9. Test + impl: conflicts left or rebase unfinished fail with "conflitos não resolvidos" — same
-- [ ] 10. Test + impl: push uses `--force-with-lease` with GH_TOKEN and records the `branch` artifact — same
-- [ ] 11. Test + impl: push without commits ahead does not push — same
-- [ ] 12. Test + impl: open_pr creates the PR (prTitle, body with `Closes #N` and signature, draft) and records `pr_url` — same + `pr_title.ts`
-- [ ] 13. Test + impl: open_pr reuses the open PR and comments the body — same
-- [ ] 14. Test + impl: open_pr without commits ahead opens no PR; project without GitHub repo fails clearly — same
+- [x] 7. Test + impl: rebase without conflicts does not call the agent and outputs `{ branch, pushed: false }` — `git_executor.ts`, `git_executor.test.ts`, `src/lib/shell_quote.ts`
+- [x] 8. Test + impl: rebase with conflict runs the rebaser agent (prompt, maxIterations 20) — same
+- [x] 9. Test + impl: conflicts left or rebase unfinished fail with "conflitos não resolvidos" — same
+- [x] 10. Test + impl: push uses `--force-with-lease` with GH_TOKEN and records the `branch` artifact — same
+- [x] 11. Test + impl: push without commits ahead does not push — same
+- [x] 12. Test + impl: open_pr creates the PR (prTitle, body with `Closes #N` and signature, draft) and records `pr_url` — same + `pr_title.ts`
+- [x] 13. Test + impl: open_pr reuses the open PR and comments the body — same
+- [x] 14. Test + impl: open_pr without commits ahead opens no PR; project without GitHub repo fails clearly — same
 - [ ] 15. Register the git executor — `node_executors.ts`, `app_executor.ts`
 - [ ] 16. Self-review checklist and feedback loops (typecheck, lint, test)
