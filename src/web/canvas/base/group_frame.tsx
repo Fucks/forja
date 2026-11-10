@@ -7,7 +7,7 @@ import { cn } from "@/web/components/ui/cn.js";
 
 type GroupKind = "loop" | "map";
 
-interface GroupProgress {
+export interface GroupProgress {
     queued: number;
     running: number;
     succeeded: number;

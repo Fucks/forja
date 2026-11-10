@@ -9,7 +9,7 @@ import { CanvasBackground } from "@/web/canvas/base/canvas_background.js";
 import { FlowEdge } from "@/web/canvas/base/flow_edge.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FLOW_EDGE_TYPE } from "@/web/canvas/graph_mapping.js";
-import { PROVISIONAL_NODE_TYPES } from "@/web/canvas/provisional_nodes.js";
+import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
 import { useCanvasElements } from "@/web/canvas/use_canvas_elements.js";
 
 const MIN_ZOOM = 0.25;
@@ -24,7 +24,7 @@ export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
         <ReactFlow
             nodes={nodes}
             edges={edges}
-            nodeTypes={PROVISIONAL_NODE_TYPES}
+            nodeTypes={nodeTypes}
             edgeTypes={EDGE_TYPES}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
