@@ -29,4 +29,4 @@
 - [x] 5. Test+impl: board service places cards with status, current node label, cost, PR url, run id; outcome needs_human from exhausted loop; blocked; closed older than 7 days hidden — `board_service.ts`
 - [x] 6. Route `GET /api/projects/:projectId/board` + route test — `work_items_routes.ts`
 - [x] 7. Web: `use_board.ts`, `work_item_card.tsx`, `board_view.tsx`, `board_page.tsx` with tests (render, live update on event, sync, no-flow warning) — `board_view.test.tsx`
-- [ ] 8. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 8. Self-review checklist and feedback loops (typecheck, lint, test)

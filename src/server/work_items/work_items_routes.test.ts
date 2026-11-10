@@ -354,6 +354,16 @@ describe("work items routes", () => {
             expect(board.cards).toEqual([{ item, columnId: "backlog" }]);
         });
 
+        it("shows an empty board for a project without items", async () => {
+            const response = await app.inject({
+                method: "GET",
+                url: `/api/projects/${PROJECT_ID}/board`,
+            });
+
+            expect(response.statusCode).toBe(200);
+            expect(response.json<BoardView>().cards).toEqual([]);
+        });
+
         it("answers 404 for an unknown project", async () => {
             const response = await app.inject({ method: "GET", url: "/api/projects/nope/board" });
 
