@@ -18,13 +18,13 @@
 
 ## Tasks
 
-- [ ] 1. Test+impl: compatible ports (`summary` text → `context` text) are accepted — `connection_rules.ts`
-- [ ] 2. Test+impl: incompatible types rejected with "Tipos incompatíveis: text → workItemList"
-- [ ] 3. Test+impl: self-connection rejected
-- [ ] 4. Test+impl: output → output rejected
-- [ ] 5. Test+impl: cycle outside loop rejected; cycle inside loop accepted
-- [ ] 6. Test+impl: `connect` adds the edge and replaces the one already on the input — `edge_actions.ts`
-- [ ] 7. Test+impl: `removeEdges` and `removeNodes` (cascade to connected edges)
+- [x] 1. Test+impl: compatible ports (`summary` text → `context` text) are accepted — `connection_rules.ts`
+- [x] 2. Test+impl: incompatible types rejected with "Tipos incompatíveis: text → workItemList"
+- [x] 3. Test+impl: self-connection rejected
+- [x] 4. Test+impl: output → output rejected
+- [x] 5. Test+impl: cycle outside loop rejected; cycle inside loop accepted
+- [x] 6. Test+impl: `connect` adds the edge and replaces the one already on the input — `edge_actions.ts`
+- [x] 7. Test+impl: `removeEdges` and `removeNodes` (cascade to connected edges)
 - [ ] 8. Canvas: `onConnect`, `isValidConnection`, `onEdgesDelete`, `onNodesDelete`, Delete/Backspace — `flow_canvas.tsx`
 - [ ] 9. Canvas: compatible/incompatible port highlight during drag — `port_handle.tsx`, css
 - [ ] 10. Canvas: tooltip with the reason for 3 s when dropped on an incompatible port
