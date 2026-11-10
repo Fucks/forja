@@ -3,6 +3,7 @@ import { monotonicFactory } from "ulid";
 export type IdPrefix =
     | "prj"
     | "flw"
+    | "nod"
     | "ver"
     | "run"
     | "nrn"

@@ -10,6 +10,8 @@ import { FlowEdge } from "@/web/canvas/base/flow_edge.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FLOW_EDGE_TYPE } from "@/web/canvas/graph_mapping.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
+import { DropTargetGroupContext } from "@/web/canvas/palette/drop_target_context.js";
+import { useNodeDrop } from "@/web/canvas/palette/use_node_drop.js";
 import { useCanvasElements } from "@/web/canvas/use_canvas_elements.js";
 
 const MIN_ZOOM = 0.25;
@@ -19,24 +21,30 @@ const EDGE_TYPES: EdgeTypes = { [FLOW_EDGE_TYPE]: FlowEdge };
 
 export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
     const { nodes, edges, onNodesChange, onEdgesChange } = useCanvasElements(store);
+    const { dropTargetGroupId, onDragOver, onDragLeave, onDrop } = useNodeDrop(store);
 
     return (
-        <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={EDGE_TYPES}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            minZoom={MIN_ZOOM}
-            maxZoom={MAX_ZOOM}
-            nodesConnectable={false}
-            deleteKeyCode={null}
-            fitView
-        >
-            <CanvasBackground />
-            <MiniMap />
-            <Controls showInteractive={false} />
-        </ReactFlow>
+        <DropTargetGroupContext value={dropTargetGroupId}>
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                edgeTypes={EDGE_TYPES}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                minZoom={MIN_ZOOM}
+                maxZoom={MAX_ZOOM}
+                nodesConnectable={false}
+                deleteKeyCode={null}
+                fitView
+            >
+                <CanvasBackground />
+                <MiniMap />
+                <Controls showInteractive={false} />
+            </ReactFlow>
+        </DropTargetGroupContext>
     );
 }
