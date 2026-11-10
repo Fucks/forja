@@ -30,5 +30,5 @@
 - [x] 9. Tool profile + credential selects, execution fields with schema limits — `agent_inspector.tsx`
 - [x] 10. Test + implement `PortListEditor` (add `spec: text`, remove port) — `port_list_editor.tsx`
 - [x] 11. `inspectorRegistry` + `InspectorPanel` (flow summary for 0/many, registry for one) — `inspector_registry.ts`, `inspector_panel.tsx`
-- [ ] 12. Mount the inspector in the editor + page test (select agent, edit, autosave) — `flow_editor_page.tsx`, `flow_editor_page.test.tsx`
+- [x] 12. Mount the inspector in the editor + page test (select agent, edit, autosave) — `flow_editor_page.tsx`, `flow_editor_page.test.tsx`
 - [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)
