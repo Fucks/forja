@@ -2,15 +2,14 @@ import { useStore } from "@xyflow/react";
 import type { NodeProps, NodeTypes, ReactFlowState } from "@xyflow/react";
 import type { JSX } from "react";
 
-import { assertNever } from "@/lib/assert_never.js";
 import { NODE_TYPES } from "@/shared/flow_graph.js";
-import type { FlowGroup } from "@/shared/flow_graph.js";
 import { BaseNode } from "@/web/canvas/base/base_node.js";
 import { GroupFrame } from "@/web/canvas/base/group_frame.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import { GROUP_NODE_TYPE } from "@/web/canvas/graph_mapping.js";
 import type { FlowRFNode, GroupRFNode } from "@/web/canvas/graph_mapping.js";
+import { describeGroupConfig } from "@/web/canvas/nodes/node_summary.js";
 
 const COMPACT_ZOOM_THRESHOLD = 0.5;
 
@@ -53,15 +52,4 @@ function ProvisionalGroup({ data, selected }: NodeProps<GroupRFNode>): JSX.Eleme
             selected={selected}
         />
     );
-}
-
-function describeGroupConfig(group: FlowGroup): string {
-    switch (group.kind) {
-        case "map":
-            return `map ×${group.config.concurrency}`;
-        case "loop":
-            return `loop ≤${group.config.maxIterations}`;
-        default:
-            return assertNever(group);
-    }
 }

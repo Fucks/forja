@@ -15,10 +15,10 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `summarizeNode` for agent (explicit and inherited) — `node_summary.ts`
-- [ ] 2. Test + implement `summarizeNode` for script, condition, gate — `node_summary.ts`
-- [ ] 3. Test + implement `summarizeNode` for trigger, source, git, output — `node_summary.ts`
-- [ ] 4. Test + move `describeGroupConfig` (map ×N, barreira, loop ≤N) — `node_summary.ts`
+- [x] 1. Test + implement `summarizeNode` for agent (explicit and inherited) — `node_summary.ts`
+- [x] 2. Test + implement `summarizeNode` for script, condition, gate — `node_summary.ts`
+- [x] 3. Test + implement `summarizeNode` for trigger, source, git, output — `node_summary.ts`
+- [x] 4. Test + move `describeGroupConfig` (map ×N, barreira, loop ≤N) — `node_summary.ts`
 - [ ] 5. `NodeLiveContext` / `NodeLiveState` — `node_live_context.ts`, export `GroupProgress`
 - [ ] 6. Test + implement `FlowNodeCard`, `SimpleNode`, `AgentNode` — `nodes.test.tsx`
 - [ ] 7. Test + implement `GroupNode` with progress from context — `group_node.tsx`
