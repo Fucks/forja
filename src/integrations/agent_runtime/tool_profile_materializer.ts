@@ -144,12 +144,17 @@ function replaceCredentialReferences(
 ): string {
     return [...credentials].reduce(
         (replaced, [credentialId, credential]) =>
-            replaced.replaceAll(
-                `${CREDENTIAL_REFERENCE_START}${credentialId}}`,
-                `\${${credential.envVar}}`,
-            ),
+            replaced.replaceAll(credentialReferenceTo(credentialId), envReferenceTo(credential)),
         envValue,
     );
+}
+
+function credentialReferenceTo(credentialId: string): string {
+    return `${CREDENTIAL_REFERENCE_START}${credentialId}}`;
+}
+
+function envReferenceTo(credential: CredentialEnv): string {
+    return `\${${credential.envVar}}`;
 }
 
 function toolArgsOf(profile: ToolProfile, mcpConfigFile: RuntimeFile): string[] {

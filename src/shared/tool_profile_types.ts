@@ -13,7 +13,7 @@ export const mcpServerSchema = z.object({
     name: z.string().regex(/^[a-z0-9_-]+$/),
     command: z.string().min(1),
     args: z.array(z.string()).default([]),
-    // Values may reference stored credentials as "${cred:<id>}"; the workspace resolves them.
+    // Values may reference stored credentials as "${cred:<id>}"; resolved when a node runs.
     env: z.record(z.string(), z.string()).default({}),
 });
 
