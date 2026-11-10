@@ -10,8 +10,13 @@ import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.j
 import { InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
 import { ExecutionFields } from "@/web/canvas/inspector/execution_fields.js";
 import { EffortField, ModelField } from "@/web/canvas/inspector/model_effort_fields.js";
-import { withAgentConfig } from "@/web/canvas/inspector/node_updates.js";
+import {
+    withAgentConfig,
+    withInputPort,
+    withoutInputPort,
+} from "@/web/canvas/inspector/node_updates.js";
 import { OutputSchemaEditor } from "@/web/canvas/inspector/output_schema_editor.js";
+import { PortListEditor } from "@/web/canvas/inspector/port_list_editor.js";
 import { PromptEditor } from "@/web/canvas/inspector/prompt_editor.js";
 import {
     CredentialField,
@@ -52,6 +57,13 @@ export function AgentInspector({ node, graph, onChange }: InspectorProps): JSX.E
                 <OutputSchemaEditor
                     outputSchema={node.config.outputSchema}
                     onChange={(outputSchema) => changeConfig({ outputSchema })}
+                />
+            </InspectorSection>
+            <InspectorSection title="Portas">
+                <PortListEditor
+                    ports={node.inputs}
+                    onAdd={(port) => onChange((current) => withInputPort(current, port))}
+                    onRemove={(name) => onChange((current) => withoutInputPort(current, name))}
                 />
             </InspectorSection>
         </div>

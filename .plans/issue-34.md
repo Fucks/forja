@@ -28,7 +28,7 @@
 - [x] 7. Test + implement `AgentInspector` model and effort fields ("padrão" removes the value) — `agent_inspector.tsx`, `agent_inspector.test.tsx`
 - [x] 8. Test + implement `OutputSchemaEditor` (invalid JSON shows error and is not applied; example button) — `output_schema_editor.tsx`
 - [x] 9. Tool profile + credential selects, execution fields with schema limits — `agent_inspector.tsx`
-- [ ] 10. Test + implement `PortListEditor` (add `spec: text`, remove port) — `port_list_editor.tsx`
+- [x] 10. Test + implement `PortListEditor` (add `spec: text`, remove port) — `port_list_editor.tsx`
 - [ ] 11. `inspectorRegistry` + `InspectorPanel` (flow summary for 0/many, registry for one) — `inspector_registry.ts`, `inspector_panel.tsx`
 - [ ] 12. Mount the inspector in the editor + page test (select agent, edit, autosave) — `flow_editor_page.tsx`, `flow_editor_page.test.tsx`
 - [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)

@@ -37,7 +37,7 @@ export function removeInputPort(graph: FlowGraph, nodeId: string, name: string):
     return updateNodeConfig(graph, nodeId, (node) => withoutInputPort(node, name));
 }
 
-export function canAddInputPort(node: FlowNode, name: string): boolean {
+function canAddInputPort(node: FlowNode, name: string): boolean {
     return node.type === "agent" && !hasInputPort(node, name);
 }
 

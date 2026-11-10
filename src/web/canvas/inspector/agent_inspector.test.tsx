@@ -175,6 +175,52 @@ describe("AgentInspector", () => {
         });
     });
 
+    describe("input ports", () => {
+        it("adds a required text port named spec", async () => {
+            const inspector = renderAgentInspector(requireAgent("tl"));
+
+            await userEvent.type(screen.getByRole("textbox", { name: "Nome da porta" }), "spec");
+            await userEvent.click(screen.getByRole("button", { name: "Adicionar porta" }));
+
+            expect(inspector.lastChangedNode().inputs).toContainEqual({
+                name: "spec",
+                type: "text",
+                required: true,
+            });
+        });
+
+        it("refuses a name already used by another input", async () => {
+            const onChange = renderAgentInspector(requireAgent("dev")).onChange;
+
+            await userEvent.type(screen.getByRole("textbox", { name: "Nome da porta" }), "spec");
+            await userEvent.click(screen.getByRole("button", { name: "Adicionar porta" }));
+
+            expect(screen.getByText("Já existe uma entrada com esse nome.")).toBeInTheDocument();
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it("refuses a name that is not a valid port name", async () => {
+            const onChange = renderAgentInspector(requireAgent("tl")).onChange;
+
+            await userEvent.type(screen.getByRole("textbox", { name: "Nome da porta" }), "Spec 2");
+            await userEvent.click(screen.getByRole("button", { name: "Adicionar porta" }));
+
+            expect(
+                screen.getByText("Comece com letra minúscula e use só letras, números e _."),
+            ).toBeInTheDocument();
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it("removes the chosen port", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+
+            await userEvent.click(screen.getByRole("button", { name: "Remover a entrada spec" }));
+
+            const inputNames = inspector.lastChangedNode().inputs.map((port) => port.name);
+            expect(inputNames).not.toContain("spec");
+        });
+    });
+
     describe("output schema", () => {
         it("shows the error and keeps the node unchanged when the JSON is invalid", async () => {
             const onChange = renderAgentInspector(requireAgent("dev")).onChange;
@@ -224,6 +270,7 @@ describe("AgentInspector", () => {
 
 interface RenderedInspector {
     onChange: NodeChangeSpy;
+    lastChangedNode: () => FlowNode;
     lastChangedConfig: () => AgentConfig;
 }
 
@@ -237,6 +284,7 @@ function renderAgentInspector(node: AgentNode): RenderedInspector {
 
     return {
         onChange,
+        lastChangedNode: () => applyLastUpdate(onChange, node),
         lastChangedConfig: () => readAgentConfig(applyLastUpdate(onChange, node)),
     };
 }
