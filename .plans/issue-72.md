@@ -23,7 +23,7 @@
 ## Tasks
 
 - [x] 1. Test+impl: canonical flow derives Backlog, Bloqueado, Especificar, Desenvolver, Revisar e abrir PR, Precisa de humano, Concluído; agent/gate/git outside maps become stages — `src/engine/board_columns.ts`
-- [ ] 2. Test+impl: `placeItem` priority rules (manual column, outcome, closed, active node run → stage, blocked, backlog) — `src/engine/board_columns.ts`
+- [x] 2. Test+impl: `placeItem` priority rules (manual column, outcome, closed, active node run → stage, blocked, backlog) — `src/engine/board_columns.ts`
 - [ ] 3. Add `BoardView` type — `src/shared/board_types.ts`
 - [ ] 4. Test+impl: board service without published default flow returns only fixed columns — `src/server/work_items/board_service.ts`
 - [ ] 5. Test+impl: board service places cards with status, current node label, cost, PR url, run id; outcome needs_human from exhausted loop; blocked; closed older than 7 days hidden — `board_service.ts`

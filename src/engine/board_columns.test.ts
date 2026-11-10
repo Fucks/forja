@@ -1,12 +1,16 @@
-import { deriveColumns } from "@/engine/board_columns.js";
+import { deriveColumns, placeItem } from "@/engine/board_columns.js";
 import type { BoardColumnDef } from "@/engine/board_columns.js";
+import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+import type { WorkItem } from "@/shared/work_item_types.js";
 import {
     buildCanonicalFlow,
     buildLoopFlow,
     connect,
     createNodeOfType,
 } from "@/test/factories/flow_graph_factory.js";
+import { buildNodeRunState } from "@/test/factories/node_run_state_factory.js";
+import { buildWorkItem } from "@/test/factories/work_item_factory.js";
 import {
     addEdges,
     addGroups,
@@ -102,5 +106,81 @@ describe("deriveColumns", () => {
             "Precisa de humano",
             "Concluído",
         ]);
+    });
+});
+
+describe("placeItem", () => {
+    const graph = buildCanonicalFlow();
+    const columns = deriveColumns(graph);
+
+    function place(
+        item: WorkItem,
+        context: Partial<Parameters<typeof placeItem>[1]> = {},
+    ): ReturnType<typeof placeItem> {
+        return placeItem(item, {
+            columns,
+            graph,
+            latestNodeRuns: [],
+            isBlocked: false,
+            ...context,
+        });
+    }
+
+    function nodeRunOf(nodeId: string, status: NodeRunState["status"]): NodeRunState {
+        return buildNodeRunState({ id: `nr_${nodeId}`, nodeId, status });
+    }
+
+    it("puts an open item without runs in the backlog", () => {
+        expect(place(buildWorkItem())).toEqual({ columnId: "backlog" });
+    });
+
+    it("puts a blocked item without an active node run in Bloqueado", () => {
+        expect(place(buildWorkItem(), { isBlocked: true })).toEqual({ columnId: "blocked" });
+    });
+
+    it("puts the item in the stage of its running node, with the node and its status", () => {
+        const latestNodeRuns = [nodeRunOf("tl", "SUCCEEDED"), nodeRunOf("dev", "RUNNING")];
+
+        expect(place(buildWorkItem(), { latestNodeRuns, isBlocked: true })).toEqual({
+            columnId: "stage:develop",
+            status: "RUNNING",
+            currentNodeId: "dev",
+        });
+    });
+
+    it("follows the earliest unfinished node of the flow when several are unfinished", () => {
+        const latestNodeRuns = [nodeRunOf("open_pr", "PENDING"), nodeRunOf("reviewer", "QUEUED")];
+
+        expect(place(buildWorkItem(), { latestNodeRuns })).toMatchObject({
+            columnId: "stage:review_and_open_pr",
+            currentNodeId: "reviewer",
+        });
+    });
+
+    it("ignores the node runs that already finished", () => {
+        const latestNodeRuns = [nodeRunOf("tl", "SUCCEEDED"), nodeRunOf("dev", "FAILED")];
+
+        expect(place(buildWorkItem(), { latestNodeRuns })).toEqual({ columnId: "backlog" });
+    });
+
+    it("puts a closed item in Concluído even while a node run is unfinished", () => {
+        const latestNodeRuns = [nodeRunOf("dev", "RUNNING")];
+
+        expect(place(buildWorkItem({ state: "closed" }), { latestNodeRuns })).toEqual({
+            columnId: "done",
+        });
+    });
+
+    it("puts the item where the outcome of its last run sent it", () => {
+        expect(place(buildWorkItem(), { outcome: "needs_human" })).toEqual({
+            columnId: "needs_human",
+        });
+        expect(place(buildWorkItem(), { outcome: "done" })).toEqual({ columnId: "done" });
+    });
+
+    it("puts the item in its manual column before any other rule", () => {
+        const item = buildWorkItem({ state: "closed", manualColumn: "backlog" });
+
+        expect(place(item, { outcome: "done" })).toEqual({ columnId: "backlog" });
     });
 });
