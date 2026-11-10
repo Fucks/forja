@@ -1,8 +1,9 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import type { DataRouter } from "react-router";
 
+import { createTestQueryClient } from "@/test/render_with_query_client.js";
 import { APP_ROUTES } from "@/web/app/routes.js";
 import { ToastProvider } from "@/web/components/ui/toast.js";
 
@@ -17,8 +18,4 @@ export function renderAppAt(path: string): DataRouter {
     );
 
     return router;
-}
-
-function createTestQueryClient(): QueryClient {
-    return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
