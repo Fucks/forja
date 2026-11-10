@@ -40,5 +40,5 @@
 - [x] 12. Test + impl: open_pr creates the PR (prTitle, body with `Closes #N` and signature, draft) and records `pr_url` — same + `pr_title.ts`
 - [x] 13. Test + impl: open_pr reuses the open PR and comments the body — same
 - [x] 14. Test + impl: open_pr without commits ahead opens no PR; project without GitHub repo fails clearly — same
-- [ ] 15. Register the git executor — `node_executors.ts`, `app_executor.ts`
+- [x] 15. Register the git executor — `node_executors.ts`, `app_executor.ts`
 - [ ] 16. Self-review checklist and feedback loops (typecheck, lint, test)

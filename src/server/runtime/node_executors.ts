@@ -4,6 +4,10 @@ import type { Clock } from "@/lib/clock.js";
 import type { ArtifactRecord, RunRecord } from "@/server/runs/run_repository.js";
 import { executeAgentNode } from "@/server/runtime/executors/agent_executor.js";
 import { executeConditionNode } from "@/server/runtime/executors/condition_executor.js";
+import {
+    createGitExecutor,
+    type GitExecutorDeps,
+} from "@/server/runtime/executors/git_executor.js";
 import { executeOutputNode } from "@/server/runtime/executors/output_executor.js";
 import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
 import {
@@ -57,8 +61,7 @@ export type NodeExecutor = (context: NodeExecutionContext) => Promise<NodeExecut
 
 export type NodeExecutorRegistry = Partial<Record<NodeType, NodeExecutor>>;
 
-// The executors that need nothing beyond the context. The git and gate nodes get theirs in #79
-// and #81.
+// The executors that need nothing beyond the context. The gate node gets its own in #81.
 export const nodeExecutors: NodeExecutorRegistry = {
     trigger: executeTriggerNode,
     agent: executeAgentNode,
@@ -67,6 +70,8 @@ export const nodeExecutors: NodeExecutorRegistry = {
     output: executeOutputNode,
 };
 
-export function createNodeExecutors(deps: SourceExecutorDeps): NodeExecutorRegistry {
-    return { ...nodeExecutors, source: createSourceExecutor(deps) };
+export type NodeExecutorDeps = SourceExecutorDeps & GitExecutorDeps;
+
+export function createNodeExecutors(deps: NodeExecutorDeps): NodeExecutorRegistry {
+    return { ...nodeExecutors, source: createSourceExecutor(deps), git: createGitExecutor(deps) };
 }
