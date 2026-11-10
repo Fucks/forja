@@ -8,10 +8,13 @@ import type {
     ExecResult,
     HeadlessSpec,
     OpenWorkspaceSummary,
+    RuntimeDir,
+    RuntimeFile,
     Workspace,
     WorkspaceFile,
     WorkspaceSpec,
 } from "@/integrations/agent_runtime/agent_runtime.js";
+import { RUNTIME_DIR_IN_CONTAINER } from "@/integrations/agent_runtime/workspace_layout.js";
 import type { FakeClock } from "@/test/fakes/fake_clock.js";
 import {
     createScriptedError,
@@ -54,9 +57,14 @@ const DEFAULT_DURATION_MS = 1_000;
 const WORKSPACE_READY_MESSAGE = "workspace pronto";
 const SUCCESSFUL_EXEC: ScriptedExec = { exitCode: 0, stdoutTail: "" };
 const FAKE_WORKTREES_DIR = "/fake/worktrees";
+const FAKE_RUNTIME_DIR = "/fake/runtime";
 
 export class FakeAgentRuntime implements AgentRuntime {
     readonly calls: RuntimeCall[] = [];
+    readonly openedSpecs: WorkspaceSpec[] = [];
+    readonly requests: AgentRunRequest[] = [];
+    // The runtime files of every agent run, by host path, as the last run left them.
+    readonly runtimeFiles = new Map<string, string>();
     private readonly clock: FakeClock;
     private readonly defaultDurationMs: number;
     private readonly steps: ScriptedStepUsage[] = [];
@@ -104,6 +112,7 @@ export class FakeAgentRuntime implements AgentRuntime {
         signal: AbortSignal,
     ): Promise<Workspace> {
         this.record({ kind: "open", workItemId: spec.workItemId });
+        this.openedSpecs.push(spec);
         if (signal.aborted) {
             return Promise.reject(new AgentCanceledError());
         }
@@ -114,6 +123,10 @@ export class FakeAgentRuntime implements AgentRuntime {
         hooks.onEvent({ kind: "system", message: WORKSPACE_READY_MESSAGE, at: this.clock.now() });
 
         return Promise.resolve(this.createWorkspace(id, spec));
+    }
+
+    headlessRuntimeDir(runId: string, nodeRunId: string): RuntimeDir {
+        return fakeRuntimeDir(`${runId}-${nodeRunId}`);
     }
 
     runHeadless(
@@ -153,6 +166,7 @@ export class FakeAgentRuntime implements AgentRuntime {
             id,
             branch: spec.branch,
             root: `${FAKE_WORKTREES_DIR}/${id}`,
+            runtimeDir: fakeRuntimeDir(id),
             runAgent: (request, hooks) => this.runAgent("run", { request, hooks, workItemId }),
             exec: (command, options) => this.exec(command, options, workItemId),
             diff: () => Promise.resolve(""),
@@ -166,6 +180,8 @@ export class FakeAgentRuntime implements AgentRuntime {
 
     private async runAgent(kind: "run" | "headless", target: RunTarget): Promise<AgentRunResult> {
         this.record({ kind, nodeRunId: target.request.nodeRunId, workItemId: target.workItemId });
+        this.requests.push(target.request);
+        this.storeRuntimeFiles(target.request.runtimeFiles);
         const step = this.takeMatchingStep(target);
 
         await this.playTrackingConcurrentRuns(step, target);
@@ -228,7 +244,15 @@ export class FakeAgentRuntime implements AgentRuntime {
         this.workspaceFiles.set(workspaceId, storedFiles);
     }
 
+    private storeRuntimeFiles(files: RuntimeFile[]): void {
+        files.forEach((file) => this.runtimeFiles.set(file.hostPath, file.content));
+    }
+
     private record(call: Omit<RuntimeCall, "at">): void {
         this.calls.push({ ...call, at: this.clock.now() });
     }
+}
+
+function fakeRuntimeDir(ownerId: string): RuntimeDir {
+    return { host: `${FAKE_RUNTIME_DIR}/${ownerId}`, container: RUNTIME_DIR_IN_CONTAINER };
 }

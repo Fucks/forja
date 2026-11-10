@@ -61,6 +61,8 @@ export interface AgentRunRequest {
     completionSignal?: string;
     /** Tool and MCP flags for the `claude` command. */
     toolArgs: string[];
+    /** Written in the runtime dir right before the agent starts; never in the worktree. */
+    runtimeFiles: RuntimeFile[];
     /** Replaces each !`command` in the prompt with its output in the workspace. */
     expandPromptCommands: boolean;
     env: Record<string, string>;
@@ -98,6 +100,7 @@ export interface Workspace {
     branch: string;
     /** Path of the item worktree on the host. */
     root: string;
+    runtimeDir: RuntimeDir;
     runAgent(request: AgentRunRequest, hooks: AgentRunHooks): Promise<AgentRunResult>;
     exec(command: string, options: ExecOptions): Promise<ExecResult>;
     /** `git diff base...branch`, used by gates. */
@@ -119,6 +122,8 @@ export interface AgentRuntime {
         hooks: AgentRunHooks,
         signal: AbortSignal,
     ): Promise<Workspace>;
+    /** Where the runtime files of a headless run go, before it starts. */
+    headlessRuntimeDir(runId: string, nodeRunId: string): RuntimeDir;
     /** Runs an agent with workspace "none": no worktree, no branch, no files. */
     runHeadless(
         spec: HeadlessSpec,

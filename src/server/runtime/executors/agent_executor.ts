@@ -51,6 +51,7 @@ function buildAgentRunRequest(context: NodeExecutionContext, node: AgentNode): A
         outputSchema: config.outputSchema,
         completionSignal: config.completionSignal,
         toolArgs: TOOL_ARGS,
+        runtimeFiles: [],
         expandPromptCommands: config.expandPromptCommands,
         env: {},
         signal: context.signal,

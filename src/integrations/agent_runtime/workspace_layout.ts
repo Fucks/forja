@@ -1,6 +1,9 @@
+import path from "node:path";
+
 import type {
     HeadlessSpec,
     OpenWorkspaceSummary,
+    RuntimeDir,
     WorkspaceSpec,
 } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { ContainerMount } from "@/integrations/agent_runtime/container_manager.js";
@@ -11,6 +14,7 @@ export interface HostUser {
 }
 
 export const WORKSPACE_DIR_IN_CONTAINER = "/home/agent/workspace";
+export const RUNTIME_DIR_IN_CONTAINER = "/home/agent/.forja";
 export const WORKSPACE_LABEL = "forja.workspace";
 const RUN_LABEL = "forja.run";
 const ITEM_LABEL = "forja.item";
@@ -58,13 +62,27 @@ export function summarizeWorkspace(labels: Record<string, string>): OpenWorkspac
     };
 }
 
+export function runtimeDirFor(runtimeRoot: string, containerName: string): RuntimeDir {
+    return { host: path.join(runtimeRoot, containerName), container: RUNTIME_DIR_IN_CONTAINER };
+}
+
 // The worktree's `.git` file points at the repository's common git dir by absolute path, so that
 // dir must exist at the same path inside the container for git to work there.
-export function workspaceMounts(worktreePath: string, gitCommonDir: string): ContainerMount[] {
+export function workspaceMounts(
+    worktreePath: string,
+    gitCommonDir: string,
+    runtimeDir: RuntimeDir,
+): ContainerMount[] {
     return [
         { host: worktreePath, container: WORKSPACE_DIR_IN_CONTAINER },
         { host: gitCommonDir, container: toContainerPath(gitCommonDir) },
+        runtimeDirMount(runtimeDir),
     ];
+}
+
+// Read-only: the agent can read its MCP file but not rewrite the next node's.
+export function runtimeDirMount(runtimeDir: RuntimeDir): ContainerMount {
+    return { host: runtimeDir.host, container: runtimeDir.container, readOnly: true };
 }
 
 export function readOnlyRepositoryMount(repoPath: string): ContainerMount {

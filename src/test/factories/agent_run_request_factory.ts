@@ -11,6 +11,7 @@ export function buildAgentRunRequest(overrides: Partial<AgentRunRequest> = {}): 
         timeoutMs: 3_600_000,
         permissionMode: "acceptEdits",
         toolArgs: [],
+        runtimeFiles: [],
         expandPromptCommands: false,
         env: {},
         signal: new AbortController().signal,

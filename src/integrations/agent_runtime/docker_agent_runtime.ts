@@ -12,6 +12,7 @@ import type {
     AgentRuntime,
     HeadlessSpec,
     OpenWorkspaceSummary,
+    RuntimeDir,
     Workspace,
     WorkspaceSpec,
 } from "@/integrations/agent_runtime/agent_runtime.js";
@@ -25,6 +26,11 @@ import {
     type OpenedWorkspace,
 } from "@/integrations/agent_runtime/docker_workspace.js";
 import { createRunAgentInContainer } from "@/integrations/agent_runtime/run_agent_in_container.js";
+import {
+    createRuntimeDir,
+    removeRuntimeDir,
+    writeRuntimeFiles,
+} from "@/integrations/agent_runtime/runtime_dir.js";
 import { createWorkspaceCommits } from "@/integrations/agent_runtime/workspace_commits.js";
 import { writeWorkspaceFiles } from "@/integrations/agent_runtime/workspace_files.js";
 import {
@@ -32,6 +38,8 @@ import {
     headlessContainerNameFor,
     headlessLabels,
     readOnlyRepositoryMount,
+    runtimeDirFor,
+    runtimeDirMount,
     summarizeWorkspace,
     toContainerPath,
     WORKSPACE_DIR_IN_CONTAINER,
@@ -84,13 +92,15 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
             baseBranch: spec.baseBranch,
         });
         const id = workspaceIdFor(spec.runId, spec.workItemId);
+        const runtimeDir = runtimeDirFor(paths.runtime, id);
         await removeLeftoverContainer(id);
+        await createRuntimeDir(runtimeDir);
 
         const containerId = await startPreparedContainer(
             {
                 name: id,
                 image: spec.image,
-                mounts: await workspaceMountsFor(spec.repoPath, worktree.path, hooks),
+                mounts: await workspaceMountsFor(spec.repoPath, worktree.path, runtimeDir, hooks),
                 labels: workspaceLabels(id, spec),
                 workdir: WORKSPACE_DIR_IN_CONTAINER,
                 user: containerUser,
@@ -108,10 +118,15 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
                 containerId,
                 worktreePath: worktree.path,
                 repoPath: spec.repoPath,
+                runtimeDir,
                 env: spec.env,
             },
             hooks,
         );
+    }
+
+    function headlessRuntimeDir(runId: string, nodeRunId: string): RuntimeDir {
+        return runtimeDirFor(paths.runtime, headlessContainerNameFor(runId, nodeRunId));
     }
 
     async function runHeadless(
@@ -120,11 +135,27 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         hooks: AgentRunHooks,
     ): Promise<AgentRunResult> {
         throwIfAborted(request.signal);
+        const runtimeDir = headlessRuntimeDir(spec.runId, request.nodeRunId);
+        await createRuntimeDir(runtimeDir);
+        try {
+            await writeRuntimeFiles(runtimeDir, request.runtimeFiles);
+            return await runInEphemeralContainer(spec, request, hooks, runtimeDir);
+        } finally {
+            await removeRuntimeDir(runtimeDir);
+        }
+    }
+
+    async function runInEphemeralContainer(
+        spec: HeadlessSpec,
+        request: AgentRunRequest,
+        hooks: AgentRunHooks,
+        runtimeDir: RuntimeDir,
+    ): Promise<AgentRunResult> {
         const containerId = await startPreparedContainer(
             {
                 name: headlessContainerNameFor(spec.runId, request.nodeRunId),
                 image: spec.image,
-                mounts: [readOnlyRepositoryMount(spec.repoPath)],
+                mounts: [readOnlyRepositoryMount(spec.repoPath), runtimeDirMount(runtimeDir)],
                 labels: headlessLabels(spec),
                 workdir: WORKSPACE_DIR_IN_CONTAINER,
                 user: containerUser,
@@ -147,11 +178,13 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         const opened = openWorkspaces.get(id);
         if (!opened) {
             await removeContainersOf(id);
+            await removeRuntimeDir(runtimeDirFor(paths.runtime, id));
             return;
         }
 
         await containers.stop(opened.containerId);
         await worktrees.remove(opened.repoPath, opened.worktreePath);
+        await removeRuntimeDir(opened.runtimeDir);
         openWorkspaces.delete(id);
     }
 
@@ -178,6 +211,7 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
     async function workspaceMountsFor(
         repoPath: string,
         worktreePath: string,
+        runtimeDir: RuntimeDir,
         hooks: AgentRunHooks,
     ): Promise<ContainerMount[]> {
         const gitCommonDir = await readGitCommonDir(commands, repoPath);
@@ -186,7 +220,7 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
             emitSystemEvent(hooks, `${gitCommonDir} montado no container em ${gitDirInContainer}`);
         }
 
-        return workspaceMounts(worktreePath, gitCommonDir);
+        return workspaceMounts(worktreePath, gitCommonDir, runtimeDir);
     }
 
     function runSetup(
@@ -213,8 +247,10 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         return createDockerWorkspace(opened, {
             commands,
             containers,
-            runAgent: (request, agentHooks) =>
-                runAgentInContainer(workspaceContainer(opened), request, agentHooks),
+            runAgent: async (request, agentHooks) => {
+                await writeRuntimeFiles(opened.runtimeDir, request.runtimeFiles);
+                return runAgentInContainer(workspaceContainer(opened), request, agentHooks);
+            },
             closeWorkspace,
         });
     }
@@ -247,7 +283,13 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         hooks.onEvent({ kind: "system", message, at: clock.now() });
     }
 
-    return { openWorkspace, runHeadless, closeWorkspace, listOpenWorkspaces };
+    return {
+        openWorkspace,
+        headlessRuntimeDir,
+        runHeadless,
+        closeWorkspace,
+        listOpenWorkspaces,
+    };
 }
 
 function throwIfAborted(signal: AbortSignal): void {
