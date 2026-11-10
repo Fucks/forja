@@ -5,6 +5,7 @@ import type { CommandResult, CommandRunner } from "@/integrations/process/comman
 
 const GIT_TIMEOUT_MS = 10_000;
 const PUSH_TIMEOUT_MS = 120_000;
+const ORIGIN_REMOTE = "origin";
 const FALLBACK_DEFAULT_BRANCH = "main";
 const ORIGIN_HEAD_REF = "refs/remotes/origin/HEAD";
 const ORIGIN_BRANCH_PREFIX = "refs/remotes/origin/";
@@ -51,7 +52,7 @@ export class CliGitProvider implements GitProvider {
     async push(root: string, branch: string, env: Record<string, string>): Promise<void> {
         const result = await this.commands.run(
             "git",
-            ["push", "--force-with-lease", "origin", branch],
+            ["push", "--force-with-lease", ORIGIN_REMOTE, branch],
             { cwd: root, env, timeoutMs: PUSH_TIMEOUT_MS },
         );
         if (!commandSucceeded(result)) {
@@ -98,7 +99,7 @@ export class CliGitProvider implements GitProvider {
     }
 
     private async readOriginUrl(root: string): Promise<string | undefined> {
-        const result = await this.runGit(root, ["remote", "get-url", "origin"]);
+        const result = await this.runGit(root, ["remote", "get-url", ORIGIN_REMOTE]);
         const remoteUrl = result.stdout.trim();
         if (!commandSucceeded(result) || remoteUrl === "") {
             return undefined;

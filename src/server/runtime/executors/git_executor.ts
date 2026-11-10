@@ -40,6 +40,13 @@ interface BranchTarget {
     baseBranch: string;
 }
 
+interface OpenPullRequestInput {
+    deps: GitExecutorDeps;
+    context: NodeExecutionContext;
+    config: GitConfig;
+    target: BranchTarget;
+}
+
 export class GitNodeWithoutItemError extends AgentRuntimeError {
     constructor() {
         super("O nó git precisa de um item de trabalho");
@@ -68,10 +75,12 @@ export function createGitExecutor(deps: GitExecutorDeps): NodeExecutor {
             case "push":
                 return buildGitResult({
                     branch: target.branch,
-                    pushed: await pushBranch(deps.git, context, target),
+                    pushed: await pushBranchIfAhead(deps.git, context, target),
                 });
             case "open_pr":
-                return buildGitResult(await openPullRequest(deps, context, node.config, target));
+                return buildGitResult(
+                    await openPullRequest({ deps, context, config: node.config, target }),
+                );
             default:
                 return assertNever(action);
         }
@@ -92,7 +101,7 @@ function branchTargetOf(context: NodeExecutionContext, config: GitConfig): Branc
 }
 
 // Without commits ahead of the base there is nothing to review, so the branch stays local.
-async function pushBranch(
+async function pushBranchIfAhead(
     git: GitProvider,
     context: NodeExecutionContext,
     target: BranchTarget,
@@ -112,14 +121,14 @@ async function pushBranch(
     return true;
 }
 
-async function openPullRequest(
-    deps: GitExecutorDeps,
-    context: NodeExecutionContext,
-    config: GitConfig,
-    target: BranchTarget,
-): Promise<GitResult> {
+async function openPullRequest({
+    deps,
+    context,
+    config,
+    target,
+}: OpenPullRequestInput): Promise<GitResult> {
     const repo = githubRepoOf(context.project);
-    const pushed = await pushBranch(deps.git, context, target);
+    const pushed = await pushBranchIfAhead(deps.git, context, target);
     if (!pushed) {
         return { branch: target.branch, pushed };
     }
@@ -129,7 +138,7 @@ async function openPullRequest(
         head: target.branch,
         base: target.baseBranch,
         title: prTitle(target.item),
-        body: buildPullRequestBody(target.item, bodyInputOf(context.inputs, config)),
+        body: buildPullRequestBody(target.item, summaryFromInputs(context.inputs, config)),
         draft: config.draft,
     });
 
@@ -144,7 +153,7 @@ function githubRepoOf(project: Project): string {
     return project.githubRepo;
 }
 
-function bodyInputOf(inputs: Record<string, unknown>, config: GitConfig): string | undefined {
+function summaryFromInputs(inputs: Record<string, unknown>, config: GitConfig): string | undefined {
     if (config.bodyFrom === undefined) {
         return undefined;
     }
