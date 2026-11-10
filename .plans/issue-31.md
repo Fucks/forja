@@ -19,8 +19,8 @@
 - [x] 2. Test + implement `summarizeNode` for script, condition, gate — `node_summary.ts`
 - [x] 3. Test + implement `summarizeNode` for trigger, source, git, output — `node_summary.ts`
 - [x] 4. Test + move `describeGroupConfig` (map ×N, barreira, loop ≤N) — `node_summary.ts`
-- [ ] 5. `NodeLiveContext` / `NodeLiveState` — `node_live_context.ts`, export `GroupProgress`
-- [ ] 6. Test + implement `FlowNodeCard`, `SimpleNode`, `AgentNode` — `nodes.test.tsx`
-- [ ] 7. Test + implement `GroupNode` with progress from context — `group_node.tsx`
-- [ ] 8. Registry `nodeTypes` and use in `FlowCanvas`; delete `provisional_nodes.tsx`
-- [ ] 9. Self-review checklist and feedback loops
+- [x] 5. `NodeLiveContext` / `NodeLiveState` — `node_live_context.ts`, export `GroupProgress`
+- [x] 6. Test + implement `FlowNodeCard`, `SimpleNode`, `AgentNode` — `nodes.test.tsx`
+- [x] 7. Test + implement `GroupNode` with progress from context — `group_node.tsx`
+- [x] 8. Registry `nodeTypes` and use in `FlowCanvas`; delete `provisional_nodes.tsx`
+- [x] 9. Self-review checklist and feedback loops

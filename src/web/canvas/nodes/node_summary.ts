@@ -8,12 +8,12 @@ import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 import type { SourceConfig } from "@/shared/node_configs/source_config.js";
 import type { TriggerConfig } from "@/shared/node_configs/trigger_config.js";
 
-export interface NodeSummary {
+interface NodeSummary {
     line1: string;
     line2?: string;
 }
 
-export interface AgentDefaults {
+interface AgentDefaults {
     model: string;
     effort: Effort;
 }
