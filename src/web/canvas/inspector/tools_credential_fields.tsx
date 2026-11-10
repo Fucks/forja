@@ -4,6 +4,7 @@ import { AGENT_CREDENTIAL_KINDS } from "@/shared/credential_types.js";
 import { useCredentials } from "@/web/app/settings/use_credentials.js";
 import { useToolProfiles } from "@/web/app/settings/use_tool_profiles.js";
 import { InheritableSelect } from "@/web/canvas/inspector/inheritable_select.js";
+import type { InheritableSelectOption } from "@/web/canvas/inspector/inheritable_select.js";
 
 interface NamedEntry {
     id: string;
@@ -62,7 +63,7 @@ export function CredentialField({
     );
 }
 
-function toOption(entry: NamedEntry): { value: string; label: string } {
+function toOption(entry: NamedEntry): InheritableSelectOption {
     return { value: entry.id, label: entry.name };
 }
 

@@ -5,12 +5,15 @@ import { describeDefault } from "@/web/app/projects/settings_section.js";
 import { Field } from "@/web/components/ui/field.js";
 import { Select } from "@/web/components/ui/select.js";
 
-interface InheritableSelectOption {
+export interface InheritableSelectOption {
     value: string;
     label: string;
 }
 
-const PROJECT_DEFAULT_OPTION = { value: "project-default", label: "padrão do projeto" };
+const PROJECT_DEFAULT_OPTION: InheritableSelectOption = {
+    value: "project-default",
+    label: "padrão do projeto",
+};
 
 // Choosing "padrão do projeto" reports undefined, so the node stops overriding the project.
 export function InheritableSelect({

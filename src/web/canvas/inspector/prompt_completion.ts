@@ -16,7 +16,7 @@ const VARIABLE_OPENING = "{{";
 const OPEN_VARIABLE_AT_CURSOR = /(?<!\\)\{\{(?<spaces>\s*)(?<prefix>[\w.]*)$/;
 
 export function promptCompletions(
-    vars: VariableInfo[],
+    variables: VariableInfo[],
     textBeforeCursor: string,
 ): PromptCompletions | null {
     const openVariable = OPEN_VARIABLE_AT_CURSOR.exec(textBeforeCursor);
@@ -29,7 +29,7 @@ export function promptCompletions(
 
     return {
         from: prefixStart,
-        options: vars.filter((variable) => variable.path.startsWith(prefix)).map(toOption),
+        options: variables.filter((variable) => variable.path.startsWith(prefix)).map(toOption),
     };
 }
 

@@ -32,7 +32,7 @@ export function IntegerField({
     const [limitError, setLimitError] = useState<string>();
 
     function applyFieldText(): void {
-        const parsed = schema.safeParse(fieldText.trim() === "" ? undefined : Number(fieldText));
+        const parsed = schema.safeParse(parseFieldText(fieldText));
         if (!parsed.success) {
             setLimitError(describeLimits(limits));
             return;
@@ -58,6 +58,10 @@ export function IntegerField({
             />
         </Field>
     );
+}
+
+function parseFieldText(fieldText: string): number | undefined {
+    return fieldText.trim() === "" ? undefined : Number(fieldText);
 }
 
 function formatInteger(value: number | undefined): string {
