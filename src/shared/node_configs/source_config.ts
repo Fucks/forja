@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const SOURCE_PROVIDERS = ["github", "local"] as const;
 
-const MIN_SOURCE_LIMIT = 1;
-const MAX_SOURCE_LIMIT = 100;
+export const MIN_SOURCE_LIMIT = 1;
+export const MAX_SOURCE_LIMIT = 100;
 const DEFAULT_SOURCE_LIMIT = 20;
 
 export const sourceConfigSchema = z.object({

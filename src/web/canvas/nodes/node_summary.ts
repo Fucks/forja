@@ -29,7 +29,7 @@ const WORKSPACE_LABELS: Record<AgentConfig["workspace"], string> = {
     none: "sem workspace",
 };
 
-const TRIGGER_KIND_LABELS: Record<TriggerConfig["kind"], string> = {
+export const TRIGGER_KIND_LABELS: Record<TriggerConfig["kind"], string> = {
     manual: "manual",
     schedule: "agendado",
     event: "por evento",
@@ -37,18 +37,18 @@ const TRIGGER_KIND_LABELS: Record<TriggerConfig["kind"], string> = {
     board_column: "coluna do board",
 };
 
-const SOURCE_PROVIDER_LABELS: Record<SourceConfig["provider"], string> = {
+export const SOURCE_PROVIDER_LABELS: Record<SourceConfig["provider"], string> = {
     github: "GitHub",
     local: "Local",
 };
 
-const GIT_ACTION_LABELS: Record<GitConfig["action"], string> = {
+export const GIT_ACTION_LABELS: Record<GitConfig["action"], string> = {
     rebase: "rebase",
     push: "push",
     open_pr: "abrir PR",
 };
 
-const ITEM_DESTINATION_LABELS: Record<NonNullable<OutputConfig["moveItemTo"]>, string> = {
+export const ITEM_DESTINATION_LABELS: Record<NonNullable<OutputConfig["moveItemTo"]>, string> = {
     done: "Concluído",
     needs_human: "Precisa de humano",
 };
