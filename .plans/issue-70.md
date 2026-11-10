@@ -12,7 +12,7 @@
   `NodeExecutor`; `node_executors.ts` gets `createNodeExecutors(deps)` = the deps-free `nodeExecutors` + `source`.
   `createAppExecutor` passes it; the test bed keeps its stub for `source` (it has no work items in the database).
 - `SourceExecutorDeps`: `workItems: WorkItemService`, `runs: RunRepository`, `projects: ProjectService`, `clock: Clock` (both for `syncGithubIssues`),
-  `githubOf(projectId): Promise<GitHubProvider>`.
+  `githubOf: GithubOfProject` (from `project_github_provider.ts`).
 - Items in other active runs: `run.itemIds` + `workItemId` of the NodeRuns of the other active runs of the project.
 - Items with an open PR: new `RunRepository.listItemIdsWithArtifact(projectId, kind)` gives the items with a
   `pr_url` artifact; for each candidate among them, `github.findPullRequestByHead(repo, item.branch)` decides if
@@ -20,7 +20,7 @@
 - GitHub provider: `syncGithubIssues` before loading, with `{ label }`; a sync error fails the node
   (`GithubSyncFailedError`) instead of selecting from stale items.
 - The provider per project (`resolveGithubEnv` + `createGhCliGitHubProvider`) is extracted from
-  `project_github_sync.ts` into `src/server/work_items/project_github_provider.ts`, reused by the executor.
+  `project_github_sync.ts` into `createGithubOfProject` in `src/server/work_items/project_github_provider.ts`, reused by the executor.
 - Artifact: `{ name: "source_selection", kind: "json", value: { selectedIds, excluded } }`.
 
 ## Tasks
@@ -38,6 +38,6 @@
 - [x] 11. Test + impl: executor fails when the GitHub sync fails
 - [x] 12. Test + impl: executor excludes items with an open PR from an earlier run (`FakeGitHubProvider`)
 - [x] 13. Test + impl: executor starts from the run's items
-- [ ] 14. Extract `project_github_provider.ts` and reuse it in `project_github_sync.ts`
+- [x] 14. Extract `project_github_provider.ts` and reuse it in `project_github_sync.ts`
 - [ ] 15. Register: `createNodeExecutors` in `node_executors.ts`, wired in `app_executor.ts`, `main.ts`, `test_app_deps.ts`
 - [ ] 16. Self-review checklist and feedback loops

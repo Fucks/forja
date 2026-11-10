@@ -13,6 +13,7 @@ import type {
     NodeExecutor,
 } from "@/server/runtime/node_executors.js";
 import { syncGithubIssues } from "@/server/work_items/github_sync.js";
+import type { GithubOfProject } from "@/server/work_items/project_github_provider.js";
 import type { WorkItemService } from "@/server/work_items/work_item_service.js";
 import type { SourceConfig } from "@/shared/node_configs/source_config.js";
 import type { Project } from "@/shared/project_types.js";
@@ -27,8 +28,7 @@ export interface SourceExecutorDeps {
     runs: RunRepository;
     projects: ProjectService;
     clock: Clock;
-    /** Already authenticated for the project. */
-    githubOf(projectId: string): Promise<GitHubProvider>;
+    githubOf: GithubOfProject;
 }
 
 export class GithubSyncFailedError extends Error {
