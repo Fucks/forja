@@ -34,6 +34,7 @@ interface AgentSectionProps {
 }
 
 export function AgentInspector({ node, graph, onChange }: InspectorProps): JSX.Element {
+    // The registry routes only agents here; the check narrows the node to its agent config.
     if (!isNodeOfType(node, "agent")) {
         return <></>;
     }

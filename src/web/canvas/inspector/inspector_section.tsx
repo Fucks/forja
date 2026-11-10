@@ -10,7 +10,7 @@ export function InspectorSection({
     children: ReactNode;
 }): JSX.Element {
     return (
-        <details open={isInitiallyOpen} className="group border-t border-border">
+        <details open={isInitiallyOpen} className="border-t border-border">
             <summary className="cursor-pointer px-3 py-2 text-sm font-medium select-none">
                 {title}
             </summary>
