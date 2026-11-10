@@ -36,4 +36,4 @@
 - [x] 13. `ConditionEditor` builds an `and` of two rules + test — `condition_editor.tsx`
 - [x] 14. Condition inspector + test — `condition_inspector.tsx`
 - [x] 15. Register every inspector — `inspector_registry.ts`
-- [ ] 16. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 16. Self-review checklist (section 5) and feedback loops (section 6)

@@ -2,10 +2,8 @@ import { Trash2 } from "lucide-react";
 import type { JSX } from "react";
 
 import type { ConditionRule } from "@/web/canvas/inspector/condition_rules.js";
-import {
-    COMPARISON_OPERATOR_SYMBOLS,
-    type ComparisonOperator,
-} from "@/web/canvas/inspector/condition_text.js";
+import { COMPARISON_OPERATOR_SYMBOLS } from "@/web/canvas/inspector/condition_text.js";
+import type { ComparisonOperator } from "@/web/canvas/inspector/condition_text.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { Input } from "@/web/components/ui/input.js";
 import { SegmentedControl } from "@/web/components/ui/segmented_control.js";
