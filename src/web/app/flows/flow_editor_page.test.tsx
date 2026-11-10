@@ -1,18 +1,28 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import type { MockInstance } from "vitest";
+import { z } from "zod";
 
+import { flowGraphSchema, isNodeOfType } from "@/shared/flow_graph.js";
+import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { FlowDraft, FlowSummary } from "@/shared/flow_types.js";
+import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
+import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
-import { respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { listSentWrites, respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
 import { DraftConflictBanner } from "@/web/app/flows/draft_conflict_banner.js";
+import { AUTOSAVE_DELAY_MS } from "@/web/canvas/use_flow_draft.js";
 
 const PROJECT_ID = "prj_forja";
 const FLOW_ID = "flw_canonico";
 const EDITOR_PATH = `/projects/${PROJECT_ID}/flows/${FLOW_ID}`;
 const DRAFT_URL = `/api/flows/${FLOW_ID}/draft`;
 const HTTP_NOT_FOUND = 404;
+const AUTOSAVE_WAIT_MS = AUTOSAVE_DELAY_MS * 3;
+
+const draftWriteSchema = z.object({ graph: flowGraphSchema });
 
 const CANONICAL_DRAFT: FlowDraft = {
     flowId: FLOW_ID,
@@ -34,7 +44,11 @@ const CANONICAL_SUMMARY: FlowSummary = {
 function fakeEditorApi(): FakeRoutes {
     return {
         [`GET ${DRAFT_URL}`]: () => Response.json(CANONICAL_DRAFT),
+        [`PUT ${DRAFT_URL}`]: () => Response.json({ ...CANONICAL_DRAFT, revision: 2 }),
         [`GET /api/projects/${PROJECT_ID}/flows`]: () => Response.json([CANONICAL_SUMMARY]),
+        [`GET /api/projects/${PROJECT_ID}/settings`]: () => Response.json(DEFAULT_PROJECT_SETTINGS),
+        "GET /api/tool-profiles": () => Response.json([]),
+        "GET /api/credentials": () => Response.json([]),
     };
 }
 
@@ -98,6 +112,50 @@ describe("FlowEditorPage", () => {
         );
     });
 
+    it("summarizes the flow in the inspector while no node is selected", async () => {
+        stubFetchRoutes(fakeEditorApi());
+
+        renderAppAt(EDITOR_PATH);
+
+        const inspector = await screen.findByRole("complementary", { name: "Inspector" });
+        expect(within(inspector).getByText("Selecione um nó para editar.")).toBeInTheDocument();
+    });
+
+    it("opens the selected agent in the inspector and saves its new effort", async () => {
+        const fetchSpy = stubFetchRoutes(fakeEditorApi());
+        renderAppAt(EDITOR_PATH);
+        const inspector = await selectCanvasNode("Dev");
+
+        await userEvent.click(within(inspector).getByRole("radio", { name: "max" }));
+
+        expect(within(inspector).getByRole("textbox", { name: "Rótulo" })).toHaveValue("Dev");
+        const savedGraph = await waitForSavedGraph(fetchSpy);
+        expect(findSavedAgentConfig(savedGraph, "dev")).toMatchObject({ effort: "max" });
+    });
+
+    it("shows 'padrão' on the node once its effort goes back to the project's", async () => {
+        stubFetchRoutes(fakeEditorApi());
+        renderAppAt(EDITOR_PATH);
+        const inspector = await selectCanvasNode("TL");
+
+        await userEvent.click(within(inspector).getByRole("radio", { name: "padrão" }));
+
+        expect(findCanvasNode("TL")).toHaveTextContent("effort padrão");
+    });
+
+    it("drops the connection of an input port removed in the inspector", async () => {
+        const fetchSpy = stubFetchRoutes(fakeEditorApi());
+        renderAppAt(EDITOR_PATH);
+        const inspector = await selectCanvasNode("Dev");
+
+        await userEvent.click(
+            within(inspector).getByRole("button", { name: "Remover a entrada spec" }),
+        );
+
+        const savedGraph = await waitForSavedGraph(fetchSpy);
+        expect(savedGraph.edges.filter((edge) => edge.to.nodeId === "dev")).toEqual([]);
+    });
+
     it("tells the user when the draft cannot be opened", async () => {
         stubFetchRoutes({
             ...fakeEditorApi(),
@@ -113,6 +171,40 @@ describe("FlowEditorPage", () => {
         expect(screen.getByText("Fluxo não encontrado.")).toBeInTheDocument();
     });
 });
+
+async function selectCanvasNode(label: string): Promise<HTMLElement> {
+    await screen.findByTestId("rf__wrapper");
+
+    // A bare click: userEvent's mousedown starts a d3-drag, which needs a real window on the event.
+    fireEvent.click(findCanvasNode(label));
+
+    return screen.getByRole("complementary", { name: "Inspector" });
+}
+
+function findCanvasNode(label: string): HTMLElement {
+    const canvas = screen.getByTestId("rf__wrapper");
+    const [nodeCard] = within(canvas).getAllByLabelText(label);
+    if (!nodeCard) {
+        throw new Error(`Node ${label} is not on the canvas`);
+    }
+
+    return nodeCard;
+}
+
+async function waitForSavedGraph(fetchSpy: MockInstance<typeof fetch>): Promise<FlowGraph> {
+    await waitFor(() => expect(listSentWrites(fetchSpy)).not.toEqual([]), {
+        timeout: AUTOSAVE_WAIT_MS,
+    });
+    const [firstWrite] = listSentWrites(fetchSpy);
+
+    return draftWriteSchema.parse(firstWrite?.body).graph;
+}
+
+function findSavedAgentConfig(graph: FlowGraph, nodeId: string): AgentConfig | undefined {
+    const node = graph.nodes.find((candidate) => candidate.id === nodeId);
+
+    return node && isNodeOfType(node, "agent") ? node.config : undefined;
+}
 
 describe("DraftConflictBanner", () => {
     it("asks to reload the flow changed in another tab", () => {

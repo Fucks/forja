@@ -8,6 +8,7 @@ import { EditorSidePanel } from "@/web/app/flows/editor_side_panel.js";
 import { EditorTopBar } from "@/web/app/flows/editor_top_bar.js";
 import { useFlowSummary } from "@/web/app/flows/use_flow_summary.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
+import { InspectorPanel } from "@/web/canvas/inspector/inspector_panel.js";
 import { NodePalette } from "@/web/canvas/palette/node_palette.js";
 import { useFlowDraft } from "@/web/canvas/use_flow_draft.js";
 import type { FlowDraftEditor } from "@/web/canvas/use_flow_draft.js";
@@ -31,12 +32,18 @@ function FlowEditor({ projectId, flowId }: { projectId: string; flowId: string }
         <div className="flex h-full min-h-0 flex-col gap-3">
             <EditorTopBar flowName={flowName} saveState={saveState} dirty={dirty} />
             {saveState === "conflict" && <DraftConflictBanner onReload={draftEditor.reload} />}
-            <EditorWorkspace draftEditor={draftEditor} />
+            <EditorWorkspace draftEditor={draftEditor} projectId={projectId} />
         </div>
     );
 }
 
-function EditorWorkspace({ draftEditor }: { draftEditor: FlowDraftEditor }): JSX.Element {
+function EditorWorkspace({
+    draftEditor,
+    projectId,
+}: {
+    draftEditor: FlowDraftEditor;
+    projectId: string;
+}): JSX.Element {
     if (draftEditor.isLoading) {
         return <Skeleton className="min-h-0 flex-1" />;
     }
@@ -60,7 +67,9 @@ function EditorWorkspace({ draftEditor }: { draftEditor: FlowDraftEditor }): JSX
                 <div className="min-w-0 flex-1">
                     <FlowCanvas store={draftEditor.store} />
                 </div>
-                <EditorSidePanel title="Inspector" side="right" widthClass="w-90" />
+                <EditorSidePanel title="Inspector" side="right" widthClass="w-90">
+                    <InspectorPanel store={draftEditor.store} projectId={projectId} />
+                </EditorSidePanel>
             </div>
         </ReactFlowProvider>
     );

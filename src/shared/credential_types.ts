@@ -9,6 +9,8 @@ export const CREDENTIAL_KINDS = [
 
 export type CredentialKind = (typeof CREDENTIAL_KINDS)[number];
 
+export const AGENT_CREDENTIAL_KINDS: CredentialKind[] = ["anthropic_api_key", "claude_oauth_token"];
+
 type FixedEnvVarCredentialKind = Exclude<CredentialKind, "generic_env">;
 
 export const ENV_VAR_BY_KIND: Record<FixedEnvVarCredentialKind, string> = {
