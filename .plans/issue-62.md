@@ -43,6 +43,6 @@
 - [x] 13. Test+impl: `checkCredential` Claude failure returns the agent error, records failure — `credential_check.ts`
 - [x] 14. Test+impl: `checkCredential` GitHub runs `gh auth status` with the token only in env — `credential_check.ts`
 - [x] 15. Test+impl: generic_env cannot be checked — `credential_check.ts`
-- [ ] 16. Test+impl: route `POST /api/credentials/:id/check` — `credentials_routes.ts`, `credentials_routes.test.ts`
+- [x] 16. Test+impl: route `POST /api/credentials/:id/check` — `credentials_routes.ts`, `credentials_routes.test.ts`
 - [ ] 17. Test+impl: "Testar" button with inline result — `use_credentials.ts`, `credentials_page.tsx`, `credentials_page.test.tsx`
 - [ ] 18. Self-review checklist and feedback loops (typecheck, lint, test)
