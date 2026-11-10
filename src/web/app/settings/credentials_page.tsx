@@ -3,17 +3,19 @@ import { useState } from "react";
 import type { JSX } from "react";
 
 import { formatDateTime } from "@/lib/format.js";
-import type { CredentialSummary } from "@/shared/credential_types.js";
+import type { CredentialCheckResult, CredentialSummary } from "@/shared/credential_types.js";
 import { PageTitle } from "@/web/app/page_title.js";
 import { CredentialFormDialog } from "@/web/app/settings/credential_form_dialog.js";
 import type { CredentialEditor } from "@/web/app/settings/credential_form_dialog.js";
 import { CREDENTIAL_KIND_LABELS } from "@/web/app/settings/credential_kinds.js";
 import { RemoveCredentialDialog } from "@/web/app/settings/remove_credential_dialog.js";
-import { useCredentials } from "@/web/app/settings/use_credentials.js";
+import { useCheckCredential, useCredentials } from "@/web/app/settings/use_credentials.js";
 import { Button } from "@/web/components/ui/button.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
+
+type CredentialCheck = ReturnType<typeof useCheckCredential>;
 
 interface CredentialActions {
     onEdit: (credential: CredentialSummary) => void;
@@ -117,15 +119,30 @@ function CredentialRow({
     credential: CredentialSummary;
     actions: CredentialActions;
 }): JSX.Element {
+    const check = useCheckCredential();
+
     return (
         <tr className="border-b border-border">
             <td className="py-2 pr-4 font-medium">{credential.name}</td>
             <td className="py-2 pr-4">{CREDENTIAL_KIND_LABELS[credential.kind]}</td>
             <td className="py-2 pr-4 font-mono">{credential.masked}</td>
             <td className="py-2 pr-4 font-mono">{credential.envVar}</td>
-            <td className="py-2 pr-4">{describeLastCheck(credential)}</td>
+            <td className="py-2 pr-4">
+                <div className="flex flex-col gap-0.5">
+                    <span>{describeLastCheck(credential)}</span>
+                    <CheckOutcome check={check} />
+                </div>
+            </td>
             <td className="py-2">
                 <div className="flex justify-end gap-1">
+                    <Button
+                        size="sm"
+                        aria-label={`Testar ${credential.name}`}
+                        loading={check.isPending}
+                        onClick={() => check.mutate(credential.id)}
+                    >
+                        Testar
+                    </Button>
                     <IconButton
                         label={`Editar ${credential.name}`}
                         icon={Pencil}
@@ -140,6 +157,24 @@ function CredentialRow({
             </td>
         </tr>
     );
+}
+
+function CheckOutcome({ check }: { check: CredentialCheck }): JSX.Element | null {
+    const outcome = describeCheckOutcome(check);
+    if (!outcome) {
+        return null;
+    }
+
+    const color = outcome.ok ? "text-status-succeeded" : "text-status-failed";
+    return <span className={`text-xs ${color}`}>{outcome.message}</span>;
+}
+
+function describeCheckOutcome(check: CredentialCheck): CredentialCheckResult | undefined {
+    if (check.isError) {
+        return { ok: false, message: check.error.message };
+    }
+
+    return check.data;
 }
 
 function describeLastCheck({ lastCheckedAt, lastCheckOk }: CredentialSummary): string {

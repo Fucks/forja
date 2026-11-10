@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
 import type {
+    CredentialCheckResult,
     CredentialInput,
     CredentialSummary,
     UpdateCredentialInput,
@@ -10,6 +11,7 @@ import { apiClient } from "@/web/api/api_client.js";
 
 const CREDENTIALS_PATH = "/credentials";
 const CREDENTIALS_QUERY_KEY = ["credentials"];
+const CHECK_PATH_SUFFIX = "/check";
 
 interface CredentialChanges {
     id: string;
@@ -45,6 +47,13 @@ export function useUpdateCredential(): UseMutationResult<
 
 export function useRemoveCredential(): UseMutationResult<void, Error, string> {
     return useCredentialsMutation((id: string) => apiClient.delete<void>(credentialPath(id)));
+}
+
+// The list is reloaded afterwards, so the row shows the new last check.
+export function useCheckCredential(): UseMutationResult<CredentialCheckResult, Error, string> {
+    return useCredentialsMutation((id: string) =>
+        apiClient.post<CredentialCheckResult>(`${credentialPath(id)}${CHECK_PATH_SUFFIX}`),
+    );
 }
 
 function useCredentialsMutation<TResult, TVariables>(
