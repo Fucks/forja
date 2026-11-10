@@ -3,9 +3,11 @@ import { userEvent } from "@testing-library/user-event";
 import type { Mock } from "vitest";
 
 import { findNode } from "@/engine/graph_queries.js";
+import type { CredentialSummary } from "@/shared/credential_types.js";
 import { isNodeOfType } from "@/shared/flow_graph.js";
 import type { FlowNode, NodeOfType } from "@/shared/flow_graph.js";
 import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
+import type { ToolProfile } from "@/shared/tool_profile_types.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderWithQueryClient } from "@/test/render_with_query_client.js";
@@ -16,6 +18,31 @@ type NodeUpdate = (node: FlowNode) => FlowNode;
 type NodeChangeSpy = Mock<(update: NodeUpdate) => void>;
 
 const GRAPH = buildCanonicalFlow();
+
+const REVIEWER_PROFILE: ToolProfile = {
+    id: "tlp_revisor",
+    name: "Revisor",
+    description: "",
+    mcpServers: [],
+    allowedTools: ["Read"],
+    disallowedTools: [],
+    permissionMode: "bypassPermissions",
+    indexCodegraphOnStart: false,
+    builtin: false,
+    createdAt: "2026-11-01T10:00:00.000Z",
+    updatedAt: "2026-11-01T10:00:00.000Z",
+};
+
+const SUBSCRIPTION_CREDENTIAL = buildCredential({
+    id: "cred_assinatura",
+    name: "Assinatura",
+    kind: "claude_oauth_token",
+});
+const GITHUB_CREDENTIAL = buildCredential({
+    id: "cred_github",
+    name: "GitHub",
+    kind: "github_token",
+});
 
 describe("AgentInspector", () => {
     describe("effort", () => {
@@ -75,6 +102,79 @@ describe("AgentInspector", () => {
         });
     });
 
+    describe("tools and credential", () => {
+        it("sets the chosen tool profile on the node", async () => {
+            const inspector = renderAgentInspector(requireAgent("tl"));
+
+            await userEvent.click(screen.getByRole("combobox", { name: "Perfil de ferramentas" }));
+            await userEvent.click(await screen.findByRole("option", { name: "Revisor" }));
+
+            expect(inspector.lastChangedConfig().toolProfileId).toBe(REVIEWER_PROFILE.id);
+        });
+
+        it("returns to the project's tool profile when 'padrão do projeto' is chosen", async () => {
+            const inspector = renderAgentInspector(requireAgent("tl"));
+
+            await userEvent.click(screen.getByRole("combobox", { name: "Perfil de ferramentas" }));
+            await userEvent.click(screen.getByRole("option", { name: "padrão do projeto" }));
+
+            expect(inspector.lastChangedConfig().toolProfileId).toBeUndefined();
+        });
+
+        it("offers only the credentials that agents can use", async () => {
+            const inspector = renderAgentInspector(requireAgent("tl"));
+
+            await userEvent.click(screen.getByRole("combobox", { name: "Credencial" }));
+            await userEvent.click(await screen.findByRole("option", { name: "Assinatura" }));
+
+            expect(screen.queryByRole("option", { name: "GitHub" })).not.toBeInTheDocument();
+            expect(inspector.lastChangedConfig().credentialId).toBe(SUBSCRIPTION_CREDENTIAL.id);
+        });
+    });
+
+    describe("execution", () => {
+        it("applies the iterations typed within the limits", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+            const iterationsField = screen.getByRole("spinbutton", { name: "Iterações máximas" });
+
+            await userEvent.clear(iterationsField);
+            await userEvent.type(iterationsField, "5");
+            await userEvent.tab();
+
+            expect(inspector.lastChangedConfig().maxIterations).toBe(5);
+        });
+
+        it("shows the limits and keeps the node unchanged when the value is out of range", async () => {
+            const onChange = renderAgentInspector(requireAgent("dev")).onChange;
+            const retriesField = screen.getByRole("spinbutton", { name: "Retentativas" });
+
+            await userEvent.clear(retriesField);
+            await userEvent.type(retriesField, "9");
+            await userEvent.tab();
+
+            expect(screen.getByText("Use um número inteiro entre 0 e 5.")).toBeInTheDocument();
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it("removes the turn limit when its field is cleared", async () => {
+            const inspector = renderAgentInspector(withConfig("dev", { maxTurns: 30 }));
+
+            await userEvent.clear(screen.getByRole("spinbutton", { name: "Turnos máximos" }));
+            await userEvent.tab();
+
+            expect(inspector.lastChangedConfig().maxTurns).toBeUndefined();
+        });
+
+        it("chooses to run without a workspace", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+
+            await userEvent.click(screen.getByRole("combobox", { name: "Workspace" }));
+            await userEvent.click(screen.getByRole("option", { name: "Sem workspace" }));
+
+            expect(inspector.lastChangedConfig().workspace).toBe("none");
+        });
+    });
+
     describe("output schema", () => {
         it("shows the error and keeps the node unchanged when the JSON is invalid", async () => {
             const onChange = renderAgentInspector(requireAgent("dev")).onChange;
@@ -129,8 +229,8 @@ interface RenderedInspector {
 
 function renderAgentInspector(node: AgentNode): RenderedInspector {
     stubFetchRoutes({
-        "GET /api/tool-profiles": () => Response.json([]),
-        "GET /api/credentials": () => Response.json([]),
+        "GET /api/tool-profiles": () => Response.json([REVIEWER_PROFILE]),
+        "GET /api/credentials": () => Response.json([SUBSCRIPTION_CREDENTIAL, GITHUB_CREDENTIAL]),
     });
     const onChange: NodeChangeSpy = vi.fn();
     renderWithQueryClient(<AgentInspector node={node} graph={GRAPH} onChange={onChange} />);
@@ -148,6 +248,18 @@ function applyLastUpdate(onChange: NodeChangeSpy, node: FlowNode): FlowNode {
     }
 
     return lastCall[0](node);
+}
+
+function buildCredential(
+    credential: Pick<CredentialSummary, "id" | "name" | "kind">,
+): CredentialSummary {
+    return {
+        ...credential,
+        masked: "••••1234",
+        envVar: "CLAUDE_CODE_OAUTH_TOKEN",
+        createdAt: "2026-11-01T10:00:00.000Z",
+        updatedAt: "2026-11-01T10:00:00.000Z",
+    };
 }
 
 function readAgentConfig(node: FlowNode): AgentConfig {

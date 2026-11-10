@@ -37,7 +37,9 @@ export function OutputSchemaEditor({
         }
 
         setParseError(undefined);
-        onChange(parsed.schema);
+        if (text !== formatOutputSchema(outputSchema)) {
+            onChange(parsed.schema);
+        }
     }
 
     function fillWithExample(): void {

@@ -3,11 +3,10 @@ import type { JSX } from "react";
 
 import { EFFORTS } from "@/shared/agent_types.js";
 import type { Effort } from "@/shared/agent_types.js";
-import { describeDefault } from "@/web/app/projects/settings_section.js";
+import { InheritableSelect, describeInherited } from "@/web/canvas/inspector/inheritable_select.js";
 import { Field } from "@/web/components/ui/field.js";
 import { Input } from "@/web/components/ui/input.js";
 import { SegmentedControl } from "@/web/components/ui/segmented_control.js";
-import { Select } from "@/web/components/ui/select.js";
 
 const SUGGESTED_MODELS = [
     "claude-opus-5-5",
@@ -15,12 +14,10 @@ const SUGGESTED_MODELS = [
     "claude-haiku-5-5",
     "claude-fable-5-1",
 ];
-const PROJECT_MODEL_OPTION = "project-model";
-const OTHER_MODEL_OPTION = "other-model";
+const OTHER_MODEL_OPTION = { value: "other-model", label: "Outro modelo…" };
 const MODEL_OPTIONS = [
-    { value: PROJECT_MODEL_OPTION, label: "padrão do projeto" },
     ...SUGGESTED_MODELS.map((model) => ({ value: model, label: model })),
-    { value: OTHER_MODEL_OPTION, label: "Outro modelo…" },
+    OTHER_MODEL_OPTION,
 ];
 
 const PROJECT_EFFORT_OPTION = "project-effort";
@@ -39,34 +36,38 @@ export function ModelField({
     inheritedModel: string | undefined;
     onChange: (model: string | undefined) => void;
 }): JSX.Element {
-    const selectId = useId();
     const otherModelId = useId();
     const [isOtherModel, setIsOtherModel] = useState(() => isOutsideSuggestions(model));
 
-    function selectModelOption(option: string): void {
-        setIsOtherModel(option === OTHER_MODEL_OPTION);
-        if (option === OTHER_MODEL_OPTION) {
-            return;
+    function selectModel(selected: string | undefined): void {
+        setIsOtherModel(selected === OTHER_MODEL_OPTION.value);
+        if (selected !== OTHER_MODEL_OPTION.value) {
+            onChange(selected);
         }
+    }
 
-        onChange(option === PROJECT_MODEL_OPTION ? undefined : option);
+    function applyTypedModel(typedModel: string): void {
+        const otherModel = typedModel.trim() || undefined;
+        if (otherModel !== model) {
+            onChange(otherModel);
+        }
     }
 
     return (
         <>
-            <Field label="Modelo" htmlFor={selectId} hint={describeInherited(inheritedModel)}>
-                <Select
-                    value={chooseModelOption(model, isOtherModel)}
-                    options={MODEL_OPTIONS}
-                    onChange={selectModelOption}
-                />
-            </Field>
+            <InheritableSelect
+                label="Modelo"
+                selected={isOtherModel ? OTHER_MODEL_OPTION.value : model}
+                options={MODEL_OPTIONS}
+                inheritedLabel={inheritedModel}
+                onChange={selectModel}
+            />
             {isOtherModel && (
                 <Field label="Nome do modelo" htmlFor={otherModelId}>
                     <Input
                         mono
                         defaultValue={model ?? ""}
-                        onBlur={(event) => onChange(event.target.value.trim() || undefined)}
+                        onBlur={(event) => applyTypedModel(event.target.value)}
                     />
                 </Field>
             )}
@@ -103,16 +104,4 @@ export function EffortField({
 
 function isOutsideSuggestions(model: string | undefined): boolean {
     return model !== undefined && !SUGGESTED_MODELS.includes(model);
-}
-
-function chooseModelOption(model: string | undefined, isOtherModel: boolean): string {
-    if (isOtherModel) {
-        return OTHER_MODEL_OPTION;
-    }
-
-    return model ?? PROJECT_MODEL_OPTION;
-}
-
-export function describeInherited(inheritedValue: string | undefined): string | undefined {
-    return inheritedValue === undefined ? undefined : describeDefault(inheritedValue);
 }

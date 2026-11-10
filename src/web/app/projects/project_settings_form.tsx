@@ -2,6 +2,7 @@ import type { JSX, ReactNode } from "react";
 
 import { EFFORTS } from "@/shared/agent_types.js";
 import type { Effort } from "@/shared/agent_types.js";
+import { AGENT_CREDENTIAL_KINDS } from "@/shared/credential_types.js";
 import type { CredentialKind } from "@/shared/credential_types.js";
 import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
 import type { ProjectSettingsDraft } from "@/web/app/projects/settings_draft.js";
@@ -27,7 +28,6 @@ interface ProjectSectionProps {
     onFieldChange: ChangeProjectField;
 }
 
-const AGENT_CREDENTIAL_KINDS: CredentialKind[] = ["anthropic_api_key", "claude_oauth_token"];
 const GITHUB_CREDENTIAL_KINDS: CredentialKind[] = ["github_token"];
 const NO_CREDENTIAL = "none";
 const NO_DAILY_BUDGET_LABEL = "sem limite";
