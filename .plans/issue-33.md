@@ -25,8 +25,8 @@
 - [x] 5. Test+impl: cycle outside loop rejected; cycle inside loop accepted
 - [x] 6. Test+impl: `connect` adds the edge and replaces the one already on the input — `edge_actions.ts`
 - [x] 7. Test+impl: `removeEdges` and `removeNodes` (cascade to connected edges)
-- [ ] 8. Canvas: `onConnect`, `isValidConnection`, `onEdgesDelete`, `onNodesDelete`, Delete/Backspace — `flow_canvas.tsx`
-- [ ] 9. Canvas: compatible/incompatible port highlight during drag — `port_handle.tsx`, css
-- [ ] 10. Canvas: tooltip with the reason for 3 s when dropped on an incompatible port
-- [ ] 11. Selected edge 2 px `--color-accent`
+- [x] 8. Canvas: `onConnect`, `isValidConnection`, `onEdgesDelete`, `onNodesDelete`, Delete/Backspace — `flow_canvas.tsx`
+- [x] 9. Canvas: compatible/incompatible port highlight during drag — `port_handle.tsx`, css
+- [x] 10. Canvas: tooltip with the reason for 3 s when dropped on an incompatible port
+- [x] 11. Selected edge 2 px `--color-accent`
 - [ ] 12. Self-review checklist and feedback loops

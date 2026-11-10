@@ -4,6 +4,7 @@ export type IdPrefix =
     | "prj"
     | "flw"
     | "nod"
+    | "edg"
     | "ver"
     | "run"
     | "nrn"
