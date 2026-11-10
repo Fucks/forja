@@ -63,3 +63,8 @@ export interface CredentialSummary {
     createdAt: string;
     updatedAt: string;
 }
+
+export interface CredentialCheckResult {
+    ok: boolean;
+    message: string;
+}
