@@ -32,7 +32,7 @@
 - [x] 2. Test+impl: OAuth → `CLAUDE_CODE_OAUTH_TOKEN`, never `ANTHROPIC_API_KEY` (even from `extra`) — `agent_env.ts`
 - [x] 3. Test+impl: GitHub → `GH_TOKEN` and `GITHUB_TOKEN`; `extra` passes through — `agent_env.ts`
 - [x] 4. Test+impl: `decideRetry` gives up on a failure marked not retryable — `retry_policy.ts`, `node_run_state.ts`, `scheduler.ts`, `run_rows.ts`
-- [ ] 5. Test+impl: `mapAgentError` maps `MissingCredentialError` to a not-retryable workspace failure — `error_mapping.ts`, `agent_env.ts`
+- [x] 5. Test+impl: `mapAgentError` maps `MissingCredentialError` to a not-retryable workspace failure — `error_mapping.ts`, `agent_env.ts`
 - [ ] 6. Test+impl: `revealForRuntime` returns the credential kind — `credential_service.ts`
 - [ ] 7. Test bed seeds a default Claude credential; redactor in executor deps — `executor_test_bed.ts`, `executor.ts`, `app_executor.ts`
 - [ ] 8. Test+impl: agent request env carries the node's Claude credential (OAuth case) — `run_credentials.ts`, `executor.ts`, `active_run.ts`, `node_executors.ts`, `node_run_execution.ts`, `agent_executor.ts`, `executor.test.ts`
