@@ -19,9 +19,9 @@
 
 ## Tasks
 
-- [ ] 1. `PALETTE_ITEMS` in the issue's order with the issue's descriptions — `palette/palette_items.ts`
-- [ ] 2. Test + implement `findDropGroup` (innermost, outside groups) — `palette/drop_target.ts`
-- [ ] 3. Test + implement `addNodeAt` (default ports, position, parentGroupId, deterministic ids) — `palette/drop_target.ts`
+- [x] 1. `PALETTE_ITEMS` in the issue's order with the issue's descriptions — `palette/palette_items.ts`
+- [x] 2. Test + implement `findDropGroup` (innermost, outside groups) — `palette/drop_target.ts`
+- [x] 3. Test + implement `addNodeAt` (default ports, position, parentGroupId, deterministic ids) — `palette/drop_target.ts`
 - [ ] 4. `nod` id prefix + `useAddNode` hook (add + select, viewport center) — `src/lib/ids.ts`, `palette/use_add_node.ts`
 - [ ] 5. Test + implement palette list, click creates and selects node — `palette/node_palette.tsx`, `palette/node_palette.test.tsx`
 - [ ] 6. Test + implement search by name and description — `palette/node_palette.tsx`
