@@ -32,7 +32,7 @@
 - [x] 9. Output inspector (move item to, comment on issue) + test — `output_inspector.tsx`
 - [x] 10. Trigger inspector (read-only kind + "Configurar gatilhos" link) + test — `trigger_inspector.tsx`, `navigation.ts`
 - [x] 11. Upstream condition path suggestions (`listUpstreamOutputPaths`) — `condition_suggestions.ts` + test
-- [ ] 12. Condition rules conversion — `condition_rules.ts` + test
+- [x] 12. Condition rules conversion — `condition_rules.ts` + test
 - [ ] 13. `ConditionEditor` builds an `and` of two rules + test — `condition_editor.tsx`
 - [ ] 14. Condition inspector + test — `condition_inspector.tsx`
 - [ ] 15. Register every inspector — `inspector_registry.ts`
