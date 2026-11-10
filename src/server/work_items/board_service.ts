@@ -60,7 +60,8 @@ export function createBoardService(deps: BoardServiceDeps): BoardService {
 
 async function buildBoard(deps: BoardServiceDeps, projectId: string): Promise<BoardView> {
     const items = await deps.workItems.list(projectId);
-    const visibleItems = items.filter((item) => isVisibleOnBoard(item, deps.clock.now()));
+    const now = deps.clock.now();
+    const visibleItems = items.filter((item) => isVisibleOnBoard(item, now));
     const [defaultFlow, nodeRunsByItem, costByItem] = await Promise.all([
         findPublishedDefaultFlow(deps.flows, projectId),
         deps.runs.latestNodeRunsByItem(
@@ -162,14 +163,20 @@ function findItemOutcome(artifacts: ArtifactRecord[]): ItemOutcome | undefined {
     const outcomeArtifact = artifacts.findLast(
         (artifact) => artifact.name === ITEM_OUTCOME_ARTIFACT,
     );
+    if (!outcomeArtifact) {
+        return undefined;
+    }
 
-    return outcomeArtifact && itemOutcomeSchema.parse(outcomeArtifact.value).moveItemTo;
+    return itemOutcomeSchema.parse(outcomeArtifact.value).moveItemTo;
 }
 
 function findPrUrl(artifacts: ArtifactRecord[]): string | undefined {
     const prUrlArtifact = artifacts.findLast((artifact) => artifact.kind === "pr_url");
+    if (!prUrlArtifact) {
+        return undefined;
+    }
 
-    return prUrlArtifact && prUrlSchema.parse(prUrlArtifact.value);
+    return prUrlSchema.parse(prUrlArtifact.value);
 }
 
 function labelOfNode(graph: FlowGraph, nodeId: string | undefined): string | undefined {

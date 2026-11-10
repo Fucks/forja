@@ -96,27 +96,6 @@ export function placeItem(item: WorkItem, context: ItemPlacementContext): ItemPl
     return { columnId: context.isBlocked ? BLOCKED_COLUMN.id : BACKLOG_COLUMN.id };
 }
 
-function placeInStageOfCurrentNode(context: ItemPlacementContext): ItemPlacement | undefined {
-    const columnIds = new Set(context.columns.map((column) => column.id));
-    const unfinishedNodeRuns = context.latestNodeRuns.filter(
-        (nodeRun) => !NODE_RUN_TERMINAL.has(nodeRun.status),
-    );
-
-    for (const nodeId of nodeIdsInFlowOrder(context.graph)) {
-        const nodeRun = unfinishedNodeRuns.find((candidate) => candidate.nodeId === nodeId);
-        const stage = stageOfNode(context.graph, nodeId);
-        if (nodeRun && stage && columnIds.has(stageColumnId(stage))) {
-            return {
-                columnId: stageColumnId(stage),
-                status: nodeRun.status,
-                currentNodeId: nodeId,
-            };
-        }
-    }
-
-    return undefined;
-}
-
 function stageColumns(graph: FlowGraph): BoardColumnDef[] {
     const stagesInOrder = nodeIdsInFlowOrder(graph).flatMap((nodeId) => {
         const stage = stageOfNode(graph, nodeId);
@@ -161,4 +140,30 @@ function toStageColumn(stage: Stage): BoardColumnDef {
 
 function stageColumnId(stage: Stage): string {
     return `${STAGE_COLUMN_ID_PREFIX}${stage.groupOrNodeId}`;
+}
+
+function placeInStageOfCurrentNode(context: ItemPlacementContext): ItemPlacement | undefined {
+    const columnIds = new Set(context.columns.map((column) => column.id));
+    const unfinishedNodeRuns = context.latestNodeRuns.filter(
+        (nodeRun) => !NODE_RUN_TERMINAL.has(nodeRun.status),
+    );
+
+    for (const nodeId of nodeIdsInFlowOrder(context.graph)) {
+        const nodeRun = unfinishedNodeRuns.find((candidate) => candidate.nodeId === nodeId);
+        const columnId = stageColumnIdOfNode(context.graph, nodeId);
+        if (nodeRun && columnId && columnIds.has(columnId)) {
+            return { columnId, status: nodeRun.status, currentNodeId: nodeId };
+        }
+    }
+
+    return undefined;
+}
+
+function stageColumnIdOfNode(graph: FlowGraph, nodeId: string): string | undefined {
+    const stage = stageOfNode(graph, nodeId);
+    if (!stage) {
+        return undefined;
+    }
+
+    return stageColumnId(stage);
 }

@@ -1,5 +1,9 @@
 import { deriveColumns, placeItem } from "@/engine/board_columns.js";
-import type { BoardColumnDef } from "@/engine/board_columns.js";
+import type {
+    BoardColumnDef,
+    ItemPlacement,
+    ItemPlacementContext,
+} from "@/engine/board_columns.js";
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { WorkItem } from "@/shared/work_item_types.js";
@@ -113,10 +117,7 @@ describe("placeItem", () => {
     const graph = buildCanonicalFlow();
     const columns = deriveColumns(graph);
 
-    function place(
-        item: WorkItem,
-        context: Partial<Parameters<typeof placeItem>[1]> = {},
-    ): ReturnType<typeof placeItem> {
+    function place(item: WorkItem, context: Partial<ItemPlacementContext> = {}): ItemPlacement {
         return placeItem(item, {
             columns,
             graph,
