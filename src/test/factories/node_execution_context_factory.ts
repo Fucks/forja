@@ -6,6 +6,7 @@ import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
 import { buildNodeRunState } from "@/test/factories/node_run_state_factory.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildRunRecord } from "@/test/factories/run_record_factory.js";
+import { buildRunToolProfiles } from "@/test/factories/run_tool_profiles_factory.js";
 import { FakeAgentRuntime } from "@/test/fakes/fake_agent_runtime.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 
@@ -29,9 +30,10 @@ export function buildNodeExecutionContext(
         runItems: [],
         project,
         settings,
+        toolProfiles: buildRunToolProfiles(),
         workspaces: createWorkspacePool({
             runtime,
-            specOf: (item) => buildWorkspaceSpec({ run, project, settings }, item),
+            specOf: (item) => buildWorkspaceSpec({ run, project, settings }, item, []),
         }),
         runtime,
         clock,

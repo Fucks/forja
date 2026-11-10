@@ -28,6 +28,7 @@ import {
     usageLimitReachedEvent,
     usageLimitResetEvent,
 } from "@/server/runtime/run_events.js";
+import type { RunToolProfiles } from "@/server/runtime/run_tool_profiles.js";
 import { createWorkspacePool, type WorkspacePool } from "@/server/runtime/workspace_pool.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
@@ -42,6 +43,7 @@ export interface ActiveRunDeps {
     graph: FlowGraph;
     project: Project;
     settings: ProjectSettings;
+    toolProfiles: RunToolProfiles;
     items: WorkItemSnapshot[];
     scheduler: Scheduler;
     runs: RunRepository;
@@ -73,6 +75,7 @@ export class ActiveRun {
                 buildWorkspaceSpec(
                     { run: this.record, project: deps.project, settings: deps.settings },
                     item,
+                    deps.toolProfiles.workspaceSetupCommands,
                 ),
         });
         this.logAnnouncer = createLogAnnouncer({
@@ -167,6 +170,7 @@ export class ActiveRun {
             graph: deps.graph,
             project: deps.project,
             settings: deps.settings,
+            toolProfiles: deps.toolProfiles,
             workspaces: this.workspaces,
             runtime: deps.runtime,
             clock: deps.clock,
