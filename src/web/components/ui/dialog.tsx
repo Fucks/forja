@@ -9,17 +9,26 @@ import {
     WITHOUT_DESCRIPTION,
 } from "@/web/components/ui/overlay_parts.js";
 
+type DialogSize = "md" | "lg";
+
+const DIALOG_WIDTH_CLASSES: Record<DialogSize, string> = {
+    md: "w-[min(32rem,90vw)]",
+    lg: "w-[min(64rem,95vw)]",
+};
+
 export function Dialog({
     open,
     onOpenChange,
     title,
     description,
+    size = "md",
     children,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     title: string;
     description?: string;
+    size?: DialogSize;
     children: ReactNode;
 }): JSX.Element {
     return (
@@ -30,7 +39,8 @@ export function Dialog({
                     {...(description ? {} : WITHOUT_DESCRIPTION)}
                     className={clsx(
                         OVERLAY_SURFACE_CLASSES,
-                        "top-1/2 left-1/2 max-h-[85vh] w-[min(32rem,90vw)] -translate-x-1/2",
+                        "top-1/2 left-1/2 max-h-[85vh] -translate-x-1/2",
+                        DIALOG_WIDTH_CLASSES[size],
                         "-translate-y-1/2 overflow-auto rounded-lg p-5",
                     )}
                 >

@@ -24,7 +24,7 @@
 - [x] 3. Test + implement `removeInputPort` (removes the connected edge) — `node_updates.ts`
 - [x] 4. Test + implement `promptCompletions` (after `{{`, prefix filter, inactive outside) — `prompt_completion.ts`
 - [x] 5. Test + implement prompt variable highlighting ranges — `prompt_highlighting.ts`
-- [ ] 6. `PromptEditor` (CodeMirror markdown, highlight, autocomplete, debounce 300 ms, resize, fullscreen Dialog) — `prompt_editor.tsx`, `dialog.tsx`
+- [x] 6. `PromptEditor` (CodeMirror markdown, highlight, autocomplete, debounce 300 ms, resize, fullscreen Dialog) — `prompt_editor.tsx`, `dialog.tsx`
 - [ ] 7. Test + implement `AgentInspector` model and effort fields ("padrão" removes the value) — `agent_inspector.tsx`, `agent_inspector.test.tsx`
 - [ ] 8. Test + implement `OutputSchemaEditor` (invalid JSON shows error and is not applied; example button) — `output_schema_editor.tsx`
 - [ ] 9. Tool profile + credential selects, execution fields with schema limits — `agent_inspector.tsx`
