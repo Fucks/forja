@@ -13,15 +13,15 @@ const HANDLE_TYPE_BY_SIDE: Record<PortSide, HandleType> = {
     right: "source",
 };
 
+const HANDLE_POSITION_BY_SIDE: Record<PortSide, Position> = {
+    left: Position.Left,
+    right: Position.Right,
+};
+
 const PORT_HINT_CLASSES: Record<PortHint, string | undefined> = {
     compatible: "port-handle--compatible",
     incompatible: "port-handle--incompatible",
     none: undefined,
-};
-
-const HANDLE_POSITION_BY_SIDE: Record<PortSide, Position> = {
-    left: Position.Left,
-    right: Position.Right,
 };
 
 export function PortHandle({

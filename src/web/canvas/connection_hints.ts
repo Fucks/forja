@@ -4,6 +4,7 @@ import { createContext, useContext, useMemo } from "react";
 
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { checkConnection, type ConnectionVerdict } from "@/web/canvas/connection_rules.js";
+import type { PortRef } from "@/web/canvas/edge_actions.js";
 import type { ConnectionPorts } from "@/web/canvas/graph_mapping.js";
 
 type ReactFlowHandle = Pick<Handle, "nodeId" | "id" | "type">;
@@ -32,12 +33,16 @@ export function usePortHint(port: string, type: HandleType): PortHint {
     }, [graph, nodeId, draggedHandle, port, type]);
 }
 
-export function hintPort(graph: FlowGraph, draggedHandle: HandleRef, port: HandleRef): PortHint {
-    if (draggedHandle.nodeId === port.nodeId && draggedHandle.port === port.port) {
+export function hintPort(
+    graph: FlowGraph,
+    draggedHandle: HandleRef,
+    candidateHandle: HandleRef,
+): PortHint {
+    if (isSamePort(draggedHandle, candidateHandle)) {
         return "none";
     }
 
-    return checkHandles(graph, draggedHandle, port).ok ? "compatible" : "incompatible";
+    return checkHandles(graph, draggedHandle, candidateHandle).ok ? "compatible" : "incompatible";
 }
 
 export function checkHandles(
@@ -58,10 +63,18 @@ export function toHandleRef(handle: ReactFlowHandle | null): HandleRef | undefin
     return { nodeId: handle.nodeId, port: handle.id, type: handle.type };
 }
 
+function findDraggedHandle(connection: ConnectionState): HandleRef | undefined {
+    return toHandleRef(connection.fromHandle);
+}
+
+function isSamePort(a: HandleRef, b: HandleRef): boolean {
+    return a.nodeId === b.nodeId && a.port === b.port;
+}
+
 // A connection dragged out of an input runs backwards: the handle it is dropped on is its origin.
 function orientConnection(draggedHandle: HandleRef, droppedHandle: HandleRef): ConnectionPorts {
-    const dragged = { nodeId: draggedHandle.nodeId, port: draggedHandle.port };
-    const dropped = { nodeId: droppedHandle.nodeId, port: droppedHandle.port };
+    const dragged = toPortRef(draggedHandle);
+    const dropped = toPortRef(droppedHandle);
     if (draggedHandle.type === "target") {
         return { from: dropped, to: dragged };
     }
@@ -69,6 +82,6 @@ function orientConnection(draggedHandle: HandleRef, droppedHandle: HandleRef): C
     return { from: dragged, to: dropped };
 }
 
-function findDraggedHandle(connection: ConnectionState): HandleRef | undefined {
-    return toHandleRef(connection.fromHandle);
+function toPortRef(handle: HandleRef): PortRef {
+    return { nodeId: handle.nodeId, port: handle.port };
 }

@@ -30,6 +30,11 @@ export interface CanvasConnections {
     rejection: ConnectionRejection | undefined;
 }
 
+interface RejectedDrop {
+    dragged: HandleRef;
+    dropped: HandleRef;
+}
+
 export function useCanvasConnections(store: EditorStore): CanvasConnections {
     const [rejection, showRejection] = useTemporaryRejection();
 
@@ -56,12 +61,13 @@ export function useCanvasConnections(store: EditorStore): CanvasConnections {
         event: MouseEvent | TouchEvent,
         connectionState: FinalConnectionState,
     ): void {
-        const handles = findRejectedHandles(connectionState);
-        if (!handles) {
+        const rejectedDrop = findRejectedDrop(connectionState);
+        if (!rejectedDrop) {
             return;
         }
 
-        const verdict = checkHandles(store.getState().graph, handles.dragged, handles.dropped);
+        const { dragged, dropped } = rejectedDrop;
+        const verdict = checkHandles(store.getState().graph, dragged, dropped);
         if (verdict.ok) {
             return;
         }
@@ -90,9 +96,7 @@ function useTemporaryRejection(): [
     return [rejection, setRejection];
 }
 
-function findRejectedHandles(
-    connectionState: FinalConnectionState,
-): { dragged: HandleRef; dropped: HandleRef } | undefined {
+function findRejectedDrop(connectionState: FinalConnectionState): RejectedDrop | undefined {
     if (connectionState.isValid !== false) {
         return undefined;
     }
