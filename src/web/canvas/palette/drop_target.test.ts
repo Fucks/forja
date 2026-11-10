@@ -14,7 +14,14 @@ describe("findDropGroup", () => {
     it("returns the innermost group when groups are nested", () => {
         const graph = buildGraph([
             buildMap({ id: "outer", x: 0, y: 0, width: 800, height: 600 }),
-            buildMap({ id: "inner", x: 100, y: 100, width: 300, height: 200, parent: "outer" }),
+            buildMap({
+                id: "inner",
+                x: 100,
+                y: 100,
+                width: 300,
+                height: 200,
+                parentGroupId: "outer",
+            }),
         ]);
 
         expect(findDropGroup(graph, { x: 150, y: 150 })).toBe("inner");
@@ -23,7 +30,14 @@ describe("findDropGroup", () => {
     it("returns the outer group when the point is outside the nested one", () => {
         const graph = buildGraph([
             buildMap({ id: "outer", x: 0, y: 0, width: 800, height: 600 }),
-            buildMap({ id: "inner", x: 100, y: 100, width: 300, height: 200, parent: "outer" }),
+            buildMap({
+                id: "inner",
+                x: 100,
+                y: 100,
+                width: 300,
+                height: 200,
+                parentGroupId: "outer",
+            }),
         ]);
 
         expect(findDropGroup(graph, { x: 600, y: 500 })).toBe("outer");
@@ -50,7 +64,14 @@ describe("addNodeAt", () => {
     it("puts the node inside the innermost group under the point", () => {
         const groups = [
             buildMap({ id: "outer", x: 0, y: 0, width: 800, height: 600 }),
-            buildMap({ id: "inner", x: 100, y: 100, width: 300, height: 200, parent: "outer" }),
+            buildMap({
+                id: "inner",
+                x: 100,
+                y: 100,
+                width: 300,
+                height: 200,
+                parentGroupId: "outer",
+            }),
         ];
 
         const graph = addNodeAt(buildGraph(groups), "script", { x: 150, y: 150 }, () => "nod_1");
@@ -79,20 +100,20 @@ function buildMap({
     y,
     width,
     height,
-    parent,
+    parentGroupId,
 }: {
     id: string;
     x: number;
     y: number;
     width: number;
     height: number;
-    parent?: string;
+    parentGroupId?: string;
 }): FlowGroup {
     return {
         id,
         kind: "map",
         label: id,
-        parentGroupId: parent,
+        parentGroupId,
         position: { x, y },
         size: { width, height },
         config: { concurrency: 1, barrier: false, failFast: false },

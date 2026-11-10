@@ -7,12 +7,13 @@ import { createDefaultNode } from "@/shared/node_defaults.js";
 import { createEditorStore } from "@/web/canvas/editor_store.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { NodePalette } from "@/web/canvas/palette/node_palette.js";
+import { PALETTE_ITEMS } from "@/web/canvas/palette/palette_items.js";
 
 describe("NodePalette", () => {
     it("lists every node type with its description", () => {
         renderPalette(createStoreWith(EMPTY_GRAPH));
 
-        expect(screen.getAllByRole("button")).toHaveLength(8);
+        expect(screen.getAllByRole("button")).toHaveLength(PALETTE_ITEMS.length);
         expect(
             screen.getByRole("button", {
                 name: "Agente",

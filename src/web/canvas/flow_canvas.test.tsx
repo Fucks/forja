@@ -7,10 +7,10 @@ import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { createEditorStore } from "@/web/canvas/editor_store.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
+import { NODE_TYPE_DRAG_FORMAT } from "@/web/canvas/palette/node_type_drag.js";
 
 const CANONICAL_FLOW = buildCanonicalFlow();
 const EMPTY_FLOW: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
-const NODE_TYPE_DRAG_FORMAT = "application/forja-node-type";
 
 // ResizeObserver is mocked in src/test/setup.ts, so React Flow never measures the nodes and keeps
 // them hidden: the nodes are found by their labels instead of by their accessible roles. For the

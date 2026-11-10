@@ -23,6 +23,14 @@ export const PALETTE_ITEMS: PaletteItem[] = [
     paletteItem("output", "Fim: move o item no board"),
 ];
 
+export function filterPaletteItems(items: PaletteItem[], query: string): PaletteItem[] {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return items.filter(({ label, description }) =>
+        [label, description].some((text) => text.toLowerCase().includes(normalizedQuery)),
+    );
+}
+
 function paletteItem(
     type: NodeType,
     description: string,
@@ -35,12 +43,4 @@ function paletteItem(
         icon: NODE_TYPE_ICONS[type],
         ...options,
     };
-}
-
-export function filterPaletteItems(items: PaletteItem[], query: string): PaletteItem[] {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    return items.filter(({ label, description }) =>
-        [label, description].some((text) => text.toLowerCase().includes(normalizedQuery)),
-    );
 }
