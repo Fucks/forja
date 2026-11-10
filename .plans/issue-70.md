@@ -11,7 +11,7 @@
 - The source needs services the `NodeExecutionContext` doesn't carry, so `createSourceExecutor(deps)` returns a
   `NodeExecutor`; `node_executors.ts` gets `createNodeExecutors(deps)` = the deps-free `nodeExecutors` + `source`.
   `createAppExecutor` passes it; the test bed keeps its stub for `source` (it has no work items in the database).
-- `SourceExecutorDeps`: `workItems: WorkItemService`, `runs: RunRepository`, `projects: ProjectService`,
+- `SourceExecutorDeps`: `workItems: WorkItemService`, `runs: RunRepository`, `projects: ProjectService`, `clock: Clock` (both for `syncGithubIssues`),
   `githubOf(projectId): Promise<GitHubProvider>`.
 - Items in other active runs: `run.itemIds` + `workItemId` of the NodeRuns of the other active runs of the project.
 - Items with an open PR: new `RunRepository.listItemIdsWithArtifact(projectId, kind)` gives the items with a
@@ -32,12 +32,12 @@
 - [x] 5. Test + impl: sorts by issue number / local `createdAt` and cuts at `limit` (`limit`)
 - [x] 6. Test + impl: starts from `requestedIds` (no label filter, still drops blocked)
 - [x] 7. Test + impl: `RunRepository.listItemIdsWithArtifact` (sqlite + in-memory) — `sqlite_run_repository.test.ts`
-- [ ] 8. Test + impl: executor with local provider outputs snapshots and the `source_selection` artifact — `source_executor.ts`
-- [ ] 9. Test + impl: executor excludes items of other active runs of the project
-- [ ] 10. Test + impl: executor syncs GitHub before selecting; closing the blocker releases the item next run
-- [ ] 11. Test + impl: executor fails when the GitHub sync fails
-- [ ] 12. Test + impl: executor excludes items with an open PR from an earlier run (`FakeGitHubProvider`)
-- [ ] 13. Test + impl: executor starts from the run's items
+- [x] 8. Test + impl: executor with local provider outputs snapshots and the `source_selection` artifact — `source_executor.ts`
+- [x] 9. Test + impl: executor excludes items of other active runs of the project
+- [x] 10. Test + impl: executor syncs GitHub before selecting; closing the blocker releases the item next run
+- [x] 11. Test + impl: executor fails when the GitHub sync fails
+- [x] 12. Test + impl: executor excludes items with an open PR from an earlier run (`FakeGitHubProvider`)
+- [x] 13. Test + impl: executor starts from the run's items
 - [ ] 14. Extract `project_github_provider.ts` and reuse it in `project_github_sync.ts`
 - [ ] 15. Register: `createNodeExecutors` in `node_executors.ts`, wired in `app_executor.ts`, `main.ts`, `test_app_deps.ts`
 - [ ] 16. Self-review checklist and feedback loops
