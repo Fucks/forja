@@ -159,6 +159,8 @@ describe("executor", () => {
             await bed.runUntilFinished(started.id);
 
             const githubEnv = { GH_TOKEN: GITHUB_TOKEN, GITHUB_TOKEN: GITHUB_TOKEN };
+            expect(bed.runtime.openedSpecs).toHaveLength(FOUR_ISSUES.length);
+            expect(devRequests()).toHaveLength(FOUR_ISSUES.length);
             bed.runtime.openedSpecs.forEach((spec) => expect(spec.env).toEqual(githubEnv));
             devRequests().forEach((request) => expect(request.env).toMatchObject(githubEnv));
         });

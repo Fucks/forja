@@ -45,4 +45,4 @@
 - [x] 15. Test+impl: generic_env cannot be checked — `credential_check.ts`
 - [x] 16. Test+impl: route `POST /api/credentials/:id/check` — `credentials_routes.ts`, `credentials_routes.test.ts`
 - [x] 17. Test+impl: "Testar" button with inline result — `use_credentials.ts`, `credentials_page.tsx`, `credentials_page.test.tsx`
-- [ ] 18. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 18. Self-review checklist and feedback loops (typecheck, lint, test)

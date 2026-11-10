@@ -34,7 +34,6 @@ export interface CredentialCheckDeps {
 const CHECK_PROMPT = "Responda apenas OK";
 const CHECK_MODEL = "haiku";
 const CHECK_EFFORT: Effort = "low";
-// Nothing in the empty sandbox needs a permission, so a request for one fails the check.
 const CHECK_PERMISSION_MODE: PermissionMode = "default";
 // The sandbox is not a git repository, so there is no branch to start from.
 const NO_BASE_BRANCH = "";
