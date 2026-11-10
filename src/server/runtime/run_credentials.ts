@@ -33,21 +33,25 @@ export interface RunCredentialsSource {
 
 /** @throws NotFoundError for a credential that no longer exists */
 export async function loadRunCredentials(
-    source: RunCredentialsSource,
+    { graph, settings }: RunCredentialsSource,
     deps: RunCredentialsDeps,
 ): Promise<RunCredentials> {
-    const agentNodes = source.graph.nodes.filter((node) => isNodeOfType(node, "agent"));
-    const credentialIdOf = (node: AgentNode): string | null =>
-        resolveAgentDefaults(source.settings, node.config).credentialId;
+    const agentNodes = graph.nodes.filter((node) => isNodeOfType(node, "agent"));
+    const agentCredentialIds = agentNodes.map((node) => credentialIdOf(node, settings));
     const [claudeCredentials, github] = await Promise.all([
-        revealClaudeCredentials(agentNodes.map(credentialIdOf), deps),
-        revealOptionalCredential(source.settings.githubCredentialId, deps),
+        revealClaudeCredentials(agentCredentialIds, deps),
+        revealOptionalCredential(settings.githubCredentialId, deps),
     ]);
 
     return {
-        claudeCredentialOf: (node) => findClaudeCredential(claudeCredentials, credentialIdOf(node)),
+        claudeCredentialOf: (node) =>
+            findClaudeCredential(claudeCredentials, credentialIdOf(node, settings)),
         githubToken: github?.value,
     };
+}
+
+function credentialIdOf(node: AgentNode, settings: ProjectSettings): string | null {
+    return resolveAgentDefaults(settings, node.config).credentialId;
 }
 
 async function revealClaudeCredentials(
@@ -56,13 +60,16 @@ async function revealClaudeCredentials(
 ): Promise<Map<string, ClaudeCredential>> {
     const uniqueIds = [...new Set(credentialIds)].filter((id) => id !== null);
     const revealed = await Promise.all(
-        uniqueIds.map(async (id) => [id, await revealAndMaskInLogs(id, deps)] as const),
-    );
-    const claudeCredentials = revealed.flatMap(([id, { kind, value }]) =>
-        isClaudeCredentialKind(kind) ? [[id, { kind, value }] as const] : [],
+        uniqueIds.map(async (id) => ({ id, credential: await revealAndMaskInLogs(id, deps) })),
     );
 
-    return new Map(claudeCredentials);
+    const claudeCredentials = new Map<string, ClaudeCredential>();
+    for (const { id, credential } of revealed) {
+        if (isClaudeCredentialKind(credential.kind)) {
+            claudeCredentials.set(id, { kind: credential.kind, value: credential.value });
+        }
+    }
+    return claudeCredentials;
 }
 
 async function revealOptionalCredential(

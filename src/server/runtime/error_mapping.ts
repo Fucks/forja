@@ -33,6 +33,7 @@ export function mapAgentError(error: unknown): NodeRunError {
     if (kind === undefined) {
         return UNEXPECTED_FAILURE;
     }
+
     // The credential is still missing on the next attempt, until someone configures it.
     if (error instanceof MissingCredentialError) {
         return { kind, message: error.message, isRetryable: false };

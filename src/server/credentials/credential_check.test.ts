@@ -10,7 +10,11 @@ import {
 } from "@/server/credentials/credential_service.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { DomainValidationError } from "@/server/errors.js";
-import type { CredentialInput, CredentialSummary } from "@/shared/credential_types.js";
+import type {
+    CredentialCheckResult,
+    CredentialInput,
+    CredentialSummary,
+} from "@/shared/credential_types.js";
 import { FakeAgentRuntime } from "@/test/fakes/fake_agent_runtime.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
@@ -55,7 +59,7 @@ describe("checkCredential", () => {
     }
 
     // The fake agent takes fake time to answer, so the clock moves until the check settles.
-    async function checkWhileTimePasses(id: string): Promise<{ ok: boolean; message: string }> {
+    async function checkWhileTimePasses(id: string): Promise<CredentialCheckResult> {
         let isSettled = false;
         const checking = checkCredential(id, deps).finally(() => {
             isSettled = true;
