@@ -1,10 +1,9 @@
 import { assertNever } from "@/lib/assert_never.js";
-import type { Condition } from "@/shared/conditions.js";
+import type { Comparison, Condition } from "@/shared/conditions.js";
 
-export type Comparison = Extract<Condition, { path: string }>;
 export type ComparisonOperator = Comparison["op"];
+export type ComparisonValue = Extract<Comparison, { op: "eq" | "neq" }>["value"];
 type Combination = Extract<Condition, { conditions: Condition[] }>;
-type ComparisonValue = Extract<Condition, { op: "eq" | "neq" }>["value"];
 
 export const COMPARISON_OPERATOR_SYMBOLS: Record<ComparisonOperator, string> = {
     eq: "=",

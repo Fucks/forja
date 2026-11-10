@@ -19,7 +19,7 @@ interface ConditionRuleRowProps {
     ruleNumber: number;
     suggestionListId: string;
     onEdit: (changes: Partial<ConditionRule>) => void;
-    onChange: (changes: Partial<ConditionRule>) => void;
+    onApply: (changes: Partial<ConditionRule>) => void;
     onBlur: () => void;
     onRemove: (() => void) | undefined;
 }
@@ -30,7 +30,7 @@ export function ConditionRuleRow({
     ruleNumber,
     suggestionListId,
     onEdit,
-    onChange,
+    onApply,
     onBlur,
     onRemove,
 }: ConditionRuleRowProps): JSX.Element {
@@ -57,7 +57,7 @@ export function ConditionRuleRow({
                     label={`Operador da ${ruleName}`}
                     value={rule.operator}
                     options={OPERATOR_OPTIONS}
-                    onChange={(operator) => onChange({ operator })}
+                    onChange={(operator) => onApply({ operator })}
                 />
                 {rule.operator !== "exists" && (
                     <Input

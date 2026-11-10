@@ -13,7 +13,7 @@ export interface ConditionRulesEditing {
     conditionRules: ConditionRules | undefined;
     error: string | undefined;
     editRule: (index: number, changes: Partial<ConditionRule>) => void;
-    changeRule: (index: number, changes: Partial<ConditionRule>) => void;
+    applyRuleChanges: (index: number, changes: Partial<ConditionRule>) => void;
     applyEditedRules: () => void;
     changeConnective: (connective: RuleConnective) => void;
     addRule: () => void;
@@ -52,7 +52,8 @@ export function useConditionRules(
         error,
         editRule: (index, changes) =>
             setConditionRules(withRuleChanges(currentRules, index, changes)),
-        changeRule: (index, changes) => applyRules(withRuleChanges(currentRules, index, changes)),
+        applyRuleChanges: (index, changes) =>
+            applyRules(withRuleChanges(currentRules, index, changes)),
         applyEditedRules: () => applyRules(currentRules),
         changeConnective: (connective) => applyRules({ ...currentRules, connective }),
         addRule: () =>

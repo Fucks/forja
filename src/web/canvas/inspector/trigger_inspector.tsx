@@ -12,6 +12,7 @@ import { KeyValue } from "@/web/components/ui/key_value.js";
 // The trigger itself (cron, event) is configured on the triggers page, so the node only shows its kind.
 export function TriggerInspector({ node, onChange }: InspectorProps): JSX.Element {
     const { projectId = "" } = useParams();
+    // The registry routes only triggers here; the check narrows the node to its trigger config.
     if (!isNodeOfType(node, "trigger")) {
         return <></>;
     }

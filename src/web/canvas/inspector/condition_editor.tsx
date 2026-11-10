@@ -49,7 +49,7 @@ export function ConditionEditor({
                     ruleNumber={index + 1}
                     suggestionListId={suggestionListId}
                     onEdit={(changes) => editing.editRule(index, changes)}
-                    onChange={(changes) => editing.changeRule(index, changes)}
+                    onApply={(changes) => editing.applyRuleChanges(index, changes)}
                     onBlur={editing.applyEditedRules}
                     onRemove={canRemoveRules ? () => editing.removeRule(index) : undefined}
                 />

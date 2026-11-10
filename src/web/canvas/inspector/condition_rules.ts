@@ -1,6 +1,6 @@
 import { assertNever } from "@/lib/assert_never.js";
-import type { Condition } from "@/shared/conditions.js";
-import type { Comparison, ComparisonOperator } from "@/web/canvas/inspector/condition_text.js";
+import type { Comparison, Condition } from "@/shared/conditions.js";
+import type { ComparisonOperator, ComparisonValue } from "@/web/canvas/inspector/condition_text.js";
 
 export type RuleConnective = "and" | "or";
 
@@ -17,7 +17,7 @@ export interface ConditionRules {
 
 export type RulesConversion = { ok: true; condition: Condition } | { ok: false; error: string };
 
-type RuleValue = Extract<Comparison, { op: "eq" | "neq" }>["value"];
+type ComparisonConversion = { ok: true; comparison: Comparison } | { ok: false; error: string };
 
 const BOOLEAN_TEXTS = new Map([
     ["true", true],
@@ -67,8 +67,6 @@ function toRule(comparison: Comparison): ConditionRule {
     return { path: comparison.path, operator: comparison.op, valueText };
 }
 
-type ComparisonConversion = { ok: true; comparison: Comparison } | { ok: false; error: string };
-
 function toComparison({ path, operator, valueText }: ConditionRule): ComparisonConversion {
     const trimmedPath = path.trim();
     if (trimmedPath === "") {
@@ -106,7 +104,7 @@ function toNumberComparison(
 }
 
 // Typed values follow JSON: `true`/`false` are booleans, numerals are numbers, anything else is text.
-function parseRuleValue(valueText: string): RuleValue {
+function parseRuleValue(valueText: string): ComparisonValue {
     const trimmedText = valueText.trim();
     const booleanValue = BOOLEAN_TEXTS.get(trimmedText);
     if (booleanValue !== undefined) {
