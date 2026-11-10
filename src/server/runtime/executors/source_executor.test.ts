@@ -478,7 +478,7 @@ function buildIssueItem(number: number, overrides: Partial<WorkItem> = {}): Work
         id: `itm_issue${number}`,
         number,
         title: `Issue ${number}`,
-        url: `https://github.com/Fucks/forja/issues/${number}`,
+        url: `https://github.com/${REPO}/issues/${number}`,
         branch: `forja/issue-${number}`,
         labels: [SANDCASTLE_LABEL],
         ...overrides,

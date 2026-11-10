@@ -152,11 +152,14 @@ async function findItemsWithOpenPr(
     }
 
     const github = await deps.githubOf(project.id);
-    const hasOpenPr = await Promise.all(
-        candidatesWithPr.map((item) => hasOpenPullRequest(github, repo, item)),
+    const pullRequestChecks = await Promise.all(
+        candidatesWithPr.map(async (item) => ({
+            itemId: item.id,
+            isOpen: await hasOpenPullRequest(github, repo, item),
+        })),
     );
 
-    return new Set(candidatesWithPr.filter((_, index) => hasOpenPr[index]).map((item) => item.id));
+    return new Set(pullRequestChecks.filter(({ isOpen }) => isOpen).map(({ itemId }) => itemId));
 }
 
 async function hasOpenPullRequest(

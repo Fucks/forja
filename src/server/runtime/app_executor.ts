@@ -40,12 +40,21 @@ export interface AppExecutorDeps {
 }
 
 // The executor of the app, over the same database and event bus as the routes.
-export function createAppExecutor(deps: AppExecutorDeps): Executor {
-    const { db, events, clock } = deps;
+export function createAppExecutor({
+    db,
+    events,
+    logs,
+    git,
+    commands,
+    secrets,
+    redactor,
+    runtime,
+    clock,
+}: AppExecutorDeps): Executor {
     const runs = new SqliteRunRepository(db, clock);
     const projects = createProjectService({
         repo: new ProjectRepository(db),
-        git: deps.git,
+        git,
         fileExists: existsSync,
         clock,
     });
@@ -62,9 +71,9 @@ export function createAppExecutor(deps: AppExecutorDeps): Executor {
         projects,
         settings,
         items: createItemSource(workItems),
-        runtime: deps.runtime,
+        runtime,
         events,
-        logs: deps.logs,
+        logs,
         usage: createAppUsageService({ db, settings, clock }),
         clock,
         newId,
@@ -73,7 +82,7 @@ export function createAppExecutor(deps: AppExecutorDeps): Executor {
             runs,
             projects,
             clock,
-            githubOf: createGithubOfProject(deps),
+            githubOf: createGithubOfProject({ db, commands, secrets, redactor, clock }),
         }),
     });
 }
