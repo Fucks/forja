@@ -34,6 +34,6 @@
 - [x] 11. Upstream condition path suggestions (`listUpstreamOutputPaths`) — `condition_suggestions.ts` + test
 - [x] 12. Condition rules conversion — `condition_rules.ts` + test
 - [x] 13. `ConditionEditor` builds an `and` of two rules + test — `condition_editor.tsx`
-- [ ] 14. Condition inspector + test — `condition_inspector.tsx`
-- [ ] 15. Register every inspector — `inspector_registry.ts`
+- [x] 14. Condition inspector + test — `condition_inspector.tsx`
+- [x] 15. Register every inspector — `inspector_registry.ts`
 - [ ] 16. Self-review checklist (section 5) and feedback loops (section 6)

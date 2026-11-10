@@ -1,12 +1,18 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import type { Mock } from "vitest";
 
-import { isNodeOfType } from "@/shared/flow_graph.js";
+import { isNodeOfType, NODE_TYPES } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowNode, NodeOfType, NodeType } from "@/shared/flow_graph.js";
-import { buildCanonicalFlow, createNodeOfType } from "@/test/factories/flow_graph_factory.js";
+import {
+    buildCanonicalFlow,
+    connect,
+    createNodeOfType,
+} from "@/test/factories/flow_graph_factory.js";
+import { inspectorRegistry } from "@/web/canvas/inspector/inspector_registry.js";
 import type { InspectorComponent } from "@/web/canvas/inspector/inspector_registry.js";
+import { ConditionInspector } from "@/web/canvas/inspector/condition_inspector.js";
 import { GateInspector } from "@/web/canvas/inspector/gate_inspector.js";
 import { GitInspector } from "@/web/canvas/inspector/git_inspector.js";
 import { OutputInspector } from "@/web/canvas/inspector/output_inspector.js";
@@ -201,6 +207,53 @@ describe("TriggerInspector", () => {
             "href",
             "/projects/forja/triggers",
         );
+    });
+});
+
+describe("ConditionInspector", () => {
+    it("writes the edited rules into the condition config", async () => {
+        const condition = createNodeOfType("condition", "approved", ORIGIN);
+        const inspector = renderInspector(ConditionInspector, condition);
+
+        await userEvent.click(screen.getByRole("button", { name: "Adicionar regra" }));
+        await userEvent.type(
+            screen.getByRole("combobox", { name: "Caminho da regra 2" }),
+            "review.notes",
+        );
+        await userEvent.click(
+            within(screen.getByRole("group", { name: "Regra 2" })).getByRole("radio", {
+                name: "existe",
+            }),
+        );
+
+        expect(inspector.lastChangedNode("condition").config.condition).toEqual({
+            op: "and",
+            conditions: [
+                { op: "eq", path: "approved", value: true },
+                { op: "exists", path: "review.notes" },
+            ],
+        });
+    });
+
+    it("suggests the outputs of the nodes upstream", () => {
+        const condition = createNodeOfType("condition", "approved", ORIGIN);
+        const graph = {
+            ...GRAPH,
+            nodes: [...GRAPH.nodes, condition],
+            edges: [...GRAPH.edges, connect(["tl", "result"], ["approved", "value"])],
+        };
+
+        renderInspector(ConditionInspector, condition, graph);
+
+        const suggestions = screen.getAllByRole("option", { hidden: true });
+
+        expect(suggestions.map((option) => option.getAttribute("value"))).toContain("tl.result");
+    });
+});
+
+describe("inspectorRegistry", () => {
+    it.each(NODE_TYPES)("has an inspector for %s nodes", (type) => {
+        expect(inspectorRegistry[type]).toBeDefined();
     });
 });
 

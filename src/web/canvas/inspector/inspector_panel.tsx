@@ -26,10 +26,6 @@ export function InspectorPanel({
     }
 
     const Inspector = inspectorRegistry[selectedNode.type];
-    if (!Inspector) {
-        return <p className="px-3 text-sm text-muted">Este tipo de nó ainda não tem inspector.</p>;
-    }
-
     const selectedNodeId = selectedNode.id;
     function changeSelectedNode(update: (node: FlowNode) => FlowNode): void {
         store.getState().applyGraph((current) => updateNodeConfig(current, selectedNodeId, update));
