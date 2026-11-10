@@ -31,7 +31,7 @@
 - [x] 4. Test + impl: excludes items in other active runs (`in_other_run`) and with open PR (`has_open_pr`)
 - [x] 5. Test + impl: sorts by issue number / local `createdAt` and cuts at `limit` (`limit`)
 - [x] 6. Test + impl: starts from `requestedIds` (no label filter, still drops blocked)
-- [ ] 7. Test + impl: `RunRepository.listItemIdsWithArtifact` (sqlite + in-memory) — `sqlite_run_repository.test.ts`
+- [x] 7. Test + impl: `RunRepository.listItemIdsWithArtifact` (sqlite + in-memory) — `sqlite_run_repository.test.ts`
 - [ ] 8. Test + impl: executor with local provider outputs snapshots and the `source_selection` artifact — `source_executor.ts`
 - [ ] 9. Test + impl: executor excludes items of other active runs of the project
 - [ ] 10. Test + impl: executor syncs GitHub before selecting; closing the blocker releases the item next run

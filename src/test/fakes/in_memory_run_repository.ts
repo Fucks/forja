@@ -8,6 +8,7 @@ import {
     keepNodeRunsOfLatestRunPerItem,
 } from "@/server/runs/run_repository.js";
 import type {
+    ArtifactKind,
     ArtifactRecord,
     ListRunsOptions,
     RunRecord,
@@ -77,6 +78,14 @@ export class InMemoryRunRepository implements RunRepository {
         return Promise.resolve(structuredClone(artifactsOfNodeRun));
     }
 
+    listItemIdsWithArtifact(projectId: string, kind: ArtifactKind): Promise<string[]> {
+        const itemIds = this.artifacts
+            .filter((artifact) => artifact.kind === kind)
+            .flatMap((artifact) => this.itemIdsOfArtifactInProject(artifact, projectId));
+
+        return Promise.resolve([...new Set(itemIds)]);
+    }
+
     getSnapshot(runId: string): Promise<unknown> {
         const snapshotJson = this.snapshotJsonByRunId.get(runId);
         return Promise.resolve(
@@ -117,6 +126,16 @@ export class InMemoryRunRepository implements RunRepository {
         }
 
         return run ? applyRunState(storedRun, run) : storedRun;
+    }
+
+    private itemIdsOfArtifactInProject(artifact: ArtifactRecord, projectId: string): string[] {
+        const itemId = this.nodeRuns.get(artifact.nodeRunId)?.workItemId;
+        const isOfProject = this.runs.get(artifact.runId)?.projectId === projectId;
+        if (itemId === undefined || !isOfProject) {
+            return [];
+        }
+
+        return [itemId];
     }
 
     private runsOldestFirst(): RunRecord[] {

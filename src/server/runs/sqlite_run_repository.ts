@@ -14,6 +14,7 @@ import {
     keepNodeRunsOfLatestRunPerItem,
 } from "@/server/runs/run_repository.js";
 import type {
+    ArtifactKind,
     ArtifactRecord,
     ListRunsOptions,
     RunRecord,
@@ -101,6 +102,19 @@ export class SqliteRunRepository implements RunRepository {
                 .orderBy(ARTIFACT_INSERTION_ORDER)
                 .all()
                 .map(toArtifactRecord),
+        );
+    }
+
+    listItemIdsWithArtifact(projectId: string, kind: ArtifactKind): Promise<string[]> {
+        return resolveWith(() =>
+            this.db
+                .selectDistinct({ itemId: nodeRuns.workItemId })
+                .from(artifacts)
+                .innerJoin(nodeRuns, eq(nodeRuns.id, artifacts.nodeRunId))
+                .innerJoin(runs, eq(runs.id, nodeRuns.runId))
+                .where(and(eq(runs.projectId, projectId), eq(artifacts.kind, kind)))
+                .all()
+                .flatMap(({ itemId }) => (itemId === null ? [] : [itemId])),
         );
     }
 
