@@ -184,12 +184,16 @@ describe("CredentialService", () => {
     });
 
     describe("revealForRuntime", () => {
-        it("opens the sealed value together with its environment variable", async () => {
+        it("opens the sealed value together with its kind and environment variable", async () => {
             const created = await service.create(buildInput());
 
             const revealed = await service.revealForRuntime(created.id);
 
-            expect(revealed).toEqual({ envVar: "ANTHROPIC_API_KEY", value: API_KEY });
+            expect(revealed).toEqual({
+                kind: "anthropic_api_key",
+                envVar: "ANTHROPIC_API_KEY",
+                value: API_KEY,
+            });
         });
 
         it("rejects an unknown id with NotFoundError", async () => {

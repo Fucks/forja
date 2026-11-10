@@ -33,7 +33,7 @@
 - [x] 3. Test+impl: GitHub → `GH_TOKEN` and `GITHUB_TOKEN`; `extra` passes through — `agent_env.ts`
 - [x] 4. Test+impl: `decideRetry` gives up on a failure marked not retryable — `retry_policy.ts`, `node_run_state.ts`, `scheduler.ts`, `run_rows.ts`
 - [x] 5. Test+impl: `mapAgentError` maps `MissingCredentialError` to a not-retryable workspace failure — `error_mapping.ts`, `agent_env.ts`
-- [ ] 6. Test+impl: `revealForRuntime` returns the credential kind — `credential_service.ts`
+- [x] 6. Test+impl: `revealForRuntime` returns the credential kind — `credential_service.ts`
 - [ ] 7. Test bed seeds a default Claude credential; redactor in executor deps — `executor_test_bed.ts`, `executor.ts`, `app_executor.ts`
 - [ ] 8. Test+impl: agent request env carries the node's Claude credential (OAuth case) — `run_credentials.ts`, `executor.ts`, `active_run.ts`, `node_executors.ts`, `node_run_execution.ts`, `agent_executor.ts`, `executor.test.ts`
 - [ ] 9. Test+impl: GitHub token in workspace spec env and request env — `run_context.ts`, `active_run.ts`, `executor.test.ts`
