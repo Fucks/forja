@@ -1,12 +1,12 @@
 import { assertNever } from "@/lib/assert_never.js";
 import type { Effort } from "@/shared/agent_types.js";
-import type { Condition } from "@/shared/conditions.js";
 import type { FlowGroup, FlowNode, NodeOfType } from "@/shared/flow_graph.js";
 import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
 import type { GitConfig } from "@/shared/node_configs/git_config.js";
 import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 import type { SourceConfig } from "@/shared/node_configs/source_config.js";
 import type { TriggerConfig } from "@/shared/node_configs/trigger_config.js";
+import { conditionToText } from "@/web/canvas/inspector/condition_text.js";
 
 interface NodeSummary {
     line1: string;
@@ -60,7 +60,7 @@ export function summarizeNode(node: FlowNode, defaults?: AgentDefaults): NodeSum
         case "script":
             return { line1: truncate(node.config.command) };
         case "condition":
-            return { line1: describeCondition(node.config.condition) };
+            return { line1: conditionToText(node.config.condition) };
         case "gate":
             return { line1: truncate(node.config.message) };
         case "git":
@@ -148,39 +148,6 @@ function summarizeOutput({ moveItemTo, commentOnIssue }: OutputConfig): NodeSumm
     }
 
     return { line1, line2: "comenta na issue" };
-}
-
-function describeCondition(condition: Condition): string {
-    switch (condition.op) {
-        case "eq":
-            return `${condition.path} = ${formatConditionValue(condition.value)}`;
-        case "neq":
-            return `${condition.path} ≠ ${formatConditionValue(condition.value)}`;
-        case "gt":
-            return `${condition.path} > ${condition.value}`;
-        case "lt":
-            return `${condition.path} < ${condition.value}`;
-        case "exists":
-            return `${condition.path} existe`;
-        case "and":
-            return condition.conditions.map(describeOperand).join(" e ");
-        case "or":
-            return condition.conditions.map(describeOperand).join(" ou ");
-        case "not":
-            return `não (${describeCondition(condition.condition)})`;
-        default:
-            return assertNever(condition);
-    }
-}
-
-function describeOperand(operand: Condition): string {
-    const isCombination = operand.op === "and" || operand.op === "or";
-
-    return isCombination ? `(${describeCondition(operand)})` : describeCondition(operand);
-}
-
-function formatConditionValue(value: string | number | boolean): string {
-    return typeof value === "string" ? JSON.stringify(value) : String(value);
 }
 
 function truncate(text: string): string {

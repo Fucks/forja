@@ -100,8 +100,8 @@ describe("summarizeNode", () => {
         const summary = summarizeNode(condition);
 
         expect(summary.line1).toBe(
-            "tests.passed > 0 e não (tests.failures existe) e " +
-                '(review.state ≠ "rejected" ou review.round < 3)',
+            "tests.passed > 0 E NÃO (tests.failures existe) E " +
+                '(review.state ≠ "rejected" OU review.round < 3)',
         );
     });
 
