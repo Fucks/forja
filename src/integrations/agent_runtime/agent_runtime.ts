@@ -12,6 +12,18 @@ export interface SetupCommand {
     timeoutMs: number;
 }
 
+/** A directory of the host mounted read-only in the container, outside the worktree. */
+export interface RuntimeDir {
+    host: string;
+    container: string;
+}
+
+export interface RuntimeFile {
+    hostPath: string;
+    containerPath: string;
+    content: string;
+}
+
 export interface WorkspaceFile {
     path: string;
     content: string;

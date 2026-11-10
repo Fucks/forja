@@ -32,10 +32,10 @@
 
 ## Tasks
 
-- [ ] 1. Test+impl: CodeGraph preset → `--mcp-config <file> --strict-mcp-config --allowedTools mcp__codegraph__*`, file with `codegraph` server, setup `codegraph init --yes` — `tool_profile_materializer(.test).ts`
-- [ ] 2. Test+impl: read-only preset → empty `{ "mcpServers": {} }` file, `--disallowedTools Write Edit NotebookEdit`, no `--allowedTools`; `npm i` setup when `hasPackageJson`
-- [ ] 3. Test+impl: MCP env with `${cred:<id>}` → `${VAR}` in file, value in `env`; unknown credential throws; `credentialIdsReferencedBy`; move regex to shared
-- [ ] 4. Test+impl: `workspaceSetupCommands` unions and dedupes
+- [x] 1. Test+impl: CodeGraph preset → `--mcp-config <file> --strict-mcp-config --allowedTools mcp__codegraph__*`, file with `codegraph` server, setup `codegraph init --yes` — `tool_profile_materializer(.test).ts`
+- [x] 2. Test+impl: read-only preset → empty `{ "mcpServers": {} }` file, `--disallowedTools Write Edit NotebookEdit`, no `--allowedTools`; `npm i` setup when `hasPackageJson`
+- [x] 3. Test+impl: MCP env with `${cred:<id>}` → `${VAR}` in file, value in `env`; unknown credential throws; `credentialIdsReferencedBy`; move regex to shared
+- [x] 4. Test+impl: `workspaceSetupCommands` unions and dedupes
 - [ ] 5. Runtime contract types + `ForjaPaths.runtime`; FakeAgentRuntime records requests/specs and runtime files
 - [ ] 6. Docker: runtime dir created, mounted read-only and removed on close; runtime files written there before the run (workspace and headless) — `docker_agent_runtime(.test).ts`
 - [ ] 7. Server: `run_tool_profiles.ts` + ExecutorDeps wiring (executor, active_run, node_run_execution, app_executor, test bed, context factory)

@@ -5,11 +5,15 @@ import { PERMISSION_MODES } from "@/shared/agent_types.js";
 export const TOOL_PROFILE_NAME_MAX_LENGTH = 60;
 const TOOL_PROFILE_DESCRIPTION_MAX_LENGTH = 300;
 
+export const CREDENTIAL_REFERENCE_START = "${cred:";
+/** `${cred:<id>}` in an MCP env value; the first group is the credential id. */
+export const CREDENTIAL_REFERENCE = /\$\{cred:(cred_[0-9A-Za-z]+)\}/g;
+
 export const mcpServerSchema = z.object({
     name: z.string().regex(/^[a-z0-9_-]+$/),
     command: z.string().min(1),
     args: z.array(z.string()).default([]),
-    // Values may reference stored credentials as "${cred:<id>}"; #61 resolves them in the workspace.
+    // Values may reference stored credentials as "${cred:<id>}"; the workspace resolves them.
     env: z.record(z.string(), z.string()).default({}),
 });
 
