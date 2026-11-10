@@ -36,3 +36,11 @@ function paletteItem(
         ...options,
     };
 }
+
+export function filterPaletteItems(items: PaletteItem[], query: string): PaletteItem[] {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return items.filter(({ label, description }) =>
+        [label, description].some((text) => text.toLowerCase().includes(normalizedQuery)),
+    );
+}
