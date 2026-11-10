@@ -30,8 +30,8 @@
 - [x] 2. `CliGitProvider.push` uses `--force-with-lease` with the env and throws `GitCommandError` on failure — same files
 - [x] 3. `FakeGitProvider` records pushes and answers `aheadBehind` from scripted counts — `fake_git_provider.ts`
 - [x] 4. `FakeGitHubProvider.comment` accepts pull request numbers — `fake_github_provider.ts`, test
-- [ ] 5. Rebaser prompt adapted from `.sandcastle/rebase-prompt.md` — `executors/prompts/rebase.md`
-- [ ] 6. `buildRebaserNode` + `nodesThatRunAgents`, used by `loadRunCredentials` and `loadRunToolProfiles` — `rebaser_node.ts`, test
+- [x] 5. Rebaser prompt adapted from `.sandcastle/rebase-prompt.md` — `executors/prompts/rebase.md`
+- [x] 6. `buildRebaserNode` + `nodesThatRunAgents`, used by `loadRunCredentials` and `loadRunToolProfiles` — `rebaser_node.ts`, test
 - [ ] 7. Test + impl: rebase without conflicts does not call the agent and outputs `{ branch, pushed: false }` — `git_executor.ts`, `git_executor.test.ts`, `src/lib/shell_quote.ts`
 - [ ] 8. Test + impl: rebase with conflict runs the rebaser agent (prompt, maxIterations 20) — same
 - [ ] 9. Test + impl: conflicts left or rebase unfinished fail with "conflitos não resolvidos" — same
