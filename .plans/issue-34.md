@@ -22,7 +22,7 @@
 - [x] 1. Test + implement `updateNodeConfig` (replace node, prune edges of removed inputs) — `node_updates.ts`
 - [x] 2. Test + implement `addInputPort` (agent only, unique name) — `node_updates.ts`
 - [x] 3. Test + implement `removeInputPort` (removes the connected edge) — `node_updates.ts`
-- [ ] 4. Test + implement `promptCompletions` (after `{{`, prefix filter, inactive outside) — `prompt_completion.ts`
+- [x] 4. Test + implement `promptCompletions` (after `{{`, prefix filter, inactive outside) — `prompt_completion.ts`
 - [ ] 5. Test + implement prompt variable highlighting ranges — `prompt_highlighting.ts`
 - [ ] 6. `PromptEditor` (CodeMirror markdown, highlight, autocomplete, debounce 300 ms, resize, fullscreen Dialog) — `prompt_editor.tsx`, `dialog.tsx`
 - [ ] 7. Test + implement `AgentInspector` model and effort fields ("padrão" removes the value) — `agent_inspector.tsx`, `agent_inspector.test.tsx`
