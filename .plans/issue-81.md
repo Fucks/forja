@@ -29,9 +29,9 @@
 
 ## Tasks
 
-- [ ] 1. Shared types `src/shared/approval_types.ts`, migration `0900_approvals.sql`, schema `db/schema/approvals.ts`, `ApprovalRepository`
-- [ ] 2. Test + implement `ApprovalService.create/get/listPending` (event `approval.requested`) — `approval_service.test.ts`
-- [ ] 3. Test + implement `ApprovalService.resolve` (409 when not pending, event `approval.resolved`) and `expireOfNodeRun`
+- [x] 1. Shared types `src/shared/approval_types.ts`, migration `0900_approvals.sql`, schema `db/schema/approvals.ts`, `ApprovalRepository`
+- [x] 2. Test + implement `ApprovalService.create/get/listPending` (event `approval.requested`) — `approval_service.test.ts`
+- [x] 3. Test + implement `ApprovalService.resolve` (409 when not pending, event `approval.resolved`) and `expireOfNodeRun`
 - [ ] 4. Scheduler test: gate waits in WAITING_APPROVAL without taking an agent slot — `scheduler.test.ts`, harness
 - [ ] 5. Scheduler: `node_run_waiting_approval` event and WAITING_APPROVAL state
 - [ ] 6. Scheduler test + implement `approval_resolved`: approved/rejected ports with the comment
