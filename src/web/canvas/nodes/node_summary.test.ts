@@ -9,15 +9,6 @@ const PROJECT_DEFAULTS: { model: string; effort: Effort } = {
     effort: "high",
 };
 
-function buildNode<Type extends NodeType>(
-    type: Type,
-    config: Partial<NodeOfType<Type>["config"]>,
-): FlowNode {
-    const node = createNodeOfType(type, `${type}_1`, { x: 0, y: 0 });
-
-    return { ...node, config: { ...node.config, ...config } };
-}
-
 describe("summarizeNode", () => {
     it("shows the agent's model, effort, workspace and iteration cap", () => {
         const agent = buildNode("agent", {
@@ -208,6 +199,15 @@ describe("describeGroupConfig", () => {
         expect(describeGroupConfig(group)).toBe("loop ≤3");
     });
 });
+
+function buildNode<Type extends NodeType>(
+    type: Type,
+    config: Partial<NodeOfType<Type>["config"]>,
+): FlowNode {
+    const node = createNodeOfType(type, `${type}_1`, { x: 0, y: 0 });
+
+    return { ...node, config: { ...node.config, ...config } };
+}
 
 function buildMapGroupWith(config: { concurrency: number; barrier: boolean }): FlowGroup {
     return { ...buildMapGroup("itens"), kind: "map", config: { ...config, failFast: false } };
