@@ -5,7 +5,7 @@
 - `GitProvider` gains `push(root, branch, env)` (always `--force-with-lease`, never `--force`) and
   `aheadBehind(root, branch, base)` (`git rev-list --left-right --count base...branch`); failures
   throw `GitCommandError` (in `git_provider.ts`).
-- The executor is `createGitExecutor({ git, githubOf })` in `git_executor.ts`; `createNodeExecutors`
+- The executor is `createGitExecutor({ git, githubOf })` in `git_executor.ts` (rebase in `git_rebase.ts`); `createNodeExecutors`
   takes `SourceExecutorDeps & GitExecutorDeps` and `app_executor.ts` passes its `git`.
 - Base branch = `config.baseBranch ?? project.baseBranch`; the remote ref is `origin/<base>`.
 - Push and open_pr run on the host in `project.repoPath` (worktrees share the refs) with
@@ -41,4 +41,4 @@
 - [x] 13. Test + impl: open_pr reuses the open PR and comments the body — same
 - [x] 14. Test + impl: open_pr without commits ahead opens no PR; project without GitHub repo fails clearly — same
 - [x] 15. Register the git executor — `node_executors.ts`, `app_executor.ts`
-- [ ] 16. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 16. Self-review checklist and feedback loops (typecheck, lint, test)

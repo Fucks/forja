@@ -1,23 +1,15 @@
 import { buildAgentEnv } from "@/integrations/agent_runtime/agent_env.js";
 import { AgentRuntimeError } from "@/integrations/agent_runtime/agent_errors.js";
-import type {
-    AgentRunHooks,
-    ExecOptions,
-    Workspace,
-} from "@/integrations/agent_runtime/agent_runtime.js";
 import type { GitProvider } from "@/integrations/git/git_provider.js";
 import type {
     CreatePullRequestInput,
     GitHubProvider,
 } from "@/integrations/github/github_provider.js";
 import { assertNever } from "@/lib/assert_never.js";
-import { quoteShellArgument } from "@/lib/shell_quote.js";
-import { executeAgentNode } from "@/server/runtime/executors/agent_executor.js";
-import { acquireItemWorkspace } from "@/server/runtime/executors/item_workspace.js";
+import { rebaseItemBranch, remoteRefOf } from "@/server/runtime/executors/git_rebase.js";
 import { asNodeOfType } from "@/server/runtime/executors/node_of_type.js";
 import { prTitle } from "@/server/runtime/executors/pr_title.js";
 import { buildPullRequestBody } from "@/server/runtime/executors/pull_request_body.js";
-import { buildRebaserNode, type GitNode } from "@/server/runtime/executors/rebaser_node.js";
 import type {
     NodeArtifact,
     NodeExecutionContext,
@@ -30,20 +22,13 @@ import type { Project } from "@/shared/project_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
 
 const GIT_RESULT_PORT = "result";
-const REBASE_TIMEOUT_MS = 300_000;
-const REMOTE = "origin";
-const CONFLICTED_FILES_COMMAND = "git diff --name-only --diff-filter=U";
-const REBASE_FINISHED_COMMAND =
-    'test ! -d "$(git rev-parse --git-path rebase-merge)" && ' +
-    'test ! -d "$(git rev-parse --git-path rebase-apply)"';
-const LINE_BREAK = /\r?\n/;
 
 export interface GitExecutorDeps {
     git: GitProvider;
     githubOf: GithubOfProject;
 }
 
-export interface GitResult {
+interface GitResult {
     branch: string;
     prUrl?: string;
     pushed: boolean;
@@ -53,14 +38,6 @@ interface BranchTarget {
     item: WorkItemSnapshot;
     branch: string;
     baseBranch: string;
-}
-
-export class UnresolvedConflictsError extends AgentRuntimeError {
-    constructor(conflictedFiles: string[]) {
-        const fileList = conflictedFiles.length === 0 ? "" : `: ${conflictedFiles.join(", ")}`;
-        super(`O rebase parou com conflitos não resolvidos${fileList}`);
-        this.name = "UnresolvedConflictsError";
-    }
 }
 
 export class GitNodeWithoutItemError extends AgentRuntimeError {
@@ -84,7 +61,10 @@ export function createGitExecutor(deps: GitExecutorDeps): NodeExecutor {
         const { action } = node.config;
         switch (action) {
             case "rebase":
-                return rebaseOntoBase(context, node, target);
+                return {
+                    ...buildGitResult({ branch: target.branch, pushed: false }),
+                    usage: await rebaseItemBranch(context, node, target.baseBranch),
+                };
             case "push":
                 return buildGitResult({
                     branch: target.branch,
@@ -109,58 +89,6 @@ function branchTargetOf(context: NodeExecutionContext, config: GitConfig): Branc
         branch: item.branch,
         baseBranch: config.baseBranch ?? context.project.baseBranch,
     };
-}
-
-async function rebaseOntoBase(
-    context: NodeExecutionContext,
-    node: GitNode,
-    target: BranchTarget,
-): Promise<NodeExecutionResult> {
-    const workspace = await acquireItemWorkspace(context, agentHooksOf(context));
-    const unchangedBranch = buildGitResult({ branch: target.branch, pushed: false });
-    const rebase = await workspace.exec(rebaseCommand(target.baseBranch), execOptionsOf(context));
-    if (rebase.exitCode === 0) {
-        return unchangedBranch;
-    }
-
-    const resolution = await resolveConflictsWithAgent(context, node, target.baseBranch);
-    await assertRebaseFinished(workspace, context);
-
-    return { ...unchangedBranch, usage: resolution.usage };
-}
-
-function rebaseCommand(baseBranch: string): string {
-    const fetch = `git fetch ${REMOTE} ${quoteShellArgument(baseBranch)}`;
-    const rebase = `git rebase ${quoteShellArgument(remoteRefOf(baseBranch))}`;
-
-    return `${fetch} && ${rebase}`;
-}
-
-// The prompt names the base of this node, which may not be the project's.
-function resolveConflictsWithAgent(
-    context: NodeExecutionContext,
-    node: GitNode,
-    baseBranch: string,
-): Promise<NodeExecutionResult> {
-    return executeAgentNode({
-        ...context,
-        node: buildRebaserNode(node),
-        project: { ...context.project, baseBranch },
-    });
-}
-
-async function assertRebaseFinished(
-    workspace: Workspace,
-    context: NodeExecutionContext,
-): Promise<void> {
-    const [conflictedFiles, rebaseFinished] = await Promise.all([
-        workspace.exec(CONFLICTED_FILES_COMMAND, execOptionsOf(context)),
-        workspace.exec(REBASE_FINISHED_COMMAND, execOptionsOf(context)),
-    ]);
-    const filesStillInConflict = linesOf(conflictedFiles.stdoutTail);
-    if (filesStillInConflict.length > 0 || rebaseFinished.exitCode !== 0) {
-        throw new UnresolvedConflictsError(filesStillInConflict);
-    }
 }
 
 // Without commits ahead of the base there is nothing to review, so the branch stays local.
@@ -248,20 +176,4 @@ function buildGitResult(result: GitResult): NodeExecutionResult {
     }
 
     return { outputs: { [GIT_RESULT_PORT]: result }, artifacts };
-}
-
-function remoteRefOf(branch: string): string {
-    return `${REMOTE}/${branch}`;
-}
-
-function agentHooksOf(context: NodeExecutionContext): AgentRunHooks {
-    return { onEvent: (event) => context.onAgentEvent(event) };
-}
-
-function execOptionsOf(context: NodeExecutionContext): ExecOptions {
-    return { timeoutMs: REBASE_TIMEOUT_MS, signal: context.signal };
-}
-
-function linesOf(text: string): string[] {
-    return text.split(LINE_BREAK).filter((line) => line.trim() !== "");
 }
