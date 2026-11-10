@@ -2,19 +2,12 @@ import { existsSync } from "node:fs";
 
 import type { FastifyBaseLogger } from "fastify";
 
-import { createGhCliGitHubProvider } from "@/integrations/github/gh_cli_github_provider.js";
 import { systemClock } from "@/lib/clock.js";
 import type { AppDeps } from "@/server/app.js";
-import { CredentialRepository } from "@/server/credentials/credential_repository.js";
-import { createCredentialService } from "@/server/credentials/credential_service.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { createProjectService } from "@/server/projects/project_service.js";
 import type { ProjectService } from "@/server/projects/project_types.js";
-import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
-import { SettingsRepository } from "@/server/settings/settings_repository.js";
-import { createSettingsService } from "@/server/settings/settings_service.js";
-import { resolveGithubEnv } from "@/server/work_items/github_env.js";
-import type { GithubEnvDeps } from "@/server/work_items/github_env.js";
+import { createGithubOfProject } from "@/server/work_items/project_github_provider.js";
 import { buildFailedSync, syncGithubIssues } from "@/server/work_items/github_sync.js";
 import type { GithubSyncOptions, SyncResult } from "@/server/work_items/github_sync.js";
 import { createSyncScheduler } from "@/server/work_items/sync_scheduler.js";
@@ -63,29 +56,12 @@ export function createProjectGithubSync(deps: ProjectGithubSyncDeps): ProjectGit
 }
 
 function createSyncProject(deps: ProjectGithubSyncDeps, projects: ProjectService): SyncProject {
-    const githubEnvDeps = createGithubEnvDeps(deps.appDeps);
+    const githubOf = createGithubOfProject({ ...deps.appDeps, clock: systemClock });
 
     return async (projectId, opts) => {
-        const env = await resolveGithubEnv(projectId, githubEnvDeps);
-        const github = createGhCliGitHubProvider({ commands: deps.appDeps.commands, env });
+        const github = await githubOf(projectId);
         const syncDeps = { projects, items: deps.workItems, github, clock: systemClock };
         return syncGithubIssues(projectId, syncDeps, opts);
-    };
-}
-
-function createGithubEnvDeps(appDeps: AppDeps): GithubEnvDeps {
-    return {
-        settings: createSettingsService({
-            repo: new SettingsRepository(appDeps.db),
-            lookups: createSettingsLookups(appDeps.db),
-            clock: systemClock,
-        }),
-        credentials: createCredentialService({
-            repo: new CredentialRepository(appDeps.db),
-            secrets: appDeps.secrets,
-            redactor: appDeps.redactor,
-            clock: systemClock,
-        }),
     };
 }
 

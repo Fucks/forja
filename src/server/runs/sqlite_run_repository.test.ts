@@ -352,4 +352,54 @@ describe.each(IMPLEMENTATIONS)("$name", ({ open }) => {
             expect(nodeRunsByItem).toEqual({ a: [] });
         });
     });
+
+    describe("listItemIdsWithArtifact", () => {
+        it("lists once each item of the project whose NodeRuns saved an artifact of the kind", async () => {
+            await repository.createRun(buildRunRecord({ id: "first" }));
+            await repository.createRun(buildRunRecord({ id: "second" }));
+            await repository.saveTransition({
+                nodeRuns: [
+                    buildNodeRunState({ id: "pr-a1", runId: "first", workItemId: "a" }),
+                    buildNodeRunState({ id: "pr-a2", runId: "second", workItemId: "a" }),
+                    buildNodeRunState({ id: "summary-b", runId: "first", workItemId: "b" }),
+                ],
+                artifacts: [
+                    buildArtifactRecord({
+                        id: "1",
+                        runId: "first",
+                        nodeRunId: "pr-a1",
+                        kind: "pr_url",
+                    }),
+                    buildArtifactRecord({
+                        id: "2",
+                        runId: "second",
+                        nodeRunId: "pr-a2",
+                        kind: "pr_url",
+                    }),
+                    buildArtifactRecord({
+                        id: "3",
+                        runId: "first",
+                        nodeRunId: "summary-b",
+                        kind: "text",
+                    }),
+                ],
+            });
+
+            const itemIds = await repository.listItemIdsWithArtifact("project-1", "pr_url");
+
+            expect(itemIds).toEqual(["a"]);
+        });
+
+        it("ignores the artifacts of other projects", async () => {
+            await repository.createRun(buildRunRecord({ id: "elsewhere", projectId: "other" }));
+            await repository.saveTransition({
+                nodeRuns: [buildNodeRunState({ runId: "elsewhere", workItemId: "a" })],
+                artifacts: [buildArtifactRecord({ runId: "elsewhere", kind: "pr_url" })],
+            });
+
+            const itemIds = await repository.listItemIdsWithArtifact("project-1", "pr_url");
+
+            expect(itemIds).toEqual([]);
+        });
+    });
 });

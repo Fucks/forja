@@ -49,6 +49,7 @@ export interface RunRepository {
     listNodeRuns(runId: string): Promise<NodeRunState[]>;
     getNodeRun(id: string): Promise<NodeRunState | undefined>;
     listArtifacts(nodeRunId: string): Promise<ArtifactRecord[]>;
+    listItemIdsWithArtifact(projectId: string, kind: ArtifactKind): Promise<string[]>;
     getSnapshot(runId: string): Promise<unknown>;
     listActiveRuns(): Promise<RunRecord[]>;
     latestNodeRunsByItem(
