@@ -3,6 +3,7 @@ import type {
     AgentRunHooks,
     AgentRunRequest,
     AgentRunResult,
+    RuntimeDir,
     Workspace,
 } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { ContainerManager } from "@/integrations/agent_runtime/container_manager.js";
@@ -15,6 +16,7 @@ export interface OpenedWorkspace {
     containerId: string;
     worktreePath: string;
     repoPath: string;
+    runtimeDir: RuntimeDir;
     env: Record<string, string>;
 }
 
@@ -49,6 +51,7 @@ export function createDockerWorkspace(
         id: opened.id,
         branch: opened.branch,
         root: opened.worktreePath,
+        runtimeDir: opened.runtimeDir,
 
         runAgent: deps.runAgent,
 

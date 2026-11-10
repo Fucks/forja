@@ -3,8 +3,14 @@ import { existsSync } from "node:fs";
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_TERMINAL } from "@/engine/run_state.js";
 import type { OpenWorkspaceSummary } from "@/integrations/agent_runtime/agent_runtime.js";
+import { createSecretRedactor } from "@/integrations/secrets/secret_redactor.js";
 import { newId } from "@/lib/ids.js";
 import type { AppDeps } from "@/server/app.js";
+import { CredentialRepository } from "@/server/credentials/credential_repository.js";
+import {
+    createCredentialService,
+    type CredentialService,
+} from "@/server/credentials/credential_service.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { FlowRepository } from "@/server/flows/flow_repository.js";
 import { createFlowService, type FlowService } from "@/server/flows/flow_service.js";
@@ -19,6 +25,11 @@ import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService, type SettingsService } from "@/server/settings/settings_service.js";
+import { ToolProfileRepository } from "@/server/tool_profiles/tool_profile_repository.js";
+import {
+    createToolProfileService,
+    type ToolProfileService,
+} from "@/server/tool_profiles/tool_profile_service.js";
 import { createAppUsageService } from "@/server/usage/app_usage_service.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
 import type { ForjaEvent } from "@/shared/events.js";
@@ -32,6 +43,7 @@ import { FakeGitProvider } from "@/test/fakes/fake_git_provider.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 import { createTestLogStore } from "@/test/test_log_store.js";
+import { createTestSecretBox } from "@/test/test_secrets.js";
 
 export const TEST_PROJECT_ID = "prj_forja";
 export const PROJECT_SYSTEM_PROMPT = "Escreva testes antes do código.";
@@ -67,6 +79,10 @@ export class ExecutorTestBed {
     readonly flows: FlowService;
     readonly settings: SettingsService;
     readonly usage: UsageService;
+    readonly toolProfiles: ToolProfileService;
+    readonly credentials: CredentialService;
+    // The repository of the test project has a package.json only when a test says so.
+    readonly existingFiles = new Set<string>();
     readonly executor: Executor;
     private readonly database: DatabaseHandle;
 
@@ -88,6 +104,16 @@ export class ExecutorTestBed {
         this.usage = createAppUsageService({
             db: this.database.db,
             settings: this.settings,
+            clock: this.clock,
+        });
+        this.toolProfiles = createToolProfileService({
+            repo: new ToolProfileRepository(this.database.db),
+            clock: this.clock,
+        });
+        this.credentials = createCredentialService({
+            repo: new CredentialRepository(this.database.db),
+            secrets: createTestSecretBox(),
+            redactor: createSecretRedactor(),
             clock: this.clock,
         });
         this.events.subscribe((envelope) => {
@@ -233,6 +259,9 @@ export class ExecutorTestBed {
             events: this.events,
             logs: this.logs,
             usage: this.usage,
+            toolProfiles: this.toolProfiles,
+            credentials: this.credentials,
+            fileExists: (filePath) => this.existingFiles.has(filePath),
             clock: this.clock,
             newId,
             nodeExecutors: { ...nodeExecutors, ...NOT_YET_IMPLEMENTED_EXECUTORS },

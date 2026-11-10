@@ -20,6 +20,7 @@ describe("resolvePaths", () => {
             masterKey: path.join("/home/ana", ".forja", "master.key"),
             tmp: path.join("/home/ana", ".forja", "tmp"),
             worktrees: path.join("/home/ana", ".forja", "worktrees"),
+            runtime: path.join("/home/ana", ".forja", "runtime"),
         });
     });
 

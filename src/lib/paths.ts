@@ -12,6 +12,8 @@ export interface ForjaPaths {
     masterKey: string;
     tmp: string;
     worktrees: string;
+    /** One directory per agent container, mounted read-only in it (MCP files). */
+    runtime: string;
 }
 
 export const RUNTIME_ASSET_KINDS = ["migrations", "prompts", "assets"] as const;
@@ -37,6 +39,7 @@ export function resolvePaths(dataDir: string | undefined, homeDir: string): Forj
         masterKey: path.join(root, "master.key"),
         tmp: path.join(root, "tmp"),
         worktrees: path.join(root, "worktrees"),
+        runtime: path.join(root, "runtime"),
     };
 }
 

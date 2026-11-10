@@ -3,6 +3,7 @@ import type {
     AgentRunResult,
     AgentRuntime,
     OpenWorkspaceSummary,
+    RuntimeDir,
     Workspace,
 } from "@/integrations/agent_runtime/agent_runtime.js";
 
@@ -12,6 +13,10 @@ const NOT_CONFIGURED_MESSAGE = "Runtime de agentes ainda não configurado";
 export class UnavailableAgentRuntime implements AgentRuntime {
     openWorkspace(): Promise<Workspace> {
         return rejectAsNotConfigured();
+    }
+
+    headlessRuntimeDir(): RuntimeDir {
+        throw new WorkspaceError(NOT_CONFIGURED_MESSAGE);
     }
 
     runHeadless(): Promise<AgentRunResult> {

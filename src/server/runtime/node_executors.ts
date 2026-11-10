@@ -11,6 +11,7 @@ import {
     type SourceExecutorDeps,
 } from "@/server/runtime/executors/source_executor.js";
 import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.js";
+import type { RunToolProfiles } from "@/server/runtime/run_tool_profiles.js";
 import type { WorkspacePool } from "@/server/runtime/workspace_pool.js";
 import type { FlowGraph, FlowNode, NodeType } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
@@ -28,6 +29,7 @@ export interface NodeExecutionContext {
     runItems: WorkItemSnapshot[];
     project: Project;
     settings: ProjectSettings;
+    toolProfiles: RunToolProfiles;
     workspaces: WorkspacePool;
     runtime: AgentRuntime;
     clock: Clock;

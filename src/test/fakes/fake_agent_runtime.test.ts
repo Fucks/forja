@@ -603,6 +603,32 @@ describe("FakeAgentRuntime", () => {
             );
 
             expect(first.root).not.toBe(second.root);
+            expect(first.runtimeDir.host).not.toBe(second.runtimeDir.host);
+        });
+
+        it("keeps the runtime files of each agent run apart from the worktree files", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock });
+            const workspace = await runtime.openWorkspace(
+                workspaceSpec("issue-8"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+            const mcpConfigFile = {
+                hostPath: `${workspace.runtimeDir.host}/mcp-dev.json`,
+                containerPath: `${workspace.runtimeDir.container}/mcp-dev.json`,
+                content: '{ "mcpServers": {} }',
+            };
+
+            const run = workspace.runAgent(
+                runRequest({ runtimeFiles: [mcpConfigFile] }),
+                SILENT_HOOKS,
+            );
+            clock.advance(1_000);
+            await run;
+
+            expect(runtime.runtimeFiles.get(mcpConfigFile.hostPath)).toBe(mcpConfigFile.content);
+            expect(runtime.filesOf(workspace.id)).toEqual({});
         });
     });
 });
@@ -644,6 +670,7 @@ function runRequest(overrides: Partial<AgentRunRequest> = {}): AgentRunRequest {
         timeoutMs: 3_600_000,
         permissionMode: "bypassPermissions",
         toolArgs: [],
+        runtimeFiles: [],
         expandPromptCommands: false,
         env: {},
         signal: neverAborted(),

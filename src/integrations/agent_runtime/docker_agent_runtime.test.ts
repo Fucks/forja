@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -13,6 +13,8 @@ import type {
     AgentRunRequest,
     AgentRunResult,
     HeadlessSpec,
+    RuntimeDir,
+    RuntimeFile,
     WorkspaceSpec,
 } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { RunAgentInContainer } from "@/integrations/agent_runtime/agent_container.js";
@@ -43,10 +45,12 @@ const AGENT_RESULT: AgentRunResult = {
 
 let paths: ForjaPaths;
 let worktreePath: string;
+let workspaceRuntimeDir: string;
 
 beforeEach(() => {
     paths = resolvePaths(mkdtempSync(path.join(tmpdir(), "forja-runtime-")), "/home/ana");
     worktreePath = path.join(paths.worktrees, "prj_1", "forja__issue-7");
+    workspaceRuntimeDir = path.join(paths.runtime, WORKSPACE_ID);
 });
 
 afterEach(() => {
@@ -81,7 +85,7 @@ function headlessSpec(): HeadlessSpec {
     };
 }
 
-function runRequest(): AgentRunRequest {
+function runRequest(overrides: Partial<AgentRunRequest> = {}): AgentRunRequest {
     return {
         nodeRunId: "nrn_01J9ZK3M4N5P6Q7R8S9THEADLS",
         prompt: "planeje",
@@ -92,10 +96,29 @@ function runRequest(): AgentRunRequest {
         timeoutMs: 3_600_000,
         permissionMode: "bypassPermissions",
         toolArgs: [],
+        runtimeFiles: [],
         expandPromptCommands: false,
         env: {},
         signal: neverAborted(),
+        ...overrides,
     };
+}
+
+function mcpConfigFileIn(runtimeDir: RuntimeDir): RuntimeFile {
+    return {
+        hostPath: path.join(runtimeDir.host, "mcp-dev.json"),
+        containerPath: `${runtimeDir.container}/mcp-dev.json`,
+        content: '{ "mcpServers": {} }',
+    };
+}
+
+// Reads the runtime files the moment the agent starts, to prove they were written before.
+function agentReadingRuntimeFiles(contentAtStart: string[]) {
+    return vi.fn<RunAgentInContainer>().mockImplementation((_container, request) => {
+        const contents = request.runtimeFiles.map((file) => readFileSync(file.hostPath, "utf8"));
+        contentAtStart.push(...contents);
+        return Promise.resolve(AGENT_RESULT);
+    });
 }
 
 function neverAborted(): AbortSignal {
@@ -194,6 +217,8 @@ describe("DockerAgentRuntime.openWorkspace", () => {
             `${worktreePath}:/home/agent/workspace`,
             "-v",
             "/repos/forja/.git:/repos/forja/.git",
+            "-v",
+            `${workspaceRuntimeDir}:/home/agent/.forja:ro`,
             "-w",
             "/home/agent/workspace",
             "--user",
@@ -202,6 +227,23 @@ describe("DockerAgentRuntime.openWorkspace", () => {
             "sleep",
             "infinity",
         ]);
+    });
+
+    it("creates the runtime dir of the workspace on the host, outside the worktree", async () => {
+        const commands = new FakeCommandRunner();
+        scriptHealthyHost(commands);
+
+        const workspace = await createRuntime(commands).openWorkspace(
+            workspaceSpec(),
+            SILENT_HOOKS,
+            neverAborted(),
+        );
+
+        expect(workspace.runtimeDir).toEqual({
+            host: workspaceRuntimeDir,
+            container: "/home/agent/.forja",
+        });
+        expect(existsSync(workspaceRuntimeDir)).toBe(true);
     });
 
     it("creates a new branch from origin/<base> when the item branch does not exist", async () => {
@@ -459,6 +501,35 @@ describe("DockerAgentRuntime workspace", () => {
         expect(runAgentInContainer.mock.calls[0]?.[0]).toMatchObject({ containerId: CONTAINER_ID });
     });
 
+    it("writes the runtime files of the run in the runtime dir before the agent starts", async () => {
+        const commands = new FakeCommandRunner();
+        const contentAtStart: string[] = [];
+        const { workspace } = await openWorkspace(
+            commands,
+            agentReadingRuntimeFiles(contentAtStart),
+        );
+        const runtimeFile = mcpConfigFileIn(workspace.runtimeDir);
+
+        await workspace.runAgent(runRequest({ runtimeFiles: [runtimeFile] }), SILENT_HOOKS);
+
+        expect(contentAtStart).toEqual([runtimeFile.content]);
+    });
+
+    it("refuses a runtime file outside the runtime dir", async () => {
+        const commands = new FakeCommandRunner();
+        const runAgentInContainer = vi.fn<RunAgentInContainer>().mockResolvedValue(AGENT_RESULT);
+        const { workspace } = await openWorkspace(commands, runAgentInContainer);
+        const inWorktree = { ...mcpConfigFileIn(workspace.runtimeDir), hostPath: worktreePath };
+
+        const running = workspace.runAgent(
+            runRequest({ runtimeFiles: [inWorktree] }),
+            SILENT_HOOKS,
+        );
+
+        await expect(running).rejects.toBeInstanceOf(WorkspaceError);
+        expect(runAgentInContainer).not.toHaveBeenCalled();
+    });
+
     it("runs Claude Code in the container by default and returns the commits of the worktree", async () => {
         const commands = new FakeCommandRunner();
         const { workspace } = await openWorkspace(commands);
@@ -488,6 +559,16 @@ describe("DockerAgentRuntime workspace", () => {
             worktreePath,
         ]);
         expect(argsOf(commands, "git").filter((args) => args[0] === "branch")).toEqual([]);
+    });
+
+    it("removes the runtime dir on close", async () => {
+        const commands = new FakeCommandRunner();
+        const { workspace } = await openWorkspace(commands);
+        scriptRegisteredWorktree(commands);
+
+        await workspace.close();
+
+        expect(existsSync(workspaceRuntimeDir)).toBe(false);
     });
 
     it("does not fail when closed twice", async () => {
@@ -536,9 +617,13 @@ describe("DockerAgentRuntime open workspaces", () => {
             .returns({ stdout: "c1\tforja.workspace=forja-a-b" });
         commands.when("docker", ["rm", "-f", "c1"]).returns({});
 
+        const orphanRuntimeDir = path.join(paths.runtime, "forja-a-b");
+        mkdirSync(orphanRuntimeDir, { recursive: true });
+
         await createRuntime(commands).closeWorkspace("forja-a-b");
 
         expect(argsOf(commands, "docker").at(-1)).toEqual(["rm", "-f", "c1"]);
+        expect(existsSync(orphanRuntimeDir)).toBe(false);
     });
 });
 
@@ -558,6 +643,28 @@ describe("DockerAgentRuntime.runHeadless", () => {
         expect(dockerRunArgs(commands)).toContain(`${REPO_PATH}:/home/agent/workspace:ro`);
         expect(argsOf(commands, "git")).toEqual([]);
         expect(argsOf(commands, "docker").at(-1)).toEqual(["rm", "-f", CONTAINER_ID]);
+    });
+
+    it("mounts a runtime dir of its own read-only, with the runtime files written before the agent starts", async () => {
+        const commands = new FakeCommandRunner();
+        scriptHealthyHost(commands);
+        const contentAtStart: string[] = [];
+        const runtime = createRuntime(commands, {
+            runAgentInContainer: agentReadingRuntimeFiles(contentAtStart),
+        });
+        const runtimeDir = runtime.headlessRuntimeDir(headlessSpec().runId, runRequest().nodeRunId);
+        const runtimeFile = mcpConfigFileIn(runtimeDir);
+
+        await runtime.runHeadless(
+            headlessSpec(),
+            runRequest({ runtimeFiles: [runtimeFile] }),
+            SILENT_HOOKS,
+        );
+
+        expect(runtimeDir.host.startsWith(paths.runtime)).toBe(true);
+        expect(dockerRunArgs(commands)).toContain(`${runtimeDir.host}:/home/agent/.forja:ro`);
+        expect(contentAtStart).toEqual([runtimeFile.content]);
+        expect(existsSync(runtimeDir.host)).toBe(false);
     });
 
     it("removes the ephemeral container even when the agent fails", async () => {

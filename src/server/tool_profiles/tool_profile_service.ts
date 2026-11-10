@@ -8,14 +8,14 @@ import {
 } from "@/server/tool_profiles/tool_profile_presets.js";
 import type { ToolProfileRepository } from "@/server/tool_profiles/tool_profile_repository.js";
 import {
+    CREDENTIAL_REFERENCE,
+    CREDENTIAL_REFERENCE_START,
     TOOL_PROFILE_NAME_MAX_LENGTH,
     extractToolProfileInput,
 } from "@/shared/tool_profile_types.js";
 import type { McpServer, ToolProfile, ToolProfileInput } from "@/shared/tool_profile_types.js";
 
 const COPY_NAME_SUFFIX = " (cópia)";
-const CREDENTIAL_REFERENCE_START = "${cred:";
-const WELL_FORMED_CREDENTIAL_REFERENCE = /\$\{cred:cred_[0-9A-Za-z]+\}/g;
 
 export interface ToolProfileService {
     /** Builtin presets first, then the user's profiles in creation order. */
@@ -141,7 +141,7 @@ function assertMcpServerNamesAreUnique(mcpServers: McpServer[]): void {
     }
 }
 
-// Credentials are not resolved here (#61 does it in the workspace), so only the format is checked.
+// Credentials are resolved when a node runs (tool_profile_materializer.ts); here only the format.
 function assertCredentialReferencesAreWellFormed(mcpServer: McpServer): void {
     for (const [variable, envValue] of Object.entries(mcpServer.env)) {
         if (hasMalformedCredentialReference(envValue)) {
@@ -154,6 +154,6 @@ function assertCredentialReferencesAreWellFormed(mcpServer: McpServer): void {
 }
 
 function hasMalformedCredentialReference(envValue: string): boolean {
-    const withoutWellFormedReferences = envValue.replace(WELL_FORMED_CREDENTIAL_REFERENCE, "");
+    const withoutWellFormedReferences = envValue.replace(CREDENTIAL_REFERENCE, "");
     return withoutWellFormedReferences.includes(CREDENTIAL_REFERENCE_START);
 }

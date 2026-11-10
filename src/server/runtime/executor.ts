@@ -20,6 +20,11 @@ import type { LogStore } from "@/server/runtime/log_store.js";
 import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
 import { runLifecycleEvent } from "@/server/runtime/run_events.js";
 import {
+    loadRunToolProfiles,
+    type RunToolProfiles,
+    type RunToolProfilesDeps,
+} from "@/server/runtime/run_tool_profiles.js";
+import {
     InvalidRunSnapshotError,
     isSchedulerSnapshotOfRun,
 } from "@/server/runtime/stored_snapshot.js";
@@ -59,7 +64,7 @@ export interface Executor {
     activeRunIds(): string[];
 }
 
-export interface ExecutorDeps {
+export interface ExecutorDeps extends RunToolProfilesDeps {
     runs: RunRepository;
     flows: FlowService;
     projects: ProjectService;
@@ -81,6 +86,7 @@ interface RunSetup {
     project: Project;
     projectSettings: ProjectSettings;
     globalSettings: GlobalSettings;
+    toolProfiles: RunToolProfiles;
     items: WorkItemSnapshot[];
 }
 
@@ -198,8 +204,12 @@ class RunExecutor implements Executor {
             deps.settings.getGlobalSettings(),
             deps.items.getItems(input.projectId, input.itemIds),
         ]);
+        const toolProfiles = await loadRunToolProfiles(
+            { graph: version.graph, project, settings: projectSettings },
+            deps,
+        );
 
-        return { version, project, projectSettings, globalSettings, items };
+        return { version, project, projectSettings, globalSettings, toolProfiles, items };
     }
 
     private async findPublishedVersion(flowId: string, version?: number): Promise<FlowVersion> {
@@ -253,6 +263,7 @@ class RunExecutor implements Executor {
             graph: version.graph,
             project: setup.project,
             settings: projectSettings,
+            toolProfiles: setup.toolProfiles,
             items: setup.items,
             scheduler: createScheduler(
                 version.graph,

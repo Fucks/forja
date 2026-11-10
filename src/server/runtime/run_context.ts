@@ -1,7 +1,11 @@
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { PromptContext } from "@/engine/prompt_template.js";
 import type { RunState } from "@/engine/run_state.js";
-import type { HeadlessSpec, WorkspaceSpec } from "@/integrations/agent_runtime/agent_runtime.js";
+import type {
+    HeadlessSpec,
+    SetupCommand,
+    WorkspaceSpec,
+} from "@/integrations/agent_runtime/agent_runtime.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
@@ -37,11 +41,16 @@ export interface RunPlace {
     settings: ProjectSettings;
 }
 
-export function buildWorkspaceSpec(place: RunPlace, item: WorkItemSnapshot): WorkspaceSpec {
+export function buildWorkspaceSpec(
+    place: RunPlace,
+    item: WorkItemSnapshot,
+    setupCommands: SetupCommand[],
+): WorkspaceSpec {
     return {
         ...buildHeadlessSpec(place, item),
         workItemId: item.id,
         branch: item.branch,
+        setupCommands,
         files: [],
     };
 }

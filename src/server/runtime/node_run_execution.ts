@@ -17,6 +17,7 @@ import type {
     NodeExecutorRegistry,
 } from "@/server/runtime/node_executors.js";
 import { usageRecordedEvent } from "@/server/runtime/run_events.js";
+import type { RunToolProfiles } from "@/server/runtime/run_tool_profiles.js";
 import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
 import type { WorkspacePool } from "@/server/runtime/workspace_pool.js";
 import type { NewUsageRecord, UsageService } from "@/server/usage/usage_service.js";
@@ -36,6 +37,7 @@ export interface NodeRunExecutionDeps {
     graph: FlowGraph;
     project: Project;
     settings: ProjectSettings;
+    toolProfiles: RunToolProfiles;
     workspaces: WorkspacePool;
     runtime: AgentRuntime;
     clock: Clock;
@@ -110,6 +112,7 @@ export class NodeRunExecution {
             runItems: deps.runItems,
             project: deps.project,
             settings: deps.settings,
+            toolProfiles: deps.toolProfiles,
             workspaces: deps.workspaces,
             runtime: deps.runtime,
             clock: deps.clock,

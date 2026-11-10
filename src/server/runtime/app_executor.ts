@@ -7,6 +7,8 @@ import type { SecretBox } from "@/integrations/secrets/secret_box.js";
 import type { SecretRedactor } from "@/integrations/secrets/secret_redactor.js";
 import type { Clock } from "@/lib/clock.js";
 import { newId } from "@/lib/ids.js";
+import { CredentialRepository } from "@/server/credentials/credential_repository.js";
+import { createCredentialService } from "@/server/credentials/credential_service.js";
 import type { ForjaDb } from "@/server/db/client.js";
 import { createAppFlowService } from "@/server/flows/app_flow_service.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
@@ -19,6 +21,8 @@ import { createNodeExecutors } from "@/server/runtime/node_executors.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService } from "@/server/settings/settings_service.js";
+import { ToolProfileRepository } from "@/server/tool_profiles/tool_profile_repository.js";
+import { createToolProfileService } from "@/server/tool_profiles/tool_profile_service.js";
 import { createAppUsageService } from "@/server/usage/app_usage_service.js";
 import { createGithubOfProject } from "@/server/work_items/project_github_provider.js";
 import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
@@ -75,6 +79,14 @@ export function createAppExecutor({
         events,
         logs,
         usage: createAppUsageService({ db, settings, clock }),
+        toolProfiles: createToolProfileService({ repo: new ToolProfileRepository(db), clock }),
+        credentials: createCredentialService({
+            repo: new CredentialRepository(db),
+            secrets,
+            redactor,
+            clock,
+        }),
+        fileExists: existsSync,
         clock,
         newId,
         nodeExecutors: createNodeExecutors({

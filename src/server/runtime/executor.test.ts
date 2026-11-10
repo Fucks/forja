@@ -139,7 +139,6 @@ describe("executor", () => {
                 maxTurns: 30,
                 maxBudgetUsd: 2,
                 expandPromptCommands: false,
-                toolArgs: [],
             });
         });
     });
