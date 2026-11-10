@@ -74,9 +74,60 @@ describe("AgentInspector", () => {
             );
         });
     });
+
+    describe("output schema", () => {
+        it("shows the error and keeps the node unchanged when the JSON is invalid", async () => {
+            const onChange = renderAgentInspector(requireAgent("dev")).onChange;
+            const schemaField = screen.getByRole("textbox", { name: "Schema de saída" });
+
+            await userEvent.click(schemaField);
+            await userEvent.paste('{ "type": ');
+            await userEvent.tab();
+
+            expect(screen.getByText("JSON inválido.")).toBeInTheDocument();
+            expect(schemaField).toHaveAttribute("aria-invalid", "true");
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it("rejects JSON that is not an object", async () => {
+            const onChange = renderAgentInspector(requireAgent("dev")).onChange;
+
+            await userEvent.click(screen.getByRole("textbox", { name: "Schema de saída" }));
+            await userEvent.paste("[]");
+            await userEvent.tab();
+
+            expect(screen.getByText("O schema precisa ser um objeto JSON.")).toBeInTheDocument();
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it("applies the example schema", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+
+            await userEvent.click(screen.getByRole("button", { name: "Exemplo" }));
+
+            expect(inspector.lastChangedConfig().outputSchema).toEqual({
+                type: "object",
+                properties: { approved: { type: "boolean" } },
+            });
+        });
+
+        it("removes the schema when the field is cleared", async () => {
+            const inspector = renderAgentInspector(requireAgent("tl"));
+
+            await userEvent.clear(screen.getByRole("textbox", { name: "Schema de saída" }));
+            await userEvent.tab();
+
+            expect(inspector.lastChangedConfig().outputSchema).toBeUndefined();
+        });
+    });
 });
 
-function renderAgentInspector(node: AgentNode): { lastChangedConfig: () => AgentConfig } {
+interface RenderedInspector {
+    onChange: NodeChangeSpy;
+    lastChangedConfig: () => AgentConfig;
+}
+
+function renderAgentInspector(node: AgentNode): RenderedInspector {
     stubFetchRoutes({
         "GET /api/tool-profiles": () => Response.json([]),
         "GET /api/credentials": () => Response.json([]),
@@ -84,7 +135,10 @@ function renderAgentInspector(node: AgentNode): { lastChangedConfig: () => Agent
     const onChange: NodeChangeSpy = vi.fn();
     renderWithQueryClient(<AgentInspector node={node} graph={GRAPH} onChange={onChange} />);
 
-    return { lastChangedConfig: () => readAgentConfig(applyLastUpdate(onChange, node)) };
+    return {
+        onChange,
+        lastChangedConfig: () => readAgentConfig(applyLastUpdate(onChange, node)),
+    };
 }
 
 function applyLastUpdate(onChange: NodeChangeSpy, node: FlowNode): FlowNode {

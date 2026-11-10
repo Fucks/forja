@@ -10,6 +10,7 @@ import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.j
 import { InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
 import { EffortField, ModelField } from "@/web/canvas/inspector/model_effort_fields.js";
 import { withAgentConfig } from "@/web/canvas/inspector/node_updates.js";
+import { OutputSchemaEditor } from "@/web/canvas/inspector/output_schema_editor.js";
 import { PromptEditor } from "@/web/canvas/inspector/prompt_editor.js";
 import { Field } from "@/web/components/ui/field.js";
 import { Input } from "@/web/components/ui/input.js";
@@ -38,6 +39,12 @@ export function AgentInspector({ node, graph, onChange }: InspectorProps): JSX.E
             />
             <PromptSection agent={node} graph={graph} onConfigChange={changeConfig} />
             <ModelAndEffortSection agent={node} onConfigChange={changeConfig} />
+            <InspectorSection title="Saída">
+                <OutputSchemaEditor
+                    outputSchema={node.config.outputSchema}
+                    onChange={(outputSchema) => changeConfig({ outputSchema })}
+                />
+            </InspectorSection>
         </div>
     );
 }
