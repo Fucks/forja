@@ -16,7 +16,6 @@ export interface HandleRef {
     type: HandleType;
 }
 
-// The graph the ports are checked against while a connection is dragged on the canvas.
 export const ConnectionGraphContext = createContext<FlowGraph | undefined>(undefined);
 
 export function usePortHint(port: string, type: HandleType): PortHint {

@@ -29,4 +29,4 @@
 - [x] 9. Canvas: compatible/incompatible port highlight during drag — `port_handle.tsx`, css
 - [x] 10. Canvas: tooltip with the reason for 3 s when dropped on an incompatible port
 - [x] 11. Selected edge 2 px `--color-accent`
-- [ ] 12. Self-review checklist and feedback loops
+- [x] 12. Self-review checklist and feedback loops
