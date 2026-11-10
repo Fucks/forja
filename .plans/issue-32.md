@@ -29,5 +29,5 @@
 - [x] 7. Test + implement trigger disabled with tooltip when flow has one — `palette/node_palette.tsx`
 - [x] 8. Drag start sets `application/forja-node-type`; canvas `onDragOver`/`onDrop` creates node — `flow_canvas.tsx`
 - [x] 9. Drop target group highlight — `palette/drop_target_context.ts`, `flow_canvas.tsx`, `nodes/group_node.tsx`
-- [ ] 10. Mount palette in the left panel with shared `ReactFlowProvider` — `flow_editor_page.tsx`
+- [x] 10. Mount palette in the left panel with shared `ReactFlowProvider` — `flow_editor_page.tsx`
 - [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)

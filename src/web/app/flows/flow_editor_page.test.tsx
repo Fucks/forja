@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
 import type { FlowDraft, FlowSummary } from "@/shared/flow_types.js";
@@ -72,6 +72,18 @@ describe("FlowEditorPage", () => {
 
         expect(await screen.findByRole("complementary", { name: "Paleta" })).toBeInTheDocument();
         expect(screen.getByRole("complementary", { name: "Inspector" })).toBeInTheDocument();
+    });
+
+    it("draws the node created from the palette on the canvas", async () => {
+        stubFetchRoutes(fakeEditorApi());
+        renderAppAt(EDITOR_PATH);
+        const palette = await screen.findByRole("complementary", { name: "Paleta" });
+        const canvas = screen.getByTestId("rf__wrapper");
+        const outputNodeCount = within(canvas).queryAllByLabelText("Saída").length;
+
+        await userEvent.click(within(palette).getByRole("button", { name: "Saída" }));
+
+        expect(within(canvas).getAllByLabelText("Saída")).toHaveLength(outputNodeCount + 1);
     });
 
     it("collapses a side panel", async () => {

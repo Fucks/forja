@@ -1,3 +1,4 @@
+import { ReactFlowProvider } from "@xyflow/react";
 import { TriangleAlert } from "lucide-react";
 import type { JSX } from "react";
 import { useParams } from "react-router";
@@ -7,6 +8,7 @@ import { EditorSidePanel } from "@/web/app/flows/editor_side_panel.js";
 import { EditorTopBar } from "@/web/app/flows/editor_top_bar.js";
 import { useFlowSummary } from "@/web/app/flows/use_flow_summary.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
+import { NodePalette } from "@/web/canvas/palette/node_palette.js";
 import { useFlowDraft } from "@/web/canvas/use_flow_draft.js";
 import type { FlowDraftEditor } from "@/web/canvas/use_flow_draft.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
@@ -48,13 +50,18 @@ function EditorWorkspace({ draftEditor }: { draftEditor: FlowDraftEditor }): JSX
         );
     }
 
+    // The palette creates nodes at the canvas viewport, so both share one React Flow instance.
     return (
-        <div className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border">
-            <EditorSidePanel title="Paleta" side="left" widthClass="w-60" />
-            <div className="min-w-0 flex-1">
-                <FlowCanvas store={draftEditor.store} />
+        <ReactFlowProvider>
+            <div className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border">
+                <EditorSidePanel title="Paleta" side="left" widthClass="w-60">
+                    <NodePalette store={draftEditor.store} />
+                </EditorSidePanel>
+                <div className="min-w-0 flex-1">
+                    <FlowCanvas store={draftEditor.store} />
+                </div>
+                <EditorSidePanel title="Inspector" side="right" widthClass="w-90" />
             </div>
-            <EditorSidePanel title="Inspector" side="right" widthClass="w-90" />
-        </div>
+        </ReactFlowProvider>
     );
 }
