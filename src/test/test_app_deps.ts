@@ -19,6 +19,8 @@ export function createTestAppDeps(db: ForjaDb, overrides: Partial<AppDeps> = {})
     const events = createEventBus(clock);
     const git = new FakeGitProvider();
     const agentRuntime = new FakeAgentRuntime({ clock });
+    const commands = new FakeCommandRunner();
+    const secrets = createTestSecretBox();
     const redactor = createSecretRedactor();
     const logs = createTestLogStore(db, clock, redactor);
 
@@ -28,13 +30,23 @@ export function createTestAppDeps(db: ForjaDb, overrides: Partial<AppDeps> = {})
         options: { seedDemo: false },
         db,
         events,
-        commands: new FakeCommandRunner(),
+        commands,
         git,
-        secrets: createTestSecretBox(),
+        secrets,
         redactor,
         logs,
         agentRuntime,
-        executor: createAppExecutor({ db, events, logs, git, runtime: agentRuntime, clock }),
+        executor: createAppExecutor({
+            db,
+            events,
+            logs,
+            git,
+            commands,
+            secrets,
+            redactor,
+            runtime: agentRuntime,
+            clock,
+        }),
         ...overrides,
     };
 }

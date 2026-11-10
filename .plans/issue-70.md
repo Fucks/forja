@@ -39,5 +39,5 @@
 - [x] 12. Test + impl: executor excludes items with an open PR from an earlier run (`FakeGitHubProvider`)
 - [x] 13. Test + impl: executor starts from the run's items
 - [x] 14. Extract `project_github_provider.ts` and reuse it in `project_github_sync.ts`
-- [ ] 15. Register: `createNodeExecutors` in `node_executors.ts`, wired in `app_executor.ts`, `main.ts`, `test_app_deps.ts`
+- [x] 15. Register: `createNodeExecutors` in `node_executors.ts`, wired in `app_executor.ts`, `main.ts`, `test_app_deps.ts`
 - [ ] 16. Self-review checklist and feedback loops

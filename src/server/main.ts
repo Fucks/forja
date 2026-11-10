@@ -58,6 +58,7 @@ async function buildAppOwningDatabase(
     const events = createEventBus(systemClock);
     const git = new CliGitProvider(commands);
     const redactor = createSecretRedactor();
+    const secrets = createSecretBox(loadOrCreateMasterKey(deps.paths.masterKey, fs));
     const logs = createLogStore({
         logsDir: deps.paths.logs,
         db: database.db,
@@ -70,6 +71,9 @@ async function buildAppOwningDatabase(
         events,
         logs,
         git,
+        commands,
+        secrets,
+        redactor,
         runtime: agentRuntime,
         clock: systemClock,
     });
@@ -81,7 +85,7 @@ async function buildAppOwningDatabase(
             events,
             commands,
             git,
-            secrets: createSecretBox(loadOrCreateMasterKey(deps.paths.masterKey, fs)),
+            secrets,
             redactor,
             logs,
             agentRuntime,

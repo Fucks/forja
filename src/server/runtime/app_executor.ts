@@ -2,6 +2,9 @@ import { existsSync } from "node:fs";
 
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { GitProvider } from "@/integrations/git/git_provider.js";
+import type { CommandRunner } from "@/integrations/process/command_runner.js";
+import type { SecretBox } from "@/integrations/secrets/secret_box.js";
+import type { SecretRedactor } from "@/integrations/secrets/secret_redactor.js";
 import type { Clock } from "@/lib/clock.js";
 import { newId } from "@/lib/ids.js";
 import type { ForjaDb } from "@/server/db/client.js";
@@ -12,31 +15,41 @@ import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import { createExecutor, type Executor, type ItemSource } from "@/server/runtime/executor.js";
 import type { LogStore } from "@/server/runtime/log_store.js";
+import { createNodeExecutors } from "@/server/runtime/node_executors.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService } from "@/server/settings/settings_service.js";
 import { createAppUsageService } from "@/server/usage/app_usage_service.js";
+import { createGithubOfProject } from "@/server/work_items/project_github_provider.js";
 import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
-import { createWorkItemService } from "@/server/work_items/work_item_service.js";
+import {
+    createWorkItemService,
+    type WorkItemService,
+} from "@/server/work_items/work_item_service.js";
 
 export interface AppExecutorDeps {
     db: ForjaDb;
     events: EventBus;
     logs: LogStore;
     git: GitProvider;
+    commands: CommandRunner;
+    secrets: SecretBox;
+    redactor: SecretRedactor;
     runtime: AgentRuntime;
     clock: Clock;
 }
 
 // The executor of the app, over the same database and event bus as the routes.
-export function createAppExecutor({
-    db,
-    events,
-    logs,
-    git,
-    runtime,
-    clock,
-}: AppExecutorDeps): Executor {
+export function createAppExecutor(deps: AppExecutorDeps): Executor {
+    const { db, events, clock } = deps;
+    const runs = new SqliteRunRepository(db, clock);
+    const projects = createProjectService({
+        repo: new ProjectRepository(db),
+        git: deps.git,
+        fileExists: existsSync,
+        clock,
+    });
+    const workItems = createWorkItemService({ repo: new WorkItemRepository(db), events, clock });
     const settings = createSettingsService({
         repo: new SettingsRepository(db),
         lookups: createSettingsLookups(db),
@@ -44,27 +57,27 @@ export function createAppExecutor({
     });
 
     return createExecutor({
-        runs: new SqliteRunRepository(db, clock),
+        runs,
         flows: createAppFlowService({ db, events, clock }),
-        projects: createProjectService({
-            repo: new ProjectRepository(db),
-            git,
-            fileExists: existsSync,
-            clock,
-        }),
+        projects,
         settings,
-        items: createItemSource(db, events, clock),
-        runtime,
+        items: createItemSource(workItems),
+        runtime: deps.runtime,
         events,
-        logs,
+        logs: deps.logs,
         usage: createAppUsageService({ db, settings, clock }),
         clock,
         newId,
+        nodeExecutors: createNodeExecutors({
+            workItems,
+            runs,
+            projects,
+            clock,
+            githubOf: createGithubOfProject(deps),
+        }),
     });
 }
 
-function createItemSource(db: ForjaDb, events: EventBus, clock: Clock): ItemSource {
-    const workItems = createWorkItemService({ repo: new WorkItemRepository(db), events, clock });
-
+function createItemSource(workItems: WorkItemService): ItemSource {
     return { getItems: (projectId, ids) => workItems.snapshots(projectId, ids) };
 }
