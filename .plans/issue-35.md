@@ -23,8 +23,8 @@
 
 - [x] 1. `conditionToText` for each operator and nesting — `condition_text.ts`, `condition_text.test.ts`
 - [x] 2. Node summary uses `conditionToText` — `node_summary.ts`, `node_summary.test.ts`
-- [ ] 3. Generic `withNodeConfig` replacing `withAgentConfig` — `node_updates.ts`, `agent_inspector.tsx`
-- [ ] 4. Extract `LabelField` and add `TextField` — `label_field.tsx`, `text_field.tsx`, `agent_inspector.tsx`
+- [x] 3. Generic `withNodeConfig` replacing `withAgentConfig` — `node_updates.ts`, `agent_inspector.tsx`
+- [x] 4. Extract `LabelField` and add `TextField` — `label_field.tsx`, `text_field.tsx`, `agent_inspector.tsx`
 - [ ] 5. Source inspector (provider, label, limit 1–100, skip blocked) + test — `source_inspector.tsx`, `other_inspectors.test.tsx`
 - [ ] 6. Script inspector (mono command with hint, timeout) + test — `script_inspector.tsx`
 - [ ] 7. Gate inspector (message, sections shown, optional timeout hours) + test — `gate_inspector.tsx`

@@ -1,7 +1,13 @@
 import { findNode } from "@/engine/graph_queries.js";
 import { isNodeOfType } from "@/shared/flow_graph.js";
-import type { FlowEdge, FlowGraph, FlowNode, Port } from "@/shared/flow_graph.js";
-import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
+import type {
+    FlowEdge,
+    FlowGraph,
+    FlowNode,
+    NodeOfType,
+    NodeType,
+    Port,
+} from "@/shared/flow_graph.js";
 
 export function updateNodeConfig(
     graph: FlowGraph,
@@ -45,8 +51,12 @@ export function withoutInputPort(node: FlowNode, name: string): FlowNode {
     return { ...node, inputs: node.inputs.filter((port) => port.name !== name) };
 }
 
-export function withAgentConfig(node: FlowNode, changes: Partial<AgentConfig>): FlowNode {
-    if (!isNodeOfType(node, "agent")) {
+export function withNodeConfig<Type extends NodeType>(
+    node: FlowNode,
+    type: Type,
+    changes: Partial<NodeOfType<Type>["config"]>,
+): FlowNode {
+    if (!isNodeOfType(node, type)) {
         return node;
     }
 
