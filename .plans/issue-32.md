@@ -15,7 +15,7 @@
 - Drag payload: `dataTransfer` with `application/forja-node-type`, helpers in `palette/node_type_drag.ts`;
   drop ignores unknown types. Search lives in `filterPaletteItems` (`palette_items.ts`).
 - Disabled trigger uses `aria-disabled` (not `disabled`) so the tooltip still opens on hover/focus.
-- Drop highlight: `DropTargetGroupContext` (`src/web/canvas/palette/drop_target_highlight.ts`) set by the
+- Drop highlight: `DropTargetGroupContext` (`palette/drop_target_context.ts`) set by `useNodeDrop` (`palette/use_node_drop.ts`) in the
   canvas on drag over; `GroupNode` outlines itself as selected when it is the target.
 
 ## Tasks
@@ -27,7 +27,7 @@
 - [x] 5. Test + implement palette list, click creates and selects node — `palette/node_palette.tsx`, `palette/node_palette.test.tsx`
 - [x] 6. Test + implement search by name and description — `palette/node_palette.tsx`
 - [x] 7. Test + implement trigger disabled with tooltip when flow has one — `palette/node_palette.tsx`
-- [ ] 8. Drag start sets `application/forja-node-type`; canvas `onDragOver`/`onDrop` creates node — `flow_canvas.tsx`
-- [ ] 9. Drop target group highlight — `palette/drop_target_highlight.ts`, `flow_canvas.tsx`, `nodes/group_node.tsx`
+- [x] 8. Drag start sets `application/forja-node-type`; canvas `onDragOver`/`onDrop` creates node — `flow_canvas.tsx`
+- [x] 9. Drop target group highlight — `palette/drop_target_context.ts`, `flow_canvas.tsx`, `nodes/group_node.tsx`
 - [ ] 10. Mount palette in the left panel with shared `ReactFlowProvider` — `flow_editor_page.tsx`
 - [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)
