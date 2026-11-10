@@ -9,7 +9,7 @@ import { edgeTarget, errorIssue, nodeTarget } from "@/engine/validation_rules/va
 import type { FlowEdge, FlowGraph, FlowNode, Port } from "@/shared/flow_graph.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 
-interface Connection {
+export interface Connection {
     edge: FlowEdge;
     sourcePort: Port;
     targetPort: Port;
@@ -50,7 +50,7 @@ function resolveConnections(graph: FlowGraph): Connection[] {
     return graph.edges.flatMap((edge) => resolveConnection(graph, edge) ?? []);
 }
 
-function resolveConnection(graph: FlowGraph, edge: FlowEdge): Connection | undefined {
+export function resolveConnection(graph: FlowGraph, edge: FlowEdge): Connection | undefined {
     const sourcePort = findSourcePort(graph, edge);
     const targetPort = findTargetPort(graph, edge);
     if (!sourcePort || !targetPort) {
@@ -88,7 +88,7 @@ function isInputConnected(graph: FlowGraph, node: FlowNode, port: Port): boolean
     return incomingEdges(graph, node.id).some((edge) => edge.to.port === port.name);
 }
 
-function isConnectionCompatible(graph: FlowGraph, connection: Connection): boolean {
+export function isConnectionCompatible(graph: FlowGraph, connection: Connection): boolean {
     const { edge, sourcePort, targetPort } = connection;
     if (areTypesCompatible(sourcePort.type, targetPort.type)) {
         return true;

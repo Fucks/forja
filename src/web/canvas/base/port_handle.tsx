@@ -2,6 +2,7 @@ import { Handle, Position } from "@xyflow/react";
 import type { HandleType } from "@xyflow/react";
 import type { JSX } from "react";
 
+import { type PortHint, usePortHint } from "@/web/canvas/connection_hints.js";
 import { cn } from "@/web/components/ui/cn.js";
 import { Tooltip } from "@/web/components/ui/tooltip.js";
 
@@ -17,6 +18,12 @@ const HANDLE_POSITION_BY_SIDE: Record<PortSide, Position> = {
     right: Position.Right,
 };
 
+const PORT_HINT_CLASSES: Record<PortHint, string | undefined> = {
+    compatible: "port-handle--compatible",
+    incompatible: "port-handle--incompatible",
+    none: undefined,
+};
+
 export function PortHandle({
     side,
     name,
@@ -30,6 +37,9 @@ export function PortHandle({
     required?: boolean;
     connectable?: boolean;
 }): JSX.Element {
+    const handleType = HANDLE_TYPE_BY_SIDE[side];
+    const hint = usePortHint(name, handleType);
+
     return (
         <div
             className={cn(
@@ -39,10 +49,14 @@ export function PortHandle({
         >
             <Handle
                 id={name}
-                type={HANDLE_TYPE_BY_SIDE[side]}
+                type={handleType}
                 position={HANDLE_POSITION_BY_SIDE[side]}
                 isConnectable={connectable}
-                className={cn("port-handle", !required && "port-handle--optional")}
+                className={cn(
+                    "port-handle",
+                    !required && "port-handle--optional",
+                    PORT_HINT_CLASSES[hint],
+                )}
             />
             <Tooltip content={type}>
                 <span className="truncate">{name}</span>

@@ -1,4 +1,4 @@
-import type { Edge, Node } from "@xyflow/react";
+import type { Connection, Edge, Node } from "@xyflow/react";
 
 import type {
     FlowEdge,
@@ -8,6 +8,7 @@ import type {
     NodeType,
     Position,
 } from "@/shared/flow_graph.js";
+import type { PortRef } from "@/web/canvas/edge_actions.js";
 
 export const GROUP_NODE_TYPE = "group";
 export const FLOW_EDGE_TYPE = "flow";
@@ -20,6 +21,11 @@ export type FlowRFNode = Node<FlowNodeData, NodeType>;
 export type GroupRFNode = Node<GroupNodeData, typeof GROUP_NODE_TYPE>;
 export type RFNode = FlowRFNode | GroupRFNode;
 export type RFEdge = Edge;
+
+export interface ConnectionPorts {
+    from: PortRef;
+    to: PortRef;
+}
 
 type GroupsById = Map<string, FlowGroup>;
 type RFNodesById = Map<string, RFNode>;
@@ -53,6 +59,19 @@ export function fromReactFlow(nodes: RFNode[], edges: RFEdge[], previous: FlowGr
     };
 }
 
+// An edge only exists in the FlowGraph between two ports; React Flow may hold one without handles.
+export function toConnectionPorts(connection: Connection | RFEdge): ConnectionPorts | undefined {
+    const { source, sourceHandle, target, targetHandle } = connection;
+    if (!sourceHandle || !targetHandle) {
+        return undefined;
+    }
+
+    return {
+        from: { nodeId: source, port: sourceHandle },
+        to: { nodeId: target, port: targetHandle },
+    };
+}
+
 function sortParentsFirst(groups: FlowGroup[], groupsById: GroupsById): FlowGroup[] {
     return groups.toSorted((a, b) => groupDepth(a, groupsById) - groupDepth(b, groupsById));
 }
@@ -72,6 +91,8 @@ function toGroupRFNode(group: FlowGroup, groupsById: GroupsById): GroupRFNode {
     return {
         id: group.id,
         type: GROUP_NODE_TYPE,
+        // Removing a group means ungrouping its nodes, which the grouping tools own.
+        deletable: false,
         parentId: parent?.id,
         position: relativeToParent(group.position, parent),
         width: group.size.width,
@@ -148,17 +169,11 @@ function toAbsolutePosition(rfNode: RFNode, nodesById: RFNodesById): Position {
     return { x: rfNode.position.x + parentPosition.x, y: rfNode.position.y + parentPosition.y };
 }
 
-// An edge only exists in the FlowGraph between two ports; React Flow may hold one without handles.
 function toFlowEdges(edge: RFEdge): FlowEdge[] {
-    if (!edge.sourceHandle || !edge.targetHandle) {
+    const ports = toConnectionPorts(edge);
+    if (!ports) {
         return [];
     }
 
-    return [
-        {
-            id: edge.id,
-            from: { nodeId: edge.source, port: edge.sourceHandle },
-            to: { nodeId: edge.target, port: edge.targetHandle },
-        },
-    ];
+    return [{ id: edge.id, ...ports }];
 }

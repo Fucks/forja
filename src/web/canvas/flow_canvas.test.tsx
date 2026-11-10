@@ -1,7 +1,7 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import { createEvent, fireEvent, render, screen } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import type { FlowGraph, FlowGroup, NodeType, Position } from "@/shared/flow_graph.js";
+import type { FlowEdge, FlowGraph, FlowGroup, NodeType, Position } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { createEditorStore } from "@/web/canvas/editor_store.js";
@@ -80,6 +80,49 @@ describe("FlowCanvas", () => {
         expect(store.getState().graph.nodes).toEqual([]);
     });
 
+    it.each(["Delete", "Backspace"])(
+        "removes the selected node and its edges when %s is pressed",
+        async (key) => {
+            const store = createStoreWith(CANONICAL_FLOW);
+            store.getState().select(["dev"]);
+            renderCanvas(store);
+
+            fireEvent.keyDown(document, { key });
+
+            await waitFor(() => expect(store.getState().selection).toEqual([]));
+            const { nodes, edges } = store.getState().graph;
+            expect(nodes.map((node) => node.id)).not.toContain("dev");
+            expect(edges.some((edge) => isConnectedTo(edge, "dev"))).toBe(false);
+        },
+    );
+
+    it("removes the selected edge when Delete is pressed", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        const [selectedEdge] = CANONICAL_FLOW.edges;
+        store.getState().select([selectedEdge?.id ?? ""]);
+        renderCanvas(store);
+
+        fireEvent.keyDown(document, { key: "Delete" });
+
+        await waitFor(() =>
+            expect(store.getState().graph.edges).toEqual(CANONICAL_FLOW.edges.slice(1)),
+        );
+    });
+
+    it("keeps a selected group and its nodes when Delete is pressed", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        const developGroup = findCanonicalGroup("Desenvolver");
+        store.getState().select([developGroup.id, "trigger"]);
+        renderCanvas(store);
+
+        fireEvent.keyDown(document, { key: "Delete" });
+
+        await waitFor(() => expect(store.getState().selection).toEqual([developGroup.id]));
+        const { nodes, groups } = store.getState().graph;
+        expect(groups).toEqual(CANONICAL_FLOW.groups);
+        expect(nodes.map((node) => node.id)).toContain("dev");
+    });
+
     it("outlines the group under the cursor while a node type is dragged over it", () => {
         const developGroup = findCanonicalGroup("Desenvolver");
         renderCanvas(createStoreWith(CANONICAL_FLOW));
@@ -110,6 +153,10 @@ function renderCanvas(store: EditorStore): void {
             <FlowCanvas store={store} />
         </ReactFlowProvider>,
     );
+}
+
+function isConnectedTo(edge: FlowEdge, nodeId: string): boolean {
+    return edge.from.nodeId === nodeId || edge.to.nodeId === nodeId;
 }
 
 function findCanonicalGroup(label: string): FlowGroup {

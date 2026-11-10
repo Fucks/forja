@@ -73,3 +73,16 @@
         animation: none;
     }
 }
+
+.react-flow__handle.port-handle--compatible {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.react-flow__handle.port-handle--incompatible {
+    opacity: 0.3;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+    stroke-width: 2;
+}
