@@ -33,5 +33,3 @@ export const resolveApprovalInput = z.object({
     decision: z.enum(APPROVAL_DECISIONS),
     comment: z.string().optional(),
 });
-
-export type ResolveApprovalInput = z.infer<typeof resolveApprovalInput>;

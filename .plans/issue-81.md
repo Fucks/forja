@@ -40,4 +40,4 @@
 - [x] 9. Gate executor test + implement (`gate_executor.ts`): creates approval with truncated diff, returns waiting
 - [x] 10. Executor contract: `NodeExecutionOutcome`, `NodeRunExecution` delivers the waiting event, `ActiveRun` runs `expire_approval`, `Executor.resolveApproval`; wiring in app_executor/test bed
 - [x] 11. Routes test + implement `approvals_routes.ts` (list pending, get, resolve, 409) incl. end-to-end gate through the executor and restart
-- [ ] 12. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 12. Self-review checklist (section 5) and feedback loops (section 6)
