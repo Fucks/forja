@@ -8,8 +8,10 @@ import { resolveWith } from "@/lib/resolve_with.js";
 import type { AppDeps } from "@/server/app.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
+import type { EventBus } from "@/server/runtime/event_bus.js";
 import { createCronRunner } from "@/server/triggers/cron_runner.js";
 import type { CronRunner } from "@/server/triggers/cron_runner.js";
+import { createEventTriggerListener } from "@/server/triggers/event_trigger_listener.js";
 import { startQueuedFiresWhenRunsFinish } from "@/server/triggers/trigger_firing.js";
 import type { TriggerFiringDeps } from "@/server/triggers/trigger_firing.js";
 import { TriggerRepository } from "@/server/triggers/trigger_repository.js";
@@ -31,6 +33,8 @@ const TRIGGERS_PAUSED_PATH = "/triggers/paused";
 const TRIGGER_PATH = "/triggers/:id";
 const TRIGGER_FIRE_PATH = `${TRIGGER_PATH}/fire`;
 const TRIGGER_HISTORY_PATH = `${TRIGGER_PATH}/history`;
+const TRIGGER_ROTATE_TOKEN_PATH = `${TRIGGER_PATH}/rotate-token`;
+const MAX_TRIGGER_CHAIN_DEPTH = 3;
 const HTTP_CREATED = 201;
 const HTTP_NO_CONTENT = 204;
 
@@ -52,6 +56,7 @@ export const registerTriggersRoutes: RouteModule = (app, deps) => {
     registerTriggerRoutes(app, triggers);
     startQueuedFiresWhileAppIsUp(app, firingDeps);
     startCronRunnerWhileAppIsUp(app, cronRunner);
+    startEventTriggersWhileAppIsUp(app, firingDeps.events, triggers);
 };
 
 export function createTriggerFiringDeps(deps: AppDeps): TriggerFiringDeps {
@@ -81,6 +86,27 @@ function startCronRunnerWhileAppIsUp(app: FastifyInstance, cronRunner: CronRunne
     app.addHook("onReady", () => cronRunner.start());
     app.addHook("onClose", (_closingApp, done) => {
         cronRunner.stop();
+        done();
+    });
+}
+
+function startEventTriggersWhileAppIsUp(
+    app: FastifyInstance,
+    events: EventBus,
+    triggers: TriggerService,
+): void {
+    const listener = createEventTriggerListener({
+        events,
+        triggers,
+        maxChainDepth: MAX_TRIGGER_CHAIN_DEPTH,
+    });
+
+    app.addHook("onReady", (done) => {
+        listener.start();
+        done();
+    });
+    app.addHook("onClose", (_closingApp, done) => {
+        listener.stop();
         done();
     });
 }
@@ -157,6 +183,12 @@ function registerTriggerRoutes(app: FastifyInstance, triggers: TriggerService): 
             });
             return reply.code(HTTP_CREATED).send(fire);
         },
+    );
+
+    typedApp.post(
+        TRIGGER_ROTATE_TOKEN_PATH,
+        { schema: { params: triggerParamsSchema } },
+        (request) => triggers.rotateWebhookToken(request.params.id),
     );
 
     typedApp.get(

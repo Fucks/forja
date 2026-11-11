@@ -33,5 +33,5 @@
 - [x] 6. Test + implement webhook create returns token once, update keeps hash, `rotateWebhookToken` — `trigger_types.ts`, `trigger_service.ts`, `trigger_service.test.ts`
 - [x] 7. Test + implement `fireWebhookTrigger` + errors 401/403 — `trigger_service.ts`, `errors.ts`
 - [x] 8. Test + implement `POST /api/hooks/:triggerId` (401, 403, 202, body) — `webhook_routes.ts`/`webhook_routes.test.ts`
-- [ ] 9. Test + implement rotate-token route, token only on create/rotate, listener started by hooks — `triggers_routes.ts`/`.test.ts`
+- [x] 9. Test + implement rotate-token route, token only on create/rotate, listener started by hooks — `triggers_routes.ts`/`.test.ts`
 - [ ] 10. Self-review checklist and feedback loops
