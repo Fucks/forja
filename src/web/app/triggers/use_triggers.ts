@@ -20,7 +20,7 @@ import type { ApiError } from "@/web/api/api_client.js";
 export type CreateTriggerInput = z.input<typeof createTriggerInput>;
 export type UpdateTriggerInput = z.infer<typeof updateTriggerInput>;
 
-export interface TriggerChanges {
+export interface TriggerUpdate {
     id: string;
     changes: UpdateTriggerInput;
 }
@@ -46,8 +46,8 @@ export function useCreateTrigger(
     );
 }
 
-export function useUpdateTrigger(): UseMutationResult<Trigger, ApiError, TriggerChanges> {
-    return useTriggersMutation(({ id, changes }: TriggerChanges) =>
+export function useUpdateTrigger(): UseMutationResult<Trigger, ApiError, TriggerUpdate> {
+    return useTriggersMutation(({ id, changes }: TriggerUpdate) =>
         apiClient.patch<Trigger>(triggerPath(id), changes),
     );
 }

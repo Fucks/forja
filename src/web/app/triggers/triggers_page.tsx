@@ -7,6 +7,7 @@ import { useParams } from "react-router";
 import type { ListedTrigger, TriggerWithToken } from "@/shared/trigger_types.js";
 import { useProjectFlows } from "@/web/app/flows/use_flow_summary.js";
 import { PageTitle } from "@/web/app/page_title.js";
+import { findFlowName } from "@/web/app/triggers/find_flow_name.js";
 import { RemoveTriggerDialog } from "@/web/app/triggers/remove_trigger_dialog.js";
 import { TriggerFormDialog } from "@/web/app/triggers/trigger_form.js";
 import type { TriggerEditor } from "@/web/app/triggers/trigger_form.js";
@@ -151,9 +152,7 @@ function TriggersTable({
     triggers: ListedTrigger[];
     actions: TriggerActions;
 }): JSX.Element {
-    const flowsQuery = useProjectFlows(projectId);
-    const findFlowName = (flowId: string): string =>
-        flowsQuery.data?.find((flow) => flow.id === flowId)?.name ?? flowId;
+    const flows = useProjectFlows(projectId).data ?? [];
 
     return (
         <table className="w-full border-collapse text-left">
@@ -176,7 +175,7 @@ function TriggersTable({
                     <TriggerRow
                         key={trigger.id}
                         trigger={trigger}
-                        flowName={findFlowName(trigger.flowId)}
+                        flowName={findFlowName(flows, trigger.flowId)}
                         actions={actions}
                     />
                 ))}

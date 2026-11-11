@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 
 import { describeCron } from "@/engine/cron_schedule.js";
+import { RUN_TERMINAL } from "@/engine/run_state.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { FlowSummary } from "@/shared/flow_types.js";
 import { ITEM_SELECTIONS, TRIGGER_EVENTS } from "@/shared/trigger_types.js";
@@ -9,7 +10,7 @@ import {
     CUSTOM_CRON_PRESET,
     findCronPresetValue,
 } from "@/web/app/triggers/cron_presets.js";
-import { ANY_FILTER, FINISHED_RUN_STATUSES } from "@/web/app/triggers/trigger_draft.js";
+import { ANY_FILTER } from "@/web/app/triggers/trigger_draft.js";
 import type {
     DraftChange,
     RunStatusFilter,
@@ -38,7 +39,7 @@ const ITEM_SELECTION_OPTIONS = ITEM_SELECTIONS.map((itemSelection) => ({
 }));
 const RUN_STATUS_OPTIONS: { value: RunStatusFilter; label: string }[] = [
     { value: ANY_FILTER, label: "Qualquer estado" },
-    ...FINISHED_RUN_STATUSES.map((status) => ({
+    ...[...RUN_TERMINAL].map((status) => ({
         value: status,
         label: EXECUTION_STATUS_STYLES[status].label,
     })),

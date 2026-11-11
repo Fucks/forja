@@ -3,6 +3,7 @@ import type { JSX } from "react";
 import type { FlowSummary } from "@/shared/flow_types.js";
 import { TRIGGER_KINDS } from "@/shared/trigger_types.js";
 import type { TriggerKind } from "@/shared/trigger_types.js";
+import { findFlowName } from "@/web/app/triggers/find_flow_name.js";
 import type { DraftChange, TriggerDraft } from "@/web/app/triggers/trigger_draft.js";
 import { TRIGGER_KIND_STYLES } from "@/web/app/triggers/trigger_labels.js";
 import { Field } from "@/web/components/ui/field.js";
@@ -13,8 +14,6 @@ const KIND_OPTIONS = TRIGGER_KINDS.map((kind) => ({
     label: TRIGGER_KIND_STYLES[kind].label,
 }));
 
-// The flow and the type are fixed once created: a webhook needs a new token and a trigger never
-// moves to another flow.
 export function FlowAndKindFields({
     draft,
     onChange,
@@ -45,6 +44,8 @@ export function FlowAndKindFields({
     );
 }
 
+// The flow and the type are fixed once created: a webhook needs a new token and a trigger never
+// moves to another flow.
 export function FixedFlowAndKind({
     draft,
     flows,
@@ -52,11 +53,9 @@ export function FixedFlowAndKind({
     draft: TriggerDraft;
     flows: FlowSummary[];
 }): JSX.Element {
-    const flowName = flows.find((flow) => flow.id === draft.flowId)?.name ?? draft.flowId;
-
     return (
         <p className="text-muted">
-            {flowName} · {TRIGGER_KIND_STYLES[draft.kind].label}
+            {findFlowName(flows, draft.flowId)} · {TRIGGER_KIND_STYLES[draft.kind].label}
         </p>
     );
 }

@@ -13,7 +13,6 @@ import { CRON_PRESETS } from "@/web/app/triggers/cron_presets.js";
 import type { CreateTriggerInput, UpdateTriggerInput } from "@/web/app/triggers/use_triggers.js";
 
 export const ANY_FILTER = "any";
-export const FINISHED_RUN_STATUSES = ["SUCCEEDED", "FAILED", "CANCELED"] as const;
 
 export type RunStatusFilter = RunStatusName | typeof ANY_FILTER;
 
