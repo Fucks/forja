@@ -2,7 +2,11 @@ import { AgentStartPacer } from "@/engine/agent_start_pacer.js";
 import { ApprovalDeadlines } from "@/engine/approval_deadlines.js";
 import type { RunBudget, UsageTotals } from "@/engine/budgets.js";
 import { FlowPlan } from "@/engine/flow_plan.js";
-import { APPROVAL_TIMEOUT_COMMENT, gateOutputsOf } from "@/engine/gate_decision.js";
+import {
+    APPROVAL_TIMEOUT_COMMENT,
+    gateOutputsOf,
+    isAwaitingDecision,
+} from "@/engine/gate_decision.js";
 import { LoopGroupCoordinator } from "@/engine/loop_group_coordinator.js";
 import type { MapGroupState } from "@/engine/map_group.js";
 import { type FinishedMapItem, MapGroupCoordinator } from "@/engine/map_group_coordinator.js";
@@ -534,8 +538,7 @@ class DagScheduler implements Scheduler {
             return;
         }
         if (this.stopOutcome) {
-            this.withdrawApproval(nodeRunId);
-            this.changeNodeRun(transitionNodeRun(gate, "CANCELED", at));
+            this.cancelGateOfStoppingRun(gate, at);
             return;
         }
 
@@ -546,9 +549,16 @@ class DagScheduler implements Scheduler {
         }
     }
 
+    // The gate may have been the last NodeRun the stopping run was waiting for.
+    private cancelGateOfStoppingRun(gate: NodeRunState, at: Date): void {
+        this.withdrawApproval(gate.id);
+        this.changeNodeRun(transitionNodeRun(gate, "CANCELED", at));
+        this.advance(at);
+    }
+
     private resolveApproval({ nodeRunId, decision, comment, at }: ApprovalResolution): void {
         const gate = this.nodeRuns.get(nodeRunId);
-        if (gate.status !== "WAITING_APPROVAL" && gate.status !== "RUNNING") {
+        if (!isAwaitingDecision(gate)) {
             return;
         }
 

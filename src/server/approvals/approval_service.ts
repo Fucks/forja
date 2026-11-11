@@ -61,13 +61,13 @@ function createApproval(deps: ApprovalServiceDeps, input: NewApproval): Approval
 }
 
 function resolveApproval(deps: ApprovalServiceDeps, resolution: Resolution): Approval {
-    const pending = findApprovalOrThrow(deps.repo, resolution.id);
-    if (pending.status !== "pending") {
-        throw new ApprovalNotPendingError(pending);
+    const approval = findApprovalOrThrow(deps.repo, resolution.id);
+    if (approval.status !== "pending") {
+        throw new ApprovalNotPendingError(approval);
     }
 
     return closeApproval(deps, {
-        ...pending,
+        ...approval,
         status: resolution.decision,
         comment: resolution.comment,
     });

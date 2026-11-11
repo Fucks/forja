@@ -21,13 +21,13 @@ const projectParamsSchema = z.object({ projectId: z.string().min(1) });
 const approvalParamsSchema = z.object({ id: z.string().min(1) });
 
 export const registerApprovalsRoutes: RouteModule = (app, deps) => {
-    const approvals = createApprovalsOf(deps);
+    const approvals = createApprovalServiceOf(deps);
 
     registerReadRoutes(app, approvals);
     registerResolveRoute(app, deps.executor);
 };
 
-function createApprovalsOf(deps: AppDeps): ApprovalService {
+function createApprovalServiceOf(deps: AppDeps): ApprovalService {
     return createApprovalService({
         repo: new ApprovalRepository(deps.db),
         events: deps.events,

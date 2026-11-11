@@ -1741,6 +1741,11 @@ describe("scheduler: gate waiting for approval", () => {
         return gate.nodeRunId;
     }
 
+    const failingHalfwayThroughTheGate: NodeScript = () => ({
+        durationMs: DEFAULT_NODE_DURATION_MS / 2,
+        outcome: FAILED_FOR_GOOD,
+    });
+
     function expiringGateIn(hours: number): NodeScript {
         return ({ nodeRun }) => ({
             outcome: {
@@ -1852,6 +1857,20 @@ describe("scheduler: gate waiting for approval", () => {
         expect(harness.finalStatusOf("gate", "1")).toBe("CANCELED");
         expect(harness.expiredApprovalNodeRunIds).toEqual([gateNodeRunIdOf(harness, "1")]);
         expect(harness.run.status).toBe("CANCELED");
+    });
+
+    it("cancels a gate that starts waiting after the run failed, and finishes the run then", () => {
+        const harness = createSchedulerHarness({
+            graph: withoutRetries(buildGateFlow()),
+            scripts: { c: failingHalfwayThroughTheGate },
+        });
+
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        expect(harness.finalStatusOf("gate", "1")).toBe("CANCELED");
+        expect(harness.expiredApprovalNodeRunIds).toEqual([gateNodeRunIdOf(harness, "1")]);
+        expect(harness.run.status).toBe("FAILED");
     });
 
     it("keeps the gate waiting across a restart, which does not interrupt it", () => {
