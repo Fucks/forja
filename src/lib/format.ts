@@ -77,6 +77,12 @@ export function formatDateTime(at: Date): string {
     return shortDateTime.format(at);
 }
 
+export function formatCount(count: number, nouns: { one: string; other: string }): string {
+    const noun = count === 1 ? nouns.one : nouns.other;
+
+    return `${count} ${noun}`;
+}
+
 function assertNonNegativeFinite(value: number): void {
     if (!Number.isFinite(value) || value < 0) {
         throw new RangeError(`Expected a non-negative finite number, received ${value}`);

@@ -1,4 +1,5 @@
 import {
+    formatCount,
     formatDateTime,
     formatDuration,
     formatRelativeOffset,
@@ -88,5 +89,15 @@ describe("formatDateTime", () => {
         const at = new Date(2026, 5, 2, 15, 30);
 
         expect(formatDateTime(at)).toBe("02/06/2026, 15:30");
+    });
+});
+
+describe("formatCount", () => {
+    it("uses the singular noun for one", () => {
+        expect(formatCount(1, { one: "erro", other: "erros" })).toBe("1 erro");
+    });
+
+    it.each([0, 2])("uses the plural noun for %i", (count) => {
+        expect(formatCount(count, { one: "erro", other: "erros" })).toBe(`${count} erros`);
     });
 });

@@ -5,21 +5,35 @@ import { z } from "zod";
 
 import { flowGraphSchema, isNodeOfType } from "@/shared/flow_graph.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
-import type { FlowDraft, FlowSummary } from "@/shared/flow_types.js";
+import type { FlowDraft, FlowSummary, FlowVersion } from "@/shared/flow_types.js";
 import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
 import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
+import type { ValidationIssue } from "@/shared/validation_issue.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
-import { listSentWrites, respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { updateAgentConfig } from "@/test/factories/flow_graph_variations.js";
+import {
+    listSentWrites,
+    respondWithApiError,
+    respondWithRefusedPublish,
+    stubFetchRoutes,
+} from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
 import { DraftConflictBanner } from "@/web/app/flows/draft_conflict_banner.js";
 import { AUTOSAVE_DELAY_MS } from "@/web/canvas/use_flow_draft.js";
+import { VALIDATION_DEBOUNCE_MS } from "@/web/canvas/use_validation.js";
 
 const PROJECT_ID = "prj_forja";
 const FLOW_ID = "flw_canonico";
 const EDITOR_PATH = `/projects/${PROJECT_ID}/flows/${FLOW_ID}`;
 const DRAFT_URL = `/api/flows/${FLOW_ID}/draft`;
+const PROJECT_FLOWS_URL = `/api/projects/${PROJECT_ID}/flows`;
+const HTTP_CREATED = 201;
 const HTTP_NOT_FOUND = 404;
+const TRIGGER_LABEL = "Gatilho";
+const NO_TRIGGER_MESSAGE = "O fluxo precisa de um nó de gatilho.";
+const EMPTY_PROMPT_MESSAGE = 'O agente "Dev" está sem prompt.';
+const VALIDATION_WAIT = { timeout: VALIDATION_DEBOUNCE_MS * 2 };
 const AUTOSAVE_WAIT_MS = AUTOSAVE_DELAY_MS * 3;
 
 const draftWriteSchema = z.object({ graph: flowGraphSchema });
@@ -29,6 +43,15 @@ const CANONICAL_DRAFT: FlowDraft = {
     graph: buildCanonicalFlow(),
     revision: 1,
     updatedAt: "2026-11-09T12:00:00Z",
+};
+
+const GRAPH_WITH_EMPTY_PROMPT = updateAgentConfig(buildCanonicalFlow(), "dev", { prompt: "" });
+
+const UNKNOWN_TOOL_PROFILE_ISSUE: ValidationIssue = {
+    level: "error",
+    code: "unknown_tool_profile",
+    message: 'O agente "Dev" usa um perfil de ferramentas que não existe.',
+    target: { kind: "node", id: "dev" },
 };
 
 const CANONICAL_SUMMARY: FlowSummary = {
@@ -41,14 +64,27 @@ const CANONICAL_SUMMARY: FlowSummary = {
     draftRevision: 1,
 };
 
-function fakeEditorApi(): FakeRoutes {
+function fakeEditorApi({
+    draftGraph = CANONICAL_DRAFT.graph,
+    latestVersion,
+}: { draftGraph?: FlowGraph; latestVersion?: number } = {}): FakeRoutes {
     return {
-        [`GET ${DRAFT_URL}`]: () => Response.json(CANONICAL_DRAFT),
+        [`GET ${DRAFT_URL}`]: () => Response.json({ ...CANONICAL_DRAFT, graph: draftGraph }),
         [`PUT ${DRAFT_URL}`]: () => Response.json({ ...CANONICAL_DRAFT, revision: 2 }),
-        [`GET /api/projects/${PROJECT_ID}/flows`]: () => Response.json([CANONICAL_SUMMARY]),
+        [`GET ${PROJECT_FLOWS_URL}`]: () =>
+            Response.json([{ ...CANONICAL_SUMMARY, latestVersion }]),
         [`GET /api/projects/${PROJECT_ID}/settings`]: () => Response.json(DEFAULT_PROJECT_SETTINGS),
         "GET /api/tool-profiles": () => Response.json([]),
         "GET /api/credentials": () => Response.json([]),
+    };
+}
+
+function buildPublishedVersion(version: number): FlowVersion {
+    return {
+        flowId: FLOW_ID,
+        version,
+        graph: CANONICAL_DRAFT.graph,
+        publishedAt: "2026-11-11T12:00:00Z",
     };
 }
 
@@ -194,6 +230,102 @@ describe("FlowEditorPage", () => {
             await screen.findByRole("heading", { name: "Não foi possível abrir o rascunho" }),
         ).toBeInTheDocument();
         expect(screen.getByText("Fluxo não encontrado.")).toBeInTheDocument();
+    });
+});
+
+describe("FlowEditorPage validation and publishing", () => {
+    it("lists the missing trigger in the problems panel once the trigger is removed", async () => {
+        stubFetchRoutes(fakeEditorApi());
+        renderAppAt(EDITOR_PATH);
+        await selectCanvasNode(TRIGGER_LABEL);
+
+        fireEvent.keyDown(document, { key: "Delete" });
+
+        const problemsPanel = screen.getByRole("region", { name: "Problemas" });
+        expect(
+            await within(problemsPanel).findByText(NO_TRIGGER_MESSAGE, {}, VALIDATION_WAIT),
+        ).toBeInTheDocument();
+    });
+
+    it("selects the node of the problem clicked in the panel", async () => {
+        stubFetchRoutes(fakeEditorApi({ draftGraph: GRAPH_WITH_EMPTY_PROMPT }));
+        renderAppAt(EDITOR_PATH);
+
+        const problemsPanel = await screen.findByRole("region", { name: "Problemas" });
+
+        await userEvent.click(within(problemsPanel).getByText(EMPTY_PROMPT_MESSAGE));
+
+        const inspector = screen.getByRole("complementary", { name: "Inspector" });
+        expect(within(inspector).getByRole("textbox", { name: "Rótulo" })).toHaveValue("Dev");
+    });
+
+    it("marks the node of a problem as invalid on the canvas", async () => {
+        stubFetchRoutes(fakeEditorApi({ draftGraph: GRAPH_WITH_EMPTY_PROMPT }));
+        renderAppAt(EDITOR_PATH);
+
+        await screen.findByTestId("rf__wrapper");
+
+        expect(
+            within(findCanvasNode("Dev")).getByLabelText("Configuração inválida"),
+        ).toBeInTheDocument();
+    });
+
+    it("blocks publishing while the draft has errors", async () => {
+        stubFetchRoutes(fakeEditorApi({ draftGraph: GRAPH_WITH_EMPTY_PROMPT }));
+        renderAppAt(EDITOR_PATH);
+
+        expect(await screen.findByRole("button", { name: "Publicar v1" })).toHaveAttribute(
+            "aria-disabled",
+            "true",
+        );
+    });
+
+    it("publishes the draft and shows the new version as the latest", async () => {
+        const routes = fakeEditorApi();
+        routes[`POST /api/flows/${FLOW_ID}/publish`] = () => {
+            routes[`GET ${PROJECT_FLOWS_URL}`] = () =>
+                Response.json([{ ...CANONICAL_SUMMARY, latestVersion: 1 }]);
+            return Response.json(buildPublishedVersion(1), { status: HTTP_CREATED });
+        };
+        routes[`GET /api/flows/${FLOW_ID}/versions/1`] = () =>
+            Response.json(buildPublishedVersion(1));
+        stubFetchRoutes(routes);
+        renderAppAt(EDITOR_PATH);
+
+        await userEvent.click(await screen.findByRole("button", { name: "Publicar v1" }));
+
+        expect(
+            await screen.findByText("Rascunho · última versão publicada v1"),
+        ).toBeInTheDocument();
+        expect(screen.getByText("v1 publicada")).toBeInTheDocument();
+    });
+
+    it("has nothing to publish when the draft equals the latest version", async () => {
+        stubFetchRoutes({
+            ...fakeEditorApi({ latestVersion: 3 }),
+            [`GET /api/flows/${FLOW_ID}/versions/3`]: () => Response.json(buildPublishedVersion(3)),
+        });
+        renderAppAt(EDITOR_PATH);
+
+        expect(
+            await screen.findByRole("button", { name: "Nada novo para publicar" }),
+        ).toHaveAttribute("aria-disabled", "true");
+    });
+
+    it("lists the issues the server found when it refused the publish", async () => {
+        stubFetchRoutes({
+            ...fakeEditorApi(),
+            [`POST /api/flows/${FLOW_ID}/publish`]: () =>
+                respondWithRefusedPublish([UNKNOWN_TOOL_PROFILE_ISSUE]),
+        });
+        renderAppAt(EDITOR_PATH);
+
+        await userEvent.click(await screen.findByRole("button", { name: "Publicar v1" }));
+
+        const problemsPanel = screen.getByRole("region", { name: "Problemas" });
+        expect(
+            await within(problemsPanel).findByText(UNKNOWN_TOOL_PROFILE_ISSUE.message),
+        ).toBeInTheDocument();
     });
 });
 

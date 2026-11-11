@@ -1,10 +1,10 @@
-import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import type { z } from "zod";
 
 import { deriveColumns } from "@/engine/board_columns.js";
 import type { BoardColumnDef } from "@/engine/board_columns.js";
-import type { FlowSummary, FlowVersion } from "@/shared/flow_types.js";
+import type { FlowSummary } from "@/shared/flow_types.js";
 import type {
     createTriggerInput,
     ListedTrigger,
@@ -16,6 +16,7 @@ import type {
 } from "@/shared/trigger_types.js";
 import { apiClient } from "@/web/api/api_client.js";
 import type { ApiError } from "@/web/api/api_client.js";
+import { flowVersionQuery } from "@/web/app/flows/use_flow_versions.js";
 
 export type CreateTriggerInput = z.input<typeof createTriggerInput>;
 export type UpdateTriggerInput = z.infer<typeof updateTriggerInput>;
@@ -28,7 +29,6 @@ export interface TriggerUpdate {
 const TRIGGERS_QUERY_KEY = "triggers";
 const TRIGGER_HISTORY_QUERY_KEY = "trigger-history";
 const TRIGGERS_PAUSED_QUERY_KEY = ["triggers-paused"];
-const FLOW_VERSION_QUERY_KEY = "flow-version";
 const TRIGGERS_PAUSED_PATH = "/triggers/paused";
 
 export function useTriggers(projectId: string): UseQueryResult<ListedTrigger[], ApiError> {
@@ -96,15 +96,8 @@ export function useSetTriggersPaused(): UseMutationResult<TriggersPaused, ApiErr
 export function useFlowBoardColumns(
     flow: FlowSummary | undefined,
 ): UseQueryResult<BoardColumnDef[], ApiError> {
-    const flowId = flow?.id;
-    const latestVersion = flow?.latestVersion;
-
     return useQuery({
-        queryKey: [FLOW_VERSION_QUERY_KEY, flowId, latestVersion],
-        queryFn:
-            flowId === undefined || latestVersion === undefined
-                ? skipToken
-                : () => apiClient.get<FlowVersion>(flowVersionPath(flowId, latestVersion)),
+        ...flowVersionQuery(flow?.id, flow?.latestVersion),
         select: (version) => deriveColumns(version.graph),
     });
 }
@@ -135,8 +128,4 @@ function projectTriggersPath(projectId: string): string {
 
 function triggerPath(id: string): string {
     return `/triggers/${encodeURIComponent(id)}`;
-}
-
-function flowVersionPath(flowId: string, version: number): string {
-    return `/flows/${encodeURIComponent(flowId)}/versions/${version}`;
 }

@@ -1,13 +1,8 @@
 import { DomainValidationError } from "@/server/errors.js";
-import {
-    FlowFileError,
-    flowFileName,
-    flowToYaml,
-    normalizeFlowGraph,
-    yamlToFlow,
-} from "@/server/flows/flow_yaml.js";
+import { FlowFileError, flowFileName, flowToYaml, yamlToFlow } from "@/server/flows/flow_yaml.js";
 import type { FlowFile } from "@/server/flows/flow_yaml.js";
 import type { FlowGraph, Position } from "@/shared/flow_graph.js";
+import { normalizeFlowGraph } from "@/shared/normalize_flow_graph.js";
 import { buildCanonicalFlow, buildLoopFlow } from "@/test/factories/flow_graph_factory.js";
 
 const EXPORTED_AT = "2026-11-08T12:00:00.000Z";

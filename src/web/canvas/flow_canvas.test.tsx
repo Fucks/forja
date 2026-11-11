@@ -1,8 +1,9 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import { createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
 import type { FlowEdge, FlowGraph, FlowGroup, NodeType, Position } from "@/shared/flow_graph.js";
+import type { ValidationIssue } from "@/shared/validation_issue.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { createEditorStore } from "@/web/canvas/editor_store.js";
@@ -10,9 +11,30 @@ import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
 import { MIXED_GROUPS_REASON } from "@/web/canvas/grouping.js";
 import { NODE_TYPE_DRAG_FORMAT } from "@/web/canvas/palette/node_type_drag.js";
+import type { IssuesByTarget } from "@/web/canvas/use_validation.js";
 
 const CANONICAL_FLOW = buildCanonicalFlow();
 const EMPTY_FLOW: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+const INVALID_MARKER_LABEL = "Configuração inválida";
+
+const EMPTY_PROMPT_ERROR: ValidationIssue = {
+    level: "error",
+    code: "empty_prompt",
+    message: 'O agente "Dev" está sem prompt.',
+    target: { kind: "node", id: "dev" },
+};
+const GROUP_OVERLAP_ERROR: ValidationIssue = {
+    level: "error",
+    code: "group_overlap",
+    message: 'O grupo "Desenvolver" se sobrepõe a outro grupo.',
+    target: { kind: "group", id: "develop" },
+};
+const BACK_EDGE_WARNING: ValidationIssue = {
+    level: "warning",
+    code: "loop_without_back_edge",
+    message: 'O loop "Dev" não tem aresta de volta entre seus nós.',
+    target: { kind: "node", id: "dev" },
+};
 
 // ResizeObserver is mocked in src/test/setup.ts, so React Flow never measures the nodes and keeps
 // them hidden: the nodes are found by their labels instead of by their accessible roles. For the
@@ -256,6 +278,42 @@ describe("FlowCanvas group menu", () => {
         expect(fittedGroup?.size).not.toEqual(findCanonicalGroup("Desenvolver").size);
     });
 
+    it("marks a node with errors as invalid", () => {
+        renderCanvas(createStoreWith(CANONICAL_FLOW), new Map([["dev", [EMPTY_PROMPT_ERROR]]]));
+
+        expect(screen.getByLabelText(INVALID_MARKER_LABEL)).toBeInTheDocument();
+    });
+
+    it("lists the messages of an invalid node in the tooltip of its alert marker", async () => {
+        const user = userEvent.setup();
+        renderCanvas(
+            createStoreWith(CANONICAL_FLOW),
+            new Map([["dev", [EMPTY_PROMPT_ERROR, BACK_EDGE_WARNING]]]),
+        );
+
+        await user.hover(screen.getByLabelText(INVALID_MARKER_LABEL));
+
+        const tooltip = await screen.findByRole("tooltip");
+        expect(tooltip).toHaveTextContent(EMPTY_PROMPT_ERROR.message);
+        expect(tooltip).toHaveTextContent(BACK_EDGE_WARNING.message);
+    });
+
+    it("does not mark a node that only has warnings", () => {
+        renderCanvas(createStoreWith(CANONICAL_FLOW), new Map([["dev", [BACK_EDGE_WARNING]]]));
+
+        expect(screen.queryByLabelText(INVALID_MARKER_LABEL)).not.toBeInTheDocument();
+    });
+
+    it("marks a group with errors as invalid", () => {
+        renderCanvas(
+            createStoreWith(CANONICAL_FLOW),
+            new Map([["develop", [GROUP_OVERLAP_ERROR]]]),
+        );
+
+        const groupFrame = screen.getByRole("group", { name: "Desenvolver", hidden: true });
+        expect(within(groupFrame).getByLabelText(INVALID_MARKER_LABEL)).toBeInTheDocument();
+    });
+
     it("closes the context menu with Escape", async () => {
         renderCanvas(createStoreWith(CANONICAL_FLOW));
         fireEvent.contextMenu(screen.getByLabelText("Desenvolver"));
@@ -266,10 +324,10 @@ describe("FlowCanvas group menu", () => {
     });
 });
 
-function renderCanvas(store: EditorStore): void {
+function renderCanvas(store: EditorStore, issuesByTarget: IssuesByTarget = new Map()): void {
     render(
         <ReactFlowProvider>
-            <FlowCanvas store={store} />
+            <FlowCanvas store={store} issuesByTarget={issuesByTarget} />
         </ReactFlowProvider>,
     );
 }

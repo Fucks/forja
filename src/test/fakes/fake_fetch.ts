@@ -1,6 +1,7 @@
 import type { MockInstance } from "vitest";
 
 import type { ApiErrorBody } from "@/shared/api_types.js";
+import type { ValidationIssue } from "@/shared/validation_issue.js";
 
 type FakeRouteResponder = (init: RequestInit | undefined) => Response | Promise<Response>;
 
@@ -14,6 +15,8 @@ export interface SentWrite {
 }
 
 const HTTP_NOT_FOUND = 404;
+const HTTP_UNPROCESSABLE_ENTITY = 422;
+export const REFUSED_PUBLISH_MESSAGE = "O fluxo tem erros e não pode ser publicado.";
 const READ_METHOD = "GET";
 
 export function stubFetchRoutes(routes: FakeRoutes): MockInstance<typeof fetch> {
@@ -30,6 +33,13 @@ export function stubFetchRoutes(routes: FakeRoutes): MockInstance<typeof fetch> 
 export function respondWithApiError(status: number, message: string): Response {
     const body: ApiErrorBody = { error: { code: "error", message } };
     return Response.json(body, { status });
+}
+
+export function respondWithRefusedPublish(issues: ValidationIssue[]): Response {
+    const body: ApiErrorBody = {
+        error: { code: "invalid", message: REFUSED_PUBLISH_MESSAGE, details: issues },
+    };
+    return Response.json(body, { status: HTTP_UNPROCESSABLE_ENTITY });
 }
 
 /** Every non-GET request sent through the stub, with its JSON body parsed. */
