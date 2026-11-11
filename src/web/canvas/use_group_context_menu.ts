@@ -12,7 +12,7 @@ export interface OpenGroupMenu {
     screenPosition: Position;
 }
 
-export interface GroupContextMenu {
+export interface GroupContextMenuControls {
     openMenu: OpenGroupMenu | undefined;
     onNodeContextMenu: (event: MouseEvent, node: RFNode) => void;
     closeMenu: () => void;
@@ -20,7 +20,7 @@ export interface GroupContextMenu {
     fitMenuGroup: () => void;
 }
 
-export function useGroupContextMenu(store: EditorStore): GroupContextMenu {
+export function useGroupContextMenu(store: EditorStore): GroupContextMenuControls {
     const [openMenu, setOpenMenu] = useState<OpenGroupMenu>();
 
     function onNodeContextMenu(event: MouseEvent, node: RFNode): void {

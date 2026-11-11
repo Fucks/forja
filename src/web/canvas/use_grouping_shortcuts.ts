@@ -8,7 +8,6 @@ const TYPING_TAG_NAMES = ["INPUT", "TEXTAREA", "SELECT"];
 
 export const GROUPING_SHORTCUT_LABELS: Record<GroupKind, string> = { map: "G M", loop: "G L" };
 
-// Two-key shortcuts: G then M groups in a map, G then L in a loop.
 export function useGroupingShortcuts(groupSelection: (kind: GroupKind) => void): void {
     const isPrefixPressed = useRef(false);
 

@@ -18,7 +18,7 @@ export const TRIGGER_INSIDE_GROUP_REASON = "O trigger não pode ficar dentro de 
 // An empty path never matches, so validation reports the loop until the user defines its exit.
 const UNDEFINED_LOOP_CONDITION: Condition = { op: "exists", path: "" };
 
-const GROUP_KIND_LABELS: Record<GroupKind, string> = { map: "Map", loop: "Loop" };
+export const GROUP_KIND_LABELS: Record<GroupKind, string> = { map: "Map", loop: "Loop" };
 
 export class GroupingRejectedError extends Error {
     constructor(readonly reason: string) {
@@ -60,14 +60,7 @@ export function groupNodes(
         parentGroupId: members[0]?.parentGroupId,
         frame: frameAround(members.map(nodeFrame)),
     });
-    const memberIds = new Set(members.map((node) => node.id));
-    const withGroup: FlowGraph = {
-        ...graph,
-        nodes: graph.nodes.map((node) =>
-            memberIds.has(node.id) ? { ...node, parentGroupId: group.id } : node,
-        ),
-        groups: [...graph.groups, group],
-    };
+    const withGroup = addGroupHolding(graph, group, members);
 
     return { graph: growAncestorsToContain(withGroup, group.id), groupId: group.id };
 }
@@ -78,19 +71,12 @@ export function ungroup(graph: FlowGraph, groupId: string): FlowGraph {
         return graph;
     }
 
-    const { parentGroupId } = group;
-    function liftToParent<Member extends GroupMember>(member: Member): Member {
-        if (member.parentGroupId !== groupId) {
-            return member;
-        }
-
-        return { ...member, parentGroupId };
-    }
-
     return {
         ...graph,
-        nodes: graph.nodes.map(liftToParent),
-        groups: graph.groups.filter((other) => other.id !== groupId).map(liftToParent),
+        nodes: graph.nodes.map((node) => liftOutOf(group, node)),
+        groups: graph.groups
+            .filter((other) => other.id !== groupId)
+            .map((other) => liftOutOf(group, other)),
         edges: graph.edges.filter(
             (edge) => edge.from.nodeId !== groupId && edge.to.nodeId !== groupId,
         ),
@@ -143,6 +129,26 @@ function createGroup({
     }
 
     return { ...fields, kind, config: loopConfigSchema.parse({ until: UNDEFINED_LOOP_CONDITION }) };
+}
+
+function addGroupHolding(graph: FlowGraph, group: FlowGroup, members: FlowNode[]): FlowGraph {
+    const memberIds = new Set(members.map((node) => node.id));
+
+    return {
+        ...graph,
+        nodes: graph.nodes.map((node) =>
+            memberIds.has(node.id) ? { ...node, parentGroupId: group.id } : node,
+        ),
+        groups: [...graph.groups, group],
+    };
+}
+
+function liftOutOf<Member extends GroupMember>(removedGroup: FlowGroup, member: Member): Member {
+    if (member.parentGroupId !== removedGroup.id) {
+        return member;
+    }
+
+    return { ...member, parentGroupId: removedGroup.parentGroupId };
 }
 
 function listChildFrames(graph: FlowGraph, groupId: string): Frame[] {

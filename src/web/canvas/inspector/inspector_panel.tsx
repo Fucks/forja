@@ -75,7 +75,7 @@ function SelectedGroupInspector({
     graph: FlowGraph;
 }): JSX.Element {
     function changeSelectedGroup(update: (group: FlowGroup) => FlowGroup): void {
-        store.getState().applyGraph((current) => updateGroupSettings(current, group.id, update));
+        store.getState().applyGraph((current) => updateGroup(current, group.id, update));
     }
 
     return (
@@ -94,7 +94,7 @@ function findSingleSelectedId(selection: string[]): string | undefined {
     return selection.length === 1 ? selection[0] : undefined;
 }
 
-function updateGroupSettings(
+function updateGroup(
     graph: FlowGraph,
     groupId: string,
     update: (group: FlowGroup) => FlowGroup,

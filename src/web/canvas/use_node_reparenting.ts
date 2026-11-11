@@ -11,7 +11,6 @@ export interface NodeReparenting {
     onNodeDragStop: OnNodeDrag<RFNode>;
 }
 
-// A node joins the innermost group under the pointer where it is dropped, or leaves its group.
 export function useNodeReparenting(store: EditorStore): NodeReparenting {
     const { screenToFlowPosition } = useReactFlow();
 
@@ -34,5 +33,9 @@ function readPointer(event: MouseEvent | TouchEvent): Position | undefined {
     }
 
     const [touch] = event.changedTouches;
-    return touch && { x: touch.clientX, y: touch.clientY };
+    if (!touch) {
+        return undefined;
+    }
+
+    return { x: touch.clientX, y: touch.clientY };
 }

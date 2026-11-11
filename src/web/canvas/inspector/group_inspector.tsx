@@ -3,6 +3,7 @@ import type { JSX } from "react";
 import { assertNever } from "@/lib/assert_never.js";
 import { MAX_MAP_CONCURRENCY, MIN_MAP_CONCURRENCY } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, LoopConfig, MapConfig } from "@/shared/flow_graph.js";
+import { GROUP_KIND_LABELS } from "@/web/canvas/grouping.js";
 import { InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
 import { LabelField } from "@/web/canvas/inspector/label_field.js";
 import { LoopFields } from "@/web/canvas/inspector/loop_fields.js";
@@ -15,11 +16,6 @@ export interface GroupInspectorProps {
     onChange: (update: (group: FlowGroup) => FlowGroup) => void;
 }
 
-const GROUP_SECTION_TITLES: Record<FlowGroup["kind"], string> = {
-    map: "Map",
-    loop: "Loop",
-};
-
 export function GroupInspector({ group, graph, onChange }: GroupInspectorProps): JSX.Element {
     return (
         <div className="flex flex-col">
@@ -27,7 +23,7 @@ export function GroupInspector({ group, graph, onChange }: GroupInspectorProps):
                 label={group.label}
                 onChange={(label) => onChange((current) => ({ ...current, label }))}
             />
-            <InspectorSection title={GROUP_SECTION_TITLES[group.kind]} isInitiallyOpen>
+            <InspectorSection title={GROUP_KIND_LABELS[group.kind]} isInitiallyOpen>
                 <GroupConfigFields group={group} graph={graph} onChange={onChange} />
             </InspectorSection>
         </div>
