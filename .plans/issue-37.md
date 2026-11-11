@@ -25,9 +25,9 @@
 
 - [x] 1. Refactor: move `normalizeFlowGraph` to `src/shared/normalize_flow_graph.ts` (and
       `withKeysInOrder`), update `flow_yaml.ts` and its tests' imports
-- [ ] 2. Test + impl: `useValidation` groups issues by target and counts errors/warnings —
+- [x] 2. Test + impl: `useValidation` groups issues by target and counts errors/warnings —
       `src/web/canvas/use_validation.ts`, `use_validation.test.ts`
-- [ ] 3. Test + impl: `useValidation` debounces graph changes by 250 ms — same files
+- [x] 3. Test + impl: `useValidation` debounces graph changes by 250 ms — same files
 - [ ] 4. Test + impl: nodes and groups with issues are drawn invalid, marker tooltip lists messages —
       `validation_overlay.tsx`, `flow_node_card.tsx`, `group_node.tsx`, `flow_canvas.tsx`,
       `flow_canvas.test.tsx`
