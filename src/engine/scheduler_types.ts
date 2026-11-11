@@ -3,6 +3,7 @@ import type { LoopInstanceState } from "@/engine/loop_group.js";
 import type { MapGroupState } from "@/engine/map_group.js";
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { RunState } from "@/engine/run_state.js";
+import type { ApprovalDecision } from "@/shared/approval_types.js";
 
 export interface SchedulerOptions {
     maxConcurrentAgents: number;
@@ -46,7 +47,16 @@ export type SchedulerEvent =
     // The user raised the limits and resumes a run paused by the budget.
     | { type: "budget_raised"; budget: RunBudget; at: Date }
     // The server restarted while the NodeRun was running; its process is gone.
-    | { type: "node_run_interrupted"; nodeRunId: string; at: Date };
+    | { type: "node_run_interrupted"; nodeRunId: string; at: Date }
+    // A gate asked for a human decision; without expiresAt it waits for as long as it takes.
+    | { type: "node_run_waiting_approval"; nodeRunId: string; expiresAt?: Date; at: Date }
+    | {
+          type: "approval_resolved";
+          nodeRunId: string;
+          decision: ApprovalDecision;
+          comment?: string;
+          at: Date;
+      };
 
 export type SchedulerCommand =
     | { type: "start_node_run"; nodeRun: NodeRunState; inputs: Record<string, unknown> }
@@ -64,7 +74,9 @@ export type SchedulerCommand =
     // The executor calls tick(at) at that time.
     | { type: "schedule_wakeup"; at: Date }
     | { type: "usage_limit_reached"; resetAt?: Date; resumeAt: Date }
-    | { type: "usage_limit_reset" };
+    | { type: "usage_limit_reset" }
+    // The gate stopped waiting without a human decision: it timed out or was canceled.
+    | { type: "expire_approval"; nodeRunId: string };
 
 export interface Scheduler {
     handle(event: SchedulerEvent): SchedulerCommand[];
@@ -88,6 +100,8 @@ export interface SchedulerSnapshot {
     stopOutcome?: StopOutcome;
     timedOutNodeRunIds?: string[];
     usageByNode?: Record<string, UsageTotals>;
+    // ISO expiry of each gate NodeRun waiting for an approval that has a timeout.
+    approvalDeadlines?: Record<string, string>;
 }
 
 export const TRIGGER_ITEMS_PORT = "items";
@@ -102,4 +116,5 @@ export interface SchedulerState {
     stopOutcome?: StopOutcome;
     timedOutNodeRunIds?: string[];
     usageByNode?: Record<string, UsageTotals>;
+    approvalDeadlines?: Record<string, string>;
 }

@@ -9,6 +9,7 @@ import type {
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { Clock } from "@/lib/clock.js";
 import type { IdPrefix } from "@/lib/ids.js";
+import type { ApprovalService } from "@/server/approvals/approval_service.js";
 import { DomainValidationError, NotFoundError } from "@/server/errors.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
 import type { ProjectService } from "@/server/projects/project_types.js";
@@ -16,6 +17,7 @@ import type { RunRecord, RunRepository } from "@/server/runs/run_repository.js";
 import { ActiveRun } from "@/server/runtime/active_run.js";
 import { BUDGET_EXCEEDED_ACTION, loadDailyBudget } from "@/server/runtime/daily_budget.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import { createGateExecutor } from "@/server/runtime/executors/gate_executor.js";
 import type { LogStore } from "@/server/runtime/log_store.js";
 import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
 import {
@@ -35,6 +37,7 @@ import {
 } from "@/server/runtime/stored_snapshot.js";
 import type { SettingsService } from "@/server/settings/settings_service.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
+import type { Approval, ApprovalDecision } from "@/shared/approval_types.js";
 import type { FlowVersion } from "@/shared/flow_types.js";
 import type { Project } from "@/shared/project_types.js";
 import type { GlobalSettings, ProjectSettings } from "@/shared/settings_types.js";
@@ -64,6 +67,8 @@ export interface Executor {
     retryNodeRun(nodeRunId: string): Promise<void>;
     // Keeps the daily budget of the project; resumes the run when the budget had paused it.
     raiseRunBudget(runId: string, runLimit: BudgetLimit | undefined): Promise<void>;
+    // Resolves the approval, then the gate that waits for it goes on through the decision's port.
+    resolveApproval(id: string, decision: ApprovalDecision, comment?: string): Promise<Approval>;
     // Takes over a run the previous server process left active.
     resumeFromSnapshot(run: RunRecord, snapshot: unknown): Promise<void>;
     activeRunIds(): string[];
@@ -79,6 +84,7 @@ export interface ExecutorDeps extends RunToolProfilesDeps, RunCredentialsDeps {
     events: EventBus;
     logs: LogStore;
     usage: UsageService;
+    approvals: ApprovalService;
     clock: Clock;
     newId(prefix: IdPrefix): string;
     // Defaults to the registry; tests stand in for the node types that are not implemented yet.
@@ -102,8 +108,14 @@ export function createExecutor(deps: ExecutorDeps): Executor {
 
 class RunExecutor implements Executor {
     private readonly activeRuns = new Map<string, ActiveRun>();
+    private readonly nodeExecutors: NodeExecutorRegistry;
 
-    constructor(private readonly deps: ExecutorDeps) {}
+    constructor(private readonly deps: ExecutorDeps) {
+        this.nodeExecutors = {
+            ...(deps.nodeExecutors ?? nodeExecutors),
+            gate: createGateExecutor({ approvals: deps.approvals }),
+        };
+    }
 
     async startRun(input: StartRunInput): Promise<RunRecord> {
         const setup = await this.loadRunSetup(input);
@@ -157,6 +169,23 @@ class RunExecutor implements Executor {
         };
 
         await activeRun.deliver({ type: "budget_raised", budget, at: this.now() });
+    }
+
+    async resolveApproval(
+        id: string,
+        decision: ApprovalDecision,
+        comment?: string,
+    ): Promise<Approval> {
+        const approval = await this.deps.approvals.resolve(id, decision, comment);
+        await this.deliverTo(approval.runId, {
+            type: "approval_resolved",
+            nodeRunId: approval.nodeRunId,
+            decision,
+            comment,
+            at: this.now(),
+        });
+
+        return approval;
     }
 
     async resumeFromSnapshot(run: RunRecord, snapshot: unknown): Promise<void> {
@@ -270,6 +299,7 @@ class RunExecutor implements Executor {
             events: deps.events,
             logs: deps.logs,
             usage: deps.usage,
+            approvals: deps.approvals,
             runtime: deps.runtime,
             clock: deps.clock,
             newId: (prefix) => deps.newId(prefix),
@@ -286,7 +316,7 @@ class RunExecutor implements Executor {
                 this.schedulerOptionsOf(projectSettings, globalSettings, dailyBudget),
                 restore,
             ),
-            nodeExecutors: deps.nodeExecutors ?? nodeExecutors,
+            nodeExecutors: this.nodeExecutors,
             onFinished: (runId) => this.activeRuns.delete(runId),
         });
         this.activeRuns.set(record.id, activeRun);

@@ -12,6 +12,7 @@ import type { AgentEvent, AgentRuntime } from "@/integrations/agent_runtime/agen
 import { assertNever } from "@/lib/assert_never.js";
 import type { CancelTimeout, Clock } from "@/lib/clock.js";
 import type { IdPrefix } from "@/lib/ids.js";
+import type { ApprovalService } from "@/server/approvals/approval_service.js";
 import type { RunRecord, RunRepository } from "@/server/runs/run_repository.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import { createLogAnnouncer, type LogAnnouncer } from "@/server/runtime/log_announcer.js";
@@ -52,6 +53,7 @@ export interface ActiveRunDeps {
     events: EventBus;
     logs: LogStore;
     usage: UsageService;
+    approvals: ApprovalService;
     runtime: AgentRuntime;
     clock: Clock;
     nodeExecutors: NodeExecutorRegistry;
@@ -160,6 +162,9 @@ export class ActiveRun {
                 break;
             case "usage_limit_reset":
                 this.deps.events.publish(usageLimitResetEvent(this.record));
+                break;
+            case "expire_approval":
+                await this.deps.approvals.expireOfNodeRun(command.nodeRunId);
                 break;
             default:
                 assertNever(command);

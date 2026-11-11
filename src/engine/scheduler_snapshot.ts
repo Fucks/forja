@@ -13,6 +13,7 @@ export function takeSnapshot(state: SchedulerState): SchedulerSnapshot {
         stopOutcome: state.stopOutcome,
         timedOutNodeRunIds: state.timedOutNodeRunIds,
         usageByNode: state.usageByNode,
+        approvalDeadlines: state.approvalDeadlines,
     };
 }
 
@@ -27,6 +28,7 @@ export function restoreSnapshot(snapshot: SchedulerSnapshot): SchedulerState {
         stopOutcome: snapshot.stopOutcome,
         timedOutNodeRunIds: snapshot.timedOutNodeRunIds,
         usageByNode: snapshot.usageByNode,
+        approvalDeadlines: snapshot.approvalDeadlines,
     };
 }
 
@@ -37,7 +39,11 @@ export function wakeupTimesOf(snapshot: SchedulerSnapshot): Date[] {
         .filter((nodeRun) => nodeRun.status === "QUEUED")
         .flatMap((nodeRun) => (nodeRun.queuedAt ? [nodeRun.queuedAt] : []));
 
-    return [...usageLimitResumeTimesOf(run), ...queuedAtTimes];
+    const approvalExpiryTimes = Object.values(snapshot.approvalDeadlines ?? {}).map(
+        (expiresAt) => new Date(expiresAt),
+    );
+
+    return [...usageLimitResumeTimesOf(run), ...queuedAtTimes, ...approvalExpiryTimes];
 }
 
 export function runningNodeRunIdsOf(snapshot: SchedulerSnapshot): string[] {

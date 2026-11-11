@@ -83,6 +83,31 @@ export function buildConditionFlow(condition: Condition): FlowGraph {
     );
 }
 
+// trigger → gate → approved: publish; rejected: rework (with the comment), beside an agent c
+export function buildGateFlow(): FlowGraph {
+    const gate = {
+        ...buildNode("gate", "gate"),
+        outputs: [...gateOutputs(), requiredPort("comment")],
+    };
+
+    return buildFlow(
+        [
+            buildNode("trigger", "trigger"),
+            gate,
+            buildNode("agent", "publish"),
+            withInput(buildNode("agent", "rework"), requiredPort("feedback")),
+            buildNode("agent", "c"),
+        ],
+        [
+            connect(["trigger", "items"], ["gate", "item"]),
+            connect(["gate", "approved"], ["publish", "item"]),
+            connect(["gate", "rejected"], ["rework", "item"]),
+            connect(["gate", "comment"], ["rework", "feedback"]),
+            connect(["trigger", "items"], ["c", "item"]),
+        ],
+    );
+}
+
 // trigger → map(a) → b, where b runs per item outside the map
 export function buildMappedLinearFlow(): FlowGraph {
     const graph = addGroups(buildLinearAgentFlow(), [buildMapGroup("map_a")]);
@@ -179,6 +204,10 @@ function buildConditionNode(id: string, condition: Condition): NodeOfType<"condi
         ],
         config: { condition },
     };
+}
+
+function gateOutputs(): Port[] {
+    return createDefaultNode("gate", "gate", ORIGIN).outputs;
 }
 
 function requiredPort(name: string): Port {

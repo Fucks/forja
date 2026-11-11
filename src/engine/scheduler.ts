@@ -1,6 +1,12 @@
 import { AgentStartPacer } from "@/engine/agent_start_pacer.js";
+import { ApprovalDeadlines } from "@/engine/approval_deadlines.js";
 import type { RunBudget, UsageTotals } from "@/engine/budgets.js";
 import { FlowPlan } from "@/engine/flow_plan.js";
+import {
+    APPROVAL_TIMEOUT_COMMENT,
+    gateOutputsOf,
+    isAwaitingDecision,
+} from "@/engine/gate_decision.js";
 import { LoopGroupCoordinator } from "@/engine/loop_group_coordinator.js";
 import type { MapGroupState } from "@/engine/map_group.js";
 import { type FinishedMapItem, MapGroupCoordinator } from "@/engine/map_group_coordinator.js";
@@ -42,10 +48,12 @@ import {
 } from "@/engine/scheduler_types.js";
 import { computeResumeAt } from "@/engine/usage_pause.js";
 import { assertNever } from "@/lib/assert_never.js";
+import type { ApprovalDecision } from "@/shared/approval_types.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 
 type NodeRunFailure = Extract<SchedulerEvent, { type: "node_run_failed" }>;
+type ApprovalResolution = Extract<SchedulerEvent, { type: "approval_resolved" }>;
 
 // A failure event that brings no error is treated as a runtime failure.
 const UNREPORTED_FAILURE: RecordedFailure = { kind: "runtime" };
@@ -80,6 +88,7 @@ class DagScheduler implements Scheduler {
     private readonly agentStarts: AgentStartPacer;
     private readonly timeouts: NodeRunTimeouts;
     private readonly budget: RunBudgetGuard;
+    private readonly approvalDeadlines: ApprovalDeadlines;
     private stopOutcome: StopOutcome | undefined;
     private outbox: SchedulerCommand[] = [];
 
@@ -108,6 +117,7 @@ class DagScheduler implements Scheduler {
         this.agentStarts = new AgentStartPacer(options, state.lastAgentStartAt);
         this.timeouts = new NodeRunTimeouts(plan, state.timedOutNodeRunIds ?? []);
         this.budget = new RunBudgetGuard(options.budget, state.usageByNode ?? {});
+        this.approvalDeadlines = new ApprovalDeadlines(state.approvalDeadlines ?? {});
         this.stopOutcome = state.stopOutcome;
     }
 
@@ -146,6 +156,12 @@ class DagScheduler implements Scheduler {
             case "node_run_interrupted":
                 this.interruptNodeRun(event.nodeRunId, event.at);
                 break;
+            case "node_run_waiting_approval":
+                this.waitForApproval(event.nodeRunId, event.expiresAt, event.at);
+                break;
+            case "approval_resolved":
+                this.resolveApproval(event);
+                break;
             default:
                 assertNever(event);
         }
@@ -171,6 +187,7 @@ class DagScheduler implements Scheduler {
             stopOutcome: this.stopOutcome,
             timedOutNodeRunIds: this.timeouts.timedOutIds(),
             usageByNode: this.budget.spentByNode(),
+            approvalDeadlines: this.approvalDeadlines.toRecord(),
         });
     }
 
@@ -351,7 +368,7 @@ class DagScheduler implements Scheduler {
         if (nodeRun.status === "RUNNING") {
             this.requestCancel([nodeRun]);
         } else {
-            this.changeNodeRun(transitionNodeRun(nodeRun, "CANCELED", at));
+            this.cancelBeforeFinishing(nodeRun, at);
         }
 
         this.advance(at);
@@ -514,13 +531,87 @@ class DagScheduler implements Scheduler {
         return requeueSameAttempt(interrupted, at);
     }
 
+    // The answer may come before the gate reports it is waiting; then there is nothing to wait for.
+    private waitForApproval(nodeRunId: string, expiresAt: Date | undefined, at: Date): void {
+        const gate = this.nodeRuns.get(nodeRunId);
+        if (gate.status !== "RUNNING") {
+            return;
+        }
+        if (this.stopOutcome) {
+            this.cancelGateOfStoppingRun(gate, at);
+            return;
+        }
+
+        this.changeNodeRun(transitionNodeRun(gate, "WAITING_APPROVAL", at));
+        if (expiresAt) {
+            this.approvalDeadlines.set(nodeRunId, expiresAt);
+            this.outbox.push({ type: "schedule_wakeup", at: expiresAt });
+        }
+    }
+
+    // The gate may have been the last NodeRun the stopping run was waiting for.
+    private cancelGateOfStoppingRun(gate: NodeRunState, at: Date): void {
+        this.withdrawApproval(gate.id);
+        this.changeNodeRun(transitionNodeRun(gate, "CANCELED", at));
+        this.advance(at);
+    }
+
+    private resolveApproval({ nodeRunId, decision, comment, at }: ApprovalResolution): void {
+        const gate = this.nodeRuns.get(nodeRunId);
+        if (!isAwaitingDecision(gate)) {
+            return;
+        }
+
+        this.decideGate(gate, decision, comment, at);
+        this.advance(at);
+    }
+
+    private expireOverdueApprovals(now: Date): void {
+        for (const nodeRunId of this.approvalDeadlines.overdueNodeRunIds(now)) {
+            this.outbox.push({ type: "expire_approval", nodeRunId });
+            const gate = this.nodeRuns.get(nodeRunId);
+            this.decideGate(gate, "rejected", APPROVAL_TIMEOUT_COMMENT, now);
+        }
+    }
+
+    private decideGate(
+        gate: NodeRunState,
+        decision: ApprovalDecision,
+        comment: string | undefined,
+        at: Date,
+    ): void {
+        this.approvalDeadlines.forget(gate.id);
+        const outputs = gateOutputsOf(gate, decision, comment);
+        this.changeNodeRun(transitionNodeRun(gate, "SUCCEEDED", at, { outputs }));
+    }
+
     // Nothing new starts once the run is stopping; RUNNING NodeRuns are left to finish.
     private stop(outcome: StopOutcome, at: Date): void {
         this.stopOutcome = outcome;
-        for (const nodeRun of this.nodeRuns.withStatus("PENDING", "QUEUED", "WAITING_LIMIT")) {
-            this.changeNodeRun(transitionNodeRun(nodeRun, "CANCELED", at));
+        const notRunning = this.nodeRuns.withStatus(
+            "PENDING",
+            "QUEUED",
+            "WAITING_LIMIT",
+            "WAITING_APPROVAL",
+        );
+        for (const nodeRun of notRunning) {
+            this.cancelBeforeFinishing(nodeRun, at);
         }
         this.mapGroups.cancelQueuedItems();
+    }
+
+    private cancelBeforeFinishing(nodeRun: NodeRunState, at: Date): void {
+        if (nodeRun.status === "WAITING_APPROVAL") {
+            this.withdrawApproval(nodeRun.id);
+        }
+
+        this.changeNodeRun(transitionNodeRun(nodeRun, "CANCELED", at));
+    }
+
+    // A gate canceled while it waits leaves an approval nobody can answer anymore.
+    private withdrawApproval(nodeRunId: string): void {
+        this.approvalDeadlines.forget(nodeRunId);
+        this.outbox.push({ type: "expire_approval", nodeRunId });
     }
 
     private requestCancel(runningNodeRuns: NodeRunState[]): void {
@@ -565,6 +656,7 @@ class DagScheduler implements Scheduler {
             return;
         }
 
+        this.expireOverdueApprovals(now);
         this.cancelOverdueNodeRuns(now);
         this.moveItemsThroughGroups(now);
         // The budget may have paused the run while the NodeRuns were being queued.

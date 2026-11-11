@@ -65,12 +65,15 @@ export class FakeAgentRuntime implements AgentRuntime {
     readonly requests: AgentRunRequest[] = [];
     // The runtime files of every agent run, by host path, as the last run left them.
     readonly runtimeFiles = new Map<string, string>();
+    // The base branches the workspaces were diffed against, in call order.
+    readonly diffBaseBranches: string[] = [];
     private readonly clock: FakeClock;
     private readonly defaultDurationMs: number;
     private readonly steps: ScriptedStepUsage[] = [];
     private readonly scriptedExecs = new Map<string, ScriptedExec[]>();
     private readonly openWorkspaces = new Map<string, OpenWorkspaceSummary>();
     private readonly workspaceFiles = new Map<string, Map<string, string>>();
+    private branchDiff = "";
     private openedWorkspaceCount = 0;
     private activeRunCount = 0;
     private peakActiveRunCount = 0;
@@ -95,6 +98,12 @@ export class FakeAgentRuntime implements AgentRuntime {
     // Each call of the command plays the next execution; the last one repeats.
     scriptExec(command: string, ...executions: ScriptedExec[]): this {
         this.scriptedExecs.set(command, executions);
+        return this;
+    }
+
+    // Every workspace answers diff() with it.
+    scriptDiff(diff: string): this {
+        this.branchDiff = diff;
         return this;
     }
 
@@ -169,7 +178,10 @@ export class FakeAgentRuntime implements AgentRuntime {
             runtimeDir: fakeRuntimeDir(id),
             runAgent: (request, hooks) => this.runAgent("run", { request, hooks, workItemId }),
             exec: (command, options) => this.exec(command, options, workItemId),
-            diff: () => Promise.resolve(""),
+            diff: (baseBranch) => {
+                this.diffBaseBranches.push(baseBranch);
+                return Promise.resolve(this.branchDiff);
+            },
             writeFiles: (files) => {
                 this.storeFiles(id, files);
                 return Promise.resolve();

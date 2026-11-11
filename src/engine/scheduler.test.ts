@@ -1,6 +1,7 @@
 import type { RunBudget } from "@/engine/budgets.js";
 import type { NodeRunError } from "@/engine/node_run_state.js";
 import { createScheduler } from "@/engine/scheduler.js";
+import { runningNodeRunIdsOf, wakeupTimesOf } from "@/engine/scheduler_snapshot.js";
 import type {
     SchedulerCommand,
     SchedulerOptions,
@@ -12,6 +13,7 @@ import { moveNode } from "@/test/factories/flow_graph_variations.js";
 import { buildRunState } from "@/test/factories/run_state_factory.js";
 import {
     buildConditionFlow,
+    buildGateFlow,
     buildLoopBesideAgentFlow,
     buildLinearAgentFlow,
     buildMappedLinearFlow,
@@ -1726,3 +1728,175 @@ function failingOn(failingItemId: string): NodeScript {
         return { outcome: FAILED_FOR_GOOD };
     };
 }
+
+describe("scheduler: gate waiting for approval", () => {
+    const HOUR_MS = 60 * MINUTE_MS;
+
+    function gateNodeRunIdOf(harness: SchedulerHarness, workItemId: string): string {
+        const [gate] = harness.attemptsOf("gate", workItemId);
+        if (!gate) {
+            throw new Error(`The gate of item ${workItemId} never ran`);
+        }
+
+        return gate.nodeRunId;
+    }
+
+    const failingHalfwayThroughTheGate: NodeScript = () => ({
+        durationMs: DEFAULT_NODE_DURATION_MS / 2,
+        outcome: FAILED_FOR_GOOD,
+    });
+
+    function expiringGateIn(hours: number): NodeScript {
+        return ({ nodeRun }) => ({
+            outcome: {
+                kind: "wait_for_approval",
+                expiresAt: new Date((nodeRun.startedAt?.getTime() ?? 0) + hours * HOUR_MS),
+            },
+        });
+    }
+
+    it("keeps the gate WAITING_APPROVAL and the run going until someone decides", () => {
+        const harness = createSchedulerHarness({ graph: buildGateFlow() });
+
+        harness.start(["1"]);
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("gate", "1")).toBe("WAITING_APPROVAL");
+        expect(harness.finalStatusOf("publish", "1")).toBe("PENDING");
+        expect(harness.run.status).toBe("RUNNING");
+    });
+
+    it("does not take an agent slot while it waits", () => {
+        const harness = createSchedulerHarness({ graph: buildGateFlow(), maxConcurrentAgents: 1 });
+
+        harness.start(["1", "2"]);
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("gate", "1")).toBe("WAITING_APPROVAL");
+        expect(harness.finalStatusOf("gate", "2")).toBe("WAITING_APPROVAL");
+        expect(harness.finalStatusOf("c", "1")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("c", "2")).toBe("SUCCEEDED");
+    });
+
+    it("goes on through the approved port when the approval is approved", () => {
+        const harness = createSchedulerHarness({ graph: buildGateFlow() });
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        harness.resolveApproval(gateNodeRunIdOf(harness, "1"), "approved");
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("gate", "1")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("publish", "1")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("rework", "1")).toBe("SKIPPED");
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("goes on through the rejected port with the comment when the approval is rejected", () => {
+        const harness = createSchedulerHarness({ graph: buildGateFlow() });
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        harness.resolveApproval(gateNodeRunIdOf(harness, "1"), "rejected", "Faltam testes");
+        harness.runToCompletion();
+
+        const [rework] = harness.startCommandsOf("rework");
+        expect(rework?.inputs).toEqual({ item: { id: "1" }, feedback: "Faltam testes" });
+        expect(harness.finalStatusOf("publish", "1")).toBe("SKIPPED");
+        expect(harness.run.status).toBe("SUCCEEDED");
+    });
+
+    it("keeps an answer that arrives before the gate reports it is waiting", () => {
+        const harness = createSchedulerHarness({ graph: buildGateFlow() });
+        harness.start(["1"]);
+
+        harness.resolveApproval(gateNodeRunIdOf(harness, "1"), "approved");
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("gate", "1")).toBe("SUCCEEDED");
+        expect(harness.finalStatusOf("publish", "1")).toBe("SUCCEEDED");
+    });
+
+    it("rejects the approval with 'tempo esgotado' when its timeout passes", () => {
+        const harness = createSchedulerHarness({
+            graph: buildGateFlow(),
+            scripts: { gate: expiringGateIn(2) },
+        });
+        harness.start(["1"]);
+
+        harness.advance(2 * HOUR_MS + DEFAULT_NODE_DURATION_MS);
+
+        const [rework] = harness.startCommandsOf("rework");
+        expect(rework?.inputs.feedback).toBe("tempo esgotado");
+        expect(harness.expiredApprovalNodeRunIds).toEqual([gateNodeRunIdOf(harness, "1")]);
+    });
+
+    it("does not expire an approval resolved before its timeout", () => {
+        const harness = createSchedulerHarness({
+            graph: buildGateFlow(),
+            scripts: { gate: expiringGateIn(2) },
+        });
+        harness.start(["1"]);
+        harness.advance(HOUR_MS);
+
+        harness.resolveApproval(gateNodeRunIdOf(harness, "1"), "approved");
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("publish", "1")).toBe("SUCCEEDED");
+        expect(harness.expiredApprovalNodeRunIds).toEqual([]);
+    });
+
+    it("cancels the waiting gate and expires its approval when the run is canceled", () => {
+        const harness = createSchedulerHarness({ graph: buildGateFlow() });
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        harness.requestCancel();
+        harness.runToCompletion();
+
+        expect(harness.finalStatusOf("gate", "1")).toBe("CANCELED");
+        expect(harness.expiredApprovalNodeRunIds).toEqual([gateNodeRunIdOf(harness, "1")]);
+        expect(harness.run.status).toBe("CANCELED");
+    });
+
+    it("cancels a gate that starts waiting after the run failed, and finishes the run then", () => {
+        const harness = createSchedulerHarness({
+            graph: withoutRetries(buildGateFlow()),
+            scripts: { c: failingHalfwayThroughTheGate },
+        });
+
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        expect(harness.finalStatusOf("gate", "1")).toBe("CANCELED");
+        expect(harness.expiredApprovalNodeRunIds).toEqual([gateNodeRunIdOf(harness, "1")]);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
+    it("keeps the gate waiting across a restart, which does not interrupt it", () => {
+        const harness = createSchedulerHarness({ graph: buildGateFlow() });
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        harness.restartAfterCrash();
+        harness.resolveApproval(gateNodeRunIdOf(harness, "1"), "approved");
+        harness.runToCompletion();
+
+        expect(runningNodeRunIdsOf(harness.snapshot())).toEqual([]);
+        expect(harness.finalStatusOf("publish", "1")).toBe("SUCCEEDED");
+    });
+
+    it("remembers the timeout of a waiting gate in the snapshot, for the wakeup after a restart", () => {
+        const harness = createSchedulerHarness({
+            graph: buildGateFlow(),
+            scripts: { gate: expiringGateIn(2) },
+        });
+        harness.start(["1"]);
+        harness.advance(DEFAULT_NODE_DURATION_MS);
+
+        const wakeups = wakeupTimesOf(harness.snapshot());
+
+        const startedAtMs = harness.clock.now().getTime() - DEFAULT_NODE_DURATION_MS;
+        expect(wakeups).toContainEqual(new Date(startedAtMs + 2 * HOUR_MS));
+    });
+});
