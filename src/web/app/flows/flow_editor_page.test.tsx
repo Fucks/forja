@@ -156,6 +156,18 @@ describe("FlowEditorPage", () => {
         expect(savedGraph.edges.filter((edge) => edge.to.nodeId === "dev")).toEqual([]);
     });
 
+    it("opens the selected group in the inspector", async () => {
+        stubFetchRoutes(fakeEditorApi());
+        renderAppAt(EDITOR_PATH);
+
+        const inspector = await selectCanvasNode("Desenvolver");
+
+        expect(within(inspector).getByRole("textbox", { name: "Rótulo" })).toHaveValue(
+            "Desenvolver",
+        );
+        expect(within(inspector).getByText("até 3 itens ao mesmo tempo")).toBeInTheDocument();
+    });
+
     it("tells the user when the draft cannot be opened", async () => {
         stubFetchRoutes({
             ...fakeEditorApi(),

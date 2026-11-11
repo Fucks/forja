@@ -28,7 +28,7 @@
 - [x] 6. Validation error for a loop without condition — `loop_rules.ts`, `graph_validation.ts`
 - [x] 7. `GroupInspector` map fields (concurrency, barrier, failFast) — `group_inspector.tsx`/test
 - [x] 8. `GroupInspector` loop fields (teto, condição, carry) — `group_inspector.tsx`/test
-- [ ] 9. `InspectorPanel` routes a selected group to `GroupInspector` — `inspector_panel.tsx`
+- [x] 9. `InspectorPanel` routes a selected group to `GroupInspector` — `inspector_panel.tsx`
 - [ ] 10. Selection toolbar with disabled reasons and `G M`/`G L` shortcuts — `selection_toolbar.tsx`,
       `flow_canvas.tsx`, `flow_canvas.test.tsx`
 - [ ] 11. Group context menu (Desagrupar, Ajustar ao conteúdo) — `flow_canvas.tsx`
