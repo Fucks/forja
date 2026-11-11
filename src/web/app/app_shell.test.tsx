@@ -1,3 +1,4 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { ComponentProps } from "react";
@@ -7,6 +8,7 @@ import { buildProject } from "@/test/factories/project_factory.js";
 import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import { createFakeMatchMedia } from "@/test/fakes/fake_match_media.js";
 import { renderAppAt } from "@/test/render_app_at.js";
+import { createTestQueryClient } from "@/test/render_with_query_client.js";
 import { Topbar } from "@/web/app/topbar.js";
 import { THEME_STORAGE_KEY } from "@/web/styles/theme.js";
 
@@ -175,6 +177,7 @@ describe("Topbar", () => {
     beforeEach(() => {
         localStorage.clear();
         delete document.documentElement.dataset.theme;
+        stubFetchRoutes({ "GET /api/triggers/paused": () => Response.json({ paused: false }) });
     });
 
     it("shows that the live connection is on", () => {
@@ -211,8 +214,10 @@ describe("Topbar", () => {
 
 function renderTopbar(props: ComponentProps<typeof Topbar>): void {
     render(
-        <MemoryRouter>
-            <Topbar {...props} />
-        </MemoryRouter>,
+        <QueryClientProvider client={createTestQueryClient()}>
+            <MemoryRouter>
+                <Topbar {...props} />
+            </MemoryRouter>
+        </QueryClientProvider>,
     );
 }

@@ -22,14 +22,14 @@
 
 - [x] 1. `CRON_PRESETS` and preset matching — `src/web/app/triggers/cron_presets.ts`
 - [x] 2. Query/mutation hooks — `use_triggers.ts`, `useProjectFlows` in `use_flow_summary.ts`
-- [ ] 3. Test + list: name, flow, kind icon, policy, next fire, last fire/result, enabled switch —
+- [x] 3. Test + list: name, flow, kind icon, policy, next fire, last fire/result, enabled switch —
       `triggers_page.tsx`, `triggers_page.test.tsx`
-- [ ] 4. Test + create schedule trigger "Todo dia às 22:00" (form with presets/custom, policy) —
+- [x] 4. Test + create schedule trigger "Todo dia às 22:00" (form with presets/custom, policy) —
       `trigger_form.tsx`
-- [ ] 5. Test + event fields (event, flow + status for run.finished) and board column select —
+- [x] 5. Test + event fields (event, flow + status for run.finished) and board column select —
       `trigger_form.tsx`
-- [ ] 6. Test + create webhook shows token once with curl — `webhook_token_dialog.tsx`
-- [ ] 7. Test + edit, toggle enabled, remove — `triggers_page.tsx`, `trigger_form.tsx`
-- [ ] 8. Test + "Disparar agora" and history shows the result — `trigger_history.tsx`
-- [ ] 9. Test + pause all on the page and indicator with resume on the topbar — `topbar.tsx`
+- [x] 6. Test + create webhook shows token once with curl — `webhook_token_dialog.tsx`
+- [x] 7. Test + edit, toggle enabled, remove — `triggers_page.tsx`, `trigger_form.tsx`
+- [x] 8. Test + "Disparar agora" and history shows the result — `trigger_history.tsx`
+- [x] 9. Test + pause all on the page and indicator with resume on the topbar — `topbar.tsx`
 - [ ] 10. Self-review checklist and feedback loops (typecheck, lint, test)

@@ -1,9 +1,11 @@
 import { clsx } from "clsx";
-import { Moon, Sun } from "lucide-react";
+import { Moon, PauseCircle, Sun } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { JSX } from "react";
 import { Link } from "react-router";
 
+import { useSetTriggersPaused, useTriggersPaused } from "@/web/app/triggers/use_triggers.js";
+import { Button } from "@/web/components/ui/button.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { projectPath } from "@/web/config/navigation.js";
 import type { ThemeName } from "@/web/styles/theme.js";
@@ -36,9 +38,36 @@ export function Topbar({
                     </Link>
                 )}
             </div>
+            <TriggersPausedIndicator />
             <LiveIndicator connected={connected} />
             <ThemeToggle />
         </header>
+    );
+}
+
+function TriggersPausedIndicator(): JSX.Element | null {
+    const pausedQuery = useTriggersPaused();
+    const setTriggersPaused = useSetTriggersPaused();
+    if (!pausedQuery.data?.paused) {
+        return null;
+    }
+
+    return (
+        <div
+            role="status"
+            aria-label="Gatilhos pausados"
+            className="inline-flex items-center gap-2 text-xs text-status-waiting-limit"
+        >
+            <PauseCircle aria-hidden className="size-3.5" />
+            Gatilhos pausados
+            <Button
+                size="sm"
+                loading={setTriggersPaused.isPending}
+                onClick={() => setTriggersPaused.mutate(false)}
+            >
+                Retomar
+            </Button>
+        </div>
     );
 }
 
