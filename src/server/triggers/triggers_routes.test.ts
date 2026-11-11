@@ -3,7 +3,12 @@ import type { FastifyInstance } from "fastify";
 import { buildApp } from "@/server/app.js";
 import type { ApiErrorBody } from "@/shared/api_types.js";
 import type { SerializedRunView } from "@/shared/run_types.js";
-import type { ListedTrigger, Trigger, TriggerFire } from "@/shared/trigger_types.js";
+import type {
+    ListedTrigger,
+    Trigger,
+    TriggerFire,
+    TriggerWithToken,
+} from "@/shared/trigger_types.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { buildIssueSnapshot, ExecutorTestBed, TEST_PROJECT_ID } from "@/test/executor_test_bed.js";
 
@@ -56,6 +61,10 @@ describe("triggers routes", () => {
             url: `/api/triggers/${triggerId}/history`,
         });
         return response.json<TriggerFire[]>();
+    }
+
+    function rotateToken(triggerId: string) {
+        return app.inject({ method: "POST", url: `/api/triggers/${triggerId}/rotate-token` });
     }
 
     function listTriggers(query = "") {
@@ -114,6 +123,73 @@ describe("triggers routes", () => {
             });
 
             expect(response.statusCode).toBe(HTTP_BAD_REQUEST);
+        });
+    });
+
+    describe("webhook triggers", () => {
+        it("shows the token only in the answer of the creation", async () => {
+            const response = await postTrigger({
+                flowId,
+                name: "Webhook",
+                config: { kind: "webhook" },
+            });
+            const listed = await listTriggers();
+
+            const created = response.json<TriggerWithToken>();
+            expect(created.token).toEqual(expect.any(String));
+            expect(listed.json<Trigger[]>()).toEqual([
+                expect.not.objectContaining({ token: expect.anything() as unknown }),
+            ]);
+        });
+
+        it("answers the new token on POST /api/triggers/:id/rotate-token", async () => {
+            const created = await createTrigger({ name: "Webhook", config: { kind: "webhook" } });
+
+            const response = await rotateToken(created.id);
+
+            expect(response.statusCode).toBe(HTTP_OK);
+            const rotated = response.json<TriggerWithToken>();
+            expect(rotated).toMatchObject({ id: created.id, token: expect.any(String) as unknown });
+            expect(rotated.config).not.toEqual(created.config);
+        });
+
+        it("answers 422 when rotating the token of a trigger that is not a webhook", async () => {
+            const manual = await createTrigger({ config: { kind: "manual" } });
+
+            const response = await rotateToken(manual.id);
+
+            expect(response.statusCode).toBe(HTTP_UNPROCESSABLE_ENTITY);
+        });
+    });
+
+    describe("event triggers", () => {
+        it("start the flow when the usage limit of the project resets", async () => {
+            const trigger = await createTrigger({
+                name: "Quota de volta",
+                config: { kind: "event", event: "usage.limit_reset" },
+            });
+
+            bed.events.publish({ type: "usage.limit_reset", projectId: TEST_PROJECT_ID });
+            await settlePendingWork();
+
+            expect(await historyOf(trigger.id)).toEqual([
+                expect.objectContaining({ outcome: "started" }),
+            ]);
+        });
+
+        it("stop listening once the app closes", async () => {
+            await createTrigger({
+                name: "Quota de volta",
+                config: { kind: "event", event: "usage.limit_reset" },
+            });
+            await app.close();
+
+            bed.events.publish({ type: "usage.limit_reset", projectId: TEST_PROJECT_ID });
+            await settlePendingWork();
+
+            expect(bed.events.since(0).map((envelope) => envelope.event.type)).not.toContain(
+                "trigger.fired",
+            );
         });
     });
 
@@ -299,4 +375,9 @@ function runIdOf(fire: TriggerFire): string {
     }
 
     return fire.runId;
+}
+
+// Lets the fires started by the event listener run before the test looks at the result.
+function settlePendingWork(): Promise<void> {
+    return new Promise((resolve) => setImmediate(resolve));
 }

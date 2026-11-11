@@ -131,6 +131,11 @@ export class TriggerRepository {
             .map(toTriggerFire);
     }
 
+    findFireByRunId(runId: string): TriggerFire | undefined {
+        const row = this.db.select().from(triggerFires).where(eq(triggerFires.runId, runId)).get();
+        return row && toTriggerFire(row);
+    }
+
     findOldestQueuedFireOfFlow(flowId: string): QueuedFire | undefined {
         const row = this.db
             .select({ fire: triggerFires })

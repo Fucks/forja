@@ -7,8 +7,10 @@ import { z } from "zod";
 import {
     ConflictError,
     DomainValidationError,
+    ForbiddenError,
     NotFoundError,
     registerErrorHandler,
+    UnauthorizedError,
 } from "@/server/errors.js";
 
 const INTERNAL_MESSAGE = "falha no disco em /home/ana/.forja";
@@ -41,6 +43,28 @@ describe("registerErrorHandler", () => {
         expect(response.statusCode).toBe(404);
         expect(response.json()).toEqual({
             error: { code: "not_found", message: "Projeto p1 não encontrado." },
+        });
+    });
+
+    it("answers UnauthorizedError with 401 unauthorized and the error message", async () => {
+        const app = buildAppThrowing(new UnauthorizedError("Token do webhook inválido."));
+
+        const response = await app.inject({ method: "GET", url: "/failing" });
+
+        expect(response.statusCode).toBe(401);
+        expect(response.json()).toEqual({
+            error: { code: "unauthorized", message: "Token do webhook inválido." },
+        });
+    });
+
+    it("answers ForbiddenError with 403 forbidden and the error message", async () => {
+        const app = buildAppThrowing(new ForbiddenError("Só da própria máquina."));
+
+        const response = await app.inject({ method: "GET", url: "/failing" });
+
+        expect(response.statusCode).toBe(403);
+        expect(response.json()).toEqual({
+            error: { code: "forbidden", message: "Só da própria máquina." },
         });
     });
 
