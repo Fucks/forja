@@ -52,7 +52,7 @@ export interface Trigger {
     lastFiredAt?: string;
 }
 
-// A schedule trigger in a listing; `nextFireAt` is missing while the trigger is disabled.
+// Schedule triggers add the readable cron, and the next fire while they are enabled.
 export interface ListedTrigger extends Trigger {
     cronDescription?: string;
     nextFireAt?: string;

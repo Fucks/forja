@@ -13,7 +13,7 @@ export interface CronRunnerDeps {
     clock: Clock;
     listScheduleTriggers(): Promise<Trigger[]>;
     fire(id: string, input: FireInput): Promise<unknown>;
-    log(msg: string): void;
+    log(message: string): void;
 }
 
 export interface CronRunner {
@@ -83,7 +83,9 @@ class CronScheduler implements CronRunner {
         const msUntilDue = dueAt.getTime() - this.deps.clock.now().getTime();
         const delayMs = Math.min(msUntilDue, MAX_TIMER_DELAY_MS);
         const cancelTimer = this.deps.clock.setTimeout(() => {
-            void this.wakeUp(triggerId, dueAt);
+            this.wakeUp(triggerId, dueAt).catch((error: unknown) => {
+                this.deps.log(`Gatilho ${triggerId}: falha ao reagendar: ${describeError(error)}`);
+            });
         }, delayMs);
         this.cancelTimerByTrigger.set(triggerId, cancelTimer);
     }

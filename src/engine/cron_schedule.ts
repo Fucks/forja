@@ -3,6 +3,7 @@ import { Cron } from "croner";
 export type ScheduleValidation = { ok: true } | { ok: false; message: string };
 
 const CRON_FIELD_COUNT = 5;
+const CRON_FIELDS_HINT = "5 campos: minuto, hora, dia do mês, mês e dia da semana";
 const CRON_MODE = "5-part";
 const CRON_FIELD_SEPARATOR = /\s+/;
 const PLAIN_NUMBER = /^\d+$/;
@@ -35,7 +36,7 @@ export function validateCron(expression: string): ScheduleValidation {
     if (splitFields(expression).length !== CRON_FIELD_COUNT) {
         return {
             ok: false,
-            message: `A expressão cron "${expression}" precisa ter 5 campos: minuto, hora, dia do mês, mês e dia da semana.`,
+            message: `A expressão cron "${expression}" precisa ter ${CRON_FIELDS_HINT}.`,
         };
     }
 
