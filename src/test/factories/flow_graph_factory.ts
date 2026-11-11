@@ -9,6 +9,7 @@ import {
     type NodeType,
     type Position,
 } from "@/shared/flow_graph.js";
+import type { GateConfig } from "@/shared/node_configs/gate_config.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 
 const GRID_STEP_PX = 240;
@@ -117,6 +118,45 @@ export function buildLoopFlowWithExits(): FlowGraph {
             connect(["review", "summary"], ["open_pr", "body"]),
             connect(["review_loop", LOOP_EXHAUSTED_PORT], ["needs_human", "item"]),
         ],
+    };
+}
+
+// trigger → map(gate → approved: done; rejected: rework)
+export function buildApprovalFlow(gateConfig: Partial<GateConfig> = {}): FlowGraph {
+    const reviewGroup = buildMapGroup({
+        id: "review",
+        label: "Revisar",
+        columns: { first: 1, count: 2 },
+        concurrency: 1,
+    });
+    const gate = createNodeOfType("gate", "gate", gridPosition(1));
+    const rework = createNodeOfType("agent", "rework", gridPosition(2, 1));
+
+    return {
+        schemaVersion: 1,
+        nodes: [
+            buildTriggerNode(),
+            {
+                ...gate,
+                parentGroupId: reviewGroup.id,
+                config: { ...gate.config, message: "Revise o diff", ...gateConfig },
+            },
+            {
+                ...createDefaultNode("output", "done", gridPosition(2)),
+                parentGroupId: reviewGroup.id,
+            },
+            {
+                ...rework,
+                parentGroupId: reviewGroup.id,
+                config: { ...rework.config, prompt: "Corrija a issue #{{item.number}}" },
+            },
+        ],
+        edges: [
+            connect(["trigger", "items"], ["gate", "item"]),
+            connect(["gate", "approved"], ["done", "item"]),
+            connect(["gate", "rejected"], ["rework", "item"]),
+        ],
+        groups: [reviewGroup],
     };
 }
 
