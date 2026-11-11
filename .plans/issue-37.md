@@ -39,9 +39,9 @@
 - [x] 8. Test + impl: `PublishBar` 422 calls `onRejected` with the server issues — same files
 - [x] 9. Impl: `useDraftDiffers` (latest version query + normalized comparison) —
       `src/web/app/flows/use_draft_differs.ts`
-- [ ] 10. Impl: `ProblemsPanel` (collapsible, lists errors/warnings, click selects and centers) —
+- [x] 10. Impl: `ProblemsPanel` (collapsible, lists errors/warnings, click selects and centers) —
       `problems_panel.tsx`
-- [ ] 11. Test + impl: editor page shows publish bar and problems panel; removing the trigger shows
+- [x] 11. Test + impl: editor page shows publish bar and problems panel; removing the trigger shows
       no_trigger; clicking a problem selects the node — `flow_editor_page.tsx`,
       `flow_editor_page.test.tsx`
 - [ ] 12. Self-review checklist (section 5) and feedback loops (section 6)

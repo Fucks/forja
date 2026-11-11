@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { JSX } from "react";
 import { z } from "zod";
 
+import { formatCount } from "@/lib/format.js";
 import type { FlowVersion } from "@/shared/flow_types.js";
 import { validationIssueSchema } from "@/shared/validation_issue.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
@@ -16,6 +17,7 @@ const NOTHING_TO_PUBLISH_LABEL = "Nada novo para publicar";
 const PUBLISH_FAILED_TITLE = "Não foi possível publicar";
 const HTTP_UNPROCESSABLE_ENTITY = 422;
 const NO_PUBLISHED_VERSION = 0;
+const ERROR_NOUNS = { one: "erro", other: "erros" };
 
 // aria-disabled instead of disabled: a blocked publish still takes focus, so its tooltip tells why.
 const BLOCKED_BUTTON_CLASSES = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50";
@@ -142,9 +144,7 @@ function checkPublishAvailability({
 }
 
 function describeErrorsToFix(errorCount: number): string {
-    const noun = errorCount === 1 ? "erro" : "erros";
-
-    return `Corrija ${errorCount} ${noun}`;
+    return `Corrija ${formatCount(errorCount, ERROR_NOUNS)}`;
 }
 
 function describeDraftStatus(latestVersion: number | undefined): string {

@@ -19,19 +19,21 @@ export interface GraphValidation {
 export function useValidation(graph: FlowGraph, context: ValidationContext): GraphValidation {
     const settledGraph = useDebouncedValue(graph, VALIDATION_DEBOUNCE_MS);
 
-    return useMemo(() => summarizeValidation(settledGraph, context), [settledGraph, context]);
+    return useMemo(() => validateLikeTheServer(settledGraph, context), [settledGraph, context]);
 }
 
-export function groupIssuesByTarget(issues: ValidationIssue[]): Map<string, ValidationIssue[]> {
-    const byTarget = new Map<string, ValidationIssue[]>();
-    for (const issue of issues) {
-        const targetId = issue.target.id;
-        if (targetId !== undefined) {
-            byTarget.set(targetId, [...(byTarget.get(targetId) ?? []), issue]);
-        }
-    }
+export function summarizeIssues(issues: ValidationIssue[]): GraphValidation {
+    return {
+        issues,
+        byTarget: groupIssuesByTarget(issues),
+        errorCount: countIssuesOfLevel(issues, "error"),
+        warningCount: countIssuesOfLevel(issues, "warning"),
+    };
+}
 
-    return byTarget;
+/** Tells issues apart in React lists and when merging the server's issues with the canvas'. */
+export function describeIssueKey({ code, target, message }: ValidationIssue): string {
+    return `${code}:${target.kind}:${target.id ?? ""}:${message}`;
 }
 
 function useDebouncedValue<T>(value: T, delayMs: number): T {
@@ -48,17 +50,24 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 
 // The same rules the server applies before publishing, so the canvas never promises a publish
 // that the server would refuse.
-function summarizeValidation(graph: FlowGraph, context: ValidationContext): GraphValidation {
-    const issues = validateFlowGraph(graph, { ...context, checkPrompt: checkPromptVariables });
-
-    return {
-        issues,
-        byTarget: groupIssuesByTarget(issues),
-        errorCount: countIssuesOfLevel(issues, "error"),
-        warningCount: countIssuesOfLevel(issues, "warning"),
-    };
+function validateLikeTheServer(graph: FlowGraph, context: ValidationContext): GraphValidation {
+    return summarizeIssues(
+        validateFlowGraph(graph, { ...context, checkPrompt: checkPromptVariables }),
+    );
 }
 
 function countIssuesOfLevel(issues: ValidationIssue[], level: ValidationIssue["level"]): number {
     return issues.filter((issue) => issue.level === level).length;
+}
+
+function groupIssuesByTarget(issues: ValidationIssue[]): Map<string, ValidationIssue[]> {
+    const byTarget = new Map<string, ValidationIssue[]>();
+    for (const issue of issues) {
+        const targetId = issue.target.id;
+        if (targetId !== undefined) {
+            byTarget.set(targetId, [...(byTarget.get(targetId) ?? []), issue]);
+        }
+    }
+
+    return byTarget;
 }
