@@ -5,7 +5,7 @@ import type { FlowSummary } from "@/shared/flow_types.js";
 import { apiClient } from "@/web/api/api_client.js";
 import type { ApiError } from "@/web/api/api_client.js";
 
-const PROJECT_FLOWS_QUERY_KEY = "project-flows";
+export const PROJECT_FLOWS_QUERY_KEY = "project-flows";
 
 export function useProjectFlows(projectId: string): UseQueryResult<FlowSummary[], ApiError> {
     return useQuery(projectFlowsQuery(projectId));

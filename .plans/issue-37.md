@@ -32,11 +32,11 @@
       `validation_overlay.tsx`, `flow_node_card.tsx`, `group_node.tsx`, `flow_canvas.tsx`,
       `flow_canvas.test.tsx`
 - [x] 5. Impl: edges with issues get `data.invalid` — `flow_canvas.tsx`, `validation_overlay.tsx`
-- [ ] 6. Test + impl: `PublishBar` disabled with errors ("Corrija 2 erros") and when the draft equals the
+- [x] 6. Test + impl: `PublishBar` disabled with errors ("Corrija 2 erros") and when the draft equals the
       latest version ("Nada novo para publicar") — `publish_bar.tsx`, `publish_bar.test.tsx`
-- [ ] 7. Test + impl: `PublishBar` publishes with the note, toasts "vN publicada", calls `onPublished`,
+- [x] 7. Test + impl: `PublishBar` publishes with the note, toasts "vN publicada", calls `onPublished`,
       invalidates version queries — same files
-- [ ] 8. Test + impl: `PublishBar` 422 calls `onRejected` with the server issues — same files
+- [x] 8. Test + impl: `PublishBar` 422 calls `onRejected` with the server issues — same files
 - [ ] 9. Impl: `useDraftDiffers` (latest version query + normalized comparison) —
       `src/web/app/flows/use_draft_differs.ts`
 - [ ] 10. Impl: `ProblemsPanel` (collapsible, lists errors/warnings, click selects and centers) —
