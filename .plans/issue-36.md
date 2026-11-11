@@ -20,11 +20,11 @@
 
 ## Tasks
 
-- [ ] 1. `canGroup` verdicts (empty, trigger, different groups) — `grouping.ts`/`grouping.test.ts`
-- [ ] 2. `groupNodes` frame, defaults, common parent, ancestors grow — `grouping.ts`
-- [ ] 3. `ungroup` lifts children to the parent (loop inside map) — `grouping.ts`
-- [ ] 4. `reparentNode` in/out of groups — `grouping.ts`
-- [ ] 5. `fitGroupToChildren` — `grouping.ts`
+- [x] 1. `canGroup` verdicts (empty, trigger, different groups) — `grouping.ts`/`grouping.test.ts`
+- [x] 2. `groupNodes` frame, defaults, common parent, ancestors grow — `grouping.ts`
+- [x] 3. `ungroup` lifts children to the parent (loop inside map) — `grouping.ts`
+- [x] 4. `reparentNode` in/out of groups — `grouping.ts`
+- [x] 5. `fitGroupToChildren` — `grouping.ts`
 - [ ] 6. Validation error for a loop without condition — `loop_rules.ts`, `graph_validation.ts`
 - [ ] 7. `GroupInspector` map fields (concurrency, barrier, failFast) — `group_inspector.tsx`/test
 - [ ] 8. `GroupInspector` loop fields (teto, condição, carry) — `group_inspector.tsx`/test
