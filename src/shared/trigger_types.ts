@@ -18,6 +18,7 @@ export const MANUAL_FIRE_REASON = "manual";
 export type TriggerKind = (typeof TRIGGER_KINDS)[number];
 export type TriggerPolicy = (typeof TRIGGER_POLICIES)[number];
 export type ItemSelection = (typeof ITEM_SELECTIONS)[number];
+export type TriggerEvent = (typeof TRIGGER_EVENTS)[number];
 export type TriggerFireOutcome = (typeof TRIGGER_FIRE_OUTCOMES)[number];
 
 const manualConfigSchema = z.object({ kind: z.literal("manual") });
