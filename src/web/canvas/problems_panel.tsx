@@ -9,6 +9,7 @@ import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { describeIssueKey } from "@/web/canvas/use_validation.js";
+import type { GraphValidation } from "@/web/canvas/use_validation.js";
 import { cn } from "@/web/components/ui/cn.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 
@@ -26,10 +27,10 @@ const LEVEL_STYLES: Record<IssueLevel, { icon: LucideIcon; colorClass: string; l
 };
 
 export function ProblemsPanel({
-    issues,
+    validation,
     store,
 }: {
-    issues: ValidationIssue[];
+    validation: GraphValidation;
     store: EditorStore;
 }): JSX.Element {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -39,7 +40,7 @@ export function ProblemsPanel({
         <section aria-label={PANEL_TITLE} className="border-t border-border bg-surface">
             <div className="flex items-center justify-between gap-2 px-3 py-1">
                 <h2 className="text-sm font-medium">
-                    {PANEL_TITLE} <span className="text-muted">{describeCounts(issues)}</span>
+                    {PANEL_TITLE} <span className="text-muted">{describeCounts(validation)}</span>
                 </h2>
                 <IconButton
                     label={isCollapsed ? `Mostrar ${PANEL_TITLE}` : `Recolher ${PANEL_TITLE}`}
@@ -48,7 +49,9 @@ export function ProblemsPanel({
                     onClick={() => setIsCollapsed(!isCollapsed)}
                 />
             </div>
-            {!isCollapsed && <IssueList issues={issues} onFocusTarget={focusIssueTarget} />}
+            {!isCollapsed && (
+                <IssueList issues={validation.issues} onFocusTarget={focusIssueTarget} />
+            )}
         </section>
     );
 }
@@ -122,21 +125,22 @@ function useIssueTargetFocus(store: EditorStore): (issue: ValidationIssue) => vo
         }
 
         store.getState().select([targetId]);
-        const nodeIds = listNodesToShow(issue, store.getState().graph);
+        const nodeIds = listNodesToShow(issue.target.kind, targetId, store.getState().graph);
         void fitView({ nodes: nodeIds.map((id) => ({ id })), duration: FOCUS_ANIMATION_MS });
     };
 }
 
 // An edge is not a node React Flow can fit, so the view frames the two nodes it connects.
-function listNodesToShow({ target }: ValidationIssue, graph: FlowGraph): string[] {
-    if (target.id === undefined) {
-        return [];
-    }
-    if (target.kind !== "edge") {
-        return [target.id];
+function listNodesToShow(
+    targetKind: ValidationIssue["target"]["kind"],
+    targetId: string,
+    graph: FlowGraph,
+): string[] {
+    if (targetKind !== "edge") {
+        return [targetId];
     }
 
-    const edge = graph.edges.find((candidate) => candidate.id === target.id);
+    const edge = graph.edges.find((candidate) => candidate.id === targetId);
     if (!edge) {
         return [];
     }
@@ -144,9 +148,6 @@ function listNodesToShow({ target }: ValidationIssue, graph: FlowGraph): string[
     return [edge.from.nodeId, edge.to.nodeId];
 }
 
-function describeCounts(issues: ValidationIssue[]): string {
-    const errorCount = issues.filter((issue) => issue.level === "error").length;
-    const warningCount = issues.length - errorCount;
-
+function describeCounts({ errorCount, warningCount }: GraphValidation): string {
     return `${formatCount(errorCount, ERROR_NOUNS)} · ${formatCount(warningCount, WARNING_NOUNS)}`;
 }

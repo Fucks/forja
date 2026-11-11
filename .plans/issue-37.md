@@ -44,4 +44,4 @@
 - [x] 11. Test + impl: editor page shows publish bar and problems panel; removing the trigger shows
       no_trigger; clicking a problem selects the node — `flow_editor_page.tsx`,
       `flow_editor_page.test.tsx`
-- [ ] 12. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 12. Self-review checklist (section 5) and feedback loops (section 6)

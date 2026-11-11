@@ -120,7 +120,7 @@ function EditorCanvasArea({
             <div className="min-h-0 flex-1">
                 <FlowCanvas store={store} issuesByTarget={editorIssues.byTarget} />
             </div>
-            <ProblemsPanel issues={editorIssues.issues} store={store} />
+            <ProblemsPanel validation={editorIssues} store={store} />
         </div>
     );
 }
