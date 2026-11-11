@@ -5,7 +5,7 @@ import type { EventEnvelope, ForjaEvent, ForjaEventType } from "@/shared/events.
 import { TRIGGER_EVENTS } from "@/shared/trigger_types.js";
 import type { Trigger, TriggerConfig } from "@/shared/trigger_types.js";
 
-export const EVENT_FIRE_REASON = "event";
+const EVENT_FIRE_REASON = "event";
 
 const FIRST_CHAIN_DEPTH = 1;
 const TRIGGER_EVENT_TYPES: ReadonlySet<ForjaEventType> = new Set(TRIGGER_EVENTS);
@@ -24,10 +24,12 @@ export interface EventTriggerListenerDeps {
     maxChainDepth: number;
 }
 
-export function createEventTriggerListener(deps: EventTriggerListenerDeps): {
+export interface EventTriggerListener {
     start(): void;
     stop(): void;
-} {
+}
+
+export function createEventTriggerListener(deps: EventTriggerListenerDeps): EventTriggerListener {
     let unsubscribe: (() => void) | undefined;
 
     return {

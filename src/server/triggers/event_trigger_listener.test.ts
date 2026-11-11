@@ -8,7 +8,10 @@ import {
     eventItems,
     matchesEventTrigger,
 } from "@/server/triggers/event_trigger_listener.js";
-import type { EventTrigger } from "@/server/triggers/event_trigger_listener.js";
+import type {
+    EventTrigger,
+    EventTriggerListener,
+} from "@/server/triggers/event_trigger_listener.js";
 import { TriggerRepository } from "@/server/triggers/trigger_repository.js";
 import { createTriggerService } from "@/server/triggers/trigger_service.js";
 import type { TriggerInput, TriggerService } from "@/server/triggers/trigger_service.js";
@@ -155,7 +158,7 @@ describe("createEventTriggerListener", () => {
     let events: EventBus;
     let executor: FakeRunStarter;
     let triggers: TriggerService;
-    let listener: { start(): void; stop(): void };
+    let listener: EventTriggerListener;
 
     beforeEach(() => {
         database = createTestDb();

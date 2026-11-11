@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ForbiddenError } from "@/server/errors.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import type { TriggerFiringDeps } from "@/server/triggers/trigger_firing.js";
-import { createTriggerFiringDeps } from "@/server/triggers/triggers_routes.js";
+import { createTriggerFiringDeps } from "@/server/triggers/trigger_firing_deps.js";
 import { fireWebhookTrigger } from "@/server/triggers/trigger_service.js";
 import { fireTriggerInput } from "@/shared/trigger_types.js";
 

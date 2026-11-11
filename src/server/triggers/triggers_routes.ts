@@ -5,16 +5,14 @@ import { z } from "zod";
 import { describeCron, nextFireAt } from "@/engine/cron_schedule.js";
 import { systemClock } from "@/lib/clock.js";
 import { resolveWith } from "@/lib/resolve_with.js";
-import type { AppDeps } from "@/server/app.js";
 import type { RouteModule } from "@/server/route_modules.js";
-import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import { createCronRunner } from "@/server/triggers/cron_runner.js";
 import type { CronRunner } from "@/server/triggers/cron_runner.js";
 import { createEventTriggerListener } from "@/server/triggers/event_trigger_listener.js";
 import { startQueuedFiresWhenRunsFinish } from "@/server/triggers/trigger_firing.js";
+import { createTriggerFiringDeps } from "@/server/triggers/trigger_firing_deps.js";
 import type { TriggerFiringDeps } from "@/server/triggers/trigger_firing.js";
-import { TriggerRepository } from "@/server/triggers/trigger_repository.js";
 import { createTriggerService } from "@/server/triggers/trigger_service.js";
 import type { TriggerService } from "@/server/triggers/trigger_service.js";
 import {
@@ -58,16 +56,6 @@ export const registerTriggersRoutes: RouteModule = (app, deps) => {
     startCronRunnerWhileAppIsUp(app, cronRunner);
     startEventTriggersWhileAppIsUp(app, firingDeps.events, triggers);
 };
-
-export function createTriggerFiringDeps(deps: AppDeps): TriggerFiringDeps {
-    return {
-        repo: new TriggerRepository(deps.db),
-        executor: deps.executor,
-        runs: new SqliteRunRepository(deps.db, systemClock),
-        events: deps.events,
-        clock: systemClock,
-    };
-}
 
 function startQueuedFiresWhileAppIsUp(app: FastifyInstance, firingDeps: TriggerFiringDeps): void {
     let stopListening: (() => void) | undefined;

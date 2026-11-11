@@ -16,7 +16,7 @@ import type {
     TriggerWithToken,
 } from "@/shared/trigger_types.js";
 
-export const WEBHOOK_FIRE_REASON = "webhook";
+const WEBHOOK_FIRE_REASON = "webhook";
 
 const INVALID_WEBHOOK_TOKEN_MESSAGE = "Token do webhook inválido.";
 const NOT_A_WEBHOOK_MESSAGE = "O gatilho não é um webhook.";
