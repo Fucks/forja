@@ -28,7 +28,7 @@
 - [x] 1. Test + implement `matchesEventTrigger` (event type, same project, run.finished flowId/status filters) — `event_trigger_listener.ts`/`.test.ts`
 - [x] 2. Test + implement `eventItems` (work_item.created + event_items → [workItemId]) — same files
 - [x] 3. Test + implement chain-depth skip and depth message in firing + `chainDepthOfRun` — `trigger_firing.ts`, `trigger_repository.ts`, `trigger_service.ts`, `trigger_service.test.ts`
-- [ ] 4. Test + implement `createEventTriggerListener` (limit_reset fires; failed run not fired with SUCCEEDED filter; event_items run with created item; A→B→A stops at depth 3; stop unsubscribes) — `event_trigger_listener.ts`/`.test.ts`
+- [x] 4. Test + implement `createEventTriggerListener` (limit_reset fires; failed run not fired with SUCCEEDED filter; event_items run with created item; A→B→A stops at depth 3; stop unsubscribes) — `event_trigger_listener.ts`/`.test.ts`
 - [ ] 5. Test + implement `generateWebhookToken`/`verifyWebhookToken` — `webhook_tokens.ts`/`.test.ts`
 - [ ] 6. Test + implement webhook create returns token once, update keeps hash, `rotateWebhookToken` — `trigger_types.ts`, `trigger_service.ts`, `trigger_service.test.ts`
 - [ ] 7. Test + implement `fireWebhookTrigger` + errors 401/403 — `trigger_service.ts`, `errors.ts`
