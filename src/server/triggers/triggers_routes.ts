@@ -2,10 +2,14 @@ import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
+import { describeCron, nextFireAt } from "@/engine/cron_schedule.js";
 import { systemClock } from "@/lib/clock.js";
+import { resolveWith } from "@/lib/resolve_with.js";
 import type { AppDeps } from "@/server/app.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
+import { createCronRunner } from "@/server/triggers/cron_runner.js";
+import type { CronRunner } from "@/server/triggers/cron_runner.js";
 import { startQueuedFiresWhenRunsFinish } from "@/server/triggers/trigger_firing.js";
 import type { TriggerFiringDeps } from "@/server/triggers/trigger_firing.js";
 import { TriggerRepository } from "@/server/triggers/trigger_repository.js";
@@ -20,7 +24,7 @@ import {
     triggersPausedInput,
     updateTriggerInput,
 } from "@/shared/trigger_types.js";
-import type { TriggersPaused } from "@/shared/trigger_types.js";
+import type { ListedTrigger, Trigger, TriggersPaused } from "@/shared/trigger_types.js";
 
 const PROJECT_TRIGGERS_PATH = "/projects/:projectId/triggers";
 const TRIGGERS_PAUSED_PATH = "/triggers/paused";
@@ -35,12 +39,19 @@ const triggerParamsSchema = z.object({ id: z.string().min(1) });
 
 export const registerTriggersRoutes: RouteModule = (app, deps) => {
     const firingDeps = createFiringDeps(deps);
-    const triggers = createTriggerService(firingDeps);
+    const cronRunner = createCronRunner({
+        clock: firingDeps.clock,
+        listScheduleTriggers: () => resolveWith(() => firingDeps.repo.listByKind("schedule")),
+        fire: (id, input) => triggers.fire(id, input),
+        log: (message) => app.log.info(message),
+    });
+    const triggers = createTriggerService({ ...firingDeps, cronRunner });
 
     registerProjectTriggersRoutes(app, triggers);
     registerPausedRoutes(app, triggers);
     registerTriggerRoutes(app, triggers);
     startQueuedFiresWhileAppIsUp(app, firingDeps);
+    startCronRunnerWhileAppIsUp(app, cronRunner);
 };
 
 function createFiringDeps(deps: AppDeps): TriggerFiringDeps {
@@ -66,13 +77,24 @@ function startQueuedFiresWhileAppIsUp(app: FastifyInstance, firingDeps: TriggerF
     });
 }
 
+function startCronRunnerWhileAppIsUp(app: FastifyInstance, cronRunner: CronRunner): void {
+    app.addHook("onReady", () => cronRunner.start());
+    app.addHook("onClose", (_closingApp, done) => {
+        cronRunner.stop();
+        done();
+    });
+}
+
 function registerProjectTriggersRoutes(app: FastifyInstance, triggers: TriggerService): void {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();
 
     typedApp.get(
         PROJECT_TRIGGERS_PATH,
         { schema: { params: projectParamsSchema, querystring: listTriggersQuery } },
-        (request) => triggers.list(request.params.projectId, request.query),
+        async (request): Promise<ListedTrigger[]> => {
+            const listed = await triggers.list(request.params.projectId, request.query);
+            return listed.map((trigger) => withSchedulePreview(trigger, systemClock.now()));
+        },
     );
 
     typedApp.post(
@@ -140,4 +162,22 @@ function registerTriggerRoutes(app: FastifyInstance, triggers: TriggerService): 
         { schema: { params: triggerParamsSchema, querystring: triggerHistoryQuery } },
         (request) => triggers.history(request.params.id, request.query.limit),
     );
+}
+
+function withSchedulePreview(trigger: Trigger, now: Date): ListedTrigger {
+    if (trigger.config.kind !== "schedule") {
+        return trigger;
+    }
+
+    const { cron, timezone } = trigger.config;
+    const cronDescription = describeCron(cron);
+    if (!trigger.enabled) {
+        return { ...trigger, cronDescription };
+    }
+
+    return {
+        ...trigger,
+        cronDescription,
+        nextFireAt: nextFireAt(cron, timezone, now).toISOString(),
+    };
 }

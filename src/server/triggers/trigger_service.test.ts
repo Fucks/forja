@@ -41,6 +41,7 @@ describe("TriggerService", () => {
     let clock: FakeClock;
     let events: EventBus;
     let executor: FakeRunStarter;
+    let rescheduledTriggerIds: string[];
     let deps: TriggerServiceDeps;
     let service: TriggerService;
     let stopQueueListener: (() => void) | undefined;
@@ -51,12 +52,19 @@ describe("TriggerService", () => {
         clock = new FakeClock(NOW);
         events = createEventBus(clock);
         executor = new FakeRunStarter(events, clock);
+        rescheduledTriggerIds = [];
         deps = {
             repo: new TriggerRepository(database.db),
             executor,
             runs: executor.runs,
             events,
             clock,
+            cronRunner: {
+                reschedule: (triggerId) => {
+                    rescheduledTriggerIds.push(triggerId);
+                    return Promise.resolve();
+                },
+            },
         };
         service = createTriggerService(deps);
     });
@@ -142,6 +150,38 @@ describe("TriggerService", () => {
 
         it("rejects a trigger that does not exist", async () => {
             await expect(service.remove("trg_ausente")).rejects.toThrow(NotFoundError);
+        });
+    });
+
+    describe("schedule triggers", () => {
+        it.each([
+            ["the cron has not five fields", { cron: "0 22 * *" }],
+            ["the cron has an invalid field", { cron: "0 25 * * *" }],
+            ["the timezone is unknown", { timezone: "Marte/Base" }],
+        ])("rejects the creation when %s", async (_case, schedule) => {
+            const creating = createTrigger({ config: { ...NIGHTLY_CONFIG, ...schedule } });
+
+            await expect(creating).rejects.toThrow(DomainValidationError);
+            expect(await service.list(PROJECT_ID)).toEqual([]);
+        });
+
+        it("rejects an update to an invalid cron and keeps the trigger as it was", async () => {
+            const trigger = await createTrigger({ config: NIGHTLY_CONFIG });
+
+            const updating = service.update(trigger.id, {
+                config: { ...NIGHTLY_CONFIG, cron: "61 * * * *" },
+            });
+
+            await expect(updating).rejects.toThrow(/61 \* \* \* \*/);
+            expect(await service.list(PROJECT_ID)).toEqual([trigger]);
+        });
+
+        it("reschedules the cron runner on create, update and remove", async () => {
+            const trigger = await createTrigger({ config: NIGHTLY_CONFIG });
+            await service.update(trigger.id, { enabled: false });
+            await service.remove(trigger.id);
+
+            expect(rescheduledTriggerIds).toEqual([trigger.id, trigger.id, trigger.id]);
         });
     });
 

@@ -25,6 +25,6 @@
 - [x] 4. Test + implement runner start/fire/next fire — `src/server/triggers/cron_runner(.test).ts`
 - [x] 5. Test + implement reschedule on edit, disable cancels, stop — `cron_runner(.test).ts`
 - [x] 6. Test + implement late timer (> 2 min) logs and fires once; restart doesn't fire twice; missed fire logged — `cron_runner(.test).ts`
-- [ ] 7. Test + implement service: cron validation and runner notification — `trigger_service(.test).ts`, `trigger_repository.ts`
-- [ ] 8. Test + implement routes: runner hooks, 422 for invalid cron, `nextFireAt`/description in the list — `triggers_routes(.test).ts`, `src/shared/trigger_types.ts`
+- [x] 7. Test + implement service: cron validation and runner notification — `trigger_service(.test).ts`, `trigger_repository.ts`
+- [x] 8. Test + implement routes: runner hooks, 422 for invalid cron, `nextFireAt`/description in the list — `triggers_routes(.test).ts`, `src/shared/trigger_types.ts`
 - [ ] 9. Self-review checklist and feedback loops (typecheck, lint, test)
