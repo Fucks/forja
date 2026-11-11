@@ -21,6 +21,8 @@ export interface GroupFrameProps {
     progress?: GroupProgress;
     selected?: boolean;
     invalid?: boolean;
+    /** Shown in the tooltip of the invalid marker. */
+    issueMessages?: string[];
 }
 
 export const GROUP_KIND_ICONS: Record<GroupKind, LucideIcon> = {
@@ -38,6 +40,7 @@ export function GroupFrame({
     progress,
     selected,
     invalid,
+    issueMessages,
 }: GroupFrameProps): JSX.Element {
     const KindIcon = GROUP_KIND_ICONS[kind];
 
@@ -55,7 +58,7 @@ export function GroupFrame({
                     <KindIcon size={KIND_ICON_SIZE_PX} aria-hidden="true" className="text-steel" />
                     <span className="font-medium text-text">{label}</span>
                     <span className="font-mono text-muted">{configLabel}</span>
-                    {invalid && <InvalidMarker />}
+                    {invalid && <InvalidMarker messages={issueMessages} />}
                 </div>
                 {progress && <span className="text-muted">{formatGroupProgress(progress)}</span>}
             </div>

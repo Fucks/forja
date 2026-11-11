@@ -65,7 +65,7 @@ function EditorWorkspace({
                     <NodePalette store={draftEditor.store} />
                 </EditorSidePanel>
                 <div className="min-w-0 flex-1">
-                    <FlowCanvas store={draftEditor.store} />
+                    <FlowCanvas store={draftEditor.store} issuesByTarget={new Map()} />
                 </div>
                 <EditorSidePanel title="Inspector" side="right" widthClass="w-90">
                     <InspectorPanel store={draftEditor.store} projectId={projectId} />

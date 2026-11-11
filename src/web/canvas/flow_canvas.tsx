@@ -3,6 +3,7 @@ import "@/web/canvas/base/canvas_theme.css";
 
 import { Controls, MiniMap, Panel, ReactFlow } from "@xyflow/react";
 import type { EdgeTypes } from "@xyflow/react";
+import { useMemo } from "react";
 import type { JSX } from "react";
 
 import { CanvasBackground } from "@/web/canvas/base/canvas_background.js";
@@ -23,6 +24,8 @@ import { useGroupContextMenu } from "@/web/canvas/use_group_context_menu.js";
 import { useGroupingShortcuts } from "@/web/canvas/use_grouping_shortcuts.js";
 import { useNodeReparenting } from "@/web/canvas/use_node_reparenting.js";
 import { useSelectionGrouping } from "@/web/canvas/use_selection_grouping.js";
+import { markInvalidEdges, ValidationOverlay } from "@/web/canvas/validation_overlay.js";
+import type { IssuesByTarget } from "@/web/canvas/validation_overlay.js";
 
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2;
@@ -31,7 +34,13 @@ const DELETE_KEYS = ["Delete", "Backspace"];
 
 const EDGE_TYPES: EdgeTypes = { [FLOW_EDGE_TYPE]: FlowEdge };
 
-export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
+export function FlowCanvas({
+    store,
+    issuesByTarget,
+}: {
+    store: EditorStore;
+    issuesByTarget: IssuesByTarget;
+}): JSX.Element {
     const graph = store((state) => state.graph);
     const { nodes, edges, onNodesChange, onEdgesChange } = useCanvasElements(store);
     const { isValidConnection, onConnect, onConnectEnd, rejection } = useCanvasConnections(store);
@@ -41,51 +50,57 @@ export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
     useGroupingShortcuts(groupSelection);
     const groupMenu = useGroupContextMenu(store);
     const { onNodeDragStop } = useNodeReparenting(store);
+    const edgesWithIssues = useMemo(
+        () => markInvalidEdges(edges, issuesByTarget),
+        [edges, issuesByTarget],
+    );
 
     return (
         <ConnectionGraphContext value={graph}>
-            <DropTargetGroupContext value={dropTargetGroupId}>
-                <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={EDGE_TYPES}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    isValidConnection={isValidConnection}
-                    onConnect={onConnect}
-                    onConnectEnd={onConnectEnd}
-                    onNodesDelete={onNodesDelete}
-                    onEdgesDelete={onEdgesDelete}
-                    onDragOver={onDragOver}
-                    onDragLeave={onDragLeave}
-                    onDrop={onDrop}
-                    onNodeContextMenu={groupMenu.onNodeContextMenu}
-                    onNodeDragStop={onNodeDragStop}
-                    minZoom={MIN_ZOOM}
-                    maxZoom={MAX_ZOOM}
-                    deleteKeyCode={DELETE_KEYS}
-                    fitView
-                >
-                    <CanvasBackground />
-                    <MiniMap />
-                    <Controls showInteractive={false} />
-                    {hasSelectedNodes && (
-                        <Panel position="top-center">
-                            <SelectionToolbar verdict={verdict} onGroup={groupSelection} />
-                        </Panel>
+            <ValidationOverlay issuesByTarget={issuesByTarget}>
+                <DropTargetGroupContext value={dropTargetGroupId}>
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edgesWithIssues}
+                        nodeTypes={nodeTypes}
+                        edgeTypes={EDGE_TYPES}
+                        onNodesChange={onNodesChange}
+                        onEdgesChange={onEdgesChange}
+                        isValidConnection={isValidConnection}
+                        onConnect={onConnect}
+                        onConnectEnd={onConnectEnd}
+                        onNodesDelete={onNodesDelete}
+                        onEdgesDelete={onEdgesDelete}
+                        onDragOver={onDragOver}
+                        onDragLeave={onDragLeave}
+                        onDrop={onDrop}
+                        onNodeContextMenu={groupMenu.onNodeContextMenu}
+                        onNodeDragStop={onNodeDragStop}
+                        minZoom={MIN_ZOOM}
+                        maxZoom={MAX_ZOOM}
+                        deleteKeyCode={DELETE_KEYS}
+                        fitView
+                    >
+                        <CanvasBackground />
+                        <MiniMap />
+                        <Controls showInteractive={false} />
+                        {hasSelectedNodes && (
+                            <Panel position="top-center">
+                                <SelectionToolbar verdict={verdict} onGroup={groupSelection} />
+                            </Panel>
+                        )}
+                    </ReactFlow>
+                    <ConnectionRejectionTooltip rejection={rejection} />
+                    {groupMenu.openMenu && (
+                        <GroupContextMenu
+                            screenPosition={groupMenu.openMenu.screenPosition}
+                            onUngroup={groupMenu.ungroupMenuGroup}
+                            onFitToContent={groupMenu.fitMenuGroup}
+                            onClose={groupMenu.closeMenu}
+                        />
                     )}
-                </ReactFlow>
-                <ConnectionRejectionTooltip rejection={rejection} />
-                {groupMenu.openMenu && (
-                    <GroupContextMenu
-                        screenPosition={groupMenu.openMenu.screenPosition}
-                        onUngroup={groupMenu.ungroupMenuGroup}
-                        onFitToContent={groupMenu.fitMenuGroup}
-                        onClose={groupMenu.closeMenu}
-                    />
-                )}
-            </DropTargetGroupContext>
+                </DropTargetGroupContext>
+            </ValidationOverlay>
         </ConnectionGraphContext>
     );
 }

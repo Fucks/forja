@@ -32,6 +32,8 @@ export interface BaseNodeProps {
     badge?: ReactNode;
     selected?: boolean;
     invalid?: boolean;
+    /** Shown in the tooltip of the invalid marker. */
+    issueMessages?: string[];
     /** Zoom below 50%: only the header is drawn. */
     compact?: boolean;
 }
@@ -63,6 +65,7 @@ function NodeHeader({
     status,
     badge,
     invalid,
+    issueMessages,
 }: BaseNodeProps): JSX.Element {
     return (
         <header className="flex items-center gap-2 px-3 py-2">
@@ -71,7 +74,7 @@ function NodeHeader({
                 <span className="text-xs text-muted">{typeLabel}</span>
                 <span className="truncate font-medium">{label}</span>
             </div>
-            {invalid && <InvalidMarker />}
+            {invalid && <InvalidMarker messages={issueMessages} />}
             {badge !== undefined && <span className="font-mono text-xs text-muted">{badge}</span>}
             {status && <StatusBadge status={status} size="sm" showLabel={false} />}
         </header>

@@ -7,6 +7,7 @@ import type { GroupRFNode } from "@/web/canvas/graph_mapping.js";
 import { useNodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
 import { describeGroupConfig } from "@/web/canvas/nodes/node_summary.js";
 import { useIsDropTargetGroup } from "@/web/canvas/palette/drop_target_context.js";
+import { useTargetValidation } from "@/web/canvas/validation_overlay.js";
 
 const MIN_GROUP_WIDTH_PX = 160;
 const MIN_GROUP_HEIGHT_PX = 96;
@@ -15,6 +16,7 @@ export function GroupNode({ data, selected }: NodeProps<GroupRFNode>): JSX.Eleme
     const { flowGroup } = data;
     const { progress } = useNodeLiveState(flowGroup.id);
     const isDropTarget = useIsDropTargetGroup(flowGroup.id);
+    const { invalid, issueMessages } = useTargetValidation(flowGroup.id);
 
     return (
         <>
@@ -29,6 +31,8 @@ export function GroupNode({ data, selected }: NodeProps<GroupRFNode>): JSX.Eleme
                 configLabel={describeGroupConfig(flowGroup)}
                 progress={progress}
                 selected={selected || isDropTarget}
+                invalid={invalid}
+                issueMessages={issueMessages}
             />
         </>
     );

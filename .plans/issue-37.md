@@ -28,10 +28,10 @@
 - [x] 2. Test + impl: `useValidation` groups issues by target and counts errors/warnings —
       `src/web/canvas/use_validation.ts`, `use_validation.test.ts`
 - [x] 3. Test + impl: `useValidation` debounces graph changes by 250 ms — same files
-- [ ] 4. Test + impl: nodes and groups with issues are drawn invalid, marker tooltip lists messages —
+- [x] 4. Test + impl: nodes and groups with issues are drawn invalid, marker tooltip lists messages —
       `validation_overlay.tsx`, `flow_node_card.tsx`, `group_node.tsx`, `flow_canvas.tsx`,
       `flow_canvas.test.tsx`
-- [ ] 5. Impl: edges with issues get `data.invalid` — `flow_canvas.tsx`, `validation_overlay.tsx`
+- [x] 5. Impl: edges with issues get `data.invalid` — `flow_canvas.tsx`, `validation_overlay.tsx`
 - [ ] 6. Test + impl: `PublishBar` disabled with errors ("Corrija 2 erros") and when the draft equals the
       latest version ("Nada novo para publicar") — `publish_bar.tsx`, `publish_bar.test.tsx`
 - [ ] 7. Test + impl: `PublishBar` publishes with the note, toasts "vN publicada", calls `onPublished`,

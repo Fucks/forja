@@ -7,6 +7,7 @@ import { BaseNode } from "@/web/canvas/base/base_node.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import { useNodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
+import { useTargetValidation } from "@/web/canvas/validation_overlay.js";
 
 const COMPACT_ZOOM_THRESHOLD = 0.5;
 
@@ -18,6 +19,7 @@ interface FlowNodeCardProps {
 
 export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JSX.Element {
     const { status, badge } = useNodeLiveState(node.id);
+    const { invalid, issueMessages } = useTargetValidation(node.id);
     const isCompact = useStore(isZoomedOut);
 
     return (
@@ -31,6 +33,8 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
             status={status}
             badge={badge}
             selected={selected}
+            invalid={invalid}
+            issueMessages={issueMessages}
             compact={isCompact}
         />
     );
