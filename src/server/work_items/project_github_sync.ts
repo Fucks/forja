@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import type { FastifyBaseLogger } from "fastify";
 
 import { systemClock } from "@/lib/clock.js";
+import { describeError } from "@/lib/describe_error.js";
 import type { AppDeps } from "@/server/app.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { createProjectService } from "@/server/projects/project_service.js";
@@ -92,7 +93,6 @@ async function syncCatchingErrors({
     try {
         return await syncProject(projectId);
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return buildFailedSync(systemClock.now().toISOString(), message);
+        return buildFailedSync(systemClock.now().toISOString(), describeError(error));
     }
 }

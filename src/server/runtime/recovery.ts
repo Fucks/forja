@@ -2,6 +2,7 @@ import type { RunState } from "@/engine/run_state.js";
 import { runningNodeRunIdsOf } from "@/engine/scheduler_snapshot.js";
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { Clock } from "@/lib/clock.js";
+import { describeError } from "@/lib/describe_error.js";
 import type { RunRecord, RunRepository } from "@/server/runs/run_repository.js";
 import type { Executor } from "@/server/runtime/executor.js";
 import { isSchedulerSnapshotOfRun } from "@/server/runtime/stored_snapshot.js";
@@ -142,8 +143,4 @@ function describeRecovery(report: RecoveryReport): string {
 
 function countOf(count: number, singular: string, plural: string): string {
     return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function describeError(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
 }

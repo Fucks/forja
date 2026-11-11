@@ -1,10 +1,13 @@
+import { validateCron, validateTimezone } from "@/engine/cron_schedule.js";
+import type { ScheduleValidation } from "@/engine/cron_schedule.js";
 import { newId } from "@/lib/ids.js";
 import { resolveWith } from "@/lib/resolve_with.js";
 import { DomainValidationError, NotFoundError } from "@/server/errors.js";
+import type { CronRunner } from "@/server/triggers/cron_runner.js";
 import { fireTrigger } from "@/server/triggers/trigger_firing.js";
 import type { FireInput, TriggerFiringDeps } from "@/server/triggers/trigger_firing.js";
 import type { TriggerRepository } from "@/server/triggers/trigger_repository.js";
-import type { Trigger, TriggerFire } from "@/shared/trigger_types.js";
+import type { Trigger, TriggerConfig, TriggerFire } from "@/shared/trigger_types.js";
 
 export type TriggerInput = Omit<Trigger, "id" | "createdAt" | "lastFiredAt">;
 export type TriggerPatch = Partial<
@@ -12,7 +15,7 @@ export type TriggerPatch = Partial<
 >;
 
 export interface TriggerService {
-    /** @throws DomainValidationError when the flow is not of the project */
+    /** @throws DomainValidationError when the flow is not of the project or the schedule is invalid */
     create(input: TriggerInput): Promise<Trigger>;
     update(id: string, patch: TriggerPatch): Promise<Trigger>;
     remove(id: string): Promise<void>;
@@ -25,15 +28,19 @@ export interface TriggerService {
     isAllPaused(): Promise<boolean>;
 }
 
-export type TriggerServiceDeps = TriggerFiringDeps;
+export interface TriggerServiceDeps extends TriggerFiringDeps {
+    cronRunner: Pick<CronRunner, "reschedule">;
+}
 
 export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
     const { repo } = deps;
 
     return {
-        create: (input) => resolveWith(() => createTrigger(deps, input)),
-        update: (id, patch) => resolveWith(() => updateTrigger(repo, id, patch)),
-        remove: (id) => resolveWith(() => removeTrigger(repo, id)),
+        create: (input) => rescheduleAfter(deps, () => createTrigger(deps, input)),
+        update: (id, patch) => rescheduleAfter(deps, () => updateTrigger(repo, id, patch)),
+        remove: async (id) => {
+            await rescheduleAfter(deps, () => removeTrigger(repo, id));
+        },
         list: (projectId, options) =>
             resolveWith(() => listTriggers(repo, projectId, options?.kind)),
         fire: (id, input) => fireFoundTrigger(deps, id, input),
@@ -43,9 +50,20 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
     };
 }
 
+async function rescheduleAfter(
+    deps: TriggerServiceDeps,
+    changeTrigger: () => Trigger,
+): Promise<Trigger> {
+    const trigger = await resolveWith(changeTrigger);
+    await deps.cronRunner.reschedule(trigger.id);
+
+    return trigger;
+}
+
 function createTrigger(deps: TriggerServiceDeps, input: TriggerInput): Trigger {
     assertProjectExists(deps.repo, input.projectId);
     assertFlowBelongsToProject(deps.repo, input);
+    assertValidSchedule(input.config);
 
     const trigger = { ...input, id: newId("trg"), createdAt: deps.clock.now().toISOString() };
     deps.repo.insert(trigger);
@@ -55,14 +73,17 @@ function createTrigger(deps: TriggerServiceDeps, input: TriggerInput): Trigger {
 
 function updateTrigger(repo: TriggerRepository, id: string, patch: TriggerPatch): Trigger {
     const trigger = { ...findTriggerOrThrow(repo, id), ...patch };
+    assertValidSchedule(trigger.config);
     repo.update(trigger);
 
     return trigger;
 }
 
-function removeTrigger(repo: TriggerRepository, id: string): void {
-    findTriggerOrThrow(repo, id);
+function removeTrigger(repo: TriggerRepository, id: string): Trigger {
+    const trigger = findTriggerOrThrow(repo, id);
     repo.delete(id);
+
+    return trigger;
 }
 
 function listTriggers(
@@ -102,6 +123,21 @@ function assertFlowBelongsToProject(repo: TriggerRepository, input: TriggerInput
         throw new DomainValidationError(
             `O fluxo ${input.flowId} não pertence ao projeto ${input.projectId}.`,
         );
+    }
+}
+
+function assertValidSchedule(config: TriggerConfig): void {
+    if (config.kind !== "schedule") {
+        return;
+    }
+
+    throwIfInvalid(validateCron(config.cron));
+    throwIfInvalid(validateTimezone(config.timezone));
+}
+
+function throwIfInvalid(validation: ScheduleValidation): void {
+    if (!validation.ok) {
+        throw new DomainValidationError(validation.message);
     }
 }
 

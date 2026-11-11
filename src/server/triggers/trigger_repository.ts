@@ -94,6 +94,16 @@ export class TriggerRepository {
             .map(toTrigger);
     }
 
+    listByKind(kind: TriggerKind): Trigger[] {
+        return this.db
+            .select()
+            .from(triggers)
+            .where(eq(triggers.kind, kind))
+            .orderBy(asc(triggers.createdAt), asc(triggers.id))
+            .all()
+            .map(toTrigger);
+    }
+
     insertFire(fire: TriggerFire, request: FireRequest): void {
         this.db.insert(triggerFires).values(toTriggerFireRow(fire, request)).run();
     }

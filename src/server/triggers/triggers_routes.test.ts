@@ -1,8 +1,9 @@
 import type { FastifyInstance } from "fastify";
 
 import { buildApp } from "@/server/app.js";
+import type { ApiErrorBody } from "@/shared/api_types.js";
 import type { SerializedRunView } from "@/shared/run_types.js";
-import type { Trigger, TriggerFire } from "@/shared/trigger_types.js";
+import type { ListedTrigger, Trigger, TriggerFire } from "@/shared/trigger_types.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { buildIssueSnapshot, ExecutorTestBed, TEST_PROJECT_ID } from "@/test/executor_test_bed.js";
 
@@ -18,6 +19,7 @@ const HTTP_UNPROCESSABLE_ENTITY = 422;
 const PROJECT_TRIGGERS_URL = `/api/projects/${TEST_PROJECT_ID}/triggers`;
 const PAUSED_URL = "/api/triggers/paused";
 const NIGHTLY_CONFIG = { kind: "schedule", cron: "0 2 * * *", timezone: "America/Sao_Paulo" };
+const NEXT_NIGHTLY_FIRE = expect.stringMatching(/T05:00:00\.000Z$/) as unknown;
 
 describe("triggers routes", () => {
     let bed: ExecutorTestBed;
@@ -93,6 +95,17 @@ describe("triggers routes", () => {
             expect(response.statusCode).toBe(HTTP_UNPROCESSABLE_ENTITY);
         });
 
+        it("answers 422 with a message for an invalid cron", async () => {
+            const response = await postTrigger({
+                flowId,
+                name: "Noturno",
+                config: { ...NIGHTLY_CONFIG, cron: "0 25 * * *" },
+            });
+
+            expect(response.statusCode).toBe(HTTP_UNPROCESSABLE_ENTITY);
+            expect(response.json<ApiErrorBody>().error.message).toContain("0 25 * * *");
+        });
+
         it("answers 400 for a config of an unknown kind", async () => {
             const response = await postTrigger({
                 flowId,
@@ -111,7 +124,30 @@ describe("triggers routes", () => {
 
             const response = await listTriggers("?kind=schedule");
 
-            expect(response.json()).toEqual([nightly]);
+            expect(response.json()).toEqual([
+                { ...nightly, cronDescription: "todo dia às 02:00", nextFireAt: NEXT_NIGHTLY_FIRE },
+            ]);
+        });
+
+        it("shows the readable cron and the next fire of a schedule trigger", async () => {
+            const nightly = await createTrigger({ name: "Noturno", config: NIGHTLY_CONFIG });
+
+            const [listed] = (await listTriggers()).json<ListedTrigger[]>();
+
+            expect(listed).toEqual({
+                ...nightly,
+                cronDescription: "todo dia às 02:00",
+                nextFireAt: NEXT_NIGHTLY_FIRE,
+            });
+            expect(Date.parse(listed?.nextFireAt ?? "")).toBeGreaterThan(Date.now());
+        });
+
+        it("shows no next fire for a disabled schedule trigger", async () => {
+            const nightly = await createTrigger({ enabled: false, config: NIGHTLY_CONFIG });
+
+            const response = await listTriggers();
+
+            expect(response.json()).toEqual([{ ...nightly, cronDescription: "todo dia às 02:00" }]);
         });
 
         it("answers 404 for an unknown project", async () => {
@@ -135,6 +171,18 @@ describe("triggers routes", () => {
             });
 
             expect(response.json()).toEqual({ ...trigger, enabled: false, policy: "queue" });
+        });
+
+        it("answers 422 for an invalid cron", async () => {
+            const trigger = await createTrigger({ config: NIGHTLY_CONFIG });
+
+            const response = await app.inject({
+                method: "PATCH",
+                url: `/api/triggers/${trigger.id}`,
+                payload: { config: { ...NIGHTLY_CONFIG, cron: "toda noite" } },
+            });
+
+            expect(response.statusCode).toBe(HTTP_UNPROCESSABLE_ENTITY);
         });
 
         it("answers 404 for an unknown trigger", async () => {

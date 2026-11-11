@@ -52,6 +52,12 @@ export interface Trigger {
     lastFiredAt?: string;
 }
 
+// Schedule triggers add the readable cron, and the next fire while they are enabled.
+export interface ListedTrigger extends Trigger {
+    cronDescription?: string;
+    nextFireAt?: string;
+}
+
 export interface TriggerFire {
     id: string;
     triggerId: string;
