@@ -11,6 +11,7 @@ import { ConnectionGraphContext } from "@/web/canvas/connection_hints.js";
 import { ConnectionRejectionTooltip } from "@/web/canvas/connection_rejection_tooltip.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FLOW_EDGE_TYPE } from "@/web/canvas/graph_mapping.js";
+import { GroupContextMenu } from "@/web/canvas/group_context_menu.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
 import { DropTargetGroupContext } from "@/web/canvas/palette/drop_target_context.js";
 import { useNodeDrop } from "@/web/canvas/palette/use_node_drop.js";
@@ -18,6 +19,7 @@ import { SelectionToolbar } from "@/web/canvas/selection_toolbar.js";
 import { useCanvasConnections } from "@/web/canvas/use_canvas_connections.js";
 import { useCanvasDeletion } from "@/web/canvas/use_canvas_deletion.js";
 import { useCanvasElements } from "@/web/canvas/use_canvas_elements.js";
+import { useGroupContextMenu } from "@/web/canvas/use_group_context_menu.js";
 import { useGroupingShortcuts } from "@/web/canvas/use_grouping_shortcuts.js";
 import { useSelectionGrouping } from "@/web/canvas/use_selection_grouping.js";
 
@@ -36,6 +38,7 @@ export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
     const { dropTargetGroupId, onDragOver, onDragLeave, onDrop } = useNodeDrop(store);
     const { hasSelectedNodes, verdict, groupSelection } = useSelectionGrouping(store);
     useGroupingShortcuts(groupSelection);
+    const groupMenu = useGroupContextMenu(store);
 
     return (
         <ConnectionGraphContext value={graph}>
@@ -55,6 +58,7 @@ export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
                     onDragOver={onDragOver}
                     onDragLeave={onDragLeave}
                     onDrop={onDrop}
+                    onNodeContextMenu={groupMenu.onNodeContextMenu}
                     minZoom={MIN_ZOOM}
                     maxZoom={MAX_ZOOM}
                     deleteKeyCode={DELETE_KEYS}
@@ -70,6 +74,14 @@ export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
                     )}
                 </ReactFlow>
                 <ConnectionRejectionTooltip rejection={rejection} />
+                {groupMenu.openMenu && (
+                    <GroupContextMenu
+                        screenPosition={groupMenu.openMenu.screenPosition}
+                        onUngroup={groupMenu.ungroupMenuGroup}
+                        onFitToContent={groupMenu.fitMenuGroup}
+                        onClose={groupMenu.closeMenu}
+                    />
+                )}
             </DropTargetGroupContext>
         </ConnectionGraphContext>
     );

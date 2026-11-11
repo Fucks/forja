@@ -216,6 +216,56 @@ describe("FlowCanvas grouping", () => {
     });
 });
 
+describe("FlowCanvas group menu", () => {
+    it("ungroups the group chosen in its context menu", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        renderCanvas(store);
+
+        fireEvent.contextMenu(screen.getByLabelText("Desenvolver"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Desagrupar" }));
+
+        const { graph } = store.getState();
+        expect(graph.groups.map((group) => group.id)).not.toContain("develop");
+        expect(graph.nodes.find((node) => node.id === "dev")?.parentGroupId).toBeUndefined();
+        expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    });
+
+    it("returns the nodes of a loop inside a map to the map when the loop is ungrouped", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["dev"]);
+        renderCanvas(store);
+        fireEvent.keyDown(document, { key: "g" });
+        fireEvent.keyDown(document, { key: "l" });
+
+        fireEvent.contextMenu(screen.getByLabelText("Loop"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Desagrupar" }));
+
+        const { graph } = store.getState();
+        expect(graph.groups.some((group) => group.kind === "loop")).toBe(false);
+        expect(graph.nodes.find((node) => node.id === "dev")?.parentGroupId).toBe("develop");
+    });
+
+    it("fits the group chosen in its context menu around its nodes", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        renderCanvas(store);
+
+        fireEvent.contextMenu(screen.getByLabelText("Desenvolver"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Ajustar ao conteúdo" }));
+
+        const fittedGroup = store.getState().graph.groups.find((group) => group.id === "develop");
+        expect(fittedGroup?.size).not.toEqual(findCanonicalGroup("Desenvolver").size);
+    });
+
+    it("closes the context menu with Escape", async () => {
+        renderCanvas(createStoreWith(CANONICAL_FLOW));
+        fireEvent.contextMenu(screen.getByLabelText("Desenvolver"));
+
+        await userEvent.keyboard("{Escape}");
+
+        expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    });
+});
+
 function renderCanvas(store: EditorStore): void {
     render(
         <ReactFlowProvider>
