@@ -20,8 +20,8 @@
 
 ## Tasks
 
-- [ ] 1. `CRON_PRESETS` and preset matching — `src/web/app/triggers/cron_presets.ts`
-- [ ] 2. Query/mutation hooks — `use_triggers.ts`, `useProjectFlows` in `use_flow_summary.ts`
+- [x] 1. `CRON_PRESETS` and preset matching — `src/web/app/triggers/cron_presets.ts`
+- [x] 2. Query/mutation hooks — `use_triggers.ts`, `useProjectFlows` in `use_flow_summary.ts`
 - [ ] 3. Test + list: name, flow, kind icon, policy, next fire, last fire/result, enabled switch —
       `triggers_page.tsx`, `triggers_page.test.tsx`
 - [ ] 4. Test + create schedule trigger "Todo dia às 22:00" (form with presets/custom, policy) —
