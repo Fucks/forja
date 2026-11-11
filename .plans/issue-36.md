@@ -29,7 +29,7 @@
 - [x] 7. `GroupInspector` map fields (concurrency, barrier, failFast) — `group_inspector.tsx`/test
 - [x] 8. `GroupInspector` loop fields (teto, condição, carry) — `group_inspector.tsx`/test
 - [x] 9. `InspectorPanel` routes a selected group to `GroupInspector` — `inspector_panel.tsx`
-- [ ] 10. Selection toolbar with disabled reasons and `G M`/`G L` shortcuts — `selection_toolbar.tsx`,
+- [x] 10. Selection toolbar with disabled reasons and `G M`/`G L` shortcuts — `selection_toolbar.tsx`,
       `flow_canvas.tsx`, `flow_canvas.test.tsx`
 - [ ] 11. Group context menu (Desagrupar, Ajustar ao conteúdo) — `flow_canvas.tsx`
 - [ ] 12. Reparent on `onNodeDragStop`; resize handles on the selected group — `flow_canvas.tsx`,

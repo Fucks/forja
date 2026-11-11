@@ -1,7 +1,7 @@
 import "@xyflow/react/dist/style.css";
 import "@/web/canvas/base/canvas_theme.css";
 
-import { Controls, MiniMap, ReactFlow } from "@xyflow/react";
+import { Controls, MiniMap, Panel, ReactFlow } from "@xyflow/react";
 import type { EdgeTypes } from "@xyflow/react";
 import type { JSX } from "react";
 
@@ -14,9 +14,12 @@ import { FLOW_EDGE_TYPE } from "@/web/canvas/graph_mapping.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
 import { DropTargetGroupContext } from "@/web/canvas/palette/drop_target_context.js";
 import { useNodeDrop } from "@/web/canvas/palette/use_node_drop.js";
+import { SelectionToolbar } from "@/web/canvas/selection_toolbar.js";
 import { useCanvasConnections } from "@/web/canvas/use_canvas_connections.js";
 import { useCanvasDeletion } from "@/web/canvas/use_canvas_deletion.js";
 import { useCanvasElements } from "@/web/canvas/use_canvas_elements.js";
+import { useGroupingShortcuts } from "@/web/canvas/use_grouping_shortcuts.js";
+import { useSelectionGrouping } from "@/web/canvas/use_selection_grouping.js";
 
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2;
@@ -31,6 +34,8 @@ export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
     const { isValidConnection, onConnect, onConnectEnd, rejection } = useCanvasConnections(store);
     const { onNodesDelete, onEdgesDelete } = useCanvasDeletion(store);
     const { dropTargetGroupId, onDragOver, onDragLeave, onDrop } = useNodeDrop(store);
+    const { hasSelectedNodes, verdict, groupSelection } = useSelectionGrouping(store);
+    useGroupingShortcuts(groupSelection);
 
     return (
         <ConnectionGraphContext value={graph}>
@@ -58,6 +63,11 @@ export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
                     <CanvasBackground />
                     <MiniMap />
                     <Controls showInteractive={false} />
+                    {hasSelectedNodes && (
+                        <Panel position="top-center">
+                            <SelectionToolbar verdict={verdict} onGroup={groupSelection} />
+                        </Panel>
+                    )}
                 </ReactFlow>
                 <ConnectionRejectionTooltip rejection={rejection} />
             </DropTargetGroupContext>

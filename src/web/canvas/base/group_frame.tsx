@@ -1,4 +1,4 @@
-import { Repeat, Split } from "lucide-react";
+import { Layers, Repeat } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { JSX } from "react";
 
@@ -23,9 +23,9 @@ export interface GroupFrameProps {
     invalid?: boolean;
 }
 
-const GROUP_KIND_ICONS: Record<GroupKind, LucideIcon> = {
+export const GROUP_KIND_ICONS: Record<GroupKind, LucideIcon> = {
     loop: Repeat,
-    map: Split,
+    map: Layers,
 };
 
 const KIND_ICON_SIZE_PX = 14;
