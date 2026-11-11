@@ -65,20 +65,6 @@ type PlannedIssue = z.infer<typeof planSchema>["issues"][number];
 // Configuration
 // ---------------------------------------------------------------------------
 
-// Model used by the evidence agent, served by Meta's Anthropic-compatible API.
-// The token lives in .sandcastle/.env as MUSE_AUTH_TOKEN; sandcastle injects
-// that file into the container, and the shell there expands the variable, so
-// the token never appears in this file.
-const MUSE_MODEL = "muse-wonder-1.0";
-const MUSE_ENV = {
-    ANTHROPIC_BASE_URL: "https://api.meta.ai",
-    ANTHROPIC_AUTH_TOKEN: '"${MUSE_AUTH_TOKEN:?set MUSE_AUTH_TOKEN in .sandcastle/.env}"',
-    ANTHROPIC_DEFAULT_OPUS_MODEL: MUSE_MODEL,
-    ANTHROPIC_DEFAULT_SONNET_MODEL: MUSE_MODEL,
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: MUSE_MODEL,
-    CLAUDE_CODE_SUBAGENT_MODEL: MUSE_MODEL,
-};
-
 // How long to wait before syncing and planning again when there is no issue
 // to work on (all done, all blocked, or all awaiting review), or after a
 // round failed outside an issue pipeline (sync or planner).
@@ -326,34 +312,6 @@ function recordFailure(issue: PlannedIssue, reason: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Agent env: sandbox.run() ignores the env given to claudeCode() (it only reads
-// the env fixed when the container was created), so the variables go in front
-// of the agent command instead. Values are inserted as shell words, unquoted,
-// so they can reference container variables; quote them where needed.
-// CLAUDE_CODE_OAUTH_TOKEN is unset so the step never falls back to the Claude
-// subscription.
-// ---------------------------------------------------------------------------
-
-function withCommandEnv(
-    provider: sandcastle.AgentProvider,
-    env: Record<string, string>,
-): sandcastle.AgentProvider {
-    const assignments = Object.entries(env)
-        .map(([key, value]) => `${key}=${value}`)
-        .join(" ");
-    return {
-        ...provider,
-        buildPrintCommand(options) {
-            const printCommand = provider.buildPrintCommand(options);
-            return {
-                ...printCommand,
-                command: `env -u CLAUDE_CODE_OAUTH_TOKEN ${assignments} ${printCommand.command}`,
-            };
-        },
-    };
-}
-
-// ---------------------------------------------------------------------------
 // Issue pipeline: implementer, then reviewer and evidence if there are
 // commits, sharing one sandbox on the issue branch. Resolves to the PR URL, or
 // undefined when the implementer produced no commits.
@@ -407,17 +365,16 @@ async function implementReviewAndOpenPullRequest(issue: PlannedIssue) {
         // Before the evidence, so the checks and screenshots run on the code the PR will merge.
         await rebaseOntoBase(sandbox, promptArgs);
 
-        await sandbox.run({
+        const evidence = await sandbox.run({
             name: "evidence",
             logging: agentLogging("evidence", issue.branch),
             maxIterations: 1,
-            agent: withCommandEnv(sandcastle.claudeCode(MUSE_MODEL), MUSE_ENV),
+            agent: sandcastle.claudeCode(MODEL),
             idleTimeoutSeconds: AGENT_IDLE_TIMEOUT_SECONDS,
             promptFile: "./.sandcastle/evidence-prompt.md",
             promptArgs: { ...promptArgs, EVIDENCE_DIR },
         });
-        // Not recorded in usageGuard: this step runs on Meta's API, not on the
-        // Claude subscription whose window the guard tracks.
+        usageGuard.recordUsage(evidence);
 
         // The evidence lives in the worktree, which close() removes.
         const evidenceDir = join(sandbox.worktreePath, EVIDENCE_DIR);
