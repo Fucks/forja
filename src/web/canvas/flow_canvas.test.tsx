@@ -1,5 +1,6 @@
 import { ReactFlowProvider } from "@xyflow/react";
 import { createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 
 import type { FlowEdge, FlowGraph, FlowGroup, NodeType, Position } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
@@ -7,6 +8,7 @@ import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { createEditorStore } from "@/web/canvas/editor_store.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
+import { MIXED_GROUPS_REASON } from "@/web/canvas/grouping.js";
 import { NODE_TYPE_DRAG_FORMAT } from "@/web/canvas/palette/node_type_drag.js";
 
 const CANONICAL_FLOW = buildCanonicalFlow();
@@ -146,6 +148,123 @@ function createStoreWith(graph: FlowGraph): EditorStore {
 
     return store;
 }
+
+describe("FlowCanvas grouping", () => {
+    it("hides the grouping actions while no node is selected", () => {
+        renderCanvas(createStoreWith(CANONICAL_FLOW));
+
+        expect(screen.queryByRole("button", { name: "Agrupar em map" })).not.toBeInTheDocument();
+    });
+
+    it("groups the selected node in a new map and selects the map", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["dev"]);
+        renderCanvas(store);
+
+        await userEvent.click(screen.getByRole("button", { name: "Agrupar em map" }));
+
+        const { graph, selection } = store.getState();
+        const newGroup = graph.groups.at(-1);
+        expect(newGroup).toMatchObject({ kind: "map", parentGroupId: "develop" });
+        expect(graph.nodes.find((node) => node.id === "dev")?.parentGroupId).toBe(newGroup?.id);
+        expect(selection).toEqual([newGroup?.id]);
+    });
+
+    it("blocks grouping nodes of different groups", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["dev", "source"]);
+        renderCanvas(store);
+        const groupInMap = screen.getByRole("button", { name: "Agrupar em map" });
+
+        await userEvent.click(groupInMap);
+
+        expect(groupInMap).toHaveAttribute("aria-disabled", "true");
+        expect(store.getState().graph.groups).toEqual(CANONICAL_FLOW.groups);
+    });
+
+    it("tells why the grouping is blocked", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["dev", "source"]);
+        renderCanvas(store);
+
+        screen.getByRole("button", { name: "Agrupar em map" }).focus();
+
+        expect(
+            await screen.findByRole("tooltip", { name: MIXED_GROUPS_REASON }),
+        ).toBeInTheDocument();
+    });
+
+    it("groups the selected node in a loop with G then L", () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["source"]);
+        renderCanvas(store);
+
+        fireEvent.keyDown(document, { key: "g" });
+        fireEvent.keyDown(document, { key: "l" });
+
+        expect(store.getState().graph.groups.at(-1)).toMatchObject({ kind: "loop" });
+    });
+
+    it("ignores L when it does not follow G", () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["source"]);
+        renderCanvas(store);
+
+        fireEvent.keyDown(document, { key: "l" });
+
+        expect(store.getState().graph.groups).toEqual(CANONICAL_FLOW.groups);
+    });
+});
+
+describe("FlowCanvas group menu", () => {
+    it("ungroups the group chosen in its context menu", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        renderCanvas(store);
+
+        fireEvent.contextMenu(screen.getByLabelText("Desenvolver"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Desagrupar" }));
+
+        const { graph } = store.getState();
+        expect(graph.groups.map((group) => group.id)).not.toContain("develop");
+        expect(graph.nodes.find((node) => node.id === "dev")?.parentGroupId).toBeUndefined();
+        expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    });
+
+    it("returns the nodes of a loop inside a map to the map when the loop is ungrouped", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["dev"]);
+        renderCanvas(store);
+        fireEvent.keyDown(document, { key: "g" });
+        fireEvent.keyDown(document, { key: "l" });
+
+        fireEvent.contextMenu(screen.getByLabelText("Loop"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Desagrupar" }));
+
+        const { graph } = store.getState();
+        expect(graph.groups.some((group) => group.kind === "loop")).toBe(false);
+        expect(graph.nodes.find((node) => node.id === "dev")?.parentGroupId).toBe("develop");
+    });
+
+    it("fits the group chosen in its context menu around its nodes", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        renderCanvas(store);
+
+        fireEvent.contextMenu(screen.getByLabelText("Desenvolver"));
+        await userEvent.click(screen.getByRole("menuitem", { name: "Ajustar ao conteúdo" }));
+
+        const fittedGroup = store.getState().graph.groups.find((group) => group.id === "develop");
+        expect(fittedGroup?.size).not.toEqual(findCanonicalGroup("Desenvolver").size);
+    });
+
+    it("closes the context menu with Escape", async () => {
+        renderCanvas(createStoreWith(CANONICAL_FLOW));
+        fireEvent.contextMenu(screen.getByLabelText("Desenvolver"));
+
+        await userEvent.keyboard("{Escape}");
+
+        expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    });
+});
 
 function renderCanvas(store: EditorStore): void {
     render(

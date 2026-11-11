@@ -60,6 +60,26 @@ describe("useCanvasElements", () => {
         expect(store.getState().dirty).toBe(true);
     });
 
+    it("saves the size of a group resized on the canvas", () => {
+        const store = createLoopStore();
+        const { result } = renderHook(() => useCanvasElements(store));
+
+        act(() =>
+            result.current.onNodesChange([
+                {
+                    id: "review_loop",
+                    type: "dimensions",
+                    dimensions: { width: 900, height: 400 },
+                    resizing: true,
+                    setAttributes: true,
+                },
+            ]),
+        );
+
+        const resizedGroup = store.getState().graph.groups.find(({ id }) => id === "review_loop");
+        expect(resizedGroup?.size).toEqual({ width: 900, height: 400 });
+    });
+
     it("keeps measured sizes on the nodes without changing the graph", () => {
         const store = createLoopStore();
         const { result } = renderHook(() => useCanvasElements(store));

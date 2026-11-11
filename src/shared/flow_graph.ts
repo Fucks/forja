@@ -92,11 +92,11 @@ export const flowEdgeSchema = z.object({
 });
 export type FlowEdge = z.infer<typeof flowEdgeSchema>;
 
-const MIN_MAP_CONCURRENCY = 1;
-const MAX_MAP_CONCURRENCY = 16;
+export const MIN_MAP_CONCURRENCY = 1;
+export const MAX_MAP_CONCURRENCY = 16;
 const DEFAULT_MAP_CONCURRENCY = 1;
-const MIN_LOOP_ITERATIONS = 1;
-const MAX_LOOP_ITERATIONS = 50;
+export const MIN_LOOP_ITERATIONS = 1;
+export const MAX_LOOP_ITERATIONS = 50;
 const DEFAULT_LOOP_ITERATIONS = 3;
 
 export const mapConfigSchema = z.object({

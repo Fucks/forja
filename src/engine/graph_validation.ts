@@ -12,6 +12,7 @@ import { checkTriggerCount, findDuplicateIds } from "@/engine/validation_rules/i
 import {
     findCyclesOutsideLoops,
     findLoopsWithoutBackEdge,
+    findLoopsWithoutCondition,
     findUnknownLoopConditionPaths,
 } from "@/engine/validation_rules/loop_rules.js";
 import {
@@ -42,6 +43,7 @@ const VALIDATION_RULES: ValidationRule[] = [
     findMapListInputProblems,
     findCyclesOutsideLoops,
     findLoopsWithoutBackEdge,
+    findLoopsWithoutCondition,
     findUnknownLoopConditionPaths,
     findEmptyPrompts,
     findUnknownToolProfiles,

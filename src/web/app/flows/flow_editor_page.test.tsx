@@ -156,6 +156,31 @@ describe("FlowEditorPage", () => {
         expect(savedGraph.edges.filter((edge) => edge.to.nodeId === "dev")).toEqual([]);
     });
 
+    it("opens the selected group in the inspector", async () => {
+        stubFetchRoutes(fakeEditorApi());
+        renderAppAt(EDITOR_PATH);
+
+        const inspector = await selectCanvasNode("Desenvolver");
+
+        expect(within(inspector).getByRole("textbox", { name: "Rótulo" })).toHaveValue(
+            "Desenvolver",
+        );
+        expect(within(inspector).getByText("até 3 itens ao mesmo tempo")).toBeInTheDocument();
+    });
+
+    it("groups Dev in a map whose label follows the concurrency set in the inspector", async () => {
+        stubFetchRoutes(fakeEditorApi());
+        renderAppAt(EDITOR_PATH);
+        const inspector = await selectCanvasNode("Dev");
+
+        await userEvent.click(screen.getByRole("button", { name: "Agrupar em map" }));
+        within(inspector).getByRole("slider", { name: "Concorrência" }).focus();
+        await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+
+        expect(within(inspector).getByRole("textbox", { name: "Rótulo" })).toHaveValue("Map");
+        expect(screen.getAllByText("map ×3")).toHaveLength(2);
+    });
+
     it("tells the user when the draft cannot be opened", async () => {
         stubFetchRoutes({
             ...fakeEditorApi(),
