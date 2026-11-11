@@ -1,7 +1,8 @@
 import { nextFireAt } from "@/engine/cron_schedule.js";
 import type { CancelTimeout, Clock } from "@/lib/clock.js";
+import { describeError } from "@/lib/describe_error.js";
 import type { FireInput } from "@/server/triggers/trigger_firing.js";
-import type { Trigger } from "@/shared/trigger_types.js";
+import type { Trigger, TriggerConfig } from "@/shared/trigger_types.js";
 
 export const CRON_FIRE_REASON = "cron";
 
@@ -23,10 +24,7 @@ export interface CronRunner {
     stop(): void;
 }
 
-interface Schedule {
-    cron: string;
-    timezone: string;
-}
+type ScheduleConfig = Extract<TriggerConfig, { kind: "schedule" }>;
 
 export function createCronRunner(deps: CronRunnerDeps): CronRunner {
     return new CronScheduler(deps);
@@ -138,7 +136,7 @@ class CronScheduler implements CronRunner {
     }
 }
 
-function findActiveSchedule(trigger: Trigger): Schedule | undefined {
+function findActiveSchedule(trigger: Trigger): ScheduleConfig | undefined {
     if (!trigger.enabled || trigger.config.kind !== "schedule") {
         return undefined;
     }
@@ -154,8 +152,4 @@ function latestOf(now: Date, lastFiredAt: string | undefined): Date {
 
     const lastFiredDate = new Date(lastFiredAt);
     return lastFiredDate > now ? lastFiredDate : now;
-}
-
-function describeError(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
 }

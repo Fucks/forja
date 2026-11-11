@@ -28,7 +28,7 @@ export class CronNeverFiresError extends Error {
     override readonly name = "CronNeverFiresError";
 
     constructor(expression: string) {
-        super(`A expressão cron "${expression}" nunca dispara.`);
+        super(describeNeverFires(expression));
     }
 }
 
@@ -45,7 +45,7 @@ export function validateCron(expression: string): ScheduleValidation {
         return { ok: false, message: `A expressão cron "${expression}" é inválida.` };
     }
     if (!cron.nextRun(NEVER_FIRES_PROBE_DATE)) {
-        return { ok: false, message: new CronNeverFiresError(expression).message };
+        return { ok: false, message: describeNeverFires(expression) };
     }
 
     return { ok: true };
@@ -75,6 +75,10 @@ export function describeCron(expression: string): string {
     }
 
     return describeCommonPattern(toCronFields(splitFields(expression))) ?? expression;
+}
+
+function describeNeverFires(expression: string): string {
+    return `A expressão cron "${expression}" nunca dispara.`;
 }
 
 function splitFields(expression: string): string[] {

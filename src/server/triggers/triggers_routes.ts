@@ -92,8 +92,10 @@ function registerProjectTriggersRoutes(app: FastifyInstance, triggers: TriggerSe
         PROJECT_TRIGGERS_PATH,
         { schema: { params: projectParamsSchema, querystring: listTriggersQuery } },
         async (request): Promise<ListedTrigger[]> => {
-            const listed = await triggers.list(request.params.projectId, request.query);
-            return listed.map((trigger) => withSchedulePreview(trigger, systemClock.now()));
+            const projectTriggers = await triggers.list(request.params.projectId, request.query);
+            const now = systemClock.now();
+
+            return projectTriggers.map((trigger) => withSchedulePreview(trigger, now));
         },
     );
 
