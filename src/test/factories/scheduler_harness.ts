@@ -16,6 +16,7 @@ import type {
 } from "@/engine/scheduler_types.js";
 import type { CancelTimeout } from "@/lib/clock.js";
 import { assertNever } from "@/lib/assert_never.js";
+import type { ApprovalDecision } from "@/shared/approval_types.js";
 import { type Condition, evaluateCondition } from "@/shared/conditions.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
@@ -26,6 +27,7 @@ export const DEFAULT_NODE_DURATION_MS = 1_000;
 export const DEFAULT_USAGE_LIMIT_MARGIN_MINUTES = 5;
 const ENOUGH_TIME_TO_FINISH_MS = 24 * 60 * 60 * 1_000;
 const UNLIMITED_AGENTS = 100;
+const WAIT_FOR_APPROVAL: NodeOutcome = { kind: "wait_for_approval" };
 const CONDITION_INPUT_PORT = "value";
 const CANCELED_BY_USER: NodeRunError = { kind: "canceled", message: "Cancelado pelo usuário" };
 const USAGE_LIMIT_REACHED: NodeRunError = {
@@ -36,7 +38,8 @@ const USAGE_LIMIT_REACHED: NodeRunError = {
 export type NodeOutcome =
     | { kind: "succeed"; outputs: Record<string, unknown> }
     | { kind: "fail"; error: NodeRunError }
-    | { kind: "hit_usage_limit"; resetAt?: Date };
+    | { kind: "hit_usage_limit"; resetAt?: Date }
+    | { kind: "wait_for_approval"; expiresAt?: Date };
 
 export interface NodeBehavior {
     durationMs: number;
@@ -82,6 +85,7 @@ export class SchedulerHarness {
     readonly clock: FakeClock;
     readonly timeline: TimelineEntry[] = [];
     readonly commands: SchedulerCommand[] = [];
+    readonly expiredApprovalNodeRunIds: string[] = [];
     private currentRun: RunState;
     private scheduler: Scheduler;
     private readonly plan: FlowPlan;
@@ -128,6 +132,16 @@ export class SchedulerHarness {
 
     raiseBudget(budget: RunBudget): void {
         this.deliver({ type: "budget_raised", budget, at: this.clock.now() });
+    }
+
+    resolveApproval(nodeRunId: string, decision: ApprovalDecision, comment?: string): void {
+        this.deliver({
+            type: "approval_resolved",
+            nodeRunId,
+            decision,
+            comment,
+            at: this.clock.now(),
+        });
     }
 
     advance(ms: number): void {
@@ -265,6 +279,9 @@ export class SchedulerHarness {
             case "schedule_wakeup":
                 this.scheduleWakeup(command.at);
                 break;
+            case "expire_approval":
+                this.expiredApprovalNodeRunIds.push(command.nodeRunId);
+                break;
             case "group_progress":
             case "usage_limit_reached":
             case "usage_limit_reset":
@@ -312,9 +329,18 @@ export class SchedulerHarness {
 
         return {
             durationMs: scripted.durationMs ?? DEFAULT_NODE_DURATION_MS,
-            outcome: scripted.outcome ?? { kind: "succeed", outputs: this.defaultOutputs(started) },
+            outcome: scripted.outcome ?? this.defaultOutcome(started),
             usage: scripted.usage,
         };
+    }
+
+    // A gate waits for someone to resolve its approval through resolveApproval.
+    private defaultOutcome(started: StartedNodeRun): NodeOutcome {
+        if (this.plan.findNode(started.nodeRun.nodeId)?.type === "gate") {
+            return WAIT_FOR_APPROVAL;
+        }
+
+        return { kind: "succeed", outputs: this.defaultOutputs(started) };
     }
 
     private defaultOutputs(started: StartedNodeRun): Record<string, unknown> {
@@ -386,6 +412,13 @@ function finishingEvent(nodeRunId: string, outcome: NodeOutcome, at: Date): Sche
                 error: USAGE_LIMIT_REACHED,
                 at,
                 resetAt: outcome.resetAt,
+            };
+        case "wait_for_approval":
+            return {
+                type: "node_run_waiting_approval",
+                nodeRunId,
+                expiresAt: outcome.expiresAt,
+                at,
             };
         default:
             return assertNever(outcome);

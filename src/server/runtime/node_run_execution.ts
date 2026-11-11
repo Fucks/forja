@@ -8,13 +8,16 @@ import { NotFoundError } from "@/server/errors.js";
 import type { ArtifactRecord, RunRecord, RunRepository } from "@/server/runs/run_repository.js";
 import { mapAgentError, usageLimitResetAtOf } from "@/server/runtime/error_mapping.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
-import type {
-    ModelUsage,
-    NodeArtifact,
-    NodeExecutionContext,
-    NodeExecutionResult,
-    NodeExecutor,
-    NodeExecutorRegistry,
+import {
+    isWaitingForApproval,
+    type ModelUsage,
+    type NodeArtifact,
+    type NodeExecutionContext,
+    type NodeExecutionOutcome,
+    type NodeExecutionResult,
+    type NodeExecutor,
+    type NodeExecutorRegistry,
+    type WaitingForApproval,
 } from "@/server/runtime/node_executors.js";
 import type { RunCredentials } from "@/server/runtime/run_credentials.js";
 import { usageRecordedEvent } from "@/server/runtime/run_events.js";
@@ -27,7 +30,7 @@ import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
 
-type ExecutionOutcome = { ok: true; result: NodeExecutionResult } | { ok: false; error: unknown };
+type ExecutionOutcome = { ok: true; result: NodeExecutionOutcome } | { ok: false; error: unknown };
 
 export interface NodeRunExecutionDeps {
     run: RunRecord;
@@ -68,6 +71,10 @@ export class NodeRunExecution {
             await this.deps.deliver(this.failureEventOf(outcome.error));
             return;
         }
+        if (isWaitingForApproval(outcome.result)) {
+            await this.reportWaitingForApproval(outcome.result);
+            return;
+        }
 
         await this.complete(outcome.result);
     }
@@ -92,7 +99,7 @@ export class NodeRunExecution {
         return node;
     }
 
-    private executorOf(node: FlowNode): NodeExecutor {
+    private executorOf(node: FlowNode): NodeExecutor<NodeExecutionOutcome> {
         const executor = this.deps.nodeExecutors[node.type];
         if (!executor) {
             throw new UnsupportedNodeTypeError(node.type);
@@ -132,6 +139,15 @@ export class NodeRunExecution {
             resetAt: usageLimitResetAtOf(error),
             at: this.deps.clock.now(),
         };
+    }
+
+    private async reportWaitingForApproval({ expiresAt }: WaitingForApproval): Promise<void> {
+        await this.deps.deliver({
+            type: "node_run_waiting_approval",
+            nodeRunId: this.deps.nodeRun.id,
+            expiresAt,
+            at: this.deps.clock.now(),
+        });
     }
 
     private async complete(result: NodeExecutionResult): Promise<void> {

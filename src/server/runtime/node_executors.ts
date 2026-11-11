@@ -57,11 +57,27 @@ export interface NodeExecutionResult {
     usage?: ModelUsage;
 }
 
-export type NodeExecutor = (context: NodeExecutionContext) => Promise<NodeExecutionResult>;
+// A gate does not finish by itself: the scheduler finishes it when its approval is resolved.
+export interface WaitingForApproval {
+    waiting: "approval";
+    approvalId: string;
+    expiresAt?: Date;
+}
 
-export type NodeExecutorRegistry = Partial<Record<NodeType, NodeExecutor>>;
+export type NodeExecutionOutcome = NodeExecutionResult | WaitingForApproval;
 
-// The executors that need nothing beyond the context. The gate node gets its own in #81.
+export type NodeExecutor<Outcome extends NodeExecutionOutcome = NodeExecutionResult> = (
+    context: NodeExecutionContext,
+) => Promise<Outcome>;
+
+export type NodeExecutorRegistry = Partial<Record<NodeType, NodeExecutor<NodeExecutionOutcome>>>;
+
+export function isWaitingForApproval(outcome: NodeExecutionOutcome): outcome is WaitingForApproval {
+    return "waiting" in outcome;
+}
+
+// The executors that need nothing beyond the context; the executor adds the gate's, which needs
+// the approvals.
 export const nodeExecutors: NodeExecutorRegistry = {
     trigger: executeTriggerNode,
     agent: executeAgentNode,

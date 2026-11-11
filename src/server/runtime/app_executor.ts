@@ -7,6 +7,8 @@ import type { SecretBox } from "@/integrations/secrets/secret_box.js";
 import type { SecretRedactor } from "@/integrations/secrets/secret_redactor.js";
 import type { Clock } from "@/lib/clock.js";
 import { newId } from "@/lib/ids.js";
+import { ApprovalRepository } from "@/server/approvals/approval_repository.js";
+import { createApprovalService } from "@/server/approvals/approval_service.js";
 import { CredentialRepository } from "@/server/credentials/credential_repository.js";
 import { createCredentialService } from "@/server/credentials/credential_service.js";
 import type { ForjaDb } from "@/server/db/client.js";
@@ -79,6 +81,7 @@ export function createAppExecutor({
         events,
         logs,
         usage: createAppUsageService({ db, settings, clock }),
+        approvals: createApprovalService({ repo: new ApprovalRepository(db), events, clock }),
         toolProfiles: createToolProfileService({ repo: new ToolProfileRepository(db), clock }),
         credentials: createCredentialService({
             repo: new CredentialRepository(db),

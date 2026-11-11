@@ -10,6 +10,11 @@ import {
 } from "@/integrations/secrets/secret_redactor.js";
 import { newId } from "@/lib/ids.js";
 import type { AppDeps } from "@/server/app.js";
+import { ApprovalRepository } from "@/server/approvals/approval_repository.js";
+import {
+    type ApprovalService,
+    createApprovalService,
+} from "@/server/approvals/approval_service.js";
 import { CredentialRepository } from "@/server/credentials/credential_repository.js";
 import {
     createCredentialService,
@@ -88,6 +93,7 @@ export class ExecutorTestBed {
     readonly flows: FlowService;
     readonly settings: SettingsService;
     readonly usage: UsageService;
+    readonly approvals: ApprovalService;
     readonly toolProfiles: ToolProfileService;
     readonly credentials: CredentialService;
     readonly redactor: SecretRedactor = createSecretRedactor();
@@ -114,6 +120,11 @@ export class ExecutorTestBed {
         this.usage = createAppUsageService({
             db: this.database.db,
             settings: this.settings,
+            clock: this.clock,
+        });
+        this.approvals = createApprovalService({
+            repo: new ApprovalRepository(this.database.db),
+            events: this.events,
             clock: this.clock,
         });
         this.toolProfiles = createToolProfileService({
@@ -271,6 +282,7 @@ export class ExecutorTestBed {
             events: this.events,
             logs: this.logs,
             usage: this.usage,
+            approvals: this.approvals,
             toolProfiles: this.toolProfiles,
             credentials: this.credentials,
             redactor: this.redactor,

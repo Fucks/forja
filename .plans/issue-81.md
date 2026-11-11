@@ -32,12 +32,12 @@
 - [x] 1. Shared types `src/shared/approval_types.ts`, migration `0900_approvals.sql`, schema `db/schema/approvals.ts`, `ApprovalRepository`
 - [x] 2. Test + implement `ApprovalService.create/get/listPending` (event `approval.requested`) — `approval_service.test.ts`
 - [x] 3. Test + implement `ApprovalService.resolve` (409 when not pending, event `approval.resolved`) and `expireOfNodeRun`
-- [ ] 4. Scheduler test: gate waits in WAITING_APPROVAL without taking an agent slot — `scheduler.test.ts`, harness
-- [ ] 5. Scheduler: `node_run_waiting_approval` event and WAITING_APPROVAL state
-- [ ] 6. Scheduler test + implement `approval_resolved`: approved/rejected ports with the comment
-- [ ] 7. Scheduler test + implement timeout → rejected with "tempo esgotado" + `expire_approval`; deadlines in snapshot and wakeups
-- [ ] 8. Scheduler test + implement: cancel of the run cancels a waiting gate and expires its approval; waiting gate survives restart (not interrupted)
-- [ ] 9. Gate executor test + implement (`gate_executor.ts`): creates approval with truncated diff, returns waiting
-- [ ] 10. Executor contract: `NodeExecutionOutcome`, `NodeRunExecution` delivers the waiting event, `ActiveRun` runs `expire_approval`, `Executor.resolveApproval`; wiring in app_executor/test bed
+- [x] 4. Scheduler test: gate waits in WAITING_APPROVAL without taking an agent slot — `scheduler.test.ts`, harness
+- [x] 5. Scheduler: `node_run_waiting_approval` event and WAITING_APPROVAL state
+- [x] 6. Scheduler test + implement `approval_resolved`: approved/rejected ports with the comment
+- [x] 7. Scheduler test + implement timeout → rejected with "tempo esgotado" + `expire_approval`; deadlines in snapshot and wakeups
+- [x] 8. Scheduler test + implement: cancel of the run cancels a waiting gate and expires its approval; waiting gate survives restart (not interrupted)
+- [x] 9. Gate executor test + implement (`gate_executor.ts`): creates approval with truncated diff, returns waiting
+- [x] 10. Executor contract: `NodeExecutionOutcome`, `NodeRunExecution` delivers the waiting event, `ActiveRun` runs `expire_approval`, `Executor.resolveApproval`; wiring in app_executor/test bed
 - [ ] 11. Routes test + implement `approvals_routes.ts` (list pending, get, resolve, 409) incl. end-to-end gate through the executor and restart
 - [ ] 12. Self-review checklist (section 5) and feedback loops (section 6)
