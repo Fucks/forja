@@ -7,6 +7,8 @@ import { FakeClock } from "@/test/fakes/fake_clock.js";
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
+const MAX_PLATFORM_TIMER_DELAY_MS = 2_147_483_647;
+const OVERFLOWED_TIMER_DELAY_MS = 1;
 const NOW = new Date("2026-11-11T12:00:00Z");
 const NIGHTLY_IN_SAO_PAULO_UTC = new Date("2026-11-12T01:00:00Z");
 const NOON_IN_SAO_PAULO_UTC = new Date("2026-11-11T15:00:00Z");
@@ -16,8 +18,9 @@ const NIGHTLY_CONFIG: TriggerConfig = {
     timezone: "America/Sao_Paulo",
 };
 
-// Simulates a suspended computer: the wall clock moves on while the pending timers stay put.
-class SuspendableClock implements Clock {
+// Behaves like Node timers: a delay over the 32-bit limit fires at once. It also simulates a
+// suspended computer: the wall clock moves on while the pending timers stay put.
+class PlatformLikeClock implements Clock {
     private suspendedMs = 0;
 
     constructor(readonly timers: FakeClock) {}
@@ -27,7 +30,8 @@ class SuspendableClock implements Clock {
     }
 
     setTimeout(fn: () => void, ms: number): CancelTimeout {
-        return this.timers.setTimeout(fn, ms);
+        const delayMs = ms > MAX_PLATFORM_TIMER_DELAY_MS ? OVERFLOWED_TIMER_DELAY_MS : ms;
+        return this.timers.setTimeout(fn, delayMs);
     }
 
     suspendFor(ms: number): void {
@@ -36,7 +40,7 @@ class SuspendableClock implements Clock {
 }
 
 describe("createCronRunner", () => {
-    let clock: SuspendableClock;
+    let clock: PlatformLikeClock;
     let triggers: Trigger[];
     let fires: { triggerId: string; reason: string; at: Date }[];
     let logs: string[];
@@ -44,7 +48,7 @@ describe("createCronRunner", () => {
     let runner: CronRunner;
 
     beforeEach(() => {
-        clock = new SuspendableClock(new FakeClock(NOW));
+        clock = new PlatformLikeClock(new FakeClock(NOW));
         triggers = [];
         fires = [];
         logs = [];
