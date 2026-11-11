@@ -25,7 +25,7 @@ import { useGroupingShortcuts } from "@/web/canvas/use_grouping_shortcuts.js";
 import { useNodeReparenting } from "@/web/canvas/use_node_reparenting.js";
 import { useSelectionGrouping } from "@/web/canvas/use_selection_grouping.js";
 import { markInvalidEdges, ValidationOverlay } from "@/web/canvas/validation_overlay.js";
-import type { IssuesByTarget } from "@/web/canvas/validation_overlay.js";
+import type { IssuesByTarget } from "@/web/canvas/use_validation.js";
 
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2;

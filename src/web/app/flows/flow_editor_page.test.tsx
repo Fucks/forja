@@ -5,14 +5,18 @@ import { z } from "zod";
 
 import { flowGraphSchema, isNodeOfType } from "@/shared/flow_graph.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
-import type { ApiErrorBody } from "@/shared/api_types.js";
 import type { FlowDraft, FlowSummary, FlowVersion } from "@/shared/flow_types.js";
 import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
 import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { updateAgentConfig } from "@/test/factories/flow_graph_variations.js";
-import { listSentWrites, respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import {
+    listSentWrites,
+    respondWithApiError,
+    respondWithRefusedPublish,
+    stubFetchRoutes,
+} from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
 import { DraftConflictBanner } from "@/web/app/flows/draft_conflict_banner.js";
@@ -26,7 +30,6 @@ const DRAFT_URL = `/api/flows/${FLOW_ID}/draft`;
 const PROJECT_FLOWS_URL = `/api/projects/${PROJECT_ID}/flows`;
 const HTTP_CREATED = 201;
 const HTTP_NOT_FOUND = 404;
-const HTTP_UNPROCESSABLE_ENTITY = 422;
 const TRIGGER_LABEL = "Gatilho";
 const NO_TRIGGER_MESSAGE = "O fluxo precisa de um nó de gatilho.";
 const EMPTY_PROMPT_MESSAGE = 'O agente "Dev" está sem prompt.';
@@ -83,18 +86,6 @@ function buildPublishedVersion(version: number): FlowVersion {
         graph: CANONICAL_DRAFT.graph,
         publishedAt: "2026-11-11T12:00:00Z",
     };
-}
-
-function respondWithRefusedPublish(issues: ValidationIssue[]): Response {
-    const body: ApiErrorBody = {
-        error: {
-            code: "invalid",
-            message: "O fluxo tem erros e não pode ser publicado.",
-            details: issues,
-        },
-    };
-
-    return Response.json(body, { status: HTTP_UNPROCESSABLE_ENTITY });
 }
 
 describe("FlowEditorPage", () => {

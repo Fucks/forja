@@ -8,6 +8,7 @@ import { validationIssueSchema } from "@/shared/validation_issue.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import type { ApiError } from "@/web/api/api_client.js";
 import { usePublishVersion } from "@/web/app/flows/use_flow_versions.js";
+import { ISSUE_NOUNS } from "@/web/canvas/use_validation.js";
 import { Button } from "@/web/components/ui/button.js";
 import { Input } from "@/web/components/ui/input.js";
 import { useToast } from "@/web/components/ui/toast.js";
@@ -17,7 +18,6 @@ const NOTHING_TO_PUBLISH_LABEL = "Nada novo para publicar";
 const PUBLISH_FAILED_TITLE = "Não foi possível publicar";
 const HTTP_UNPROCESSABLE_ENTITY = 422;
 const NO_PUBLISHED_VERSION = 0;
-const ERROR_NOUNS = { one: "erro", other: "erros" };
 
 // aria-disabled instead of disabled: a blocked publish still takes focus, so its tooltip tells why.
 const BLOCKED_BUTTON_CLASSES = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50";
@@ -144,7 +144,7 @@ function checkPublishAvailability({
 }
 
 function describeErrorsToFix(errorCount: number): string {
-    return `Corrija ${formatCount(errorCount, ERROR_NOUNS)}`;
+    return `Corrija ${formatCount(errorCount, ISSUE_NOUNS.error)}`;
 }
 
 function describeDraftStatus(latestVersion: number | undefined): string {

@@ -11,7 +11,7 @@ import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
 import { MIXED_GROUPS_REASON } from "@/web/canvas/grouping.js";
 import { NODE_TYPE_DRAG_FORMAT } from "@/web/canvas/palette/node_type_drag.js";
-import type { IssuesByTarget } from "@/web/canvas/validation_overlay.js";
+import type { IssuesByTarget } from "@/web/canvas/use_validation.js";
 
 const CANONICAL_FLOW = buildCanonicalFlow();
 const EMPTY_FLOW: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };

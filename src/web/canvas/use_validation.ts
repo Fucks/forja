@@ -8,9 +8,16 @@ import type { ValidationIssue } from "@/shared/validation_issue.js";
 
 export const VALIDATION_DEBOUNCE_MS = 250;
 
+export const ISSUE_NOUNS: Record<ValidationIssue["level"], { one: string; other: string }> = {
+    error: { one: "erro", other: "erros" },
+    warning: { one: "aviso", other: "avisos" },
+};
+
+export type IssuesByTarget = Map<string, ValidationIssue[]>;
+
 export interface GraphValidation {
     issues: ValidationIssue[];
-    byTarget: Map<string, ValidationIssue[]>;
+    byTarget: IssuesByTarget;
     errorCount: number;
     warningCount: number;
 }
@@ -60,8 +67,8 @@ function countIssuesOfLevel(issues: ValidationIssue[], level: ValidationIssue["l
     return issues.filter((issue) => issue.level === level).length;
 }
 
-function groupIssuesByTarget(issues: ValidationIssue[]): Map<string, ValidationIssue[]> {
-    const byTarget = new Map<string, ValidationIssue[]>();
+function groupIssuesByTarget(issues: ValidationIssue[]): IssuesByTarget {
+    const byTarget: IssuesByTarget = new Map();
     for (const issue of issues) {
         const targetId = issue.target.id;
         if (targetId !== undefined) {

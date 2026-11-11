@@ -3,8 +3,7 @@ import type { JSX, ReactNode } from "react";
 
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import type { RFEdge } from "@/web/canvas/graph_mapping.js";
-
-export type IssuesByTarget = Map<string, ValidationIssue[]>;
+import type { IssuesByTarget } from "@/web/canvas/use_validation.js";
 
 export interface TargetValidation {
     invalid: boolean;

@@ -3,11 +3,15 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 
-import type { ApiErrorBody } from "@/shared/api_types.js";
 import type { FlowVersion } from "@/shared/flow_types.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
-import { listSentWrites, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import {
+    listSentWrites,
+    REFUSED_PUBLISH_MESSAGE,
+    respondWithRefusedPublish,
+    stubFetchRoutes,
+} from "@/test/fakes/fake_fetch.js";
 import { createTestQueryClient } from "@/test/render_with_query_client.js";
 import { PublishBar } from "@/web/canvas/publish_bar.js";
 import { ToastProvider } from "@/web/components/ui/toast.js";
@@ -15,7 +19,6 @@ import { ToastProvider } from "@/web/components/ui/toast.js";
 const FLOW_ID = "flw_canonico";
 const PUBLISH_ROUTE = `POST /api/flows/${FLOW_ID}/publish`;
 const HTTP_CREATED = 201;
-const HTTP_UNPROCESSABLE_ENTITY = 422;
 
 const PUBLISHED_VERSION: FlowVersion = {
     flowId: FLOW_ID,
@@ -155,9 +158,7 @@ describe("PublishBar", () => {
 
         await userEvent.click(screen.getByRole("button", { name: "Publicar v4" }));
 
-        expect(
-            await screen.findByText("O fluxo tem erros e não pode ser publicado."),
-        ).toBeInTheDocument();
+        expect(await screen.findByText(REFUSED_PUBLISH_MESSAGE)).toBeInTheDocument();
     });
 });
 
@@ -183,16 +184,4 @@ function renderPublishBar(overrides: Partial<PublishBarProps> = {}): void {
 
 function stubPublishResponse(response: Response): ReturnType<typeof stubFetchRoutes> {
     return stubFetchRoutes({ [PUBLISH_ROUTE]: () => response });
-}
-
-function respondWithRefusedPublish(issues: ValidationIssue[]): Response {
-    const body: ApiErrorBody = {
-        error: {
-            code: "invalid",
-            message: "O fluxo tem erros e não pode ser publicado.",
-            details: issues,
-        },
-    };
-
-    return Response.json(body, { status: HTTP_UNPROCESSABLE_ENTITY });
 }

@@ -8,7 +8,7 @@ import { formatCount } from "@/lib/format.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
-import { describeIssueKey } from "@/web/canvas/use_validation.js";
+import { describeIssueKey, ISSUE_NOUNS } from "@/web/canvas/use_validation.js";
 import type { GraphValidation } from "@/web/canvas/use_validation.js";
 import { cn } from "@/web/components/ui/cn.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
@@ -18,8 +18,6 @@ type IssueLevel = ValidationIssue["level"];
 const LEVEL_ICON_SIZE_PX = 14;
 const FOCUS_ANIMATION_MS = 300;
 const PANEL_TITLE = "Problemas";
-const ERROR_NOUNS = { one: "erro", other: "erros" };
-const WARNING_NOUNS = { one: "aviso", other: "avisos" };
 
 const LEVEL_STYLES: Record<IssueLevel, { icon: LucideIcon; colorClass: string; label: string }> = {
     error: { icon: CircleAlert, colorClass: "text-status-failed", label: "Erro" },
@@ -149,5 +147,8 @@ function listNodesToShow(
 }
 
 function describeCounts({ errorCount, warningCount }: GraphValidation): string {
-    return `${formatCount(errorCount, ERROR_NOUNS)} · ${formatCount(warningCount, WARNING_NOUNS)}`;
+    const errors = formatCount(errorCount, ISSUE_NOUNS.error);
+    const warnings = formatCount(warningCount, ISSUE_NOUNS.warning);
+
+    return `${errors} · ${warnings}`;
 }
