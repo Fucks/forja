@@ -9,6 +9,14 @@ export class NotFoundError extends Error {
     override readonly name = "NotFoundError";
 }
 
+export class UnauthorizedError extends Error {
+    override readonly name = "UnauthorizedError";
+}
+
+export class ForbiddenError extends Error {
+    override readonly name = "ForbiddenError";
+}
+
 export class ConflictError extends Error {
     override readonly name = "ConflictError";
 }
@@ -25,6 +33,8 @@ export class DomainValidationError extends Error {
 }
 
 const HTTP_BAD_REQUEST = 400;
+const HTTP_UNAUTHORIZED = 401;
+const HTTP_FORBIDDEN = 403;
 const HTTP_NOT_FOUND = 404;
 const HTTP_CONFLICT = 409;
 const HTTP_UNPROCESSABLE_ENTITY = 422;
@@ -58,6 +68,15 @@ export function registerErrorHandler(app: FastifyInstance): void {
 function toErrorResponse(error: FastifyError): ErrorResponse {
     if (error instanceof NotFoundError) {
         return buildErrorResponse(HTTP_NOT_FOUND, { code: "not_found", message: error.message });
+    }
+    if (error instanceof UnauthorizedError) {
+        return buildErrorResponse(HTTP_UNAUTHORIZED, {
+            code: "unauthorized",
+            message: error.message,
+        });
+    }
+    if (error instanceof ForbiddenError) {
+        return buildErrorResponse(HTTP_FORBIDDEN, { code: "forbidden", message: error.message });
     }
     if (error instanceof ConflictError) {
         return buildErrorResponse(HTTP_CONFLICT, { code: "conflict", message: error.message });

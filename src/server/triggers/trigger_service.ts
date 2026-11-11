@@ -2,12 +2,12 @@ import { validateCron, validateTimezone } from "@/engine/cron_schedule.js";
 import type { ScheduleValidation } from "@/engine/cron_schedule.js";
 import { newId } from "@/lib/ids.js";
 import { resolveWith } from "@/lib/resolve_with.js";
-import { DomainValidationError, NotFoundError } from "@/server/errors.js";
+import { DomainValidationError, NotFoundError, UnauthorizedError } from "@/server/errors.js";
 import type { CronRunner } from "@/server/triggers/cron_runner.js";
 import { chainDepthOfFire, fireTrigger } from "@/server/triggers/trigger_firing.js";
 import type { FireInput, TriggerFiringDeps } from "@/server/triggers/trigger_firing.js";
 import type { TriggerRepository } from "@/server/triggers/trigger_repository.js";
-import { generateWebhookToken } from "@/server/triggers/webhook_tokens.js";
+import { generateWebhookToken, verifyWebhookToken } from "@/server/triggers/webhook_tokens.js";
 import type {
     Trigger,
     TriggerConfig,
@@ -16,6 +16,9 @@ import type {
     TriggerWithToken,
 } from "@/shared/trigger_types.js";
 
+export const WEBHOOK_FIRE_REASON = "webhook";
+
+const INVALID_WEBHOOK_TOKEN_MESSAGE = "Token do webhook inválido.";
 const NOT_A_WEBHOOK_MESSAGE = "O gatilho não é um webhook.";
 const WEBHOOK_NEEDS_NEW_TRIGGER_MESSAGE =
     "Para usar um webhook, crie um novo gatilho: o token é gerado na criação.";
@@ -50,6 +53,11 @@ export interface TriggerService {
     isAllPaused(): Promise<boolean>;
 }
 
+export interface WebhookFireInput {
+    token: string | undefined;
+    itemIds?: string[];
+}
+
 export interface TriggerServiceDeps extends TriggerFiringDeps {
     cronRunner: Pick<CronRunner, "reschedule">;
 }
@@ -73,6 +81,18 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
         setAllPaused: (paused) => resolveWith(() => repo.setAllPaused(paused)),
         isAllPaused: () => resolveWith(() => repo.isAllPaused()),
     };
+}
+
+/** @throws UnauthorizedError when the trigger is not a webhook or the token is not its own */
+export async function fireWebhookTrigger(
+    deps: TriggerFiringDeps,
+    id: string,
+    input: WebhookFireInput,
+): Promise<TriggerFire> {
+    const trigger = await resolveWith(() => findTriggerOrThrow(deps.repo, id));
+    assertWebhookToken(trigger, input.token);
+
+    return fireTrigger(deps, trigger, { reason: WEBHOOK_FIRE_REASON, itemIds: input.itemIds });
 }
 
 async function rescheduleAfter<ChangedTrigger extends Trigger>(
@@ -177,6 +197,16 @@ async function fireFoundTrigger(
     const trigger = await resolveWith(() => findTriggerOrThrow(deps.repo, id));
 
     return fireTrigger(deps, trigger, input);
+}
+
+function assertWebhookToken(trigger: Trigger, token: string | undefined): void {
+    const isTokenOfTrigger =
+        trigger.config.kind === "webhook" &&
+        token !== undefined &&
+        verifyWebhookToken(token, trigger.config.tokenHash);
+    if (!isTokenOfTrigger) {
+        throw new UnauthorizedError(INVALID_WEBHOOK_TOKEN_MESSAGE);
+    }
 }
 
 function assertProjectExists(repo: TriggerRepository, projectId: string): void {

@@ -38,7 +38,7 @@ const projectParamsSchema = z.object({ projectId: z.string().min(1) });
 const triggerParamsSchema = z.object({ id: z.string().min(1) });
 
 export const registerTriggersRoutes: RouteModule = (app, deps) => {
-    const firingDeps = createFiringDeps(deps);
+    const firingDeps = createTriggerFiringDeps(deps);
     const cronRunner = createCronRunner({
         clock: firingDeps.clock,
         listScheduleTriggers: () => resolveWith(() => firingDeps.repo.listByKind("schedule")),
@@ -54,7 +54,7 @@ export const registerTriggersRoutes: RouteModule = (app, deps) => {
     startCronRunnerWhileAppIsUp(app, cronRunner);
 };
 
-function createFiringDeps(deps: AppDeps): TriggerFiringDeps {
+export function createTriggerFiringDeps(deps: AppDeps): TriggerFiringDeps {
     return {
         repo: new TriggerRepository(deps.db),
         executor: deps.executor,
