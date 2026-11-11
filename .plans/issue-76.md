@@ -19,9 +19,9 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `validateCron` and `validateTimezone` — `src/engine/cron_schedule(.test).ts`
-- [ ] 2. Test + implement `nextFireAt` with timezones and DST of other zones — `src/engine/cron_schedule(.test).ts`
-- [ ] 3. Test + implement `describeCron` (daily, hourly, weekdays, fallback) — `src/engine/cron_schedule(.test).ts`
+- [x] 1. Test + implement `validateCron` and `validateTimezone` — `src/engine/cron_schedule(.test).ts`
+- [x] 2. Test + implement `nextFireAt` with timezones and DST of other zones — `src/engine/cron_schedule(.test).ts`
+- [x] 3. Test + implement `describeCron` (daily, hourly, weekdays, fallback) — `src/engine/cron_schedule(.test).ts`
 - [ ] 4. Test + implement runner start/fire/next fire — `src/server/triggers/cron_runner(.test).ts`
 - [ ] 5. Test + implement reschedule on edit, disable cancels, stop — `cron_runner(.test).ts`
 - [ ] 6. Test + implement late timer (> 2 min) logs and fires once; restart doesn't fire twice; missed fire logged — `cron_runner(.test).ts`
