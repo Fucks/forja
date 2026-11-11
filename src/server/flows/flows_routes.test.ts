@@ -2,10 +2,11 @@ import type { FastifyInstance } from "fastify";
 
 import { buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
-import { flowToYaml, normalizeFlowGraph, yamlToFlow } from "@/server/flows/flow_yaml.js";
+import { flowToYaml, yamlToFlow } from "@/server/flows/flow_yaml.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { FlowDraft, FlowSummary, FlowVersion } from "@/shared/flow_types.js";
+import { normalizeFlowGraph } from "@/shared/normalize_flow_graph.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { updateNode } from "@/test/factories/flow_graph_variations.js";

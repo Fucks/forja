@@ -23,7 +23,7 @@
 
 ## Tasks
 
-- [ ] 1. Refactor: move `normalizeFlowGraph` to `src/shared/normalize_flow_graph.ts` (and
+- [x] 1. Refactor: move `normalizeFlowGraph` to `src/shared/normalize_flow_graph.ts` (and
       `withKeysInOrder`), update `flow_yaml.ts` and its tests' imports
 - [ ] 2. Test + impl: `useValidation` groups issues by target and counts errors/warnings —
       `src/web/canvas/use_validation.ts`, `use_validation.test.ts`
