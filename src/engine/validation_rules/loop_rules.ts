@@ -49,6 +49,20 @@ export function findLoopsWithoutBackEdge(graph: FlowGraph): ValidationIssue[] {
     );
 }
 
+export function findLoopsWithoutCondition(graph: FlowGraph): ValidationIssue[] {
+    const loopsWithoutCondition = graph.groups
+        .filter(isLoopGroup)
+        .filter((loop) => listConditionPaths(loop.config.until).some(isBlankPath));
+
+    return loopsWithoutCondition.map((loop) =>
+        errorIssue(
+            "loop_without_condition",
+            `O loop "${loop.label}" não tem a condição de saída definida.`,
+            groupTarget(loop.id),
+        ),
+    );
+}
+
 export function findUnknownLoopConditionPaths(graph: FlowGraph): ValidationIssue[] {
     return graph.groups
         .filter(isLoopGroup)
@@ -124,7 +138,7 @@ function findUnknownConditionPathsOfLoop(graph: FlowGraph, loop: LoopGroup): Val
         ]),
     );
     const unknownPaths = listConditionPaths(loop.config.until).filter(
-        (path) => !knownNames.has(firstPathSegment(path)),
+        (path) => !isBlankPath(path) && !knownNames.has(firstPathSegment(path)),
     );
 
     return unknownPaths.map((path) =>
@@ -152,6 +166,10 @@ function listConditionPaths(condition: Condition): string[] {
         default:
             return assertNever(condition);
     }
+}
+
+function isBlankPath(path: string): boolean {
+    return path.trim() === "";
 }
 
 function firstPathSegment(path: string): string {

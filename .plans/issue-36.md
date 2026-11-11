@@ -25,7 +25,7 @@
 - [x] 3. `ungroup` lifts children to the parent (loop inside map) — `grouping.ts`
 - [x] 4. `reparentNode` in/out of groups — `grouping.ts`
 - [x] 5. `fitGroupToChildren` — `grouping.ts`
-- [ ] 6. Validation error for a loop without condition — `loop_rules.ts`, `graph_validation.ts`
+- [x] 6. Validation error for a loop without condition — `loop_rules.ts`, `graph_validation.ts`
 - [ ] 7. `GroupInspector` map fields (concurrency, barrier, failFast) — `group_inspector.tsx`/test
 - [ ] 8. `GroupInspector` loop fields (teto, condição, carry) — `group_inspector.tsx`/test
 - [ ] 9. `InspectorPanel` routes a selected group to `GroupInspector` — `inspector_panel.tsx`

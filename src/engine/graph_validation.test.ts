@@ -297,6 +297,31 @@ describe("loop_condition_unknown_port", () => {
     });
 });
 
+describe("loop_without_condition", () => {
+    it("points to a loop whose exit condition has a blank path", () => {
+        const graph = updateLoopCondition(buildLoopFlow(), "review_loop", {
+            op: "exists",
+            path: "",
+        });
+
+        expect(issuesWithCode(graph, "loop_without_condition")).toEqual([
+            expect.objectContaining({
+                level: "error",
+                target: { kind: "group", id: "review_loop" },
+            }),
+        ]);
+    });
+
+    it("does not also warn that the blank path is unknown", () => {
+        const graph = updateLoopCondition(buildLoopFlow(), "review_loop", {
+            op: "exists",
+            path: " ",
+        });
+
+        expect(issuesWithCode(graph, "loop_condition_unknown_port")).toEqual([]);
+    });
+});
+
 describe("empty_prompt", () => {
     it("points to an agent whose prompt is blank", () => {
         const graph = updateAgentConfig(buildCanonicalFlow(), "tl", { prompt: "  \n" });

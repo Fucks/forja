@@ -1,3 +1,4 @@
+import { validateFlowGraph } from "@/engine/graph_validation.js";
 import type { FlowGraph, FlowGroup, FlowNode, NodeType, Position } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import { connect } from "@/test/factories/flow_graph_factory.js";
@@ -66,6 +67,14 @@ describe("groupNodes", () => {
             kind: "loop",
             config: { maxIterations: 3, until: { op: "exists", path: "" }, carry: [] },
         });
+    });
+
+    it("leaves a new loop flagged as an error until its condition is defined", () => {
+        const { graph } = groupNodes(buildFlow(), ["source"], "loop", () => GROUP_ID);
+
+        expect(validateFlowGraph(graph)).toContainEqual(
+            expect.objectContaining({ level: "error", code: "loop_without_condition" }),
+        );
     });
 
     it("frames the nodes with 40 px of padding and 32 px more on top for the label", () => {
