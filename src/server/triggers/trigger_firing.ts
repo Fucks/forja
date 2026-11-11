@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { assertNever } from "@/lib/assert_never.js";
 import type { Clock } from "@/lib/clock.js";
 import { newId } from "@/lib/ids.js";
@@ -14,10 +16,21 @@ const DISABLED_MESSAGE = "O gatilho está desativado.";
 const ALL_PAUSED_MESSAGE = "Os gatilhos estão pausados.";
 const ACTIVE_RUN_MESSAGE = "Já existe uma run ativa deste fluxo.";
 const START_FAILED_MESSAGE = "Não foi possível iniciar a run.";
+const CHAIN_TOO_LONG_MESSAGE = "cadeia de gatilhos muito longa";
+const NO_CHAIN_DEPTH = 0;
+
+const chainDepthMessageSchema = z.object({ depth: z.number().int().nonnegative() });
+
+// Event triggers can fire each other (flow A finishes → B → A …); the depth stops the loop.
+export interface TriggerChain {
+    depth: number;
+    maxDepth: number;
+}
 
 export interface FireInput {
     itemIds?: string[];
     reason: string;
+    chain?: TriggerChain;
 }
 
 export interface TriggerFiringDeps {
@@ -38,7 +51,7 @@ export async function fireTrigger(
 ): Promise<TriggerFire> {
     const firedAt = deps.clock.now().toISOString();
     const request = { reason: input.reason, itemIds: selectRunItems(trigger, input.itemIds) };
-    const result = await resolveFire(deps, trigger, request);
+    const result = await resolveFire(deps, trigger, request, input.chain);
 
     const fire: TriggerFire = { id: newId("trf"), triggerId: trigger.id, at: firedAt, ...result };
     deps.repo.insertFire(fire, request);
@@ -46,6 +59,17 @@ export async function fireTrigger(
     publishFired(deps.events, trigger, fire);
 
     return fire;
+}
+
+// The depth of a chain is kept in the message of the fire that started the run, so the run it
+// starts in turn goes one level deeper.
+export function chainDepthOfFire(fire: TriggerFire | undefined): number {
+    if (fire?.message === undefined) {
+        return NO_CHAIN_DEPTH;
+    }
+
+    const parsed = chainDepthMessageSchema.safeParse(JSON.parse(fire.message));
+    return parsed.success ? parsed.data.depth : NO_CHAIN_DEPTH;
 }
 
 // A queued fire waits for the active run of its flow to finish. Fires queued while the server was
@@ -79,12 +103,22 @@ async function resolveFire(
     deps: TriggerFiringDeps,
     trigger: Trigger,
     request: FireRequest,
+    chain: TriggerChain | undefined,
 ): Promise<FireResult> {
-    const skipMessage = findSkipMessage(deps.repo, trigger);
+    const skipMessage = findSkipMessage(deps.repo, trigger, chain);
     if (skipMessage) {
         return { outcome: "skipped", message: skipMessage };
     }
 
+    const result = await resolvePolicy(deps, trigger, request);
+    return chain ? withChainDepth(result, chain) : result;
+}
+
+async function resolvePolicy(
+    deps: TriggerFiringDeps,
+    trigger: Trigger,
+    request: FireRequest,
+): Promise<FireResult> {
     const activeRunIds = await findActiveRunIdsOfFlow(deps.runs, trigger.flowId);
     const decision = decidePolicy(trigger.policy, activeRunIds);
     switch (decision) {
@@ -99,9 +133,16 @@ async function resolveFire(
     }
 }
 
-function findSkipMessage(repo: TriggerRepository, trigger: Trigger): string | undefined {
+function findSkipMessage(
+    repo: TriggerRepository,
+    trigger: Trigger,
+    chain: TriggerChain | undefined,
+): string | undefined {
     if (trigger.config.kind === "manual") {
         return undefined;
+    }
+    if (chain && chain.depth > chain.maxDepth) {
+        return CHAIN_TOO_LONG_MESSAGE;
     }
     if (!trigger.enabled) {
         return DISABLED_MESSAGE;
@@ -111,6 +152,15 @@ function findSkipMessage(repo: TriggerRepository, trigger: Trigger): string | un
     }
 
     return undefined;
+}
+
+function withChainDepth(result: FireResult, chain: TriggerChain): FireResult {
+    const isRunOnItsWay = result.outcome === "started" || result.outcome === "queued";
+    if (!isRunOnItsWay) {
+        return result;
+    }
+
+    return { ...result, message: JSON.stringify({ depth: chain.depth }) };
 }
 
 async function startNextQueuedFire(deps: TriggerFiringDeps, flowId: string): Promise<void> {

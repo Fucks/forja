@@ -4,7 +4,7 @@ import { newId } from "@/lib/ids.js";
 import { resolveWith } from "@/lib/resolve_with.js";
 import { DomainValidationError, NotFoundError } from "@/server/errors.js";
 import type { CronRunner } from "@/server/triggers/cron_runner.js";
-import { fireTrigger } from "@/server/triggers/trigger_firing.js";
+import { chainDepthOfFire, fireTrigger } from "@/server/triggers/trigger_firing.js";
 import type { FireInput, TriggerFiringDeps } from "@/server/triggers/trigger_firing.js";
 import type { TriggerRepository } from "@/server/triggers/trigger_repository.js";
 import type { Trigger, TriggerConfig, TriggerFire } from "@/shared/trigger_types.js";
@@ -21,6 +21,8 @@ export interface TriggerService {
     remove(id: string): Promise<void>;
     list(projectId: string, opts?: { kind?: Trigger["config"]["kind"] }): Promise<Trigger[]>;
     fire(id: string, input: FireInput): Promise<TriggerFire>;
+    /** How many event triggers in a row led to the run; 0 when no event trigger started it. */
+    chainDepthOfRun(runId: string): Promise<number>;
     /** Newest fire first. */
     history(id: string, limit: number): Promise<TriggerFire[]>;
     /** A paused trigger records its fires as skipped; manual triggers always run. */
@@ -44,6 +46,8 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
         list: (projectId, options) =>
             resolveWith(() => listTriggers(repo, projectId, options?.kind)),
         fire: (id, input) => fireFoundTrigger(deps, id, input),
+        chainDepthOfRun: (runId) =>
+            resolveWith(() => chainDepthOfFire(repo.findFireByRunId(runId))),
         history: (id, limit) => resolveWith(() => listHistory(repo, id, limit)),
         setAllPaused: (paused) => resolveWith(() => repo.setAllPaused(paused)),
         isAllPaused: () => resolveWith(() => repo.isAllPaused()),

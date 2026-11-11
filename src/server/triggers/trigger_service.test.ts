@@ -333,6 +333,48 @@ describe("TriggerService", () => {
         });
     });
 
+    describe("chain of event triggers", () => {
+        const EVENT_CONFIG: TriggerConfig = { kind: "event", event: "run.finished" };
+        const MAX_CHAIN_DEPTH = 3;
+
+        it("records skipped without starting a run when the chain is deeper than the limit", async () => {
+            const trigger = await createTrigger({ config: EVENT_CONFIG });
+
+            const fired = await service.fire(trigger.id, {
+                reason: FIRE_REASON,
+                chain: { depth: MAX_CHAIN_DEPTH + 1, maxDepth: MAX_CHAIN_DEPTH },
+            });
+
+            expect(fired).toEqual(
+                expect.objectContaining({
+                    outcome: "skipped",
+                    message: "cadeia de gatilhos muito longa",
+                }),
+            );
+            expect(executor.startedRuns).toEqual([]);
+        });
+
+        it("remembers the chain depth of the run it started", async () => {
+            const trigger = await createTrigger({ config: EVENT_CONFIG });
+
+            const fired = await service.fire(trigger.id, {
+                reason: FIRE_REASON,
+                chain: { depth: MAX_CHAIN_DEPTH, maxDepth: MAX_CHAIN_DEPTH },
+            });
+
+            expect(fired.outcome).toBe("started");
+            expect(await service.chainDepthOfRun(fired.runId ?? "")).toBe(MAX_CHAIN_DEPTH);
+        });
+
+        it("gives depth zero to a run that no chain started", async () => {
+            const trigger = await createTrigger();
+
+            const fired = await fire(trigger);
+
+            expect(await service.chainDepthOfRun(fired.runId ?? "")).toBe(0);
+        });
+    });
+
     describe("policy with an active run of the same flow", () => {
         async function startActiveRunOf(flowId: string): Promise<string> {
             const run = await executor.startRun({ projectId: PROJECT_ID, flowId, itemIds: [] });
