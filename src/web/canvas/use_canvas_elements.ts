@@ -36,7 +36,7 @@ export function useCanvasElements(store: EditorStore): CanvasElements {
     function onNodesChange(changes: NodeChange<RFNode>[]): void {
         setMeasuredSizes((sizes) => withMeasuredSizes(sizes, changes));
         const changedNodes = applyNodeChanges(changes, nodes);
-        if (changes.some(isMove)) {
+        if (changes.some(isMoveOrResize)) {
             store.getState().applyGraph((current) => fromReactFlow(changedNodes, edges, current));
         }
         if (changes.some(isSelectionChange)) {
@@ -92,8 +92,11 @@ function withMeasuredSizes(sizes: MeasuredSizes, changes: NodeChange<RFNode>[]):
     return { ...sizes, ...Object.fromEntries(measurements) };
 }
 
-function isMove(change: NodeChange<RFNode>): boolean {
-    return change.type === "position" && change.position !== undefined;
+function isMoveOrResize(change: NodeChange<RFNode>): boolean {
+    const isMove = change.type === "position" && change.position !== undefined;
+    const isResize = change.type === "dimensions" && Boolean(change.setAttributes);
+
+    return isMove || isResize;
 }
 
 function isSelectionChange(change: NodeChange<RFNode> | EdgeChange<RFEdge>): boolean {

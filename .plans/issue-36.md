@@ -32,6 +32,6 @@
 - [x] 10. Selection toolbar with disabled reasons and `G M`/`G L` shortcuts — `selection_toolbar.tsx`,
       `flow_canvas.tsx`, `flow_canvas.test.tsx`
 - [x] 11. Group context menu (Desagrupar, Ajustar ao conteúdo) — `flow_canvas.tsx`
-- [ ] 12. Reparent on `onNodeDragStop`; resize handles on the selected group — `flow_canvas.tsx`,
+- [x] 12. Reparent on `onNodeDragStop`; resize handles on the selected group — `flow_canvas.tsx`,
       `group_node.tsx`, `use_canvas_elements.ts`, `Layers` icon
 - [ ] 13. Self-review checklist and feedback loops

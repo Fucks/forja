@@ -21,6 +21,7 @@ import { useCanvasDeletion } from "@/web/canvas/use_canvas_deletion.js";
 import { useCanvasElements } from "@/web/canvas/use_canvas_elements.js";
 import { useGroupContextMenu } from "@/web/canvas/use_group_context_menu.js";
 import { useGroupingShortcuts } from "@/web/canvas/use_grouping_shortcuts.js";
+import { useNodeReparenting } from "@/web/canvas/use_node_reparenting.js";
 import { useSelectionGrouping } from "@/web/canvas/use_selection_grouping.js";
 
 const MIN_ZOOM = 0.25;
@@ -39,6 +40,7 @@ export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
     const { hasSelectedNodes, verdict, groupSelection } = useSelectionGrouping(store);
     useGroupingShortcuts(groupSelection);
     const groupMenu = useGroupContextMenu(store);
+    const { onNodeDragStop } = useNodeReparenting(store);
 
     return (
         <ConnectionGraphContext value={graph}>
@@ -59,6 +61,7 @@ export function FlowCanvas({ store }: { store: EditorStore }): JSX.Element {
                     onDragLeave={onDragLeave}
                     onDrop={onDrop}
                     onNodeContextMenu={groupMenu.onNodeContextMenu}
+                    onNodeDragStop={onNodeDragStop}
                     minZoom={MIN_ZOOM}
                     maxZoom={MAX_ZOOM}
                     deleteKeyCode={DELETE_KEYS}

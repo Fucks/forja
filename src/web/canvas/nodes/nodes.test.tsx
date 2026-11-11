@@ -101,6 +101,19 @@ describe("canvas node components", () => {
         expect(screen.queryByLabelText("Rodando")).not.toBeInTheDocument();
     });
 
+    it("offers resize handles only on the selected group", () => {
+        renderOnCanvas({ groups: [MAP_GROUP, { ...MAP_GROUP, id: "other_map" }] }, undefined, [
+            MAP_GROUP.id,
+        ]);
+
+        const resizableGroups = document.querySelectorAll(
+            ".react-flow__node:has(.react-flow__resize-control)",
+        );
+        expect([...resizableGroups].map((group) => group.getAttribute("data-id"))).toEqual([
+            MAP_GROUP.id,
+        ]);
+    });
+
     it("shows the group progress the live context gives the group", () => {
         const liveStates = new Map<string, NodeLiveState>([
             [MAP_GROUP.id, { progress: { queued: 1, running: 2, succeeded: 0, failed: 0 } }],
@@ -145,14 +158,19 @@ function IconOf({ type }: { type: NodeType }): JSX.Element {
 function renderOnCanvas(
     elements: Partial<Pick<FlowGraph, "nodes" | "groups">>,
     liveStates = new Map<string, NodeLiveState>(),
+    selectedIds: string[] = [],
 ): void {
     const graph: FlowGraph = { schemaVersion: 1, nodes: [], groups: [], edges: [], ...elements };
     const { nodes, edges } = toReactFlow(graph);
+    const nodesWithSelection = nodes.map((node) => ({
+        ...node,
+        selected: selectedIds.includes(node.id),
+    }));
 
     render(
         <NodeLiveContext.Provider value={liveStates}>
             <ReactFlowProvider>
-                <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} />
+                <ReactFlow nodes={nodesWithSelection} edges={edges} nodeTypes={nodeTypes} />
             </ReactFlowProvider>
         </NodeLiveContext.Provider>,
     );
