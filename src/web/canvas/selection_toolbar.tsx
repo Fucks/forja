@@ -46,6 +46,11 @@ function GroupActionButton({
 }): JSX.Element {
     const KindIcon = GROUP_KIND_ICONS[kind];
     const tooltip = verdict.ok ? `Atalho: ${GROUPING_SHORTCUT_LABELS[kind]}` : verdict.reason;
+    function groupWhenAllowed(): void {
+        if (verdict.ok) {
+            onGroup(kind);
+        }
+    }
 
     return (
         <Tooltip content={tooltip}>
@@ -54,7 +59,7 @@ function GroupActionButton({
                 size="sm"
                 aria-disabled={!verdict.ok}
                 className={REFUSED_ACTION_CLASSES}
-                onClick={() => verdict.ok && onGroup(kind)}
+                onClick={groupWhenAllowed}
             >
                 <KindIcon aria-hidden className="size-4" />
                 {GROUP_ACTION_LABELS[kind]}

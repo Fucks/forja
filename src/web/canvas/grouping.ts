@@ -2,26 +2,21 @@ import { findGroup, findNode, groupMembers } from "@/engine/graph_queries.js";
 import type { Condition } from "@/shared/conditions.js";
 import { loopConfigSchema, mapConfigSchema } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, FlowNode, Position } from "@/shared/flow_graph.js";
+import { boundingFrame, frameAround, nodeFrame } from "@/web/canvas/group_frame_geometry.js";
+import type { Frame } from "@/web/canvas/group_frame_geometry.js";
 import { findDropGroup } from "@/web/canvas/palette/drop_target.js";
 
 export type GroupingVerdict = { ok: true } | { ok: false; reason: string };
 export type GroupKind = FlowGroup["kind"];
 
-type Size = FlowGroup["size"];
-type Frame = Pick<FlowGroup, "position" | "size">;
 type GroupMember = { parentGroupId?: string };
 
 export const EMPTY_SELECTION_REASON = "Selecione ao menos um nó";
 export const MIXED_GROUPS_REASON = "Os nós precisam estar no mesmo grupo";
 export const TRIGGER_INSIDE_GROUP_REASON = "O trigger não pode ficar dentro de um grupo";
 
-// The graph keeps no node sizes; every node card is drawn 240 px wide (`w-60`).
-export const NODE_FRAME_SIZE: Size = { width: 240, height: 120 };
-const GROUP_PADDING_PX = 40;
-const GROUP_LABEL_HEIGHT_PX = 32;
-
 // An empty path never matches, so validation reports the loop until the user defines its exit.
-export const UNDEFINED_LOOP_CONDITION: Condition = { op: "exists", path: "" };
+const UNDEFINED_LOOP_CONDITION: Condition = { op: "exists", path: "" };
 
 const GROUP_KIND_LABELS: Record<GroupKind, string> = { map: "Map", loop: "Loop" };
 
@@ -169,42 +164,6 @@ function growAncestorsToContain(graph: FlowGraph, groupId: string): FlowGraph {
 
     const grownParent = { ...parent, ...boundingFrame([parent, frameAround([group])]) };
     return growAncestorsToContain(replaceGroup(graph, grownParent), parent.id);
-}
-
-function nodeFrame(node: FlowNode): Frame {
-    return { position: node.position, size: NODE_FRAME_SIZE };
-}
-
-function frameAround(contents: Frame[]): Frame {
-    const { position, size } = boundingFrame(contents);
-
-    return {
-        position: {
-            x: position.x - GROUP_PADDING_PX,
-            y: position.y - GROUP_PADDING_PX - GROUP_LABEL_HEIGHT_PX,
-        },
-        size: {
-            width: size.width + 2 * GROUP_PADDING_PX,
-            height: size.height + 2 * GROUP_PADDING_PX + GROUP_LABEL_HEIGHT_PX,
-        },
-    };
-}
-
-function boundingFrame(frames: Frame[]): Frame {
-    const left = Math.min(...frames.map(({ position }) => position.x));
-    const top = Math.min(...frames.map(({ position }) => position.y));
-    const right = Math.max(...frames.map(frameRight));
-    const bottom = Math.max(...frames.map(frameBottom));
-
-    return { position: { x: left, y: top }, size: { width: right - left, height: bottom - top } };
-}
-
-function frameRight({ position, size }: Frame): number {
-    return position.x + size.width;
-}
-
-function frameBottom({ position, size }: Frame): number {
-    return position.y + size.height;
 }
 
 function replaceNode(graph: FlowGraph, replacement: FlowNode): FlowGraph {
