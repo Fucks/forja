@@ -27,7 +27,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `createHistory` (push/undo/redo/limit/canUndo/canRedo) — `history.ts`, `history.test.ts`
+- [x] 1. Test + implement `createHistory` (push/undo/redo/limit/canUndo/canRedo) — `history.ts`, `history.test.ts`
 - [ ] 2. Test + implement store `undo`/`redo`/`canUndo`/`canRedo` with 500 ms merge — `editor_store.ts`, `editor_store.test.ts`
 - [ ] 3. Test + implement `copySelection` — `clipboard.ts`, `clipboard.test.ts`
 - [ ] 4. Test + implement `pasteFragment` (new ids, internal edges, trigger ignored) — `clipboard.ts`, `clipboard.test.ts`
