@@ -20,24 +20,47 @@ export type TriggerPolicy = (typeof TRIGGER_POLICIES)[number];
 export type ItemSelection = (typeof ITEM_SELECTIONS)[number];
 export type TriggerFireOutcome = (typeof TRIGGER_FIRE_OUTCOMES)[number];
 
+const manualConfigSchema = z.object({ kind: z.literal("manual") });
+const scheduleConfigSchema = z.object({
+    kind: z.literal("schedule"),
+    cron: z.string().min(1),
+    timezone: z.string().min(1),
+});
+const eventConfigSchema = z.object({
+    kind: z.literal("event"),
+    event: z.enum(TRIGGER_EVENTS),
+    filter: z
+        .object({
+            flowId: z.string().min(1).optional(),
+            status: z.enum(RUN_STATUS_NAMES).optional(),
+        })
+        .optional(),
+});
+const webhookConfigSchema = z.object({ kind: z.literal("webhook"), tokenHash: z.string().min(1) });
+const boardColumnConfigSchema = z.object({
+    kind: z.literal("board_column"),
+    columnId: z.string().min(1),
+});
+
 export const triggerConfigSchema = z.discriminatedUnion("kind", [
-    z.object({ kind: z.literal("manual") }),
-    z.object({ kind: z.literal("schedule"), cron: z.string().min(1), timezone: z.string().min(1) }),
-    z.object({
-        kind: z.literal("event"),
-        event: z.enum(TRIGGER_EVENTS),
-        filter: z
-            .object({
-                flowId: z.string().min(1).optional(),
-                status: z.enum(RUN_STATUS_NAMES).optional(),
-            })
-            .optional(),
-    }),
-    z.object({ kind: z.literal("webhook"), tokenHash: z.string().min(1) }),
-    z.object({ kind: z.literal("board_column"), columnId: z.string().min(1) }),
+    manualConfigSchema,
+    scheduleConfigSchema,
+    eventConfigSchema,
+    webhookConfigSchema,
+    boardColumnConfigSchema,
+]);
+
+// The server makes the token of a webhook, so a request never sends its hash.
+export const triggerConfigInputSchema = z.discriminatedUnion("kind", [
+    manualConfigSchema,
+    scheduleConfigSchema,
+    eventConfigSchema,
+    webhookConfigSchema.omit({ tokenHash: true }),
+    boardColumnConfigSchema,
 ]);
 
 export type TriggerConfig = z.infer<typeof triggerConfigSchema>;
+export type TriggerConfigInput = z.infer<typeof triggerConfigInputSchema>;
 
 export interface Trigger {
     id: string;
@@ -56,6 +79,11 @@ export interface Trigger {
 export interface ListedTrigger extends Trigger {
     cronDescription?: string;
     nextFireAt?: string;
+}
+
+// The token of a webhook is shown only once, when the trigger is created or its token rotated.
+export interface TriggerWithToken extends Trigger {
+    token: string;
 }
 
 export interface TriggerFire {
@@ -77,7 +105,7 @@ export const createTriggerInput = z.object({
     enabled: z.boolean().default(true),
     policy: policySchema.default("skip"),
     itemSelection: itemSelectionSchema.default("source"),
-    config: triggerConfigSchema,
+    config: triggerConfigInputSchema,
 });
 
 // Built without defaults: a partial of `createTriggerInput` would reset the fields the request did
@@ -87,7 +115,7 @@ export const updateTriggerInput = z.object({
     enabled: z.boolean().optional(),
     policy: policySchema.optional(),
     itemSelection: itemSelectionSchema.optional(),
-    config: triggerConfigSchema.optional(),
+    config: triggerConfigInputSchema.optional(),
 });
 
 export const listTriggersQuery = z.object({ kind: z.enum(TRIGGER_KINDS).optional() });

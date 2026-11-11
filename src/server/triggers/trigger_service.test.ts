@@ -7,13 +7,14 @@ import type { EventBus } from "@/server/runtime/event_bus.js";
 import { TriggerRepository } from "@/server/triggers/trigger_repository.js";
 import { startQueuedFiresWhenRunsFinish } from "@/server/triggers/trigger_firing.js";
 import { createTriggerService } from "@/server/triggers/trigger_service.js";
+import { verifyWebhookToken } from "@/server/triggers/webhook_tokens.js";
 import type {
     TriggerInput,
     TriggerService,
     TriggerServiceDeps,
 } from "@/server/triggers/trigger_service.js";
 import type { ForjaEvent } from "@/shared/events.js";
-import type { Trigger, TriggerConfig } from "@/shared/trigger_types.js";
+import type { Trigger, TriggerConfig, TriggerWithToken } from "@/shared/trigger_types.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildTriggerInput } from "@/test/factories/trigger_factory.js";
@@ -182,6 +183,77 @@ describe("TriggerService", () => {
             await service.remove(trigger.id);
 
             expect(rescheduledTriggerIds).toEqual([trigger.id, trigger.id, trigger.id]);
+        });
+    });
+
+    describe("webhook triggers", () => {
+        const WEBHOOK_INPUT_CONFIG = { kind: "webhook" } as const;
+
+        async function createWebhookTrigger(): Promise<TriggerWithToken> {
+            const created = await service.create(
+                buildTriggerInput({
+                    projectId: PROJECT_ID,
+                    flowId: FLOW_ID,
+                    config: WEBHOOK_INPUT_CONFIG,
+                }),
+            );
+            if (!("token" in created)) {
+                throw new Error("A webhook trigger is created with its token");
+            }
+            return created;
+        }
+
+        function tokenHashOf(trigger: Trigger | undefined): string {
+            if (trigger?.config.kind !== "webhook") {
+                throw new Error("Expected a webhook trigger");
+            }
+            return trigger.config.tokenHash;
+        }
+
+        it("gives the token on creation and keeps only its hash", async () => {
+            const created = await createWebhookTrigger();
+
+            const [listed] = await service.list(PROJECT_ID);
+
+            expect(verifyWebhookToken(created.token, tokenHashOf(created))).toBe(true);
+            expect(listed).not.toHaveProperty("token");
+            expect(tokenHashOf(listed)).toBe(tokenHashOf(created));
+        });
+
+        it("keeps the token when an update sends the webhook config again", async () => {
+            const created = await createWebhookTrigger();
+
+            const updated = await service.update(created.id, {
+                name: "Renomeado",
+                config: WEBHOOK_INPUT_CONFIG,
+            });
+
+            expect(tokenHashOf(updated)).toBe(tokenHashOf(created));
+        });
+
+        it("rejects turning another kind of trigger into a webhook", async () => {
+            const trigger = await createTrigger();
+
+            const updating = service.update(trigger.id, { config: WEBHOOK_INPUT_CONFIG });
+
+            await expect(updating).rejects.toThrow(DomainValidationError);
+        });
+
+        it("rotates the token, so only the new one is accepted", async () => {
+            const created = await createWebhookTrigger();
+
+            const rotated = await service.rotateWebhookToken(created.id);
+
+            expect(verifyWebhookToken(rotated.token, tokenHashOf(rotated))).toBe(true);
+            expect(verifyWebhookToken(created.token, tokenHashOf(rotated))).toBe(false);
+        });
+
+        it("rejects rotating the token of a trigger that is not a webhook", async () => {
+            const trigger = await createTrigger();
+
+            const rotating = service.rotateWebhookToken(trigger.id);
+
+            await expect(rotating).rejects.toThrow(DomainValidationError);
         });
     });
 
