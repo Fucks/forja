@@ -9,6 +9,8 @@ export type Condition =
     | { op: "and" | "or"; conditions: Condition[] }
     | { op: "not"; condition: Condition };
 
+export type Comparison = Extract<Condition, { path: string }>;
+
 export const conditionSchema: z.ZodType<Condition> = z.lazy(() =>
     z.discriminatedUnion("op", [
         z.object({
@@ -45,8 +47,6 @@ export function evaluateCondition(condition: Condition, data: unknown): boolean 
             return assertNever(condition);
     }
 }
-
-type Comparison = Extract<Condition, { path: string }>;
 
 function evaluateComparison(comparison: Comparison, lookup: PathLookup): boolean {
     if (!lookup.isFound) {

@@ -1,4 +1,4 @@
-import { useId, useMemo } from "react";
+import { useMemo } from "react";
 import type { JSX } from "react";
 
 import { availableVariables } from "@/engine/prompt_template.js";
@@ -8,11 +8,12 @@ import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
 import { useInheritedSettings } from "@/web/canvas/inspector/inherited_settings.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
+import { LabelField } from "@/web/canvas/inspector/label_field.js";
 import { ExecutionFields } from "@/web/canvas/inspector/execution_fields.js";
 import { EffortField, ModelField } from "@/web/canvas/inspector/model_effort_fields.js";
 import {
-    withAgentConfig,
     withInputPort,
+    withNodeConfig,
     withoutInputPort,
 } from "@/web/canvas/inspector/node_updates.js";
 import { OutputSchemaEditor } from "@/web/canvas/inspector/output_schema_editor.js";
@@ -22,8 +23,6 @@ import {
     CredentialField,
     ToolProfileField,
 } from "@/web/canvas/inspector/tools_credential_fields.js";
-import { Field } from "@/web/components/ui/field.js";
-import { Input } from "@/web/components/ui/input.js";
 
 type AgentNode = NodeOfType<"agent">;
 type ChangeAgentConfig = (changes: Partial<AgentConfig>) => void;
@@ -40,7 +39,7 @@ export function AgentInspector({ node, graph, onChange }: InspectorProps): JSX.E
     }
 
     const changeConfig: ChangeAgentConfig = (changes) =>
-        onChange((current) => withAgentConfig(current, changes));
+        onChange((current) => withNodeConfig(current, "agent", changes));
 
     return (
         <div className="flex flex-col">
@@ -67,30 +66,6 @@ export function AgentInspector({ node, graph, onChange }: InspectorProps): JSX.E
                     onRemove={(name) => onChange((current) => withoutInputPort(current, name))}
                 />
             </InspectorSection>
-        </div>
-    );
-}
-
-function LabelField({
-    label,
-    onChange,
-}: {
-    label: string;
-    onChange: (label: string) => void;
-}): JSX.Element {
-    const inputId = useId();
-
-    function applyLabel(typedLabel: string): void {
-        if (typedLabel !== label) {
-            onChange(typedLabel);
-        }
-    }
-
-    return (
-        <div className="px-3 pb-3">
-            <Field label="Rótulo" htmlFor={inputId}>
-                <Input defaultValue={label} onBlur={(event) => applyLabel(event.target.value)} />
-            </Field>
         </div>
     );
 }

@@ -5,6 +5,7 @@ import {
     addInputPort,
     removeInputPort,
     updateNodeConfig,
+    withNodeConfig,
 } from "@/web/canvas/inspector/node_updates.js";
 
 const SPEC_PORT: Port = { name: "spec", type: "text", required: true };
@@ -89,6 +90,24 @@ describe("removeInputPort", () => {
 
         expect(listEdgesInto(updated, "dev")).toEqual([]);
         expect(updated.edges).toHaveLength(graph.edges.length - 1);
+    });
+});
+
+describe("withNodeConfig", () => {
+    it("merges the changes into the config of a node of the given type", () => {
+        const source = requireNode(buildCanonicalFlow(), "source");
+
+        const updated = withNodeConfig(source, "source", { limit: 5 });
+
+        expect(updated.config).toEqual({ ...source.config, limit: 5 });
+    });
+
+    it("leaves a node of another type unchanged", () => {
+        const source = requireNode(buildCanonicalFlow(), "source");
+
+        const updated = withNodeConfig(source, "script", { command: "npm test" });
+
+        expect(updated).toBe(source);
     });
 });
 
