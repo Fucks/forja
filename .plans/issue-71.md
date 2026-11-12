@@ -48,8 +48,8 @@
 - [x] 8. Test + implement `seedDemo` creating project, 5 local items, published flow and a finished run
       with logs and usage — `seed_demo.ts`, `seed_demo.test.ts`
 - [x] 9. Test + implement `seedDemo` idempotency (`app_meta.demo_seeded`)
-- [ ] 10. Wire `main.ts`: `FORJA_AGENT_RUNTIME=fake` → scripted runtime; `options.seedDemo` → `seedDemo()`
+- [x] 10. Wire `main.ts`: `FORJA_AGENT_RUNTIME=fake` → scripted runtime; `options.seedDemo` → `seedDemo()`
       before listening; delete `UnavailableAgentRuntime` if unused
-- [ ] 11. Manual check: `FORJA_DATA_DIR=<empty> FORJA_AGENT_RUNTIME=fake npm run start -- --no-open --seed-demo`
+- [x] 11. Manual check: `FORJA_DATA_DIR=<empty> FORJA_AGENT_RUNTIME=fake npm run start -- --no-open --seed-demo`
       boots with the demo; a second boot does not duplicate; a new run finishes in < 1 min
 - [ ] 12. Self-review checklist and feedback loops (typecheck, lint, test)
