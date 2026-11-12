@@ -23,9 +23,9 @@
 ## Tasks
 
 - [x] 1. Refactor: extract `adaptFlowToLocalItems` to `src/server/demo/local_items_flow.ts`, used by `demo_flow.ts`
-- [ ] 2. Playwright config with `webServer`, `test:e2e` script, ESLint for `e2e/` — `playwright.config.ts`, `package.json`, `eslint.config.mjs`, `.gitignore`
-- [ ] 3. Fixtures: temporary git repo with one commit and the Forja API helpers — `e2e/fixtures.ts`
-- [ ] 4. Scenario project_and_flow: register repo, flow from "Fábrica básica", Dev effort `max`, map concurrency 2, publish v1 — `e2e/project_and_flow.spec.ts`
+- [x] 2. Playwright config with `webServer`, `test:e2e` script, ESLint for `e2e/` — `playwright.config.ts`, `package.json`, `eslint.config.mjs`, `.gitignore`
+- [x] 3. Fixtures: temporary git repo with one commit and the Forja API helpers — `e2e/fixtures.ts`
+- [x] 4. Scenario project_and_flow: register repo, flow from "Fábrica básica", Dev effort `max`, map concurrency 2, publish v1 — `e2e/project_and_flow.spec.ts`
 - [ ] 5. Scenario live_run: 3 local items, start run, Dev "Rodando" + group counters, drawer with logs, "Sucesso" — `e2e/live_run.spec.ts`
 - [ ] 6. Scenario board: cards move and end in "Concluído"; drag a new item to the trigger column starts a run — `e2e/board.spec.ts`
 - [ ] 7. Scenario approvals: flow with a gate, approve with a comment, the flow goes on — `e2e/approvals.spec.ts`

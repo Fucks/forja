@@ -5,12 +5,14 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
 
 const SOURCE_FILES = ["src/**/*.{ts,tsx}"];
+const E2E_FILES = ["e2e/**/*.ts", "playwright.config.ts"];
+const TYPED_FILES = [...SOURCE_FILES, ...E2E_FILES];
 
 export default defineConfig(
-    globalIgnores(["dist/", ".sandcastle/", "coverage/"]),
+    globalIgnores(["dist/", ".sandcastle/", "coverage/", "playwright-report/", "test-results/"]),
     {
-        files: SOURCE_FILES,
-        extends: [tseslint.configs.recommendedTypeChecked, reactHooks.configs.flat.recommended],
+        files: TYPED_FILES,
+        extends: [tseslint.configs.recommendedTypeChecked],
         languageOptions: {
             parserOptions: {
                 projectService: true,
@@ -24,14 +26,18 @@ export default defineConfig(
     },
     {
         files: SOURCE_FILES,
+        extends: [reactHooks.configs.flat.recommended],
+    },
+    {
+        files: TYPED_FILES,
         plugins: { "check-file": checkFile },
         rules: {
             "check-file/filename-naming-convention": [
                 "error",
-                { "src/**/*.{ts,tsx}": "SNAKE_CASE" },
+                { "{src,e2e}/**/*.{ts,tsx}": "SNAKE_CASE" },
                 { ignoreMiddleExtensions: true },
             ],
-            "check-file/folder-naming-convention": ["error", { "src/**/": "SNAKE_CASE" }],
+            "check-file/folder-naming-convention": ["error", { "{src,e2e}/**/": "SNAKE_CASE" }],
         },
     },
     prettierConfig,

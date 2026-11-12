@@ -11,3 +11,5 @@ coverage/
 .sandcastle/worktrees/
 .forja-data/
 docs/backlog/_preview.md
+/playwright-report/
+/test-results/
