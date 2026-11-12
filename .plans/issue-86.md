@@ -36,7 +36,7 @@
 - [x] 2. `checkRequest`: Host/Origin 403 and cookie 401 — `request_guard.ts`, `request_guard.test.ts`
 - [x] 3. `checkRequest`: `/api/hooks/*` only checks loopback remoteAddress; static paths skip cookie
 - [x] 4. `NODE_ENV` in env; `ApiProtection` in AppDeps; guard hook in `app.ts` (+ app-level tests, dev port)
-- [ ] 5. Security headers on every response — `security_headers.ts`, `app.ts`, test
+- [x] 5. Security headers on every response — `security_headers.ts`, `app.ts`, test
 - [ ] 6. Session cookie on index.html — `static_routes.ts`, `static_routes.test.ts`
 - [ ] 7. Web client `credentials: "same-origin"` — `api_client.ts`, `use_agent_image.ts`
 - [ ] 8. `audit_log` migration, schema and `createAuditLog` with tests — `audit_log.ts`, `audit_log.test.ts`

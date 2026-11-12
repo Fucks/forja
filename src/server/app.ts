@@ -17,6 +17,7 @@ import type { EventBus } from "@/server/runtime/event_bus.js";
 import type { Executor } from "@/server/runtime/executor.js";
 import type { LogStore } from "@/server/runtime/log_store.js";
 import { type ApiProtection, protectApi } from "@/server/security/api_protection.js";
+import { addSecurityHeaders } from "@/server/security/security_headers.js";
 import { registerStaticRoutes } from "@/server/static/static_routes.js";
 
 const API_PREFIX = "/api";
@@ -51,6 +52,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     app.setValidatorCompiler(validatorCompiler);
     app.setSerializerCompiler(serializerCompiler);
     registerErrorHandler(app);
+    addSecurityHeaders(app);
     protectApi(app, deps.apiProtection);
 
     const typedApp = app.withTypeProvider<ZodTypeProvider>();
