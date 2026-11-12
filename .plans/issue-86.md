@@ -39,7 +39,7 @@
 - [x] 5. Security headers on every response — `security_headers.ts`, `app.ts`, test
 - [x] 6. Session cookie on index.html — `static_routes.ts`, `static_routes.test.ts`
 - [x] 7. Web client `credentials: "same-origin"` — `api_client.ts`, `use_agent_image.ts`
-- [ ] 8. `audit_log` migration, schema and `createAuditLog` with tests — `audit_log.ts`, `audit_log.test.ts`
+- [x] 8. `audit_log` migration, schema and `createAuditLog` with tests — `audit_log.ts`, `audit_log.test.ts`
 - [ ] 9. Audit `flow.published` — `flow_service.ts` + callers
 - [ ] 10. Audit credential created/updated/deleted — `credential_service.ts` + callers
 - [ ] 11. Audit `approval.resolved` — `approval_service.ts` + callers
