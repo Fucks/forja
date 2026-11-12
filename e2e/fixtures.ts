@@ -18,8 +18,11 @@ export interface TemporaryGitRepo {
 
 export interface RunnableProject {
     id: string;
-    /** Gives each local item of the project its branch, as an agent of the real runtime would. */
-    createItemBranches(): Promise<void>;
+    /**
+     * Gives each local item of the project its branch, as an agent of the real runtime would, and
+     * returns the ids of the items.
+     */
+    prepareItemsToRun(): Promise<string[]>;
 }
 
 interface ForjaFixtures {
@@ -52,9 +55,11 @@ export const test = base.extend<ForjaFixtures>({
 
         await use({
             id: projectId,
-            createItemBranches: async () => {
+            prepareItemsToRun: async () => {
                 const items = await forja.listWorkItems(projectId);
                 gitRepo.createBranches(items.map((item) => item.branch));
+
+                return items.map((item) => item.id);
             },
         });
     },
