@@ -52,4 +52,4 @@
       before listening; delete `UnavailableAgentRuntime` if unused
 - [x] 11. Manual check: `FORJA_DATA_DIR=<empty> FORJA_AGENT_RUNTIME=fake npm run start -- --no-open --seed-demo`
       boots with the demo; a second boot does not duplicate; a new run finishes in < 1 min
-- [ ] 12. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 12. Self-review checklist and feedback loops (typecheck, lint, test)

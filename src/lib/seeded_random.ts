@@ -1,6 +1,4 @@
 export interface SeededRandom {
-    /** A number in [0, 1). */
-    next(): number;
     /** An integer in [min, max]. */
     integerBetween(min: number, max: number): number;
     pickOne<Choice>(choices: readonly Choice[]): Choice;
@@ -15,13 +13,13 @@ const UINT32_RANGE = 2 ** 32;
 export function createSeededRandom(seed: string): SeededRandom {
     let state = hashSeed(seed);
 
-    function next(): number {
+    function nextFraction(): number {
         state = (state + MULBERRY_INCREMENT) >>> 0;
         return mulberry32(state) / UINT32_RANGE;
     }
 
     function integerBetween(min: number, max: number): number {
-        return min + Math.floor(next() * (max - min + 1));
+        return min + Math.floor(nextFraction() * (max - min + 1));
     }
 
     function pickOne<Choice>(choices: readonly Choice[]): Choice {
@@ -33,7 +31,7 @@ export function createSeededRandom(seed: string): SeededRandom {
         return choice;
     }
 
-    return { next, integerBetween, pickOne };
+    return { integerBetween, pickOne };
 }
 
 // FNV-1a: spreads seeds that differ in one character over the whole 32-bit range.
