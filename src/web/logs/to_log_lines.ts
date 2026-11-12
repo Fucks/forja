@@ -3,7 +3,7 @@ import type { StoredLogEvent } from "@/shared/log_types.js";
 import type { LogLine } from "@/web/logs/log_types.js";
 
 export const TOOL_CALL_MARKER = "▸ ";
-export const TOOL_RESULT_MARKER = "◂ ";
+const TOOL_RESULT_MARKER = "◂ ";
 const JSON_INDENT_SPACES = 2;
 
 // The stream-json parser stores each tool result as a raw line in this shape.

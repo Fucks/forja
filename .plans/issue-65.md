@@ -39,4 +39,4 @@
 - [x] 11. Test + implement the filter "Bruto" showing raw lines — `node_run_logs.tsx`
 - [x] 12. Test + implement the raw download — `node_run_logs.tsx`
 - [x] 13. Test + implement full screen dialog — `node_run_logs.tsx`
-- [ ] 14. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 14. Self-review checklist and feedback loops (typecheck, lint, test)
