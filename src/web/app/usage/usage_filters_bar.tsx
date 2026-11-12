@@ -4,6 +4,7 @@ import type { JSX } from "react";
 import { USAGE_GROUP_BYS } from "@/shared/usage_types.js";
 import type { UsageGroupBy } from "@/shared/usage_types.js";
 import { USAGE_GROUP_LABELS } from "@/web/app/usage/usage_group_labels.js";
+import { USAGE_PERIOD_CHOICES } from "@/web/app/usage/usage_period.js";
 import type { DayRange, UsagePeriodChoice } from "@/web/app/usage/usage_period.js";
 import { Button } from "@/web/components/ui/button.js";
 import { Field } from "@/web/components/ui/field.js";
@@ -18,12 +19,17 @@ export interface UsageFilters {
     nodeId?: string;
 }
 
-const PERIOD_OPTIONS: { value: UsagePeriodChoice; label: string }[] = [
-    { value: "today", label: "Hoje" },
-    { value: "7d", label: "7 dias" },
-    { value: "30d", label: "30 dias" },
-    { value: "custom", label: "Personalizado" },
-];
+const PERIOD_LABELS: Record<UsagePeriodChoice, string> = {
+    today: "Hoje",
+    "7d": "7 dias",
+    "30d": "30 dias",
+    custom: "Personalizado",
+};
+
+const PERIOD_OPTIONS = USAGE_PERIOD_CHOICES.map((choice) => ({
+    value: choice,
+    label: PERIOD_LABELS[choice],
+}));
 
 const GROUP_BY_OPTIONS = USAGE_GROUP_BYS.map((groupBy) => ({
     value: groupBy,

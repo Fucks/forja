@@ -3,6 +3,8 @@ import { clsx } from "clsx";
 import { TriangleAlert } from "lucide-react";
 import type { JSX } from "react";
 
+import { addUsage, NO_USAGE } from "@/engine/budgets.js";
+import type { UsageTotals } from "@/engine/budgets.js";
 import { formatTokens, formatUsd } from "@/lib/format.js";
 import type { ApiError } from "@/web/api/api_client.js";
 import { useUsage } from "@/web/app/usage/use_usage.js";
@@ -12,11 +14,6 @@ import { Skeleton } from "@/web/components/ui/skeleton.js";
 
 const BUDGET_WARNING_PERCENT = 80;
 const FULL_BUDGET_PERCENT = 100;
-
-interface SpentToday {
-    costUsd: number;
-    tokens: number;
-}
 
 export function UsageTodayCard({
     projectId,
@@ -67,7 +64,7 @@ function TodaySpending({
     spent,
     dailyBudgetUsd,
 }: {
-    spent: SpentToday;
+    spent: UsageTotals;
     dailyBudgetUsd: number | null;
 }): JSX.Element {
     return (
@@ -129,12 +126,10 @@ function BudgetProgress({
     );
 }
 
-function sumSpent(rows: UsageRow[]): SpentToday {
-    return rows.reduce(
-        (spent, row) => ({
-            costUsd: spent.costUsd + row.costUsd,
-            tokens: spent.tokens + row.inputTokens + row.outputTokens,
-        }),
-        { costUsd: 0, tokens: 0 },
-    );
+function sumSpent(rows: UsageRow[]): UsageTotals {
+    return rows.map(spentInRow).reduce(addUsage, NO_USAGE);
+}
+
+function spentInRow(row: UsageRow): UsageTotals {
+    return { costUsd: row.costUsd, tokens: row.inputTokens + row.outputTokens };
 }

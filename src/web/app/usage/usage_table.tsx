@@ -5,9 +5,9 @@ import type { UsageGroupBy } from "@/shared/usage_types.js";
 import type { UsageRow } from "@/web/app/usage/use_usage.js";
 import { USAGE_GROUP_LABELS } from "@/web/app/usage/usage_group_labels.js";
 
-type UsageTotals = Omit<UsageRow, "key" | "label">;
+type UsageRowTotals = Omit<UsageRow, "key" | "label">;
 
-const NO_USAGE: UsageTotals = {
+const NO_ROW_TOTALS: UsageRowTotals = {
     inputTokens: 0,
     outputTokens: 0,
     cacheReadTokens: 0,
@@ -47,14 +47,14 @@ export function UsageTable({
                         <td className="py-1.5 pr-4">
                             <GroupLabel row={row} groupBy={groupBy} onSelectNode={onSelectNode} />
                         </td>
-                        <UsageTotalsCells totals={row} />
+                        <UsageRowTotalsCells totals={row} />
                     </tr>
                 ))}
             </tbody>
             <tfoot className="font-medium">
                 <tr>
                     <td className="py-1.5 pr-4">Total</td>
-                    <UsageTotalsCells totals={sumUsageRows(rows)} />
+                    <UsageRowTotalsCells totals={sumUsageRows(rows)} />
                 </tr>
             </tfoot>
         </table>
@@ -89,7 +89,7 @@ function GroupLabel({
     );
 }
 
-function UsageTotalsCells({ totals }: { totals: UsageTotals }): JSX.Element {
+function UsageRowTotalsCells({ totals }: { totals: UsageRowTotals }): JSX.Element {
     return (
         <>
             <td className="py-1.5 pr-4 text-right font-mono">{formatTokens(totals.inputTokens)}</td>
@@ -105,7 +105,7 @@ function UsageTotalsCells({ totals }: { totals: UsageTotals }): JSX.Element {
     );
 }
 
-function sumUsageRows(rows: UsageRow[]): UsageTotals {
+function sumUsageRows(rows: UsageRow[]): UsageRowTotals {
     return rows.reduce(
         (total, row) => ({
             inputTokens: total.inputTokens + row.inputTokens,
@@ -114,6 +114,6 @@ function sumUsageRows(rows: UsageRow[]): UsageTotals {
             costUsd: total.costUsd + row.costUsd,
             nodeRuns: total.nodeRuns + row.nodeRuns,
         }),
-        NO_USAGE,
+        NO_ROW_TOTALS,
     );
 }
