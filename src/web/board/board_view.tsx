@@ -1,11 +1,14 @@
 import { RefreshCw } from "lucide-react";
+import { useState } from "react";
 import type { JSX } from "react";
 
 import type { BoardColumnDef } from "@/engine/board_columns.js";
 import type { BoardCard, BoardView } from "@/shared/board_types.js";
+import type { WorkItem } from "@/shared/work_item_types.js";
 import { useBoard, useSyncBoard } from "@/web/board/use_board.js";
 import type { CreateEventSource } from "@/web/api/use_event_stream.js";
 import { WorkItemCard } from "@/web/board/work_item_card.js";
+import { WorkItemDrawer } from "@/web/board/work_item_drawer.js";
 import { Button } from "@/web/components/ui/button.js";
 import { cn } from "@/web/components/ui/cn.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
@@ -27,7 +30,7 @@ export function ProjectBoard({
             <SyncButton projectId={projectId} />
             {boardQuery.isError && <p role="alert">Não foi possível carregar o board.</p>}
             {boardQuery.isPending && <Skeleton className="h-64" />}
-            {boardQuery.isSuccess && <BoardColumns board={boardQuery.data} />}
+            {boardQuery.isSuccess && <BoardColumns projectId={projectId} board={boardQuery.data} />}
         </div>
     );
 }
@@ -54,7 +57,10 @@ function SyncButton({ projectId }: { projectId: string }): JSX.Element {
     );
 }
 
-function BoardColumns({ board }: { board: BoardView }): JSX.Element {
+function BoardColumns({ projectId, board }: { projectId: string; board: BoardView }): JSX.Element {
+    const [openItemId, setOpenItemId] = useState<string>();
+    const openCard = board.cards.find((card) => card.item.id === openItemId);
+
     return (
         <>
             {board.flowId === undefined && (
@@ -68,9 +74,18 @@ function BoardColumns({ board }: { board: BoardView }): JSX.Element {
                         key={column.id}
                         column={column}
                         cards={board.cards.filter((card) => card.columnId === column.id)}
+                        onOpenCard={(card) => setOpenItemId(card.item.id)}
                     />
                 ))}
             </div>
+            {openCard && (
+                <WorkItemDrawer
+                    projectId={projectId}
+                    card={openCard}
+                    blockers={findBlockers(board, openCard.item)}
+                    onClose={() => setOpenItemId(undefined)}
+                />
+            )}
         </>
     );
 }
@@ -78,9 +93,11 @@ function BoardColumns({ board }: { board: BoardView }): JSX.Element {
 function BoardColumn({
     column,
     cards,
+    onOpenCard,
 }: {
     column: BoardColumnDef;
     cards: BoardCard[];
+    onOpenCard: (card: BoardCard) => void;
 }): JSX.Element {
     return (
         <section
@@ -97,8 +114,14 @@ function BoardColumn({
                 <span className="text-xs text-muted">{cards.length}</span>
             </header>
             {cards.map((card) => (
-                <WorkItemCard key={card.item.id} card={card} />
+                <WorkItemCard key={card.item.id} card={card} onOpen={() => onOpenCard(card)} />
             ))}
         </section>
     );
+}
+
+function findBlockers(board: BoardView, item: WorkItem): WorkItem[] {
+    return board.cards
+        .map((card) => card.item)
+        .filter((candidate) => item.blockedBy.includes(candidate.id));
 }
