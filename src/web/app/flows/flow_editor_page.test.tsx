@@ -99,6 +99,17 @@ describe("FlowEditorPage", () => {
         ).toBeInTheDocument();
     });
 
+    it("links to the flow's versions from the top bar", async () => {
+        stubFetchRoutes(fakeEditorApi());
+
+        renderAppAt(EDITOR_PATH);
+
+        expect(await screen.findByRole("link", { name: "Versões" })).toHaveAttribute(
+            "href",
+            `${EDITOR_PATH}/versions`,
+        );
+    });
+
     it("shows the draft as saved when it opens", async () => {
         stubFetchRoutes(fakeEditorApi());
 

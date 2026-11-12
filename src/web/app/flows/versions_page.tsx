@@ -21,6 +21,7 @@ import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Field } from "@/web/components/ui/field.js";
 import { Select } from "@/web/components/ui/select.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
+import { flowEditorPath } from "@/web/config/navigation.js";
 
 const COMPARISON_TARGET_FIELD_ID = "comparison-target";
 
@@ -37,7 +38,7 @@ export function VersionsPage(): JSX.Element {
             <header className="flex items-baseline justify-between gap-4">
                 <PageTitle>Versões do fluxo</PageTitle>
                 <Button asChild variant="ghost" size="sm">
-                    <Link to={editorPath(projectId, flowId)}>Voltar ao editor</Link>
+                    <Link to={flowEditorPath(projectId, flowId)}>Voltar ao editor</Link>
                 </Button>
             </header>
             <FlowVersionsBrowser key={flowId} flowId={flowId} />
@@ -208,8 +209,4 @@ function findPreviousVersion(
         .filter((version) => version < selectedVersion);
 
     return olderVersions.length === 0 ? undefined : Math.max(...olderVersions);
-}
-
-function editorPath(projectId: string, flowId: string): string {
-    return `/projects/${encodeURIComponent(projectId)}/flows/${encodeURIComponent(flowId)}`;
 }

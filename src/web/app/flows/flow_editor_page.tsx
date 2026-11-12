@@ -19,6 +19,7 @@ import { useFlowDraft } from "@/web/canvas/use_flow_draft.js";
 import type { FlowDraftEditor } from "@/web/canvas/use_flow_draft.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
+import { flowVersionsPath } from "@/web/config/navigation.js";
 
 export function FlowEditorPage(): JSX.Element {
     const { projectId = "", flowId = "" } = useParams();
@@ -40,7 +41,12 @@ function FlowEditor({ projectId, flowId }: FlowLocation): JSX.Element {
 
     return (
         <div className="flex h-full min-h-0 flex-col gap-3">
-            <EditorTopBar flowName={flowSummary?.name} saveState={saveState} dirty={dirty} />
+            <EditorTopBar
+                flowName={flowSummary?.name}
+                saveState={saveState}
+                dirty={dirty}
+                versionsPath={flowVersionsPath(projectId, flowId)}
+            />
             {saveState === "conflict" && <DraftConflictBanner onReload={draftEditor.reload} />}
             <EditorWorkspace
                 draftEditor={draftEditor}

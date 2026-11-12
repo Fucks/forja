@@ -30,5 +30,5 @@
 - [x] 7. Test + implement: prompt changes show a line diff — `version_diff_view.tsx`
 - [x] 8. Test + implement: compare with the draft — `versions_page.tsx`
 - [x] 9. Test + implement: restore with confirmation posts restore and refreshes the draft — `versions_page.tsx`
-- [ ] 10. "Versões" link in the editor bar — `flow_editor_page.tsx`, `editor_top_bar.tsx`
+- [x] 10. "Versões" link in the editor bar — `flow_editor_page.tsx`, `editor_top_bar.tsx`
 - [ ] 11. Self-review checklist and feedback loops
