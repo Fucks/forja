@@ -4,7 +4,7 @@ import type { FastifyInstance } from "fastify";
 
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import { createDockerAgentRuntime } from "@/integrations/agent_runtime/docker_agent_runtime.js";
-import { UnavailableAgentRuntime } from "@/integrations/agent_runtime/unavailable_agent_runtime.js";
+import { createScriptedAgentRuntime } from "@/integrations/agent_runtime/scripted_agent_runtime.js";
 import { currentHostUser } from "@/integrations/agent_runtime/workspace_layout.js";
 import { CliGitProvider } from "@/integrations/git/cli_git_provider.js";
 import type { CommandRunner } from "@/integrations/process/command_runner.js";
@@ -15,9 +15,11 @@ import { createSecretRedactor } from "@/integrations/secrets/secret_redactor.js"
 import { assertNever } from "@/lib/assert_never.js";
 import { systemClock } from "@/lib/clock.js";
 import { buildApp } from "@/server/app.js";
-import type { AppDeps } from "@/server/app.js";
+import type { AppDeps, ServerOptions } from "@/server/app.js";
 import { openDatabase } from "@/server/db/client.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
+import { seedDemo } from "@/server/demo/seed_demo.js";
+import type { AppServices } from "@/server/demo/seed_demo.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import { createAppExecutor } from "@/server/runtime/app_executor.js";
 import { createEventBus } from "@/server/runtime/event_bus.js";
@@ -65,8 +67,7 @@ async function buildAppOwningDatabase(
         redactor,
         clock: systemClock,
     });
-    const agentRuntime = createAgentRuntime(deps, commands);
-    const executor = createAppExecutor({
+    const services: AppServices = {
         db: database.db,
         events,
         logs,
@@ -74,11 +75,13 @@ async function buildAppOwningDatabase(
         commands,
         secrets,
         redactor,
-        runtime: agentRuntime,
         clock: systemClock,
-    });
+    };
+    const agentRuntime = createAgentRuntime(deps, commands);
+    const executor = createAppExecutor({ ...services, runtime: agentRuntime });
     try {
         await recoverRunsOfPreviousProcess(database, executor, agentRuntime);
+        await seedDemoIfRequested(deps.options, services);
         const app = await buildApp({
             ...deps,
             db: database.db,
@@ -112,8 +115,7 @@ function createAgentRuntime({ env, paths }: ServerDeps, commands: CommandRunner)
                 hostUser: currentHostUser(),
             });
         case "fake":
-            // TODO(#71): the demo runtime for --seed-demo.
-            return new UnavailableAgentRuntime();
+            return createScriptedAgentRuntime({ clock: systemClock });
         default:
             return assertNever(env.FORJA_AGENT_RUNTIME);
     }
@@ -132,6 +134,16 @@ async function recoverRunsOfPreviousProcess(
         clock: systemClock,
         log: (message) => console.log(message),
     });
+}
+
+async function seedDemoIfRequested(options: ServerOptions, services: AppServices): Promise<void> {
+    if (!options.seedDemo) {
+        return;
+    }
+
+    const seeded = await seedDemo(services);
+    const outcome = seeded.created ? "criado" : "já existia";
+    console.log(`Projeto de demonstração ${outcome}: ${seeded.projectId}`);
 }
 
 function closeOnShutdownSignals(app: FastifyInstance): void {
