@@ -32,12 +32,12 @@
 ## Tasks
 
 - [x] 1. Test + implement the minimal valid value for a JSON Schema — `minimal_schema_value.ts` (+ test)
-- [ ] 2. Test + implement a headless agent run that lasts 3–8 s / speed and emits text and tool calls
+- [x] 2. Test + implement a headless agent run that lasts 3–8 s / speed and emits text and tool calls
       (Read, Grep, Edit, Bash "npm run test") — `scripted_agent_runtime.ts`, `demo_script.ts`
-- [ ] 3. Test + implement determinism by `nodeRunId` (events, duration, usage)
-- [ ] 4. Test + implement the output that satisfies `outputSchema` and the echoed completion signal
-- [ ] 5. Test + implement the in-memory workspace (open, runAgent, exec, diff, writeFiles, list, close)
-- [ ] 6. Test + implement cancellation by the request signal
+- [x] 3. Test + implement determinism by `nodeRunId` (events, duration, usage)
+- [x] 4. Test + implement the output that satisfies `outputSchema` and the echoed completion signal
+- [x] 5. Test + implement the in-memory workspace (open, runAgent, exec, diff, writeFiles, list, close)
+- [x] 6. Test + implement cancellation by the request signal
 - [ ] 7. Test + implement `open_pr` without commits ahead not requiring a GitHub repo — `git_executor.ts`
 - [ ] 8. Test + implement `seedDemo` creating project, 5 local items, published flow and a finished run
       with logs and usage — `seed_demo.ts`, `seed_demo.test.ts`
