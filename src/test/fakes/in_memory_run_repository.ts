@@ -8,7 +8,6 @@ import {
     keepNodeRunsOfLatestRunPerItem,
 } from "@/server/runs/run_repository.js";
 import type {
-    ArtifactKind,
     ArtifactRecord,
     ListRunsOptions,
     RunRecord,
@@ -17,6 +16,7 @@ import type {
 } from "@/server/runs/run_repository.js";
 import { parseJsonText } from "@/server/runs/run_rows.js";
 import type { RunStatusName } from "@/shared/events.js";
+import type { ArtifactKind } from "@/shared/run_types.js";
 
 export class InMemoryRunRepository implements RunRepository {
     private readonly runs = new Map<string, RunRecord>();

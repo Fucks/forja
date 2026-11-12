@@ -28,8 +28,8 @@ export function useRunActions(runId: string): RunActions {
     };
 }
 
-// The stream also reports the change; reloading keeps the bar right if that event is missed.
-function useRunMutation<TVariables>(
+// The stream also reports the change; reloading keeps the view right if that event is missed.
+export function useRunMutation<TVariables>(
     runId: string,
     send: (variables: TVariables) => Promise<void>,
 ): UseMutationResult<void, ApiError, TVariables> {

@@ -542,7 +542,12 @@ describe("FlowCanvas read-only", () => {
 function renderReadOnlyCanvas(store: EditorStore): void {
     render(
         <ReactFlowProvider>
-            <FlowCanvas readOnly store={store} flowingEdgeIds={new Set()} />
+            <FlowCanvas
+                readOnly
+                store={store}
+                flowingEdgeIds={new Set()}
+                onNodeClick={() => undefined}
+            />
         </ReactFlowProvider>,
     );
 }

@@ -2,11 +2,12 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { useMemo, useState } from "react";
 import type { JSX } from "react";
 
-import type { FlowGraph } from "@/shared/flow_graph.js";
+import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import type { SerializedRunView } from "@/shared/run_types.js";
 import { createEditorStore } from "@/web/canvas/editor_store.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
+import { NodeRunDrawer } from "@/web/canvas/live/node_run_drawer.js";
 import { aggregateNodeStates, flowingEdges } from "@/web/canvas/live/run_view_model.js";
 import { NodeLiveContext } from "@/web/canvas/nodes/node_live_context.js";
 
@@ -23,14 +24,33 @@ export function RunCanvas({
     const store = useRunGraphStore(view);
     const liveStates = useMemo(() => aggregateNodeStates(view, filterItemId), [view, filterItemId]);
     const flowingEdgeIds = useMemo(() => flowingEdges(view), [view]);
+    const [clickedNodeId, setClickedNodeId] = useState<string>();
+    const openNode = findFlowNode(view.graph, clickedNodeId);
 
     return (
         <NodeLiveContext.Provider value={liveStates}>
             <ReactFlowProvider>
-                <FlowCanvas readOnly store={store} flowingEdgeIds={flowingEdgeIds} />
+                <FlowCanvas
+                    readOnly
+                    store={store}
+                    flowingEdgeIds={flowingEdgeIds}
+                    onNodeClick={setClickedNodeId}
+                />
             </ReactFlowProvider>
+            {openNode && (
+                <NodeRunDrawer
+                    view={view}
+                    node={openNode}
+                    onClose={() => setClickedNodeId(undefined)}
+                />
+            )}
         </NodeLiveContext.Provider>
     );
+}
+
+// Groups are drawn as nodes too, but only the flow's nodes run, so a clicked group opens nothing.
+function findFlowNode(graph: FlowGraph, nodeId: string | undefined): FlowNode | undefined {
+    return graph.nodes.find((node) => node.id === nodeId);
 }
 
 // The run's version never changes, so the graph is loaded once; the live state comes by context.
