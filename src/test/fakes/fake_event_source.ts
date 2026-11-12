@@ -52,6 +52,16 @@ export function createFakeEventSourceFactory(): FakeEventSourceFactory {
     };
 }
 
+// For screens that open the stream through the browser EventSource instead of an injected factory.
+export function captureBrowserEventSources(): FakeEventSourceFactory {
+    const factory = createFakeEventSourceFactory();
+    vi.stubGlobal("EventSource", function CapturedEventSource(url: string) {
+        return factory.createSource(url);
+    });
+
+    return factory;
+}
+
 // The DOM typing of EventSource.addEventListener has overloads that a plain EventTarget can't
 // declare, although it dispatches the same events at runtime.
 function asEventSource(source: FakeEventSource): EventSource {

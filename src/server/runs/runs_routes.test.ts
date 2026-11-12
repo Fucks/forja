@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 
 import { buildApp } from "@/server/app.js";
 import type { RunRecord } from "@/server/runs/run_repository.js";
-import type { SerializedRunRecord, SerializedRunView } from "@/shared/run_types.js";
+import type { RunListItem, SerializedRunRecord, SerializedRunView } from "@/shared/run_types.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { buildIssueSnapshot, ExecutorTestBed, TEST_PROJECT_ID } from "@/test/executor_test_bed.js";
 
@@ -80,7 +80,7 @@ describe("runs routes", () => {
             expect(response.statusCode).toBe(HTTP_CREATED);
             const started = response.json<SerializedRunRecord>();
             expect(started).toMatchObject({ flowId, flowVersion: 1, itemIds: [ISSUE_1.id] });
-            expect(listed.json<SerializedRunRecord[]>().map((run) => run.id)).toEqual([started.id]);
+            expect(listed.json<RunListItem[]>().map((run) => run.id)).toEqual([started.id]);
         });
 
         it("answers 422 asking to publish a flow that has no published version", async () => {
@@ -117,9 +117,26 @@ describe("runs routes", () => {
             const firstPage = await listRuns("limit=2");
             const secondPage = await listRuns(`limit=2&before=${second.id}`);
 
-            const idsOf = (runs: SerializedRunRecord[]) => runs.map((run) => run.id);
-            expect(idsOf(firstPage.json<SerializedRunRecord[]>())).toEqual([third.id, second.id]);
-            expect(idsOf(secondPage.json<SerializedRunRecord[]>())).toEqual([first.id]);
+            const idsOf = (runs: RunListItem[]) => runs.map((run) => run.id);
+            expect(idsOf(firstPage.json<RunListItem[]>())).toEqual([third.id, second.id]);
+            expect(idsOf(secondPage.json<RunListItem[]>())).toEqual([first.id]);
+        });
+
+        it("answers each run with its flow name, items, duration and cost", async () => {
+            const finished = await startFinishedRun();
+
+            const response = await listRuns("");
+
+            const [listed] = response.json<RunListItem[]>();
+            expect(listed).toMatchObject({
+                id: finished.id,
+                flowName: "Entrega",
+                status: "SUCCEEDED",
+                itemCount: ITEMS.length,
+                failedItemCount: 0,
+            });
+            expect(typeof listed?.costUsd).toBe("number");
+            expect(typeof listed?.durationMs).toBe("number");
         });
 
         it("filters the runs by status", async () => {
@@ -128,7 +145,7 @@ describe("runs routes", () => {
 
             const response = await listRuns("status=SUCCEEDED");
 
-            const runs = response.json<SerializedRunRecord[]>();
+            const runs = response.json<RunListItem[]>();
             expect(runs.map((run) => run.id)).toEqual([finished.id]);
         });
 

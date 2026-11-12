@@ -1,6 +1,7 @@
 import { ConflictError, DomainValidationError } from "@/server/errors.js";
 import type { RunRecord } from "@/server/runs/run_repository.js";
 import { createRunService, type RunService } from "@/server/runs/run_service.js";
+import type { Trigger } from "@/shared/trigger_types.js";
 import { updateNode } from "@/test/factories/flow_graph_variations.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { buildIssueSnapshot, ExecutorTestBed, TEST_PROJECT_ID } from "@/test/executor_test_bed.js";
@@ -12,6 +13,17 @@ const DEV_PROMPT = "Implemente a issue";
 const DEV_DURATION_MS = 60_000;
 const DEV_ATTEMPTS = 2;
 const UNPUBLISHED_FLOW_MESSAGE = "Publique o fluxo antes de executar.";
+const NIGHTLY_TRIGGER: Trigger = {
+    id: "trg_noturno",
+    projectId: TEST_PROJECT_ID,
+    flowId: "flw_entrega",
+    name: "Noturno",
+    enabled: true,
+    policy: "skip",
+    itemSelection: "source",
+    config: { kind: "manual" },
+    createdAt: "2026-11-01T10:00:00.000Z",
+};
 
 describe("run service", () => {
     let bed: ExecutorTestBed;
@@ -25,6 +37,8 @@ describe("run service", () => {
             runs: bed.runs,
             flows: bed.flows,
             events: bed.events,
+            usage: bed.usage,
+            triggers: { listByProject: () => [NIGHTLY_TRIGGER] },
         });
         flowId = await bed.publishFlow(buildCanonicalFlow());
     });
@@ -105,6 +119,52 @@ describe("run service", () => {
 
             expect(firstPage.map((run) => run.id)).toEqual([third.id, second.id]);
             expect(secondPage.map((run) => run.id)).toEqual([first.id]);
+        });
+
+        it("lists each run with its flow name, item counts, duration and cost", async () => {
+            const finished = await startFinishedRunWithFailedDev();
+            const finishedAt = finished.finishedAt?.getTime() ?? 0;
+            const startedAt = finished.startedAt?.getTime() ?? 0;
+            const usageRecords = await bed.usage.forRun(finished.id);
+            const costUsd = usageRecords.reduce((total, record) => total + record.costUsd, 0);
+
+            const [listed] = await service.listRuns(TEST_PROJECT_ID, { limit: 10 });
+
+            expect(listed).toMatchObject({
+                id: finished.id,
+                flowId,
+                flowName: "Entrega",
+                flowVersion: 1,
+                status: finished.status,
+                itemCount: ITEMS.length,
+                failedItemCount: 1,
+                createdAt: finished.createdAt.toISOString(),
+                durationMs: finishedAt - startedAt,
+                costUsd,
+            });
+            expect(listed?.triggerName).toBeUndefined();
+        });
+
+        it("leaves the duration out while the run is active", async () => {
+            await startRunWithDevsRunning();
+
+            const [listed] = await service.listRuns(TEST_PROJECT_ID, { limit: 10 });
+
+            expect(listed?.status).toBe("RUNNING");
+            expect(listed?.durationMs).toBeUndefined();
+        });
+
+        it("names the trigger that started the run", async () => {
+            await bed.executor.startRun({
+                projectId: TEST_PROJECT_ID,
+                flowId,
+                itemIds: [],
+                triggerId: NIGHTLY_TRIGGER.id,
+            });
+
+            const [listed] = await service.listRuns(TEST_PROJECT_ID, { limit: 10 });
+
+            expect(listed?.triggerName).toBe(NIGHTLY_TRIGGER.name);
         });
     });
 

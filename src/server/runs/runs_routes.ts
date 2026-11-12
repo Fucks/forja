@@ -7,6 +7,11 @@ import { createAppFlowService } from "@/server/flows/app_flow_service.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import { createRunService, type RunService } from "@/server/runs/run_service.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
+import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
+import { SettingsRepository } from "@/server/settings/settings_repository.js";
+import { createSettingsService } from "@/server/settings/settings_service.js";
+import { TriggerRepository } from "@/server/triggers/trigger_repository.js";
+import { createAppUsageService } from "@/server/usage/app_usage_service.js";
 import { listRunsQuery, raiseRunBudgetInput, startRunInput } from "@/shared/run_types.js";
 
 const PROJECT_RUNS_PATH = "/projects/:projectId/runs";
@@ -23,11 +28,18 @@ const nodeRunParamsSchema = z.object({ nodeRunId: z.string().min(1) });
 type ActionOnTarget = (id: string) => Promise<void>;
 
 export const registerRunsRoutes: RouteModule = (app, deps) => {
+    const settings = createSettingsService({
+        repo: new SettingsRepository(deps.db),
+        lookups: createSettingsLookups(deps.db),
+        clock: systemClock,
+    });
     const runs = createRunService({
         executor: deps.executor,
         runs: new SqliteRunRepository(deps.db, systemClock),
         flows: createAppFlowService({ db: deps.db, events: deps.events, clock: systemClock }),
         events: deps.events,
+        usage: createAppUsageService({ db: deps.db, settings, clock: systemClock }),
+        triggers: new TriggerRepository(deps.db),
     });
 
     registerProjectRunsRoutes(app, runs);

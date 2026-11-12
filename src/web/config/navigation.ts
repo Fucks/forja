@@ -33,11 +33,12 @@ export const PROJECTS_PATH = "/";
 const PROJECT_AREA_PATTERN = "/projects/:projectId/:areaId/*";
 
 const TRIGGERS_AREA = projectArea({ id: "triggers", label: "Gatilhos", icon: Zap });
+const RUNS_AREA = projectArea({ id: "runs", label: "Runs", icon: History });
 
 export const PROJECT_NAV: NavItem[] = [
     projectArea({ id: "flows", label: "Fluxos", icon: Workflow }),
     projectArea({ id: "board", label: "Board", icon: SquareKanban }),
-    projectArea({ id: "runs", label: "Runs", icon: History }),
+    RUNS_AREA,
     projectArea({ id: "usage", label: "Uso", icon: Gauge }),
     TRIGGERS_AREA,
     projectArea({ id: "approvals", label: "Aprovações", icon: ClipboardCheck }),
@@ -65,6 +66,14 @@ export function flowVersionsPath(projectId: string, flowId: string): string {
 
 export function triggersPath(projectId: string): string {
     return TRIGGERS_AREA.path(projectId);
+}
+
+export function runsPath(projectId: string): string {
+    return RUNS_AREA.path(projectId);
+}
+
+export function runPath(projectId: string, runId: string): string {
+    return `${runsPath(projectId)}/${encodeURIComponent(runId)}`;
 }
 
 export function switchProjectPath(currentPathname: string, projectId: string): string {

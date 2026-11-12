@@ -6,6 +6,7 @@ import type { Project } from "@/shared/project_types.js";
 import { PageTitle } from "@/web/app/page_title.js";
 import { DetectedList, NextStepHints } from "@/web/app/projects/project_detections.js";
 import { useProject } from "@/web/app/projects/use_projects.js";
+import { RecentRunsCard } from "@/web/app/runs/recent_runs_card.js";
 import { KeyValue } from "@/web/components/ui/key_value.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { PROJECT_NAV } from "@/web/config/navigation.js";
@@ -70,6 +71,7 @@ function ProjectOverview({ project }: { project: Project }): JSX.Element {
             />
             <NextStepHints detection={project.detected} />
             <ProjectShortcuts projectId={project.id} />
+            <RecentRunsCard projectId={project.id} />
         </div>
     );
 }
