@@ -9,7 +9,8 @@ import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { createEditorStore, HISTORY_MERGE_WINDOW_MS } from "@/web/canvas/editor_store.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
-import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
+import { FlowCanvas, markFlowingEdges } from "@/web/canvas/flow_canvas.js";
+import { toReactFlow } from "@/web/canvas/graph_mapping.js";
 import { MIXED_GROUPS_REASON } from "@/web/canvas/grouping.js";
 import { NODE_TYPE_DRAG_FORMAT } from "@/web/canvas/palette/node_type_drag.js";
 import { SHORTCUTS } from "@/web/canvas/shortcuts.js";
@@ -500,6 +501,51 @@ describe("FlowCanvas shortcuts", () => {
         expect(await screen.findByRole("dialog")).toHaveTextContent("Duplicar a seleção");
     });
 });
+
+describe("FlowCanvas read-only", () => {
+    const DEVELOPER_TO_REVIEWER_EDGE_ID = "dev.summary->reviewer.context";
+
+    it("renders the graph without the editor toolbar", () => {
+        renderReadOnlyCanvas(createStoreWith(CANONICAL_FLOW));
+
+        expect(screen.getAllByLabelText("Dev").length).toBeGreaterThan(0);
+        expect(screen.queryByRole("toolbar", { name: "Editor" })).not.toBeInTheDocument();
+    });
+
+    it("does not let the nodes be dragged", () => {
+        renderReadOnlyCanvas(createStoreWith(CANONICAL_FLOW));
+
+        expect(document.querySelector(".react-flow__node.draggable")).toBeNull();
+    });
+
+    it("ignores the editing shortcuts", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        renderReadOnlyCanvas(store);
+
+        await userEvent.keyboard("{Control>}a{/Control}");
+
+        expect(store.getState().selection).toEqual([]);
+    });
+
+    it("marks as flowing only the edges where data flows", () => {
+        const { edges } = toReactFlow(CANONICAL_FLOW);
+
+        const markedEdges = markFlowingEdges(edges, new Set([DEVELOPER_TO_REVIEWER_EDGE_ID]));
+
+        const flowingEdgeIds = markedEdges
+            .filter((edge) => edge.data?.flowing === true)
+            .map((edge) => edge.id);
+        expect(flowingEdgeIds).toEqual([DEVELOPER_TO_REVIEWER_EDGE_ID]);
+    });
+});
+
+function renderReadOnlyCanvas(store: EditorStore): void {
+    render(
+        <ReactFlowProvider>
+            <FlowCanvas readOnly store={store} flowingEdgeIds={new Set()} />
+        </ReactFlowProvider>,
+    );
+}
 
 function renderCanvas(store: EditorStore, issuesByTarget: IssuesByTarget = new Map()): void {
     render(

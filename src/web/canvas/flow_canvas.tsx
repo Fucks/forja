@@ -13,6 +13,7 @@ import { ConnectionRejectionTooltip } from "@/web/canvas/connection_rejection_to
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { EditorToolbar } from "@/web/canvas/editor_toolbar.js";
 import { FLOW_EDGE_TYPE } from "@/web/canvas/graph_mapping.js";
+import type { RFEdge } from "@/web/canvas/graph_mapping.js";
 import { GroupContextMenu } from "@/web/canvas/group_context_menu.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
 import { DropTargetGroupContext } from "@/web/canvas/palette/drop_target_context.js";
@@ -39,7 +40,66 @@ const DELETE_KEYS = ["Delete", "Backspace"];
 
 const EDGE_TYPES: EdgeTypes = { [FLOW_EDGE_TYPE]: FlowEdge };
 
-export function FlowCanvas({
+type FlowCanvasProps =
+    | { readOnly?: false; store: EditorStore; issuesByTarget: IssuesByTarget }
+    | { readOnly: true; store: EditorStore; flowingEdgeIds: ReadonlySet<string> };
+
+export function FlowCanvas(props: FlowCanvasProps): JSX.Element {
+    if (props.readOnly) {
+        return <ReadOnlyFlowCanvas store={props.store} flowingEdgeIds={props.flowingEdgeIds} />;
+    }
+
+    return <EditableFlowCanvas store={props.store} issuesByTarget={props.issuesByTarget} />;
+}
+
+// Shows a run: the graph can be panned and zoomed, but not selected, moved, connected or edited.
+function ReadOnlyFlowCanvas({
+    store,
+    flowingEdgeIds,
+}: {
+    store: EditorStore;
+    flowingEdgeIds: ReadonlySet<string>;
+}): JSX.Element {
+    const { nodes, edges, onNodesChange } = useCanvasElements(store);
+    const edgesWithFlow = useMemo(
+        () => markFlowingEdges(edges, flowingEdgeIds),
+        [edges, flowingEdgeIds],
+    );
+
+    return (
+        <ReactFlow
+            nodes={nodes}
+            edges={edgesWithFlow}
+            nodeTypes={nodeTypes}
+            edgeTypes={EDGE_TYPES}
+            onNodesChange={onNodesChange}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable={false}
+            deleteKeyCode={null}
+            minZoom={MIN_ZOOM}
+            maxZoom={MAX_ZOOM}
+            fitView
+        >
+            <CanvasBackground />
+            <MiniMap />
+            <Controls showInteractive={false} />
+        </ReactFlow>
+    );
+}
+
+// Exported because React Flow draws an edge only between measured nodes, which jsdom never has.
+export function markFlowingEdges(edges: RFEdge[], flowingEdgeIds: ReadonlySet<string>): RFEdge[] {
+    return edges.map((edge) => {
+        if (!flowingEdgeIds.has(edge.id)) {
+            return edge;
+        }
+
+        return { ...edge, data: { ...edge.data, flowing: true } };
+    });
+}
+
+function EditableFlowCanvas({
     store,
     issuesByTarget,
 }: {
