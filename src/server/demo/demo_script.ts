@@ -49,3 +49,27 @@ export const DEMO_SCRIPT: DemoScript = {
         "Feito. Acrescentei os testes do novo comportamento e a suíte está verde.",
     ],
 };
+
+/** The local items of the demo project, each one a small task of a coffee shop app. */
+export const DEMO_ITEMS: { title: string; body: string }[] = [
+    {
+        title: "Cardápio com preços em centavos",
+        body: "Guardar os preços do cardápio como inteiros em centavos e formatar só na tela.",
+    },
+    {
+        title: "Taxa de entrega por faixa de distância",
+        body: "Calcular a taxa de entrega a partir das faixas de distância da loja.",
+    },
+    {
+        title: "Pausar a loja nos feriados",
+        body: "Recusar pedidos novos enquanto a loja estiver pausada.",
+    },
+    {
+        title: "Pix expira junto com o pedido",
+        body: "O QR code do Pix expira em 15 minutos e libera a reserva de estoque.",
+    },
+    {
+        title: "Histórico de pedidos do cliente",
+        body: "Listar os pedidos anteriores do cliente, do mais recente ao mais antigo.",
+    },
+];

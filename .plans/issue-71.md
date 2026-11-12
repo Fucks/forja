@@ -27,7 +27,13 @@
   need one to run) and sets global `minStartIntervalMs` to 0 (the demo never calls the real Claude, and
   15 agents 5 s apart would exceed the 1 min target).
 - Flow: "Fábrica básica" built from `basicFactoryTemplate`, source node switched to `provider: "local"`
-  without label, published and set as the project's default flow.
+  without label, agent prompts use `{{item.id}}` instead of `{{item.number}}` (local items have no
+  number), published and set as the project's default flow (`demo_flow.ts`).
+- The seed run is started with the ids of the 5 demo items: a run started without items does not give
+  the NodeRuns of the groups their `item` (ActiveRun only knows `run.itemIds`) — pre-existing gap, report
+  it in the issue comment, don't fix it here.
+- Split: `seed_demo.ts` (orchestration, `AppServices`), `demo_git_repo.ts`, `demo_marker.ts`,
+  `demo_flow.ts`, `demo_run.ts` (scripted executor + wait for the end), `DEMO_ITEMS` in `demo_script.ts`.
 
 ## Tasks
 
@@ -39,7 +45,7 @@
 - [x] 5. Test + implement the in-memory workspace (open, runAgent, exec, diff, writeFiles, list, close)
 - [x] 6. Test + implement cancellation by the request signal
 - [x] 7. Test + implement `open_pr` without commits ahead not requiring a GitHub repo — `git_executor.ts`
-- [ ] 8. Test + implement `seedDemo` creating project, 5 local items, published flow and a finished run
+- [x] 8. Test + implement `seedDemo` creating project, 5 local items, published flow and a finished run
       with logs and usage — `seed_demo.ts`, `seed_demo.test.ts`
 - [ ] 9. Test + implement `seedDemo` idempotency (`app_meta.demo_seeded`)
 - [ ] 10. Wire `main.ts`: `FORJA_AGENT_RUNTIME=fake` → scripted runtime; `options.seedDemo` → `seedDemo()`
