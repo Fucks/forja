@@ -26,7 +26,7 @@
 
 ## Tasks
 
-- [ ] 1. `deleteLocalBranch` + `BranchInUseError` in `git_provider.ts`, `cli_git_provider.ts` (+ test) and `fake_git_provider.ts`
+- [x] 1. `deleteLocalBranch` + `BranchInUseError` in `git_provider.ts`, `cli_git_provider.ts` (+ test) and `fake_git_provider.ts`
 - [ ] 2. Test + implement: merged PR moves the item to done, closes the open issue, deletes the branch — `pull_request_sync.ts`
 - [ ] 3. Test + implement: closed-without-merge PR, PR not opened by Forja, PR older than 30 days change nothing
 - [ ] 4. Test + implement: repeated sync does nothing more; already-closed issue is not closed again; local item has no issue to close

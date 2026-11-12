@@ -1,5 +1,9 @@
 import { CliGitProvider, parseGithubRepo } from "@/integrations/git/cli_git_provider.js";
-import { GitCommandError, NotARepoError } from "@/integrations/git/git_provider.js";
+import {
+    BranchInUseError,
+    GitCommandError,
+    NotARepoError,
+} from "@/integrations/git/git_provider.js";
 import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
 
 const REPO_ROOT = "/repos/forja";
@@ -193,5 +197,64 @@ describe("CliGitProvider.push", () => {
         const pushing = new CliGitProvider(commands).push(REPO_ROOT, "forja/issue-7", {});
 
         await expect(pushing).rejects.toThrow(/stale info/);
+    });
+});
+
+describe("CliGitProvider.deleteLocalBranch", () => {
+    const LOCAL_BRANCH_REF = ["show-ref", "--verify", "--quiet", "refs/heads/forja/issue-7"];
+    const DELETE_BRANCH = ["branch", "-D", "forja/issue-7"];
+
+    it("force-deletes the local branch, since a squash merge leaves it unmerged for git", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("git", LOCAL_BRANCH_REF).returns({ exitCode: 0 });
+        commands.when("git", DELETE_BRANCH).returns({ exitCode: 0 });
+
+        const deleted = await new CliGitProvider(commands).deleteLocalBranch(
+            REPO_ROOT,
+            "forja/issue-7",
+        );
+
+        expect(deleted).toBe(true);
+        expect(commands.calls.at(-1)).toMatchObject({
+            args: DELETE_BRANCH,
+            options: { cwd: REPO_ROOT },
+        });
+    });
+
+    it("answers false without deleting anything when there is no local branch", async () => {
+        const commands = new FakeCommandRunner();
+
+        const deleted = await new CliGitProvider(commands).deleteLocalBranch(
+            REPO_ROOT,
+            "forja/issue-7",
+        );
+
+        expect(deleted).toBe(false);
+        expect(commands.calls.map((call) => call.args)).not.toContainEqual(DELETE_BRANCH);
+    });
+
+    it("rejects with BranchInUseError when a worktree holds the branch", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("git", LOCAL_BRANCH_REF).returns({ exitCode: 0 });
+        commands.when("git", DELETE_BRANCH).returns({
+            exitCode: 1,
+            stderr: "error: cannot delete branch 'forja/issue-7' used by worktree at '/wt/7'",
+        });
+
+        const deleting = new CliGitProvider(commands).deleteLocalBranch(REPO_ROOT, "forja/issue-7");
+
+        await expect(deleting).rejects.toThrow(BranchInUseError);
+    });
+
+    it("rejects with GitCommandError when git fails for another reason", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("git", LOCAL_BRANCH_REF).returns({ exitCode: 0 });
+        commands
+            .when("git", DELETE_BRANCH)
+            .returns({ exitCode: 128, stderr: "fatal: Unable to create '.git/packed-refs.lock'" });
+
+        const deleting = new CliGitProvider(commands).deleteLocalBranch(REPO_ROOT, "forja/issue-7");
+
+        await expect(deleting).rejects.toThrow(GitCommandError);
     });
 });

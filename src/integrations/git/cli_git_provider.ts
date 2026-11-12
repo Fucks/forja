@@ -1,4 +1,8 @@
-import { GitCommandError, NotARepoError } from "@/integrations/git/git_provider.js";
+import {
+    BranchInUseError,
+    GitCommandError,
+    NotARepoError,
+} from "@/integrations/git/git_provider.js";
 import type { CommitCounts, GitProvider, RepoInfo } from "@/integrations/git/git_provider.js";
 import { commandSucceeded } from "@/integrations/process/command_runner.js";
 import type { CommandResult, CommandRunner } from "@/integrations/process/command_runner.js";
@@ -11,6 +15,8 @@ const ORIGIN_HEAD_REF = "refs/remotes/origin/HEAD";
 const ORIGIN_BRANCH_PREFIX = "refs/remotes/origin/";
 const LOCAL_BRANCH_PREFIX = "refs/heads/";
 const COUNTS_SEPARATOR = /\s+/;
+// Newer git says "used by worktree at", older git says "checked out at".
+const BRANCH_IN_WORKTREE_PATTERN = /used by worktree|checked out at/;
 const GITHUB_REMOTE_PATTERN =
     /^(?:https:\/\/github\.com\/|git@github\.com:)([^/]+)\/([^/]+?)(?:\.git)?\/?$/;
 
@@ -72,6 +78,23 @@ export class CliGitProvider implements GitProvider {
 
         const [behind = 0, ahead = 0] = result.stdout.trim().split(COUNTS_SEPARATOR).map(Number);
         return { ahead, behind };
+    }
+
+    // `-D` because a squash-merged branch is not merged as far as git can tell.
+    async deleteLocalBranch(root: string, branch: string): Promise<boolean> {
+        if (!(await this.refExists(root, `${LOCAL_BRANCH_PREFIX}${branch}`))) {
+            return false;
+        }
+
+        const result = await this.runGit(root, ["branch", "-D", branch]);
+        if (commandSucceeded(result)) {
+            return true;
+        }
+        if (BRANCH_IN_WORKTREE_PATTERN.test(result.stderr)) {
+            throw new BranchInUseError(branch, result.stderr);
+        }
+
+        throw new GitCommandError(`Não foi possível apagar o branch ${branch}`, result.stderr);
     }
 
     private async findRepoRoot(path: string): Promise<string> {
