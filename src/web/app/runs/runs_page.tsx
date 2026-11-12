@@ -1,7 +1,57 @@
+import { CircleAlert, History } from "lucide-react";
 import type { JSX } from "react";
+import { useParams } from "react-router";
 
-import { PlaceholderPage } from "@/web/app/placeholder_page.js";
+import { PageTitle } from "@/web/app/page_title.js";
+import { RunsTable } from "@/web/app/runs/runs_table.js";
+import { useRuns } from "@/web/app/runs/use_runs.js";
+import type { RunFilters } from "@/web/app/runs/use_runs.js";
+import { EmptyState } from "@/web/components/ui/empty_state.js";
+import { Skeleton } from "@/web/components/ui/skeleton.js";
+
+const NO_FILTERS: RunFilters = {};
 
 export function RunsPage(): JSX.Element {
-    return <PlaceholderPage title="Runs" />;
+    const { projectId = "" } = useParams();
+
+    return (
+        <div className="flex flex-col gap-4">
+            <PageTitle>Runs</PageTitle>
+            <RunsContent projectId={projectId} filters={NO_FILTERS} />
+        </div>
+    );
+}
+
+function RunsContent({
+    projectId,
+    filters,
+}: {
+    projectId: string;
+    filters: RunFilters;
+}): JSX.Element {
+    const runsQuery = useRuns(projectId, filters);
+
+    if (runsQuery.isPending) {
+        return <Skeleton className="h-24" />;
+    }
+    if (runsQuery.isError) {
+        return (
+            <EmptyState
+                icon={CircleAlert}
+                title="Não foi possível carregar as runs"
+                description={runsQuery.error.message}
+            />
+        );
+    }
+    if (runsQuery.data.length === 0) {
+        return (
+            <EmptyState
+                icon={History}
+                title="Nenhuma run ainda"
+                description="Inicie uma run de um fluxo publicado para acompanhar a execução aqui."
+            />
+        );
+    }
+
+    return <RunsTable projectId={projectId} runs={runsQuery.data} />;
 }

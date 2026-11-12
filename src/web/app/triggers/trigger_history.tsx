@@ -9,7 +9,7 @@ import { useTriggerHistory } from "@/web/app/triggers/use_triggers.js";
 import { Drawer } from "@/web/components/ui/drawer.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
-import { projectPath } from "@/web/config/navigation.js";
+import { runPath } from "@/web/config/navigation.js";
 
 const HISTORY_PAGE_SIZE = 50;
 
@@ -88,8 +88,4 @@ function FireEntry({ fire, projectId }: { fire: TriggerFire; projectId: string }
             )}
         </li>
     );
-}
-
-function runPath(projectId: string, runId: string): string {
-    return `${projectPath(projectId)}/runs/${encodeURIComponent(runId)}`;
 }

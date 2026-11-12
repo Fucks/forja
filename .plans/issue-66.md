@@ -26,9 +26,9 @@
       `src/server/runs/run_service.ts`, `src/server/runs/run_service.test.ts`
 - [x] 2. Wire the usage service and trigger repository in the routes; route test uses `RunListItem` —
       `src/server/runs/runs_routes.ts`, `src/server/runs/runs_routes.test.ts`
-- [ ] 3. Test: the runs page lists runs with state, flow/version, items, duration, cost and trigger, active on
+- [x] 3. Test: the runs page lists runs with state, flow/version, items, duration, cost and trigger, active on
       top; impl `use_runs.ts`, `runs_table.tsx`, `runs_page.tsx` — `src/web/app/runs/runs_page.test.tsx`
-- [ ] 4. Test + impl: clicking a row opens the run — `runs_table.tsx`
+- [x] 4. Test + impl: clicking a row opens the run — `runs_table.tsx`
 - [ ] 5. Test + impl: status and flow filters ("Falha" shows only failed runs) — `runs_page.tsx`
 - [ ] 6. Test + impl: "Carregar mais" pages by the `before` cursor — `use_runs.ts`, `runs_page.tsx`
 - [ ] 7. Test + impl: a `run.*` event reloads the list — `use_runs.ts`
