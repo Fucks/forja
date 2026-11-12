@@ -33,7 +33,7 @@
 - [x] 6. Test+impl: `flowingEdges` — `run_view_model.ts`
 - [x] 7. Test+impl: `useLiveRun` loads the view and applies events — `use_live_run.ts`
 - [x] 8. Test+impl: `useLiveRun` reloads on reconnection and replays events during the load
-- [ ] 9. Impl: `FlowCanvas` read-only mode — `flow_canvas.tsx` (+ test in `flow_canvas.test.tsx`)
+- [x] 9. Impl: `FlowCanvas` read-only mode — `flow_canvas.tsx` (+ test in `flow_canvas.test.tsx`)
 - [ ] 10. Test+impl: `RunCanvas` renders node states, group counters, flowing edges — `run_canvas.tsx`
 - [ ] 11. Test+impl: run actions (pause/resume/cancel with confirmation, raise budget) —
       `use_run_actions.ts`, `run_actions.tsx`, `run_control_bar.test.tsx`
