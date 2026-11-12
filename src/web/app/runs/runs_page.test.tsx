@@ -1,10 +1,13 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { MockInstance } from "vitest";
 
 import { formatDateTime, formatDuration, formatUsd } from "@/lib/format.js";
 import type { FlowSummary } from "@/shared/flow_types.js";
+import type { RunListItem } from "@/shared/run_types.js";
+import { buildRunStartedEvent } from "@/test/factories/forja_event_factory.js";
 import { buildRunListItem } from "@/test/factories/run_list_item_factory.js";
+import { captureBrowserEventSources } from "@/test/fakes/fake_event_source.js";
 import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
@@ -45,6 +48,17 @@ const RUNNING_RUN = buildRunListItem({
     durationMs: undefined,
     costUsd: 0.2,
 });
+
+const RUN_FINISHED_ENVELOPE = {
+    id: 1,
+    at: "2026-11-12T00:00:00.000Z",
+    event: buildRunStartedEvent({
+        type: "run.finished",
+        runId: RUNNING_RUN.id,
+        projectId: "prj_forja",
+        status: "SUCCEEDED",
+    }),
+};
 
 function stubRunsApi(routes: FakeRoutes = {}): MockInstance<typeof fetch> {
     return stubFetchRoutes({
@@ -160,6 +174,23 @@ describe("RunsPage", () => {
         expect(await screen.findByRole("row", { name: /Antigo/ })).toBeInTheDocument();
         expect(await findRunRows()).toHaveLength(RUNS_PAGE_SIZE + 1);
         expect(screen.queryByRole("button", { name: "Carregar mais" })).not.toBeInTheDocument();
+    });
+
+    it("reloads the list when a run of the project changes, without reloading the page", async () => {
+        const eventSources = captureBrowserEventSources();
+        let listedRuns: RunListItem[] = [RUNNING_RUN];
+        stubRunsApi({ [`GET ${FIRST_PAGE_URL}`]: () => Response.json(listedRuns) });
+        renderAppAt(RUNS_PAGE_PATH);
+        const [runningRow] = await findRunRows();
+        expect(runningRow).toHaveTextContent("Rodando");
+
+        listedRuns = [{ ...RUNNING_RUN, status: "SUCCEEDED" }];
+        act(() => eventSources.latestSource().emit(RUN_FINISHED_ENVELOPE));
+
+        await waitFor(async () => {
+            const [finishedRow] = await findRunRows();
+            expect(finishedRow).toHaveTextContent("Sucesso");
+        });
     });
 
     it("explains when there are no runs yet", async () => {

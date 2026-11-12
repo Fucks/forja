@@ -31,7 +31,7 @@
 - [x] 4. Test + impl: clicking a row opens the run — `runs_table.tsx`
 - [x] 5. Test + impl: status and flow filters ("Falha" shows only failed runs) — `runs_page.tsx`
 - [x] 6. Test + impl: "Carregar mais" pages by the `before` cursor — `use_runs.ts`, `runs_page.tsx`
-- [ ] 7. Test + impl: a `run.*` event reloads the list — `use_runs.ts`
+- [x] 7. Test + impl: a `run.*` event reloads the list — `use_runs.ts`
 - [ ] 8. Test + impl: "Nova run" starts the run and opens it — `new_run_dialog.tsx`
 - [ ] 9. Test + impl: "Últimas runs" card on the project overview — `recent_runs_card.tsx`,
       `project_page.tsx`
