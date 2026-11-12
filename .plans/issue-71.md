@@ -38,7 +38,7 @@
 - [x] 4. Test + implement the output that satisfies `outputSchema` and the echoed completion signal
 - [x] 5. Test + implement the in-memory workspace (open, runAgent, exec, diff, writeFiles, list, close)
 - [x] 6. Test + implement cancellation by the request signal
-- [ ] 7. Test + implement `open_pr` without commits ahead not requiring a GitHub repo — `git_executor.ts`
+- [x] 7. Test + implement `open_pr` without commits ahead not requiring a GitHub repo — `git_executor.ts`
 - [ ] 8. Test + implement `seedDemo` creating project, 5 local items, published flow and a finished run
       with logs and usage — `seed_demo.ts`, `seed_demo.test.ts`
 - [ ] 9. Test + implement `seedDemo` idempotency (`app_meta.demo_seeded`)

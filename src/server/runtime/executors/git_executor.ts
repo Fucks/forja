@@ -100,39 +100,33 @@ function branchTargetOf(context: NodeExecutionContext, config: GitConfig): Branc
     };
 }
 
-// Without commits ahead of the base there is nothing to review, so the branch stays local.
 async function pushBranchIfAhead(
     git: GitProvider,
     context: NodeExecutionContext,
     target: BranchTarget,
 ): Promise<boolean> {
-    const { repoPath } = context.project;
-    const { ahead } = await git.aheadBehind(
-        repoPath,
-        target.branch,
-        remoteRefOf(target.baseBranch),
-    );
-    if (ahead === 0) {
+    if (!(await hasCommitsAhead(git, context, target))) {
         return false;
     }
 
-    const env = buildAgentEnv({ github: context.credentials.githubToken, extra: {} });
-    await git.push(repoPath, target.branch, env);
+    await pushBranch(git, context, target.branch);
     return true;
 }
 
+// Without commits ahead of the base there is nothing to review, so the branch stays local and a
+// project without a GitHub repository can still finish the item.
 async function openPullRequest({
     deps,
     context,
     config,
     target,
 }: OpenPullRequestInput): Promise<GitResult> {
-    const repo = githubRepoOf(context.project);
-    const pushed = await pushBranchIfAhead(deps.git, context, target);
-    if (!pushed) {
-        return { branch: target.branch, pushed };
+    if (!(await hasCommitsAhead(deps.git, context, target))) {
+        return { branch: target.branch, pushed: false };
     }
 
+    const repo = githubRepoOf(context.project);
+    await pushBranch(deps.git, context, target.branch);
     const github = await deps.githubOf(context.project.id);
     const prUrl = await reuseOrCreatePullRequest(github, repo, {
         head: target.branch,
@@ -142,7 +136,30 @@ async function openPullRequest({
         draft: config.draft,
     });
 
-    return { branch: target.branch, prUrl, pushed };
+    return { branch: target.branch, prUrl, pushed: true };
+}
+
+async function hasCommitsAhead(
+    git: GitProvider,
+    context: NodeExecutionContext,
+    target: BranchTarget,
+): Promise<boolean> {
+    const { ahead } = await git.aheadBehind(
+        context.project.repoPath,
+        target.branch,
+        remoteRefOf(target.baseBranch),
+    );
+
+    return ahead > 0;
+}
+
+async function pushBranch(
+    git: GitProvider,
+    context: NodeExecutionContext,
+    branch: string,
+): Promise<void> {
+    const env = buildAgentEnv({ github: context.credentials.githubToken, extra: {} });
+    await git.push(context.project.repoPath, branch, env);
 }
 
 function githubRepoOf(project: Project): string {

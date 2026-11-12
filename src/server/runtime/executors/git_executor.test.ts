@@ -267,6 +267,14 @@ describe("git executor", () => {
             expect(result.artifacts).toEqual([{ name: "branch", kind: "branch", value: BRANCH }]);
         });
 
+        it("needs no GitHub repository for a branch without commits ahead of the base", async () => {
+            const bed = createGitBed({ action: "open_pr" }, { githubRepo: undefined });
+
+            const result = await bed.execute();
+
+            expect(result.outputs).toEqual({ result: { branch: BRANCH, pushed: false } });
+        });
+
         it("fails clearly when the project has no GitHub repository", async () => {
             const bed = createGitBed({ action: "open_pr" }, { githubRepo: undefined });
             bed.git.setCommitsAhead(BRANCH, 2);
