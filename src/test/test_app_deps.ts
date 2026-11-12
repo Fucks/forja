@@ -47,6 +47,7 @@ export function createTestAppDeps(db: ForjaDb, overrides: Partial<AppDeps> = {})
             runtime: agentRuntime,
             clock,
         }),
+        apiProtection: { kind: "none" },
         ...overrides,
     };
 }

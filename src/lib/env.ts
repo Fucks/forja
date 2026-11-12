@@ -11,6 +11,7 @@ export const envSchema = z.object({
     FORJA_HOST: z.literal(LOOPBACK_HOST).default(LOOPBACK_HOST),
     FORJA_AGENT_RUNTIME: z.enum(["docker", "fake"]).default("docker"),
     FORJA_LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+    NODE_ENV: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
