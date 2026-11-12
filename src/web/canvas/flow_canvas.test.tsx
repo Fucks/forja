@@ -5,13 +5,20 @@ import { userEvent } from "@testing-library/user-event";
 import type { FlowEdge, FlowGraph, FlowGroup, NodeType, Position } from "@/shared/flow_graph.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
+import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
-import { createEditorStore } from "@/web/canvas/editor_store.js";
+import { createEditorStore, HISTORY_MERGE_WINDOW_MS } from "@/web/canvas/editor_store.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
 import { MIXED_GROUPS_REASON } from "@/web/canvas/grouping.js";
 import { NODE_TYPE_DRAG_FORMAT } from "@/web/canvas/palette/node_type_drag.js";
+import { SHORTCUTS } from "@/web/canvas/shortcuts.js";
+import {
+    DUPLICATE_OFFSET_PX,
+    TRIGGER_NOT_PASTED_NOTICE,
+} from "@/web/canvas/use_canvas_clipboard.js";
 import type { IssuesByTarget } from "@/web/canvas/use_validation.js";
+import { ToastProvider } from "@/web/components/ui/toast.js";
 
 const CANONICAL_FLOW = buildCanonicalFlow();
 const EMPTY_FLOW: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
@@ -159,8 +166,8 @@ describe("FlowCanvas", () => {
     });
 });
 
-function createStoreWith(graph: FlowGraph): EditorStore {
-    const store = createEditorStore();
+function createStoreWith(graph: FlowGraph, clock: FakeClock = new FakeClock()): EditorStore {
+    const store = createEditorStore(clock);
     store.getState().load({
         flowId: "flw_canonico",
         graph,
@@ -324,11 +331,183 @@ describe("FlowCanvas group menu", () => {
     });
 });
 
+describe("FlowCanvas history", () => {
+    it("undoes and redoes creating and deleting a node in order", async () => {
+        const clock = new FakeClock();
+        const store = createStoreWith(EMPTY_FLOW, clock);
+        renderCanvas(store);
+        dropNodeType("agent", { x: 0, y: 0 });
+        clock.advance(HISTORY_MERGE_WINDOW_MS + 1);
+        fireEvent.keyDown(document, { key: "Delete" });
+        await waitFor(() => expect(store.getState().graph.nodes).toEqual([]));
+
+        fireEvent.keyDown(document, { key: "z", ctrlKey: true });
+        const nodesAfterFirstUndo = store.getState().graph.nodes;
+        fireEvent.keyDown(document, { key: "z", ctrlKey: true });
+        const nodesAfterSecondUndo = store.getState().graph.nodes;
+        fireEvent.keyDown(document, { key: "z", ctrlKey: true, shiftKey: true });
+
+        expect(nodesAfterFirstUndo).toHaveLength(1);
+        expect(nodesAfterSecondUndo).toEqual([]);
+        expect(store.getState().graph.nodes).toHaveLength(1);
+    });
+
+    it("undoes and redoes with the toolbar buttons", async () => {
+        const store = createStoreWith(EMPTY_FLOW);
+        renderCanvas(store);
+        dropNodeType("agent", { x: 0, y: 0 });
+
+        await userEvent.click(screen.getByRole("button", { name: "Desfazer" }));
+        const nodesAfterUndo = store.getState().graph.nodes;
+        await userEvent.click(screen.getByRole("button", { name: "Refazer" }));
+
+        expect(nodesAfterUndo).toEqual([]);
+        expect(store.getState().graph.nodes).toHaveLength(1);
+    });
+
+    it("disables undo and redo while there is nothing to undo or redo", () => {
+        renderCanvas(createStoreWith(CANONICAL_FLOW));
+
+        expect(screen.getByRole("button", { name: "Desfazer" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Refazer" })).toBeDisabled();
+    });
+
+    it("leaves Ctrl+Z typed in the prompt editor to the text", () => {
+        const store = createStoreWith(EMPTY_FLOW);
+        renderCanvas(store);
+        dropNodeType("agent", { x: 0, y: 0 });
+        const promptEditor = appendPromptEditor();
+
+        fireEvent.keyDown(promptEditor, { key: "z", ctrlKey: true });
+
+        expect(store.getState().graph.nodes).toHaveLength(1);
+        promptEditor.remove();
+    });
+
+    it("arranges the flow with Organizar and undoes the arrangement", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        renderCanvas(store);
+
+        await userEvent.click(screen.getByRole("button", { name: "Organizar" }));
+        await waitFor(() => expect(store.getState().graph).not.toEqual(CANONICAL_FLOW));
+        await userEvent.click(screen.getByRole("button", { name: "Desfazer" }));
+
+        expect(store.getState().graph).toEqual(CANONICAL_FLOW);
+    });
+});
+
+describe("FlowCanvas clipboard", () => {
+    it("pastes a copied map with its nodes under new ids, keeping the edges inside it", () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["review_and_open_pr"]);
+        renderCanvas(store);
+        const clipboard = createClipboard();
+
+        fireEvent.copy(document, { clipboardData: clipboard });
+        fireEvent.paste(document, { clipboardData: clipboard });
+
+        const { graph, selection } = store.getState();
+        const pastedGroup = graph.groups.find((group) => group.id === selection[0]);
+        const pastedNodes = graph.nodes.filter((node) => node.parentGroupId === pastedGroup?.id);
+        const pastedNodeIds = new Set(pastedNodes.map((node) => node.id));
+        expect(pastedGroup).toMatchObject({ kind: "map", label: "Revisar e abrir PR" });
+        expect(pastedNodes.map((node) => node.label)).toEqual(
+            CANONICAL_FLOW.nodes
+                .filter((node) => node.parentGroupId === "review_and_open_pr")
+                .map((node) => node.label),
+        );
+        expect(
+            graph.edges.filter(
+                (edge) => pastedNodeIds.has(edge.from.nodeId) && pastedNodeIds.has(edge.to.nodeId),
+            ),
+        ).toHaveLength(1);
+    });
+
+    it("pastes the last copy made in the editor when the clipboard holds no flow", () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["dev"]);
+        renderCanvas(store);
+
+        fireEvent.copy(document, { clipboardData: createClipboard() });
+        fireEvent.paste(document, { clipboardData: createClipboard({ "text/plain": "olá" }) });
+
+        expect(store.getState().graph.nodes).toHaveLength(CANONICAL_FLOW.nodes.length + 1);
+    });
+
+    it("leaves the trigger out of a paste and says so", async () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        store.getState().select(["trigger", "source"]);
+        renderCanvas(store);
+        const clipboard = createClipboard();
+
+        fireEvent.copy(document, { clipboardData: clipboard });
+        fireEvent.paste(document, { clipboardData: clipboard });
+
+        const { nodes } = store.getState().graph;
+        expect(nodes.filter((node) => node.type === "trigger")).toHaveLength(1);
+        expect(nodes).toHaveLength(CANONICAL_FLOW.nodes.length + 1);
+        expect(await screen.findByText(TRIGGER_NOT_PASTED_NOTICE.title)).toBeInTheDocument();
+    });
+
+    it("duplicates the selected node next to it with Ctrl+D", () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        const original = CANONICAL_FLOW.nodes.find((node) => node.id === "source");
+        store.getState().select(["source"]);
+        renderCanvas(store);
+
+        fireEvent.keyDown(document, { key: "d", ctrlKey: true });
+
+        const { graph, selection } = store.getState();
+        const duplicate = graph.nodes.find((node) => node.id === selection[0]);
+        expect(duplicate).toMatchObject({
+            type: "source",
+            position: {
+                x: (original?.position.x ?? 0) + DUPLICATE_OFFSET_PX,
+                y: (original?.position.y ?? 0) + DUPLICATE_OFFSET_PX,
+            },
+        });
+    });
+});
+
+describe("FlowCanvas shortcuts", () => {
+    it("selects every element with Ctrl+A", () => {
+        const store = createStoreWith(CANONICAL_FLOW);
+        renderCanvas(store);
+
+        fireEvent.keyDown(document, { key: "a", ctrlKey: true });
+
+        expect(store.getState().selection).toHaveLength(
+            CANONICAL_FLOW.nodes.length +
+                CANONICAL_FLOW.edges.length +
+                CANONICAL_FLOW.groups.length,
+        );
+    });
+
+    it("lists the shortcuts when ? is pressed", async () => {
+        renderCanvas(createStoreWith(CANONICAL_FLOW));
+
+        fireEvent.keyDown(document, { key: "?", shiftKey: true });
+
+        const dialog = await screen.findByRole("dialog", { name: "Atalhos do teclado" });
+        expect(within(dialog).getAllByRole("term")).toHaveLength(SHORTCUTS.length);
+    });
+
+    it("lists the shortcuts from the toolbar", async () => {
+        renderCanvas(createStoreWith(CANONICAL_FLOW));
+
+        await userEvent.click(screen.getByRole("button", { name: "Atalhos do teclado" }));
+
+        expect(await screen.findByRole("dialog")).toHaveTextContent("Duplicar a seleção");
+    });
+});
+
 function renderCanvas(store: EditorStore, issuesByTarget: IssuesByTarget = new Map()): void {
     render(
-        <ReactFlowProvider>
-            <FlowCanvas store={store} issuesByTarget={issuesByTarget} />
-        </ReactFlowProvider>,
+        <ToastProvider>
+            <ReactFlowProvider>
+                <FlowCanvas store={store} issuesByTarget={issuesByTarget} />
+            </ReactFlowProvider>
+        </ToastProvider>,
     );
 }
 
@@ -371,5 +550,22 @@ function buildDataTransfer(payload: Record<string, string>): Partial<DataTransfe
         types: Object.keys(payload),
         getData: (format) => payload[format] ?? "",
         dropEffect: "none",
+    };
+}
+
+function appendPromptEditor(): HTMLElement {
+    const promptEditor = document.createElement("div");
+    promptEditor.setAttribute("contenteditable", "true");
+    document.body.append(promptEditor);
+
+    return promptEditor;
+}
+
+function createClipboard(initialContent: Record<string, string> = {}): Partial<DataTransfer> {
+    const content = new Map(Object.entries(initialContent));
+
+    return {
+        setData: (format, text) => content.set(format, text),
+        getData: (format) => content.get(format) ?? "",
     };
 }
