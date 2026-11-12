@@ -32,9 +32,9 @@
 - [x] 4. Test + implement history loading in pages of 2 000 until the end — `src/web/logs/use_node_run_logs.ts`
 - [x] 5. Test + implement incremental loading on `log.appended` with dedupe by seq — `use_node_run_logs.ts`
 - [x] 6. Test + implement the error when the logs cannot be loaded — `use_node_run_logs.ts`
-- [ ] 7. Test + implement the `renderLine` prop of `LogViewer` — `log_viewer.tsx`, `log_line_list.tsx`, `log_line.tsx`
-- [ ] 8. Implement `renderAgentEventLine` — `src/web/logs/event_renderers.tsx`
-- [ ] 9. Implement the log filters — `src/web/logs/log_filters.tsx`
+- [x] 7. Test + implement the `renderLine` prop of `LogViewer` — `log_viewer.tsx`, `log_line_list.tsx`, `log_line.tsx`
+- [x] 8. Implement `renderAgentEventLine` — `src/web/logs/event_renderers.tsx`
+- [x] 9. Implement the log filters — `src/web/logs/log_filters.tsx`
 - [ ] 10. Test (drawer) + implement the Logs tab: events in order, tool call expands — `node_run_logs.tsx`, `node_run_detail.tsx`
 - [ ] 11. Test + implement the filter "Bruto" showing raw lines — `node_run_logs.tsx`
 - [ ] 12. Test + implement the raw download — `node_run_logs.tsx`

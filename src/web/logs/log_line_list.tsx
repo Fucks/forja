@@ -1,7 +1,7 @@
 import type { JSX, RefObject, UIEvent } from "react";
 
 import { LogLine } from "@/web/logs/log_line.js";
-import type { LogLine as LogLineEntry } from "@/web/logs/log_types.js";
+import type { LogLine as LogLineEntry, LogLineRenderer } from "@/web/logs/log_types.js";
 import type { ExpandedLines } from "@/web/logs/use_expanded_lines.js";
 import type { ScrollPosition } from "@/web/logs/use_log_follow.js";
 import type { LogVirtualizer } from "@/web/logs/use_log_virtualizer.js";
@@ -14,6 +14,7 @@ export function LogLineList({
     onScroll,
     searchQuery,
     selectedMatchSeq,
+    renderLine,
 }: {
     lines: LogLineEntry[];
     virtualizer: LogVirtualizer;
@@ -22,6 +23,7 @@ export function LogLineList({
     onScroll: (position: ScrollPosition) => void;
     searchQuery: string;
     selectedMatchSeq: number | null;
+    renderLine: LogLineRenderer;
 }): JSX.Element {
     return (
         <div
@@ -57,6 +59,7 @@ export function LogLineList({
                                 onToggleExpanded={expandedLines.toggle}
                                 searchQuery={searchQuery}
                                 isSelectedMatch={line.seq === selectedMatchSeq}
+                                renderLine={renderLine}
                             />
                         </div>
                     );

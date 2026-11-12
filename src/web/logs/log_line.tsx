@@ -1,12 +1,16 @@
 import { clsx } from "clsx";
 import { ChevronRight, Copy } from "lucide-react";
-import type { JSX, Ref } from "react";
+import type { JSX, ReactNode, Ref } from "react";
 
 import { formatRelativeOffset } from "@/lib/format.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { copyToClipboard, formatLineForClipboard } from "@/web/logs/log_clipboard.js";
 import { HighlightedText } from "@/web/logs/highlighted_text.js";
-import type { LogLine as LogLineEntry, LogLineKind } from "@/web/logs/log_types.js";
+import type {
+    LogLine as LogLineEntry,
+    LogLineKind,
+    LogLineRenderer,
+} from "@/web/logs/log_types.js";
 
 const KIND_TEXT_CLASSES: Record<LogLineKind, string> = {
     text: "text-text",
@@ -25,6 +29,7 @@ export function LogLine({
     onToggleExpanded,
     searchQuery,
     isSelectedMatch,
+    renderLine,
 }: {
     line: LogLineEntry;
     index: number;
@@ -33,7 +38,10 @@ export function LogLine({
     onToggleExpanded: (seq: number) => void;
     searchQuery: string;
     isSelectedMatch: boolean;
+    renderLine: LogLineRenderer;
 }): JSX.Element {
+    const summary = <LineSummary line={line} searchQuery={searchQuery} renderLine={renderLine} />;
+
     return (
         <div
             ref={measureRef}
@@ -49,10 +57,10 @@ export function LogLine({
             <span className="shrink-0 text-muted">{formatRelativeOffset(line.offsetMs)}</span>
             <div className={clsx("min-w-0 flex-1", KIND_TEXT_CLASSES[line.kind])}>
                 {line.detail === undefined ? (
-                    <LineSummary line={line} searchQuery={searchQuery} />
+                    summary
                 ) : (
                     <ExpandableLine
-                        line={line}
+                        summary={summary}
                         detail={line.detail}
                         searchQuery={searchQuery}
                         isExpanded={isExpanded}
@@ -71,13 +79,13 @@ export function LogLine({
 }
 
 function ExpandableLine({
-    line,
+    summary,
     detail,
     searchQuery,
     isExpanded,
     onToggle,
 }: {
-    line: LogLineEntry;
+    summary: ReactNode;
     detail: string;
     searchQuery: string;
     isExpanded: boolean;
@@ -98,7 +106,7 @@ function ExpandableLine({
                         isExpanded && "rotate-90",
                     )}
                 />
-                <LineSummary line={line} searchQuery={searchQuery} />
+                {summary}
             </button>
             {isExpanded && (
                 <pre className="py-1 pl-4.5 break-words whitespace-pre-wrap text-muted">
@@ -112,15 +120,25 @@ function ExpandableLine({
 function LineSummary({
     line,
     searchQuery,
+    renderLine,
 }: {
     line: LogLineEntry;
     searchQuery: string;
+    renderLine: LogLineRenderer;
 }): JSX.Element {
     return (
         <span className="min-w-0 break-words whitespace-pre-wrap">
             {line.kind === "error" && <span className="sr-only">Erro: </span>}
+            {renderLine(line, searchQuery)}
+        </span>
+    );
+}
+
+export function renderLineText(line: LogLineEntry, searchQuery: string): ReactNode {
+    return (
+        <>
             {line.toolName && <span className="mr-2 font-medium text-steel">{line.toolName}</span>}
             <HighlightedText text={line.text} query={searchQuery} />
-        </span>
+        </>
     );
 }

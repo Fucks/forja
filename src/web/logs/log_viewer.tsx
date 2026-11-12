@@ -6,9 +6,10 @@ import { Button } from "@/web/components/ui/button.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { copyToClipboard, formatLinesForClipboard } from "@/web/logs/log_clipboard.js";
+import { renderLineText } from "@/web/logs/log_line.js";
 import { LogLineList } from "@/web/logs/log_line_list.js";
 import { LogToolbar } from "@/web/logs/log_toolbar.js";
-import type { LogLine } from "@/web/logs/log_types.js";
+import type { LogLine, LogLineRenderer } from "@/web/logs/log_types.js";
 import { useExpandedLines } from "@/web/logs/use_expanded_lines.js";
 import { useLogFollow } from "@/web/logs/use_log_follow.js";
 import { useLogSearch } from "@/web/logs/use_log_search.js";
@@ -26,6 +27,7 @@ export interface LogViewerProps {
     onDownloadRaw?: () => void;
     emptyLabel?: string;
     loading?: boolean;
+    renderLine?: LogLineRenderer;
 }
 
 export function LogViewer({
@@ -35,6 +37,7 @@ export function LogViewer({
     onDownloadRaw,
     emptyLabel = DEFAULT_EMPTY_LABEL,
     loading = false,
+    renderLine = renderLineText,
 }: LogViewerProps): JSX.Element {
     const scrollElementRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +103,7 @@ export function LogViewer({
                     onScroll={following.trackScroll}
                     searchQuery={search.query}
                     selectedMatchSeq={search.selectedMatchSeq}
+                    renderLine={renderLine}
                 />
                 {!following.isFollowing && (
                     <GoToEndButton onClick={() => following.setFollowing(true)} />

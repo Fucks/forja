@@ -127,7 +127,10 @@ function useLogUpdates({
             return;
         }
 
-        void reportApiError(loadPagesFrom(nodeRunId, nextSeqRef.current, appendEvents), reportError);
+        void reportApiError(
+            loadPagesFrom(nodeRunId, nextSeqRef.current, appendEvents),
+            reportError,
+        );
     }, [connected, isHistoryComplete, nodeRunId, appendEvents, reportError]);
 }
 
