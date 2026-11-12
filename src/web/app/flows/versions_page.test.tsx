@@ -9,7 +9,7 @@ import {
     updateAgentConfig,
     updateNode,
 } from "@/test/factories/flow_graph_variations.js";
-import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { listSentWrites, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
 
@@ -35,7 +35,7 @@ function fakeVersionsApi({
     versions: FlowVersion[];
     draftGraph?: FlowGraph;
 }): FakeRoutes {
-    const draft: FlowDraft = {
+    let draft: FlowDraft = {
         flowId: FLOW_ID,
         graph: draftGraph,
         revision: 4,
@@ -47,6 +47,10 @@ function fakeVersionsApi({
     };
     for (const version of versions) {
         routes[`GET ${FLOW_API_PATH}/versions/${version.version}`] = () => Response.json(version);
+        routes[`POST ${FLOW_API_PATH}/versions/${version.version}/restore`] = () => {
+            draft = { ...draft, graph: version.graph, revision: draft.revision + 1 };
+            return Response.json(draft);
+        };
     }
 
     return routes;
@@ -140,8 +144,7 @@ describe("VersionsPage", () => {
             );
             renderAppAt(VERSIONS_PATH);
 
-            await user.click(await screen.findByRole("combobox", { name: "Comparar com" }));
-            await user.click(screen.getByRole("option", { name: "Rascunho" }));
+            await chooseComparisonWithDraft(user);
 
             const reviewerChanges = await screen.findByRole("article", { name: "Reviewer" });
             expect(reviewerChanges).toHaveTextContent("config.effort: high → medium");
@@ -185,4 +188,51 @@ describe("VersionsPage", () => {
             expect(await screen.findByText("Nenhuma diferença entre v1 e v2.")).toBeInTheDocument();
         });
     });
+
+    describe("restoring", () => {
+        it("makes the draft equal to the version after the user confirms", async () => {
+            const user = userEvent.setup();
+            const secondGraph = updateAgentConfig(buildCanonicalFlow(), "reviewer", {
+                effort: "medium",
+            });
+            const fetchSpy = stubFetchRoutes(
+                fakeVersionsApi({
+                    versions: [buildVersion(1, buildCanonicalFlow()), buildVersion(2, secondGraph)],
+                }),
+            );
+            renderAppAt(VERSIONS_PATH);
+            await chooseComparisonWithDraft(user);
+
+            await user.click(await screen.findByRole("button", { name: "Restaurar no rascunho" }));
+            const confirmation = screen.getByRole("dialog", { name: "Restaurar v2" });
+            expect(confirmation).toHaveTextContent("substitui o rascunho atual");
+            await user.click(within(confirmation).getByRole("button", { name: "Restaurar" }));
+
+            expect(
+                await screen.findByText("Nenhuma diferença entre v2 e Rascunho."),
+            ).toBeInTheDocument();
+            expect(listSentWrites(fetchSpy)).toEqual([
+                { method: "POST", url: `${FLOW_API_PATH}/versions/2/restore`, body: undefined },
+            ]);
+        });
+
+        it("leaves the draft alone when the user cancels", async () => {
+            const user = userEvent.setup();
+            const fetchSpy = stubFetchRoutes(
+                fakeVersionsApi({ versions: [buildVersion(1, buildCanonicalFlow())] }),
+            );
+            renderAppAt(VERSIONS_PATH);
+
+            await user.click(await screen.findByRole("button", { name: "Restaurar no rascunho" }));
+            await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+            expect(listSentWrites(fetchSpy)).toEqual([]);
+        });
+    });
 });
+
+async function chooseComparisonWithDraft(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+    await user.click(await screen.findByRole("combobox", { name: "Comparar com" }));
+    await user.click(screen.getByRole("option", { name: "Rascunho" }));
+}

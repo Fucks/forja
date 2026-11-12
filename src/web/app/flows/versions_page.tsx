@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router";
 
 import { assertNever } from "@/lib/assert_never.js";
 import type { FlowVersionSummary } from "@/shared/flow_types.js";
+import { RestoreVersionDialog } from "@/web/app/flows/restore_version_dialog.js";
 import { useFlowVersions } from "@/web/app/flows/use_flow_versions.js";
 import {
     DRAFT_LABEL,
@@ -98,6 +99,7 @@ function VersionsWorkspace({
                         previousVersion={previousVersion}
                         onChange={setTarget}
                     />
+                    <RestoreVersionButton flowId={flowId} version={selectedVersion} />
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto">
                     <VersionComparisonResult
@@ -109,6 +111,31 @@ function VersionsWorkspace({
                 </div>
             </section>
         </div>
+    );
+}
+
+function RestoreVersionButton({
+    flowId,
+    version,
+}: {
+    flowId: string;
+    version: number;
+}): JSX.Element {
+    const [isConfirming, setIsConfirming] = useState(false);
+
+    return (
+        <>
+            <Button className="ml-auto" onClick={() => setIsConfirming(true)}>
+                Restaurar no rascunho
+            </Button>
+            {isConfirming && (
+                <RestoreVersionDialog
+                    flowId={flowId}
+                    version={version}
+                    onClose={() => setIsConfirming(false)}
+                />
+            )}
+        </>
     );
 }
 
