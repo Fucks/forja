@@ -3,7 +3,7 @@ import type { JSX } from "react";
 import { Link } from "react-router";
 
 import { formatDateTime } from "@/lib/format.js";
-import type { Approval, ApprovalDecision } from "@/shared/approval_types.js";
+import type { Approval, ApprovalDecision, ApprovalReviewSection } from "@/shared/approval_types.js";
 import { ApprovalStatusBadge } from "@/web/app/approvals/approval_status.js";
 import { DiffViewer } from "@/web/app/approvals/diff_viewer.js";
 import { useApprovalArtifacts, useResolveApproval } from "@/web/app/approvals/use_approvals.js";
@@ -27,7 +27,7 @@ export function ApprovalDetail({
     projectId: string;
     approval: Approval;
 }): JSX.Element {
-    const shows = (section: Approval["show"][number]): boolean => approval.show.includes(section);
+    const asksToShow = (section: ApprovalReviewSection): boolean => approval.show.includes(section);
 
     return (
         <article
@@ -40,9 +40,9 @@ export function ApprovalDetail({
             ) : (
                 <ApprovalOutcome approval={approval} />
             )}
-            {shows("diff") && <ApprovalDiff diff={approval.diff} />}
-            {shows("artifacts") && <ApprovalArtifactsSection approval={approval} />}
-            {shows("logs") && (
+            {asksToShow("diff") && <ApprovalDiff diff={approval.diff} />}
+            {asksToShow("artifacts") && <ApprovalArtifactsSection approval={approval} />}
+            {asksToShow("logs") && (
                 <Link
                     to={nodeRunPath(projectId, approval.runId, approval.nodeRunId)}
                     className="text-sm text-accent underline"
