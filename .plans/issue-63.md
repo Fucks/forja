@@ -40,4 +40,4 @@
 - [x] 12. Test+impl: control bar summary (status, flow · version, duration, pause reason with resume time)
       — `run_control_bar.tsx`
 - [x] 13. Impl: item selector and `RunPage` wiring — `run_item_select.tsx`, `run_page.tsx`
-- [ ] 14. Self-review checklist and feedback loops
+- [x] 14. Self-review checklist and feedback loops

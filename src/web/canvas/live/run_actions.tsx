@@ -32,6 +32,7 @@ export function RunActions({ run }: { run: SerializedRunRecord }): JSX.Element {
                     Pausar
                 </Button>
             )}
+            {/* The usage limit and budget pauses end on their own or by raising the budget. */}
             {isPausedBy(run, "user") && (
                 <Button loading={actions.resume.isPending} onClick={() => actions.resume.mutate()}>
                     <Play aria-hidden className={ACTION_ICON_CLASSES} />
@@ -60,7 +61,6 @@ export function RunActions({ run }: { run: SerializedRunRecord }): JSX.Element {
     );
 }
 
-// The usage limit pause ends by itself, so only the user's own pause can be resumed by hand.
 function isPausedBy(
     run: SerializedRunRecord,
     reason: NonNullable<SerializedRunRecord["pauseReason"]>,

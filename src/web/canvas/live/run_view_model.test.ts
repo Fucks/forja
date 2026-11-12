@@ -216,6 +216,29 @@ describe("applyEvent", () => {
         expect(updated.run).toMatchObject({ status: "SUCCEEDED", finishedAt: EVENT_AT });
     });
 
+    it("runs a reopened run again after it had finished", () => {
+        const finishedRun = {
+            ...buildSerializedRunView().run,
+            status: "FAILED" as const,
+            finishedAt: EVENT_AT,
+        };
+        const view = buildSerializedRunView({ run: finishedRun });
+
+        const updated = applyEvent(
+            view,
+            envelopeOf({
+                type: "run.started",
+                runId: "run-1",
+                projectId: "project-1",
+                flowId: "flow-1",
+                status: "RUNNING",
+            }),
+        );
+
+        expect(updated.run.status).toBe("RUNNING");
+        expect(updated.run.finishedAt).toBeUndefined();
+    });
+
     it("pauses the run with the reason and resume time of run.paused", () => {
         const view = buildSerializedRunView();
 

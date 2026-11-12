@@ -64,19 +64,6 @@ export function aggregateNodeStates(
     return liveStates;
 }
 
-export function describeItem(workItemId: string): string {
-    return `item #${workItemId}`;
-}
-
-// A source node may bring items the run did not start with, so the NodeRuns are listed too.
-export function listRunItems(view: SerializedRunView): string[] {
-    const itemsOfNodeRuns = view.nodeRuns.flatMap((nodeRun) =>
-        nodeRun.workItemId === undefined ? [] : [nodeRun.workItemId],
-    );
-
-    return [...new Set([...view.run.itemIds, ...itemsOfNodeRuns])];
-}
-
 // NodeRuns without an item (the trigger, the source) belong to every item, so the filter keeps them.
 function keepNodeRunsOfItem(
     nodeRuns: SerializedNodeRun[],
@@ -175,6 +162,19 @@ function describeCurrentItems(currentItems: string[]): string {
     }
 
     return formatCount(currentItems.length, ITEM_NOUNS);
+}
+
+export function describeItem(workItemId: string): string {
+    return `item #${workItemId}`;
+}
+
+// A source node may bring items the run did not start with, so the NodeRuns are listed too.
+export function listRunItems(view: SerializedRunView): string[] {
+    const itemsOfNodeRuns = view.nodeRuns.flatMap((nodeRun) =>
+        nodeRun.workItemId === undefined ? [] : [nodeRun.workItemId],
+    );
+
+    return [...new Set([...view.run.itemIds, ...itemsOfNodeRuns])];
 }
 
 export function flowingEdges(view: SerializedRunView): Set<string> {
@@ -307,8 +307,9 @@ function runTimestampsOnEntering(
     status: RunStatusName,
     at: string,
 ): Pick<SerializedRunRecord, "startedAt" | "finishedAt"> {
+    // A retried NodeRun reopens a finished run, which then runs again.
     if (status === "RUNNING") {
-        return { startedAt: run.startedAt ?? at };
+        return { startedAt: run.startedAt ?? at, finishedAt: undefined };
     }
     if (RUN_TERMINAL.has(status)) {
         return { finishedAt: at };

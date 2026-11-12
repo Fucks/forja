@@ -10,7 +10,8 @@ import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
 import { aggregateNodeStates, flowingEdges } from "@/web/canvas/live/run_view_model.js";
 import { NodeLiveContext } from "@/web/canvas/nodes/node_live_context.js";
 
-const NO_REVISION = 0;
+// The editor store holds drafts; the run's graph is a published version and is never saved.
+const NEVER_SAVED = { revision: 0, updatedAt: "" };
 
 export function RunCanvas({
     view,
@@ -40,7 +41,7 @@ function useRunGraphStore(view: SerializedRunView): EditorStore {
 
 function createStoreShowing(flowId: string, graph: FlowGraph): EditorStore {
     const store = createEditorStore();
-    store.getState().load({ flowId, graph, revision: NO_REVISION, updatedAt: "" });
+    store.getState().load({ flowId, graph, ...NEVER_SAVED });
 
     return store;
 }
