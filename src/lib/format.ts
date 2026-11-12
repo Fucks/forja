@@ -22,6 +22,7 @@ const twoDecimals = new Intl.NumberFormat(LOCALE, {
 });
 const twoSignificantDigits = new Intl.NumberFormat(LOCALE, { maximumSignificantDigits: 2 });
 const shortDateTime = new Intl.DateTimeFormat(LOCALE, { dateStyle: "short", timeStyle: "short" });
+const shortTime = new Intl.DateTimeFormat(LOCALE, { timeStyle: "short" });
 
 export function formatDuration(ms: number): string {
     assertNonNegativeFinite(ms);
@@ -75,6 +76,10 @@ export function formatRelativeOffset(ms: number): string {
 
 export function formatDateTime(at: Date): string {
     return shortDateTime.format(at);
+}
+
+export function formatTimeOfDay(at: Date): string {
+    return shortTime.format(at);
 }
 
 export function formatCount(count: number, nouns: { one: string; other: string }): string {

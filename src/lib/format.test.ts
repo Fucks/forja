@@ -3,6 +3,7 @@ import {
     formatDateTime,
     formatDuration,
     formatRelativeOffset,
+    formatTimeOfDay,
     formatTokens,
     formatUsd,
 } from "@/lib/format.js";
@@ -81,6 +82,14 @@ describe("formatRelativeOffset", () => {
 
     it.each([-1, Number.NaN])("rejects %d ms", (ms) => {
         expect(() => formatRelativeOffset(ms)).toThrow(RangeError);
+    });
+});
+
+describe("formatTimeOfDay", () => {
+    it("shows the local hours and minutes", () => {
+        const at = new Date(2026, 5, 2, 15, 5);
+
+        expect(formatTimeOfDay(at)).toBe("15:05");
     });
 });
 
