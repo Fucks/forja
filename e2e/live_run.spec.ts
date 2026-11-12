@@ -1,9 +1,9 @@
 import type { Locator, Page } from "@playwright/test";
 
-import { expect, test } from "./fixtures.js";
+import { createLocalItemOnBoard } from "./board_steps.js";
+import { expect, RUN_TIMEOUT_MS, test } from "./fixtures.js";
 
 const ITEM_TITLES = ["Cardápio em centavos", "Taxa de entrega", "Pausar a loja"];
-const RUN_TIMEOUT_MS = 90_000;
 
 test("follows a run live, from the running Dev node to its logs and the success", async ({
     page,
@@ -11,7 +11,7 @@ test("follows a run live, from the running Dev node to its logs and the success"
 }) => {
     await page.goto(`/projects/${runnableProject.id}/board`);
     for (const title of ITEM_TITLES) {
-        await createLocalItem(page, title);
+        await createLocalItemOnBoard(page, title);
     }
     const itemIds = await runnableProject.prepareItemsToRun();
 
@@ -26,14 +26,6 @@ test("follows a run live, from the running Dev node to its logs and the success"
         timeout: RUN_TIMEOUT_MS,
     });
 });
-
-async function createLocalItem(page: Page, title: string): Promise<void> {
-    await page.getByRole("button", { name: "Novo item" }).click();
-    await page.getByLabel("Título").fill(title);
-    await page.getByRole("button", { name: "Criar item" }).click();
-
-    await expect(page.getByRole("article", { name: title })).toBeVisible();
-}
 
 async function startRunOfDefaultFlow(
     page: Page,

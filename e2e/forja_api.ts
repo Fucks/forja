@@ -9,6 +9,11 @@ export interface PublishedFlowInput {
     graph: FlowGraph;
 }
 
+export interface BoardColumnTriggerInput {
+    flowId: string;
+    columnId: string;
+}
+
 const createdRecordSchema = z.object({ id: z.string() });
 const workItemsSchema = z.array(z.object({ id: z.string(), branch: z.string() }));
 
@@ -40,6 +45,19 @@ export class ForjaApi {
         await this.send("post", `/api/flows/${flowId}/default`);
 
         return flowId;
+    }
+
+    // The dropped item is the one to run, so the trigger takes the items of the event.
+    async createBoardColumnTrigger(
+        projectId: string,
+        { flowId, columnId }: BoardColumnTriggerInput,
+    ): Promise<void> {
+        await this.send("post", `/api/projects/${projectId}/triggers`, {
+            flowId,
+            name: "Soltar na coluna",
+            itemSelection: "event_items",
+            config: { kind: "board_column", columnId },
+        });
     }
 
     async createLocalItem(projectId: string, title: string): Promise<void> {

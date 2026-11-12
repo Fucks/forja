@@ -18,6 +18,7 @@ export interface TemporaryGitRepo {
 
 export interface RunnableProject {
     id: string;
+    flowId: string;
     /**
      * Gives each local item of the project its branch, as an agent of the real runtime would, and
      * returns the ids of the items.
@@ -31,6 +32,9 @@ interface ForjaFixtures {
     projectFlow: PublishedFlowInput;
     runnableProject: RunnableProject;
 }
+
+/** Enough for the simulated agents of the basic factory to finish a few items. */
+export const RUN_TIMEOUT_MS = 90_000;
 
 const BASE_BRANCH = "main";
 const GIT_AUTHOR = ["-c", "user.name=Forja E2E", "-c", "user.email=e2e@forja.local"];
@@ -51,10 +55,11 @@ export const test = base.extend<ForjaFixtures>({
     runnableProject: async ({ gitRepo, forja, projectFlow }, use) => {
         const projectId = await forja.createProject({ name: "Repo E2E", repoPath: gitRepo.path });
         await forja.prepareSimulatedAgents(projectId);
-        await forja.publishDefaultFlow(projectId, projectFlow);
+        const flowId = await forja.publishDefaultFlow(projectId, projectFlow);
 
         await use({
             id: projectId,
+            flowId,
             prepareItemsToRun: async () => {
                 const items = await forja.listWorkItems(projectId);
                 gitRepo.createBranches(items.map((item) => item.branch));
