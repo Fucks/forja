@@ -5,12 +5,16 @@ import { canTransitionRun, RUN_TERMINAL } from "@/engine/run_state.js";
 import { ConflictError, NotFoundError } from "@/server/errors.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
 import type { ArtifactRecord, RunRecord, RunRepository } from "@/server/runs/run_repository.js";
+import { toRunListItem } from "@/server/runs/run_list_item.js";
 import { buildRunView, type RunView } from "@/server/runs/run_view.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import type { Executor } from "@/server/runtime/executor.js";
+import type { TriggerRepository } from "@/server/triggers/trigger_repository.js";
+import type { UsageService } from "@/server/usage/usage_service.js";
 import type {
     ListRunsRequest,
     RaiseRunBudgetRequest,
+    RunListItem,
     StartRunRequest,
 } from "@/shared/run_types.js";
 
@@ -29,7 +33,7 @@ export interface NodeRunDetail {
 export interface RunService {
     /** @throws DomainValidationError when the flow has no published version */
     startRun(projectId: string, request: StartRunRequest): Promise<RunRecord>;
-    listRuns(projectId: string, request: ListRunsRequest): Promise<RunRecord[]>;
+    listRuns(projectId: string, request: ListRunsRequest): Promise<RunListItem[]>;
     getRunView(runId: string): Promise<RunView>;
     /** The run actions throw ConflictError when the run's status does not allow them. */
     pauseRun(runId: string): Promise<void>;
@@ -47,6 +51,8 @@ export interface RunServiceDeps {
     runs: RunRepository;
     flows: FlowService;
     events: EventBus;
+    usage: Pick<UsageService, "forRun">;
+    triggers: Pick<TriggerRepository, "listByProject">;
 }
 
 export function createRunService(deps: RunServiceDeps): RunService {
@@ -54,7 +60,7 @@ export function createRunService(deps: RunServiceDeps): RunService {
 
     return {
         startRun: (projectId, request) => executor.startRun({ projectId, ...request }),
-        listRuns: (projectId, request) => runs.listRuns(projectId, request),
+        listRuns: (projectId, request) => listRuns(deps, projectId, request),
         getRunView: (runId) => getRunView(deps, runId),
         pauseRun: (runId) => pauseRun(deps, runId),
         resumeRun: (runId) => resumeRun(deps, runId),
@@ -64,6 +70,48 @@ export function createRunService(deps: RunServiceDeps): RunService {
         cancelNodeRun: (nodeRunId) => cancelNodeRun(deps, nodeRunId),
         retryNodeRun: (nodeRunId) => retryNodeRun(deps, nodeRunId),
     };
+}
+
+async function listRuns(
+    deps: RunServiceDeps,
+    projectId: string,
+    request: ListRunsRequest,
+): Promise<RunListItem[]> {
+    const [runs, flowNames] = await Promise.all([
+        deps.runs.listRuns(projectId, request),
+        findFlowNames(deps.flows, projectId),
+    ]);
+    const triggerNames = findTriggerNames(deps.triggers, projectId);
+
+    return Promise.all(
+        runs.map(async (run) =>
+            toRunListItem(run, {
+                flowName: flowNames.get(run.flowId) ?? run.flowId,
+                costUsd: await sumRunCostUsd(deps.usage, run.id),
+                triggerName:
+                    run.triggerId === undefined ? undefined : triggerNames.get(run.triggerId),
+            }),
+        ),
+    );
+}
+
+async function findFlowNames(flows: FlowService, projectId: string): Promise<Map<string, string>> {
+    const projectFlows = await flows.list(projectId, { includeArchived: true });
+
+    return new Map(projectFlows.map((flow) => [flow.id, flow.name]));
+}
+
+function findTriggerNames(
+    triggers: RunServiceDeps["triggers"],
+    projectId: string,
+): Map<string, string> {
+    return new Map(triggers.listByProject(projectId).map((trigger) => [trigger.id, trigger.name]));
+}
+
+async function sumRunCostUsd(usage: RunServiceDeps["usage"], runId: string): Promise<number> {
+    const records = await usage.forRun(runId);
+
+    return records.reduce((totalUsd, record) => totalUsd + record.costUsd, 0);
 }
 
 async function getRunView(deps: RunServiceDeps, runId: string): Promise<RunView> {
@@ -78,13 +126,12 @@ async function getRunView(deps: RunServiceDeps, runId: string): Promise<RunView>
 }
 
 async function findFlowName(flows: FlowService, run: RunRecord): Promise<string> {
-    const projectFlows = await flows.list(run.projectId, { includeArchived: true });
-    const flow = projectFlows.find((projectFlow) => projectFlow.id === run.flowId);
-    if (!flow) {
+    const flowName = (await findFlowNames(flows, run.projectId)).get(run.flowId);
+    if (flowName === undefined) {
         throw new NotFoundError(`O fluxo ${run.flowId} não existe.`);
     }
 
-    return flow.name;
+    return flowName;
 }
 
 // Pausing a run paused by the usage limit or the budget hands it over to the user.

@@ -5,6 +5,7 @@ import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { RunState } from "@/engine/run_state.js";
 import type { JsonDates } from "@/engine/scheduler_types.js";
 import { RUN_STATUS_NAMES } from "@/shared/events.js";
+import type { RunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 
 const MAX_ITEMS_PER_RUN = 100;
@@ -55,6 +56,24 @@ export type SerializedRunRecord = JsonDates<RunState> & {
     itemIds: string[];
     failedItemIds: string[];
 };
+
+// A row of the run history, with dates as ISO strings.
+export interface RunListItem {
+    id: string;
+    flowId: string;
+    flowName: string;
+    flowVersion: number;
+    status: RunStatusName;
+    pauseReason?: string;
+    itemCount: number;
+    failedItemCount: number;
+    createdAt: string;
+    startedAt?: string;
+    finishedAt?: string;
+    durationMs?: number;
+    costUsd?: number;
+    triggerName?: string;
+}
 
 export type SerializedNodeRun = JsonDates<NodeRunState>;
 

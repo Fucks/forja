@@ -21,10 +21,10 @@
 
 ## Tasks
 
-- [ ] 1. Test + impl: `listRuns` answers `RunListItem` with flowName, itemCount, failedItemCount, durationMs,
+- [x] 1. Test + impl: `listRuns` answers `RunListItem` with flowName, itemCount, failedItemCount, durationMs,
       costUsd, triggerName — `src/shared/run_types.ts`, `src/server/runs/run_list_item.ts`,
       `src/server/runs/run_service.ts`, `src/server/runs/run_service.test.ts`
-- [ ] 2. Wire the usage service and trigger repository in the routes; route test uses `RunListItem` —
+- [x] 2. Wire the usage service and trigger repository in the routes; route test uses `RunListItem` —
       `src/server/runs/runs_routes.ts`, `src/server/runs/runs_routes.test.ts`
 - [ ] 3. Test: the runs page lists runs with state, flow/version, items, duration, cost and trigger, active on
       top; impl `use_runs.ts`, `runs_table.tsx`, `runs_page.tsx` — `src/web/app/runs/runs_page.test.tsx`
