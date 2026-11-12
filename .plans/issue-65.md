@@ -25,9 +25,9 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `toLogLines` for text, system and offsets — `src/web/logs/to_log_lines.ts`
-- [ ] 2. Test + implement tool_call lines (JSON and non-JSON args) — `to_log_lines.ts`
-- [ ] 3. Test + implement raw lines: tool results collapsed, other raw as muted system — `to_log_lines.ts`, `log_types.ts`
+- [x] 1. Test + implement `toLogLines` for text, system and offsets — `src/web/logs/to_log_lines.ts`
+- [x] 2. Test + implement tool_call lines (JSON and non-JSON args) — `to_log_lines.ts`
+- [x] 3. Test + implement raw lines: tool results collapsed, other raw as muted system — `to_log_lines.ts`, `log_types.ts`
 - [ ] 4. Test + implement history loading in pages of 2 000 until the end — `src/web/logs/use_node_run_logs.ts`
 - [ ] 5. Test + implement incremental loading on `log.appended` with dedupe by seq — `use_node_run_logs.ts`
 - [ ] 6. Test + implement the error when the logs cannot be loaded — `use_node_run_logs.ts`

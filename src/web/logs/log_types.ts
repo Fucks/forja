@@ -7,4 +7,5 @@ export interface LogLine {
     text: string;
     detail?: string;
     toolName?: string;
+    isRawOutput?: boolean;
 }
