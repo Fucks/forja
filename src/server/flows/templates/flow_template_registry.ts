@@ -1,6 +1,7 @@
 import { NotFoundError } from "@/server/errors.js";
 import { basicFactoryTemplate } from "@/server/flows/templates/basic_factory.js";
 import { reviewLoopTemplate } from "@/server/flows/templates/review_loop.js";
+import { sandcastlePipelineTemplate } from "@/server/flows/templates/sandcastle_pipeline.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 
 export interface FlowTemplate {
@@ -10,7 +11,11 @@ export interface FlowTemplate {
     build(): FlowGraph;
 }
 
-export const FLOW_TEMPLATES: FlowTemplate[] = [basicFactoryTemplate, reviewLoopTemplate];
+export const FLOW_TEMPLATES: FlowTemplate[] = [
+    basicFactoryTemplate,
+    reviewLoopTemplate,
+    sandcastlePipelineTemplate,
+];
 
 export function findFlowTemplateOrThrow(templateId: string): FlowTemplate {
     const template = FLOW_TEMPLATES.find((candidate) => candidate.id === templateId);

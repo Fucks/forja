@@ -55,7 +55,7 @@ export function buildManualTrigger(): FlowNode {
     return createTemplateNode("trigger", "trigger", { column: 0 });
 }
 
-export function buildSandcastleIssuesSource(): FlowNode {
+export function buildSandcastleIssuesSource(): NodeOfType<"source"> {
     const source = createTemplateNode("source", "source", { column: 1 });
 
     return {
@@ -116,7 +116,7 @@ export function buildReviewerAgent(spec: AgentNodeSpec): FlowNode {
     };
 }
 
-export function buildOpenPullRequest(cell: CanvasCell): FlowNode {
+export function buildOpenPullRequest(cell: CanvasCell): NodeOfType<"git"> {
     const openPullRequest = createTemplateNode("git", OPEN_PULL_REQUEST_NODE_ID, cell);
 
     return {
@@ -144,7 +144,7 @@ export function buildOutput(spec: {
     label?: string;
     cell: CanvasCell;
     moveItemTo: NonNullable<OutputConfig["moveItemTo"]>;
-}): FlowNode {
+}): NodeOfType<"output"> {
     const output = createTemplateNode("output", spec.id, spec.cell);
 
     return {
