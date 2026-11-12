@@ -1,9 +1,14 @@
 import { screen, within } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { FlowDraft, FlowVersion, FlowVersionSummary } from "@/shared/flow_types.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
-import { updateAgentConfig, updateNode } from "@/test/factories/flow_graph_variations.js";
+import {
+    removeNodes,
+    updateAgentConfig,
+    updateNode,
+} from "@/test/factories/flow_graph_variations.js";
 import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
@@ -118,6 +123,50 @@ describe("VersionsPage", () => {
                 "Seja rigoroso.",
             );
             expect(within(reviewerChanges).getAllByText(/Revise o branch\./)).toHaveLength(1);
+        });
+
+        it("compares the selected version with the draft when asked", async () => {
+            const user = userEvent.setup();
+            stubFetchRoutes(
+                fakeVersionsApi({
+                    versions: [
+                        buildVersion(1, buildCanonicalFlow()),
+                        buildVersion(2, buildCanonicalFlow()),
+                    ],
+                    draftGraph: updateAgentConfig(buildCanonicalFlow(), "reviewer", {
+                        effort: "medium",
+                    }),
+                }),
+            );
+            renderAppAt(VERSIONS_PATH);
+
+            await user.click(await screen.findByRole("combobox", { name: "Comparar com" }));
+            await user.click(screen.getByRole("option", { name: "Rascunho" }));
+
+            const reviewerChanges = await screen.findByRole("article", { name: "Reviewer" });
+            expect(reviewerChanges).toHaveTextContent("config.effort: high → medium");
+        });
+
+        it("compares the first version with the draft, as nothing precedes it", async () => {
+            const user = userEvent.setup();
+            stubFetchRoutes(
+                fakeVersionsApi({
+                    versions: [
+                        buildVersion(1, buildCanonicalFlow()),
+                        buildVersion(2, buildCanonicalFlow()),
+                    ],
+                    draftGraph: removeNodes(buildCanonicalFlow(), ["tl"]),
+                }),
+            );
+            renderAppAt(VERSIONS_PATH);
+
+            await user.click(await screen.findByRole("button", { name: /v1/ }));
+
+            expect(screen.getByRole("combobox", { name: "Comparar com" })).toHaveTextContent(
+                "Rascunho",
+            );
+            const nodeChanges = await screen.findByRole("region", { name: "Nós" });
+            expect(nodeChanges).toHaveTextContent("TL (removido)");
         });
 
         it("shows no differences when the nodes only moved", async () => {
