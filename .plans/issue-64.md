@@ -23,8 +23,8 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `sortNodeRuns` — `node_run_sorting.ts`, `node_run_sorting.test.ts`
-- [ ] 2. Test + implement `describeNodeRun` — same files
+- [x] 1. Test + implement `sortNodeRuns` — `node_run_sorting.ts`, `node_run_sorting.test.ts`
+- [x] 2. Test + implement `describeNodeRun` — same files
 - [ ] 3. Shared types for the NodeRun detail (move ARTIFACT_KINDS) — `src/shared/run_types.ts`, server imports
 - [ ] 4. `JsonView` (collapsible tree, truncation with "ver tudo", copy) — `json_view.tsx`
 - [ ] 5. Test: drawer lists the node's NodeRuns sorted, RUNNING first, with cost — `node_run_drawer.test.tsx`; implement `node_run_drawer.tsx`, `node_run_list.tsx`, `use_node_run_costs.ts`, `drawer_resize_handle.tsx`
