@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
 import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
@@ -188,6 +188,42 @@ describe("UsagePage", () => {
         await userEvent.click(await screen.findByRole("button", { name: "Limpar filtro" }));
 
         expect(screen.queryByText("Filtrando pelo nó dev")).not.toBeInTheDocument();
+    });
+
+    it("shows only today when the period is today", async () => {
+        stubUsageApi();
+        renderAppAt(USAGE_PAGE_PATH);
+
+        await userEvent.click(await screen.findByRole("radio", { name: "Hoje" }));
+
+        expect(await findChartBars()).toEqual(["12/11: 0 de entrada, 0 de saída, US$ 0,00"]);
+    });
+
+    it("shows the days of a custom period", async () => {
+        const firstDaysOfNovember = {
+            from: "2026-11-01T03:00:00.000Z",
+            to: "2026-11-04T03:00:00.000Z",
+        };
+        stubUsageApi({
+            routes: {
+                [usageRoute(firstDaysOfNovember, "day")]: answer([
+                    buildUsageAggregate({ key: "2026-11-02", costUsd: 0.2 }),
+                ]),
+            },
+        });
+        renderAppAt(USAGE_PAGE_PATH);
+        await userEvent.click(await screen.findByRole("radio", { name: "Personalizado" }));
+
+        fireEvent.change(screen.getByLabelText("De"), { target: { value: "2026-11-01" } });
+        fireEvent.change(screen.getByLabelText("Até"), { target: { value: "2026-11-03" } });
+
+        await waitFor(async () =>
+            expect(await findChartBars()).toEqual([
+                "01/11: 0 de entrada, 0 de saída, US$ 0,00",
+                "02/11: 1 mil de entrada, 200 de saída, US$ 0,20",
+                "03/11: 0 de entrada, 0 de saída, US$ 0,00",
+            ]),
+        );
     });
 
     describe("the today card", () => {

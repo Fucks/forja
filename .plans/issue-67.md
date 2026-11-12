@@ -38,7 +38,7 @@
 - [x] 8. Page test + implementation: clicking a node row filters by that node
 - [x] 9. Page test + implementation: "Hoje" card vs daily budget (with and without budget, >80%) —
       `usage_today_card.tsx`
-- [ ] 10. Page test + implementation: custom period
+- [x] 10. Page test + implementation: custom period
 - [ ] 11. Move `addUsage`/`EMPTY_USAGE` to `src/shared/usage_types.ts`
 - [ ] 12. Drawer test + implementation: NodeRun detail shows tokens and cost — `use_node_run_usage.ts`,
       `node_run_list.tsx`, `node_run_drawer.tsx`, `node_run_detail.tsx`
