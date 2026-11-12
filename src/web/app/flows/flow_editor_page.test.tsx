@@ -110,6 +110,23 @@ describe("FlowEditorPage", () => {
         );
     });
 
+    it("exports the published version or the draft from the top bar", async () => {
+        const user = userEvent.setup();
+        stubFetchRoutes(fakeEditorApi({ latestVersion: 2 }));
+        renderAppAt(EDITOR_PATH);
+
+        await user.click(await screen.findByLabelText("Exportar Issues para PR"));
+
+        expect(screen.getByRole("link", { name: "Versão publicada (v2)" })).toHaveAttribute(
+            "href",
+            `/api/flows/${FLOW_ID}/export?version=2`,
+        );
+        expect(screen.getByRole("link", { name: "Rascunho" })).toHaveAttribute(
+            "href",
+            `/api/flows/${FLOW_ID}/export?version=draft`,
+        );
+    });
+
     it("shows the draft as saved when it opens", async () => {
         stubFetchRoutes(fakeEditorApi());
 

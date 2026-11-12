@@ -30,6 +30,6 @@
 - [x] 6. Test + impl: marking default posts and the previous default loses the star — `flows_table.tsx`
 - [x] 7. Test + impl: rename dialog — `rename_flow_dialog.tsx`
 - [x] 8. Test + impl: archive action — `flows_table.tsx`
-- [ ] 9. Test + impl: export links (version and draft) in rows and in the editor top bar —
+- [x] 9. Test + impl: export links (version and draft) in rows and in the editor top bar —
       `export_flow_menu.tsx`, `editor_top_bar.tsx`, `flow_editor_page.tsx`, `flow_editor_page.test.tsx`
-- [ ] 10. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 10. Self-review checklist and feedback loops (typecheck, lint, test)
