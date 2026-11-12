@@ -27,7 +27,7 @@
       `versions_page.test.tsx`
 - [x] 6. Test + implement: diff with previous version shows `config.effort: medium → high` on "Reviewer",
       and "no differences" for position-only change — `version_diff_view.tsx`
-- [ ] 7. Test + implement: prompt changes show a line diff — `version_diff_view.tsx`
+- [x] 7. Test + implement: prompt changes show a line diff — `version_diff_view.tsx`
 - [ ] 8. Test + implement: compare with the draft — `versions_page.tsx`
 - [ ] 9. Test + implement: restore with confirmation posts restore and refreshes the draft — `versions_page.tsx`
 - [ ] 10. "Versões" link in the editor bar — `flow_editor_page.tsx`, `editor_top_bar.tsx`

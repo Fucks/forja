@@ -98,6 +98,28 @@ describe("VersionsPage", () => {
             expect(reviewerChanges).toHaveTextContent("config.effort: medium → high");
         });
 
+        it("shows a changed prompt line by line", async () => {
+            const withPrompt = (prompt: string): FlowGraph =>
+                updateAgentConfig(buildCanonicalFlow(), "reviewer", { prompt });
+            stubFetchRoutes(
+                fakeVersionsApi({
+                    versions: [
+                        buildVersion(1, withPrompt("Revise o branch.\nSeja breve.\nAbra o PR.")),
+                        buildVersion(2, withPrompt("Revise o branch.\nSeja rigoroso.\nAbra o PR.")),
+                    ],
+                }),
+            );
+
+            renderAppAt(VERSIONS_PATH);
+
+            const reviewerChanges = await screen.findByRole("article", { name: "Reviewer" });
+            expect(within(reviewerChanges).getByRole("deletion")).toHaveTextContent("Seja breve.");
+            expect(within(reviewerChanges).getByRole("insertion")).toHaveTextContent(
+                "Seja rigoroso.",
+            );
+            expect(within(reviewerChanges).getAllByText(/Revise o branch\./)).toHaveLength(1);
+        });
+
         it("shows no differences when the nodes only moved", async () => {
             const moved = updateNode(buildCanonicalFlow(), "dev", (node) => ({
                 ...node,
