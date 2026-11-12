@@ -7,28 +7,16 @@ import { assertNever } from "@/lib/assert_never.js";
 import type { FlowVersionSummary } from "@/shared/flow_types.js";
 import { RestoreVersionDialog } from "@/web/app/flows/restore_version_dialog.js";
 import { useFlowVersions } from "@/web/app/flows/use_flow_versions.js";
-import {
-    DRAFT_LABEL,
-    useVersionComparison,
-    versionLabel,
-} from "@/web/app/flows/use_version_comparison.js";
+import { ComparisonTargetPicker } from "@/web/app/flows/comparison_target_picker.js";
+import { useVersionComparison } from "@/web/app/flows/use_version_comparison.js";
 import type { ComparisonTarget } from "@/web/app/flows/use_version_comparison.js";
 import { findLatestVersion, VersionList } from "@/web/app/flows/version_list.js";
 import { VersionDiffView } from "@/web/app/flows/version_diff_view.js";
 import { PageTitle } from "@/web/app/page_title.js";
 import { Button } from "@/web/components/ui/button.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
-import { Field } from "@/web/components/ui/field.js";
-import { Select } from "@/web/components/ui/select.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { flowEditorPath } from "@/web/config/navigation.js";
-
-const COMPARISON_TARGET_FIELD_ID = "comparison-target";
-
-interface ComparisonOption {
-    value: ComparisonTarget;
-    label: string;
-}
 
 export function VersionsPage(): JSX.Element {
     const { projectId = "", flowId = "" } = useParams();
@@ -140,28 +128,6 @@ function RestoreVersionButton({
     );
 }
 
-function ComparisonTargetPicker({
-    target,
-    previousVersion,
-    onChange,
-}: {
-    target: ComparisonTarget;
-    previousVersion: number | undefined;
-    onChange: (target: ComparisonTarget) => void;
-}): JSX.Element {
-    return (
-        <div className="w-64">
-            <Field label="Comparar com" htmlFor={COMPARISON_TARGET_FIELD_ID}>
-                <Select
-                    value={target}
-                    onChange={onChange}
-                    options={listComparisonOptions(previousVersion)}
-                />
-            </Field>
-        </div>
-    );
-}
-
 function VersionComparisonResult(props: {
     flowId: string;
     selectedVersion: number;
@@ -186,18 +152,6 @@ function VersionComparisonResult(props: {
         default:
             return assertNever(comparison);
     }
-}
-
-function listComparisonOptions(previousVersion: number | undefined): ComparisonOption[] {
-    const draftOption: ComparisonOption = { value: "draft", label: DRAFT_LABEL };
-    if (previousVersion === undefined) {
-        return [draftOption];
-    }
-
-    return [
-        { value: "previous", label: `Versão anterior (${versionLabel(previousVersion)})` },
-        draftOption,
-    ];
 }
 
 function findPreviousVersion(
