@@ -1,5 +1,5 @@
 import type { UseQueryResult } from "@tanstack/react-query";
-import { CircleAlert, X } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import { useState } from "react";
 import type { JSX } from "react";
 import { useParams } from "react-router";
@@ -7,12 +7,13 @@ import { useParams } from "react-router";
 import { systemClock } from "@/lib/clock.js";
 import { localDayOf } from "@/lib/local_day.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
+import type { UsageGroupBy } from "@/shared/usage_types.js";
+import type { ApiError } from "@/web/api/api_client.js";
 import { PageTitle } from "@/web/app/page_title.js";
 import { useProjectSettings } from "@/web/app/projects/use_settings.js";
-import type { ApiError } from "@/web/api/api_client.js";
 import { useUsage } from "@/web/app/usage/use_usage.js";
 import type { UsageRow } from "@/web/app/usage/use_usage.js";
-import { UsageFiltersBar } from "@/web/app/usage/usage_filters_bar.js";
+import { NodeFilterNotice, UsageFiltersBar } from "@/web/app/usage/usage_filters_bar.js";
 import type { UsageFilters } from "@/web/app/usage/usage_filters_bar.js";
 import { USAGE_GROUP_LABELS } from "@/web/app/usage/usage_group_labels.js";
 import {
@@ -25,7 +26,6 @@ import type { UsagePeriod } from "@/web/app/usage/usage_period.js";
 import { UsageChart } from "@/web/app/usage/usage_chart.js";
 import { UsageTable } from "@/web/app/usage/usage_table.js";
 import { UsageTodayCard } from "@/web/app/usage/usage_today_card.js";
-import { Button } from "@/web/components/ui/button.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 
@@ -106,24 +106,6 @@ function UsageDashboard({
     );
 }
 
-function NodeFilterNotice({
-    nodeId,
-    onClear,
-}: {
-    nodeId: string;
-    onClear: () => void;
-}): JSX.Element {
-    return (
-        <div className="flex items-center gap-2 text-sm">
-            <span>Filtrando pelo nó {nodeId}</span>
-            <Button size="sm" onClick={onClear}>
-                <X aria-hidden className="size-3.5" />
-                Limpar filtro
-            </Button>
-        </div>
-    );
-}
-
 function UsageChartSection({
     projectId,
     period,
@@ -177,7 +159,7 @@ function UsageTableContent({
     onSelectNode,
 }: {
     query: UseQueryResult<UsageRow[], ApiError>;
-    groupBy: UsageFilters["groupBy"];
+    groupBy: UsageGroupBy;
     onSelectNode: (nodeId: string) => void;
 }): JSX.Element {
     if (query.isPending) {

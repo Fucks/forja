@@ -1,9 +1,11 @@
+import { X } from "lucide-react";
 import type { JSX } from "react";
 
 import { USAGE_GROUP_BYS } from "@/shared/usage_types.js";
 import type { UsageGroupBy } from "@/shared/usage_types.js";
 import { USAGE_GROUP_LABELS } from "@/web/app/usage/usage_group_labels.js";
 import type { DayRange, UsagePeriodChoice } from "@/web/app/usage/usage_period.js";
+import { Button } from "@/web/components/ui/button.js";
 import { Field } from "@/web/components/ui/field.js";
 import { Input } from "@/web/components/ui/input.js";
 import { SegmentedControl } from "@/web/components/ui/segmented_control.js";
@@ -61,6 +63,24 @@ export function UsageFiltersBar({
                     options={GROUP_BY_OPTIONS}
                 />
             </Field>
+        </div>
+    );
+}
+
+export function NodeFilterNotice({
+    nodeId,
+    onClear,
+}: {
+    nodeId: string;
+    onClear: () => void;
+}): JSX.Element {
+    return (
+        <div className="flex items-center gap-2 text-sm">
+            <span>Filtrando pelo nó {nodeId}</span>
+            <Button size="sm" onClick={onClear}>
+                <X aria-hidden className="size-3.5" />
+                Limpar filtro
+            </Button>
         </div>
     );
 }

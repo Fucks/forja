@@ -137,10 +137,12 @@ function BarDetails({ bar }: { bar: DailyBar }): JSX.Element {
 }
 
 function describeBar(bar: DailyBar): string {
+    const day = formatCalendarDay(bar.day);
     const input = formatTokens(bar.inputTokens);
     const output = formatTokens(bar.outputTokens);
+    const cost = formatUsd(bar.costUsd);
 
-    return `${formatCalendarDay(bar.day)}: ${input} de entrada, ${output} de saída, ${formatUsd(bar.costUsd)}`;
+    return `${day}: ${input} de entrada, ${output} de saída, ${cost}`;
 }
 
 function heightPercentOf(tokens: number, maxTokens: number): string {

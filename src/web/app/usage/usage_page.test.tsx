@@ -69,6 +69,14 @@ async function findTableRows(tableName: string): Promise<string[][]> {
     );
 }
 
+async function findChartBars(): Promise<(string | null)[]> {
+    const chart = await screen.findByRole("list", { name: "Tokens por dia" });
+
+    return within(chart)
+        .getAllByRole("listitem")
+        .map((bar) => bar.getAttribute("aria-label"));
+}
+
 describe("UsagePage", () => {
     beforeEach(() => {
         vi.useFakeTimers({ toFake: ["Date"] });
@@ -265,7 +273,7 @@ describe("UsagePage", () => {
             expect(within(card).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "85");
         });
 
-        it("shows the spending of today without a comparison when there is no daily budget", async () => {
+        it("shows the spending of today alone when there is no daily budget", async () => {
             stubUsageApi({
                 routes: {
                     [usageRoute(TODAY, "day")]: answer([
@@ -283,11 +291,3 @@ describe("UsagePage", () => {
         });
     });
 });
-
-async function findChartBars(): Promise<(string | null)[]> {
-    const chart = await screen.findByRole("list", { name: "Tokens por dia" });
-
-    return within(chart)
-        .getAllByRole("listitem")
-        .map((bar) => bar.getAttribute("aria-label"));
-}
