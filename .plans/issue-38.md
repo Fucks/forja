@@ -36,4 +36,4 @@
 - [x] 7. Clipboard hook (copy/paste/duplicate events + toast) — `use_canvas_clipboard.ts`
 - [x] 8. Editor shortcuts hook + shortcuts dialog — `use_editor_shortcuts.ts`, `shortcuts_dialog.tsx`
 - [x] 9. Canvas wiring: toolbar (undo/redo/Organizar/atalhos), shortcuts, clipboard; canvas tests — `flow_canvas.tsx`, `use_auto_layout.ts`, `flow_canvas.test.tsx`
-- [ ] 10. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 10. Self-review checklist and feedback loops (typecheck, lint, test)
