@@ -14,7 +14,6 @@ import {
     keepNodeRunsOfLatestRunPerItem,
 } from "@/server/runs/run_repository.js";
 import type {
-    ArtifactKind,
     ArtifactRecord,
     ListRunsOptions,
     RunRecord,
@@ -31,6 +30,7 @@ import {
     toRunRow,
     toRunStateColumns,
 } from "@/server/runs/run_rows.js";
+import type { ArtifactKind } from "@/shared/run_types.js";
 
 const NODE_RUN_INSERTION_ORDER = sql`${nodeRuns}.rowid`;
 const ARTIFACT_INSERTION_ORDER = sql`${artifacts}.rowid`;

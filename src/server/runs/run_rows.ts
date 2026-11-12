@@ -5,9 +5,9 @@ import type { NodeRunState } from "@/engine/node_run_state.js";
 import { RUN_PAUSE_REASONS } from "@/engine/run_state.js";
 import type { RunState } from "@/engine/run_state.js";
 import type { ArtifactRow, NodeRunRow, RunRow } from "@/server/db/schema/runs.js";
-import { ARTIFACT_KINDS } from "@/server/runs/run_repository.js";
 import type { ArtifactRecord, RunRecord } from "@/server/runs/run_repository.js";
 import { NODE_RUN_STATUS_NAMES, RUN_STATUS_NAMES } from "@/shared/events.js";
+import { ARTIFACT_KINDS } from "@/shared/run_types.js";
 
 const runStatusSchema = z.enum(RUN_STATUS_NAMES);
 const nodeRunStatusSchema = z.enum(NODE_RUN_STATUS_NAMES);

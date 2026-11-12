@@ -7,6 +7,10 @@ import type { JsonDates } from "@/engine/scheduler_types.js";
 import { RUN_STATUS_NAMES } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 
+export const ARTIFACT_KINDS = ["text", "json", "branch", "pr_url"] as const;
+
+export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];
+
 const MAX_ITEMS_PER_RUN = 100;
 const DEFAULT_RUNS_PAGE_SIZE = 50;
 const MAX_RUNS_PAGE_SIZE = 100;
@@ -64,4 +68,19 @@ export interface SerializedRunView {
     groups: Record<string, MapProgress>;
     graph: FlowGraph;
     lastEventId: number;
+}
+
+export interface SerializedArtifact {
+    id: string;
+    nodeRunId: string;
+    runId: string;
+    name: string;
+    kind: ArtifactKind;
+    value: unknown;
+    createdAt: string;
+}
+
+export interface SerializedNodeRunDetail {
+    nodeRun: SerializedNodeRun;
+    artifacts: SerializedArtifact[];
 }

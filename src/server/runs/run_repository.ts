@@ -1,10 +1,7 @@
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { RunState } from "@/engine/run_state.js";
 import type { RunStatusName } from "@/shared/events.js";
-
-export const ARTIFACT_KINDS = ["text", "json", "branch", "pr_url"] as const;
-
-export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];
+import type { ArtifactKind, SerializedArtifact } from "@/shared/run_types.js";
 
 export const ACTIVE_RUN_STATUSES: readonly RunStatusName[] = ["QUEUED", "RUNNING", "PAUSED"];
 
@@ -14,15 +11,8 @@ export interface RunRecord extends RunState {
     failedItemIds: string[];
 }
 
-export interface ArtifactRecord {
-    id: string;
-    nodeRunId: string;
-    runId: string;
-    name: string;
-    kind: ArtifactKind;
-    value: unknown;
-    createdAt: string;
-}
+// An artifact holds only JSON, so the API sends the record as it is stored.
+export type ArtifactRecord = SerializedArtifact;
 
 export interface RunTransition {
     // The engine reports map failures as failedItems; when set, they replace failedItemIds.
