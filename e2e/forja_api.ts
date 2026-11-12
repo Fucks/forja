@@ -9,6 +9,11 @@ export interface PublishedFlowInput {
     graph: FlowGraph;
 }
 
+export interface StartRunInput {
+    flowId: string;
+    itemIds: string[];
+}
+
 export interface BoardColumnTriggerInput {
     flowId: string;
     columnId: string;
@@ -62,6 +67,11 @@ export class ForjaApi {
 
     async createLocalItem(projectId: string, title: string): Promise<void> {
         await this.send("post", `/api/projects/${projectId}/work-items`, { title });
+    }
+
+    async startRun(projectId: string, run: StartRunInput): Promise<string> {
+        const started = await this.send("post", `/api/projects/${projectId}/runs`, run);
+        return createdRecordSchema.parse(started).id;
     }
 
     async listWorkItems(projectId: string): Promise<CreatedWorkItem[]> {
