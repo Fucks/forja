@@ -26,9 +26,9 @@
 ## Tasks
 
 - [x] 1. Refactor: move map progress to `src/engine/map_progress.ts`, `run_view.ts` uses it
-- [ ] 2. Test+impl: node status and counters per node — `run_view_model.ts`
-- [ ] 3. Test+impl: badge with current items and group progress from the view — `run_view_model.ts`
-- [ ] 4. Test+impl: filter by item (node states and map progress) — `run_view_model.ts`
+- [x] 2. Test+impl: node status and counters per node — `run_view_model.ts`
+- [x] 3. Test+impl: badge with current items and group progress from the view — `run_view_model.ts`
+- [x] 4. Test+impl: filter by item (node states and map progress) — `run_view_model.ts`
 - [ ] 5. Test+impl: `applyEvent` for node_run.updated, group.progress, run.* — `run_view_model.ts`
 - [ ] 6. Test+impl: `flowingEdges` — `run_view_model.ts`
 - [ ] 7. Test+impl: `useLiveRun` loads the view and applies events — `use_live_run.ts`
