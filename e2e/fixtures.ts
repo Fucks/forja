@@ -36,6 +36,7 @@ interface ForjaFixtures {
 /** Enough for the simulated agents of the basic factory to finish a few items. */
 export const RUN_TIMEOUT_MS = 90_000;
 
+const PROJECT_NAME = "Repo E2E";
 const BASE_BRANCH = "main";
 const GIT_AUTHOR = ["-c", "user.name=Forja E2E", "-c", "user.email=e2e@forja.local"];
 
@@ -53,7 +54,7 @@ export const test = base.extend<ForjaFixtures>({
     projectFlow: [localBasicFactoryFlow(), { option: true }],
 
     runnableProject: async ({ gitRepo, forja, projectFlow }, use) => {
-        const projectId = await forja.createProject({ name: "Repo E2E", repoPath: gitRepo.path });
+        const projectId = await forja.createProject({ name: PROJECT_NAME, repoPath: gitRepo.path });
         await forja.prepareSimulatedAgents(projectId);
         const flowId = await forja.publishDefaultFlow(projectId, projectFlow);
 

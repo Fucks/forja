@@ -125,5 +125,6 @@ async function readJsonBody(response: APIResponse): Promise<unknown> {
         return undefined;
     }
 
-    return JSON.parse(text) as unknown;
+    const body: unknown = JSON.parse(text);
+    return body;
 }

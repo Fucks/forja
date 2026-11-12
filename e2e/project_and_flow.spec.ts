@@ -4,6 +4,9 @@ import { expect, test } from "./fixtures.js";
 
 const PROJECT_NAME = "Repo E2E";
 const FLOW_NAME = "Fábrica E2E";
+const DEVELOPER_NODE_LABEL = "Dev";
+const DEVELOP_GROUP_LABEL = "Desenvolver";
+const CONCURRENCY_OF_TWO_SUMMARY = "até 2 itens ao mesmo tempo";
 
 test("registers the repository and publishes v1 of a flow made from the basic factory", async ({
     page,
@@ -19,8 +22,8 @@ test("registers the repository and publishes v1 of a flow made from the basic fa
     await page.reload();
     const developerModelSection = await openModelSectionOfDeveloper(page);
     await expect(developerModelSection.getByRole("radio", { name: "max" })).toBeChecked();
-    const developGroupInspector = await openInspectorOf(page, "Desenvolver");
-    await expect(developGroupInspector.getByText("até 2 itens ao mesmo tempo")).toBeVisible();
+    const developGroupInspector = await openInspectorOf(page, DEVELOP_GROUP_LABEL);
+    await expect(developGroupInspector.getByText(CONCURRENCY_OF_TWO_SUMMARY)).toBeVisible();
 });
 
 async function registerProject(page: Page, repoPath: string): Promise<void> {
@@ -49,18 +52,18 @@ async function setDeveloperEffortToMax(page: Page): Promise<void> {
 }
 
 async function openModelSectionOfDeveloper(page: Page): Promise<Locator> {
-    const inspector = await openInspectorOf(page, "Dev");
+    const inspector = await openInspectorOf(page, DEVELOPER_NODE_LABEL);
     await inspector.getByText("Modelo e esforço").click();
 
     return inspector;
 }
 
 async function lowerDevelopGroupConcurrencyToTwo(page: Page): Promise<void> {
-    const inspector = await openInspectorOf(page, "Desenvolver");
+    const inspector = await openInspectorOf(page, DEVELOP_GROUP_LABEL);
     await inspector.getByRole("slider", { name: "Concorrência" }).focus();
     await page.keyboard.press("ArrowLeft");
 
-    await expect(inspector.getByText("até 2 itens ao mesmo tempo")).toBeVisible();
+    await expect(inspector.getByText(CONCURRENCY_OF_TWO_SUMMARY)).toBeVisible();
 }
 
 async function publishFirstVersion(page: Page): Promise<void> {
