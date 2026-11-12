@@ -18,7 +18,11 @@ import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 export const ITEM_OUTCOME_ARTIFACT = "item_outcome";
 
 const reasonSchema = z.string().trim().min(1).optional().catch(undefined);
-const explainedInputSchema = z.object({ reason: reasonSchema, notes: reasonSchema });
+const explainedInputSchema = z.object({
+    reason: reasonSchema,
+    notes: reasonSchema,
+    failureSummary: reasonSchema,
+});
 
 export interface OutputExecutorDeps {
     runs: RunRepository;
@@ -105,7 +109,8 @@ async function findPrUrlOfNodeRuns(
     return findPrUrl(artifacts);
 }
 
-// A review that sends the item to a human usually explains itself in `notes` (or `reason`).
+// A review that sends the item to a human usually explains itself in `notes` (or `reason`);
+// checks that failed explain themselves in `failureSummary`.
 function findReason(inputs: Record<string, unknown>): string | undefined {
     for (const input of Object.values(inputs)) {
         const reason = reasonFieldOf(input);
@@ -123,7 +128,7 @@ function reasonFieldOf(input: unknown): string | undefined {
         return undefined;
     }
 
-    return parsed.data.reason ?? parsed.data.notes;
+    return parsed.data.reason ?? parsed.data.notes ?? parsed.data.failureSummary;
 }
 
 function buildOutputResult(config: OutputConfig): NodeExecutionResult {

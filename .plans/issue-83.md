@@ -30,8 +30,8 @@
 - [x] 2. Implement commit count in `executeAgentNode` — `src/server/runtime/executors/agent_executor.ts`
 - [x] 3. Test: `bodyFrom` reads a path inside an input — `src/server/runtime/executors/git_executor.test.ts`
 - [x] 4. Implement `bodyFrom` as a path — `src/server/runtime/executors/git_executor.ts`
-- [ ] 5. Test: the needs-human comment uses `failureSummary` as reason — `src/server/runtime/executors/deterministic_executors.test.ts` (or output tests)
-- [ ] 6. Implement `failureSummary` reason — `src/server/runtime/executors/output_executor.ts`
+- [x] 5. Test: the needs-human comment uses `failureSummary` as reason — `src/server/runtime/executors/deterministic_executors.test.ts` (or output tests)
+- [x] 6. Implement `failureSummary` reason — `src/server/runtime/executors/output_executor.ts`
 - [ ] 7. Adapted prompts `sandcastle_implement.md`, `sandcastle_review.md`, `sandcastle_evidence.md` + `TemplatePromptName`
 - [ ] 8. Test: template is listed and publishes without errors; structure (nodes, concurrency 1, configs) — `sandcastle_pipeline.test.ts`, `flow_templates.test.ts`
 - [ ] 9. Implement the template and register it — `sandcastle_pipeline.ts`, `flow_template_registry.ts`

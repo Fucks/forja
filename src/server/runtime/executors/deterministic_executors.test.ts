@@ -251,6 +251,25 @@ describe("deterministic executors", () => {
             ]);
         });
 
+        it("comments with the summary of the checks that failed", async () => {
+            const failedEvidence = {
+                checksPassed: false,
+                failureSummary: "npm run test falhou em 2 testes",
+                body: "",
+            };
+            const context = buildOutputContext(
+                { moveItemTo: "needs_human", commentOnIssue: true },
+                { inputs: { evidence: failedEvidence } },
+            );
+
+            await executeOutput(context);
+
+            expect(commentBodies()).toEqual([
+                `Forja: run ${RUN_ID} concluída — item precisa de revisão humana ` +
+                    "(npm run test falhou em 2 testes).",
+            ]);
+        });
+
         it("comments only that the run finished when there is no pull request", async () => {
             await executeOutput(buildOutputContext({ commentOnIssue: true }));
 
