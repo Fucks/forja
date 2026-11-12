@@ -1,15 +1,23 @@
 import { diffFlowGraphs } from "@/engine/graph_diff.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
-import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import { buildCanonicalFlow, connect } from "@/test/factories/flow_graph_factory.js";
 import {
+    addEdges,
+    addGroups,
     addNodes,
+    buildMapGroup,
+    findEdge,
+    removeEdges,
+    removeGroups,
     removeNodes,
     updateAgentConfig,
+    updateGroup,
     updateNode,
 } from "@/test/factories/flow_graph_variations.js";
 
 const NEW_NODE_POSITION = { x: 900, y: 900 };
+const DEV_TO_REVIEWER_EDGE_ID = "dev.summary->reviewer.context";
 
 function findNode(graph: FlowGraph, nodeId: string): FlowNode {
     const node = graph.nodes.find((candidate) => candidate.id === nodeId);
@@ -18,6 +26,15 @@ function findNode(graph: FlowGraph, nodeId: string): FlowNode {
     }
 
     return node;
+}
+
+function findMapConcurrency(graph: FlowGraph, groupId: string): number {
+    const group = graph.groups.find((candidate) => candidate.id === groupId);
+    if (group?.kind !== "map") {
+        throw new Error(`Map group ${groupId} not found`);
+    }
+
+    return group.config.concurrency;
 }
 
 describe("diffFlowGraphs", () => {
@@ -131,6 +148,72 @@ describe("diffFlowGraphs", () => {
                     path: "outputs",
                     before: developerOutputs,
                     after: [...developerOutputs, extraOutput],
+                },
+            ]);
+        });
+    });
+    describe("edges", () => {
+        it("lists new and dropped connections", () => {
+            const before = buildCanonicalFlow();
+            const newEdge = connect(["tl", "summary"], ["reviewer", "context"]);
+            const after = addEdges(removeEdges(before, [DEV_TO_REVIEWER_EDGE_ID]), [newEdge]);
+
+            const diff = diffFlowGraphs(before, after);
+
+            expect(diff.addedEdges).toEqual([newEdge]);
+            expect(diff.removedEdges).toEqual([findEdge(before, DEV_TO_REVIEWER_EDGE_ID)]);
+        });
+
+        it("treats an edge re-created with another id as the same connection", () => {
+            const before = buildCanonicalFlow();
+            const recreated = { ...findEdge(before, DEV_TO_REVIEWER_EDGE_ID), id: "e_novo" };
+            const after = addEdges(removeEdges(before, [DEV_TO_REVIEWER_EDGE_ID]), [recreated]);
+
+            const diff = diffFlowGraphs(before, after);
+
+            expect(diff.addedEdges).toEqual([]);
+            expect(diff.removedEdges).toEqual([]);
+        });
+    });
+
+    describe("groups", () => {
+        it("lists added and removed groups", () => {
+            const before = buildCanonicalFlow();
+            const batchGroup = buildMapGroup("batch");
+            const after = addGroups(removeGroups(before, ["specify"]), [batchGroup]);
+
+            const diff = diffFlowGraphs(before, after);
+
+            expect(diff.addedGroups).toEqual([batchGroup]);
+            expect(diff.removedGroups.map((group) => group.id)).toEqual(["specify"]);
+        });
+
+        it("ignores groups that were only moved or resized", () => {
+            const after = updateGroup(buildCanonicalFlow(), "develop", (group) => ({
+                ...group,
+                position: { x: group.position.x + 10, y: group.position.y + 10 },
+                size: { width: group.size.width * 2, height: group.size.height * 2 },
+            }));
+
+            const diff = diffFlowGraphs(buildCanonicalFlow(), after);
+
+            expect(diff.changedGroups).toEqual([]);
+        });
+
+        it("reports a changed group config by its path", () => {
+            const after = updateGroup(buildCanonicalFlow(), "develop", (group) =>
+                group.kind === "map"
+                    ? { ...group, config: { ...group.config, concurrency: 4 } }
+                    : group,
+            );
+            const beforeConcurrency = findMapConcurrency(buildCanonicalFlow(), "develop");
+
+            const diff = diffFlowGraphs(buildCanonicalFlow(), after);
+
+            expect(diff.changedGroups).toEqual([
+                {
+                    groupId: "develop",
+                    changes: [{ path: "config.concurrency", before: beforeConcurrency, after: 4 }],
                 },
             ]);
         });

@@ -20,8 +20,8 @@
 
 - [x] 1. Test + implement: added/removed/changed nodes, position ignored — `src/engine/graph_diff.ts`,
       `src/engine/field_changes.ts`, `src/engine/graph_diff.test.ts`
-- [ ] 2. Test + implement: added/removed edges matched by connection — `src/engine/graph_diff.ts`
-- [ ] 3. Test + implement: added/removed/changed groups, position and size ignored — `src/engine/graph_diff.ts`
+- [x] 2. Test + implement: added/removed edges matched by connection — `src/engine/graph_diff.ts`
+- [x] 3. Test + implement: added/removed/changed groups, position and size ignored — `src/engine/graph_diff.ts`
 - [ ] 4. Hooks `useFlowVersions`, `useSavedFlowDraft`, `useRestoreVersion` — `use_flow_versions.ts`
 - [ ] 5. Test + implement: versions page lists versions (number, date, note) — `versions_page.tsx`,
       `versions_page.test.tsx`
