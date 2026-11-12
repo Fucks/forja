@@ -27,7 +27,7 @@
 - [x] 4. Test + implement `prUrl` and `spec` — `item_timeline.ts`, `src/engine/board_columns.ts`
 - [x] 5. Route `GET /api/work-items/:id/timeline` + route test — `work_items_routes.ts`, `work_items_routes.test.ts`
 - [x] 6. Run page opens the NodeRun given by `?nodeRun=` — `navigation.ts`, `run_page.tsx`, `run_canvas.tsx`, `node_run_drawer.tsx`, `run_canvas.test.tsx`
-- [ ] 7. Test + implement drawer header, description, blockers, spec, timeline (entry links to run with NodeRun) — `work_item_drawer.tsx`, `item_timeline.tsx`, `use_board.ts`, `work_item_drawer.test.tsx`
-- [ ] 8. Test + implement manual column actions — `work_item_drawer.tsx`, `use_board.ts`
+- [x] 7. Test + implement drawer header, description, blockers, spec, timeline (entry links to run with NodeRun) — `work_item_drawer.tsx`, `item_timeline.tsx`, `use_board.ts`, `work_item_drawer.test.tsx`
+- [x] 8. Test + implement manual column actions — `work_item_drawer.tsx`, `use_board.ts`
 - [ ] 9. Board opens the drawer on card click; moving to "Precisa de humano" updates the card — `board_view.tsx`, `work_item_card.tsx`, `board_view.test.tsx`
 - [ ] 10. Self-review checklist and feedback loops

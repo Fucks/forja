@@ -40,7 +40,7 @@ function CurrentStep({ card }: { card: BoardCard }): JSX.Element | null {
     );
 }
 
-function PullRequestLink({ url }: { url: string }): JSX.Element {
+export function PullRequestLink({ url }: { url: string }): JSX.Element {
     return (
         <a href={url} target="_blank" rel="noreferrer" aria-label="Pull request">
             <GitPullRequest size={PR_ICON_SIZE_PX} aria-hidden="true" className="text-steel" />
@@ -48,6 +48,6 @@ function PullRequestLink({ url }: { url: string }): JSX.Element {
     );
 }
 
-function itemReference(item: WorkItem): string {
+export function itemReference(item: WorkItem): string {
     return item.number === undefined ? "local" : `#${item.number}`;
 }

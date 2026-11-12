@@ -72,7 +72,10 @@ function NodeRunRow({
 }
 
 // The live events do not carry the times, so a NodeRun they created shows its duration on reload.
-function formatNodeRunDuration({ startedAt, finishedAt }: SerializedNodeRun): string {
+export function formatNodeRunDuration({
+    startedAt,
+    finishedAt,
+}: Pick<SerializedNodeRun, "startedAt" | "finishedAt">): string {
     if (startedAt === undefined || finishedAt === undefined) {
         return NO_VALUE;
     }
