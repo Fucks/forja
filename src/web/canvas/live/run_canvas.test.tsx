@@ -79,6 +79,22 @@ describe("RunCanvas node drawer", () => {
         expect(rows[0]).toHaveTextContent("item #4 · tentativa 1");
     });
 
+    it("opens the drawer with the NodeRun given to open already selected", async () => {
+        stubFetchRoutes({ "GET /api/runs/run-1/usage": () => Response.json([]) });
+        const view = viewWithNodeRuns([
+            { nodeId: "tl", workItemId: "1", status: "SUCCEEDED" },
+            { nodeId: "dev", workItemId: "1", status: "SUCCEEDED" },
+            { nodeId: "dev", workItemId: "2", status: "RUNNING" },
+        ]);
+
+        renderWithQueryClient(<RunCanvas view={view} openNodeRunId="node-run-1" />);
+
+        const drawer = await screen.findByRole("dialog", { name: DEVELOPER_LABEL });
+        expect(within(drawer).getByRole("button", { pressed: true })).toHaveTextContent(
+            "item #1 · tentativa 1",
+        );
+    });
+
     it("opens nothing when a group is clicked", () => {
         renderWithQueryClient(<RunCanvas view={buildSerializedRunView()} />);
 

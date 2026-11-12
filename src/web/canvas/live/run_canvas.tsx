@@ -14,18 +14,25 @@ import { NodeLiveContext } from "@/web/canvas/nodes/node_live_context.js";
 // The editor store holds drafts; the run's graph is a published version and is never saved.
 const NEVER_SAVED = { revision: 0, updatedAt: "" };
 
+interface DrawerTarget {
+    nodeId: string;
+    nodeRunId?: string;
+}
+
 export function RunCanvas({
     view,
     filterItemId,
+    openNodeRunId,
 }: {
     view: SerializedRunView;
     filterItemId?: string;
+    openNodeRunId?: string;
 }): JSX.Element {
     const store = useRunGraphStore(view);
     const liveStates = useMemo(() => aggregateNodeStates(view, filterItemId), [view, filterItemId]);
     const flowingEdgeIds = useMemo(() => flowingEdges(view), [view]);
-    const [clickedNodeId, setClickedNodeId] = useState<string>();
-    const openNode = findFlowNode(view.graph, clickedNodeId);
+    const [drawerTarget, setDrawerTarget] = useState(() => drawerTargetOf(view, openNodeRunId));
+    const openNode = findFlowNode(view.graph, drawerTarget?.nodeId);
 
     return (
         <NodeLiveContext.Provider value={liveStates}>
@@ -34,18 +41,31 @@ export function RunCanvas({
                     readOnly
                     store={store}
                     flowingEdgeIds={flowingEdgeIds}
-                    onNodeClick={setClickedNodeId}
+                    onNodeClick={(nodeId) => setDrawerTarget({ nodeId })}
                 />
             </ReactFlowProvider>
             {openNode && (
                 <NodeRunDrawer
                     view={view}
                     node={openNode}
-                    onClose={() => setClickedNodeId(undefined)}
+                    initialNodeRunId={drawerTarget?.nodeRunId}
+                    onClose={() => setDrawerTarget(undefined)}
                 />
             )}
         </NodeLiveContext.Provider>
     );
+}
+
+function drawerTargetOf(
+    view: SerializedRunView,
+    nodeRunId: string | undefined,
+): DrawerTarget | undefined {
+    const nodeRun = view.nodeRuns.find((candidate) => candidate.id === nodeRunId);
+    if (!nodeRun) {
+        return undefined;
+    }
+
+    return { nodeId: nodeRun.nodeId, nodeRunId: nodeRun.id };
 }
 
 // Groups are drawn as nodes too, but only the flow's nodes run, so a clicked group opens nothing.

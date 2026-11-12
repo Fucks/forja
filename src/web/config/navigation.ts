@@ -30,6 +30,8 @@ export interface GlobalNavItem {
 
 export const PROJECTS_PATH = "/";
 
+export const OPEN_NODE_RUN_PARAM = "nodeRun";
+
 const PROJECT_AREA_PATTERN = "/projects/:projectId/:areaId/*";
 
 const TRIGGERS_AREA = projectArea({ id: "triggers", label: "Gatilhos", icon: Zap });
@@ -74,6 +76,11 @@ export function runsPath(projectId: string): string {
 
 export function runPath(projectId: string, runId: string): string {
     return `${runsPath(projectId)}/${encodeURIComponent(runId)}`;
+}
+
+export function nodeRunPath(projectId: string, runId: string, nodeRunId: string): string {
+    const query = new URLSearchParams({ [OPEN_NODE_RUN_PARAM]: nodeRunId });
+    return `${runPath(projectId, runId)}?${query.toString()}`;
 }
 
 export function switchProjectPath(currentPathname: string, projectId: string): string {

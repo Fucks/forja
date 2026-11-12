@@ -1,4 +1,4 @@
-import { switchProjectPath, triggersPath } from "@/web/config/navigation.js";
+import { nodeRunPath, switchProjectPath, triggersPath } from "@/web/config/navigation.js";
 
 describe("switchProjectPath", () => {
     it.each([
@@ -15,5 +15,13 @@ describe("switchProjectPath", () => {
 describe("triggersPath", () => {
     it("points to the triggers area of the project", () => {
         expect(triggersPath("forja")).toBe("/projects/forja/triggers");
+    });
+});
+
+describe("nodeRunPath", () => {
+    it("points to the run with the NodeRun to open in the query", () => {
+        expect(nodeRunPath("forja", "run_1", "nr_dev")).toBe(
+            "/projects/forja/runs/run_1?nodeRun=nr_dev",
+        );
     });
 });
