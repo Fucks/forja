@@ -22,7 +22,7 @@
 
 ## Tasks
 
-- [ ] 1. Refactor: extract `adaptFlowToLocalItems` to `src/server/demo/local_items_flow.ts`, used by `demo_flow.ts`
+- [x] 1. Refactor: extract `adaptFlowToLocalItems` to `src/server/demo/local_items_flow.ts`, used by `demo_flow.ts`
 - [ ] 2. Playwright config with `webServer`, `test:e2e` script, ESLint for `e2e/` — `playwright.config.ts`, `package.json`, `eslint.config.mjs`, `.gitignore`
 - [ ] 3. Fixtures: temporary git repo with one commit and the Forja API helpers — `e2e/fixtures.ts`
 - [ ] 4. Scenario project_and_flow: register repo, flow from "Fábrica básica", Dev effort `max`, map concurrency 2, publish v1 — `e2e/project_and_flow.spec.ts`
