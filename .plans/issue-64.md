@@ -15,7 +15,8 @@
 - Detail query in `use_node_run_detail.ts`; artifacts rendered by `node_run_artifacts.tsx`. The detail opens
   on the "Entradas" tab (Logs stays empty until #65). No NodeRun is selected when the drawer opens.
 - Cost per NodeRun: `GET /api/runs/:runId/usage`, summed by `nodeRunId` (`use_node_run_costs.ts`).
-- Actions in `use_node_run_actions.ts`: POST `/node-runs/:id/cancel|retry`, then invalidate the run view.
+- Actions in `use_node_run_actions.ts`: POST `/node-runs/:id/cancel|retry`, then invalidate the run view
+  (reuses `useRunMutation`, now exported from `use_run_actions.ts`); buttons in `node_run_action_buttons.tsx`.
   Cancel for RUNNING/QUEUED, Repetir for FAILED/CANCELED/SUCCEEDED, each with a confirmation Dialog.
 - Error kinds translated in `node_run_error_labels.ts` (Record<NodeRunErrorKind, string>).
 - Drawer: existing `Drawer` side="bottom"; height is a fraction of the window (30–80%, default 45%) set
@@ -32,7 +33,7 @@
 - [x] 5. Test: drawer lists the node's NodeRuns sorted, RUNNING first, with cost — `node_run_drawer.test.tsx`; implement `node_run_drawer.tsx`, `node_run_list.tsx`, `use_node_run_costs.ts`, `drawer_resize_handle.tsx`
 - [x] 6. Test: selecting a NodeRun shows inputs and outputs as JSON — implement `node_run_detail.tsx`
 - [x] 7. Test: structured output error shows translated kind and message — `node_run_error_labels.ts`
-- [ ] 8. Test: retrying a failed NodeRun calls the API and the new NodeRun appears live — `use_node_run_actions.ts`
-- [ ] 9. Test: cancel a running NodeRun with confirmation
+- [x] 8. Test: retrying a failed NodeRun calls the API and the new NodeRun appears live — `use_node_run_actions.ts`
+- [x] 9. Test: cancel a running NodeRun with confirmation
 - [ ] 10. Clicking a node in `RunCanvas` opens the drawer — `flow_canvas.tsx`, `run_canvas.tsx`, test in `run_canvas.test.tsx`
 - [ ] 11. Self-review checklist (section 5) and feedback loops (section 6)

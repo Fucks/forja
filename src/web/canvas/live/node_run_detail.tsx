@@ -4,6 +4,7 @@ import type { JSX } from "react";
 import type { NodeRunError } from "@/engine/node_run_state.js";
 import type { SerializedNodeRun, SerializedNodeRunDetail } from "@/shared/run_types.js";
 import { JsonView } from "@/web/canvas/live/json_view.js";
+import { NodeRunActionButtons } from "@/web/canvas/live/node_run_action_buttons.js";
 import { NodeRunArtifacts } from "@/web/canvas/live/node_run_artifacts.js";
 import { NODE_RUN_ERROR_LABELS } from "@/web/canvas/live/node_run_error_labels.js";
 import { describeNodeRun } from "@/web/canvas/live/node_run_sorting.js";
@@ -22,6 +23,7 @@ export function NodeRunDetail({ nodeRun }: { nodeRun: SerializedNodeRun }): JSX.
                 <h3 className="min-w-0 flex-1 truncate text-sm font-medium">
                     {describeNodeRun(nodeRun)}
                 </h3>
+                <NodeRunActionButtons nodeRun={nodeRun} />
             </header>
             <NodeRunDetailContent nodeRun={nodeRun} />
         </article>

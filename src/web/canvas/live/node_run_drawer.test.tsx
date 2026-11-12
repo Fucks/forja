@@ -1,7 +1,9 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import type { JSX } from "react";
 
+import type { EventEnvelope, NodeRunStatusName } from "@/shared/events.js";
 import type { FlowNode } from "@/shared/flow_graph.js";
 import type {
     SerializedNodeRun,
@@ -13,13 +15,19 @@ import {
     buildSerializedNodeRun,
     buildSerializedRunView,
 } from "@/test/factories/run_view_factory.js";
-import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { createFakeEventSourceFactory } from "@/test/fakes/fake_event_source.js";
+import type { FakeEventSourceFactory } from "@/test/fakes/fake_event_source.js";
+import { listSentWrites, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { createTestQueryClient } from "@/test/render_with_query_client.js";
 import { NodeRunDrawer } from "@/web/canvas/live/node_run_drawer.js";
+import { useLiveRun } from "@/web/canvas/live/use_live_run.js";
 
 const DEVELOPER_NODE_ID = "dev";
-const RUN_USAGE_URL = "/api/runs/run-1/usage";
+const RUN_URL = "/api/runs/run-1";
+const RUN_USAGE_URL = `${RUN_URL}/usage`;
+const NODE_RUN_URL = "/api/node-runs/node-run-0";
+const HTTP_NO_CONTENT = 204;
 const LONG_TEXT_LENGTH = 500;
 
 describe("NodeRunDrawer", () => {
@@ -118,6 +126,64 @@ describe("NodeRunDrawer detail", () => {
     });
 });
 
+describe("NodeRunDrawer actions", () => {
+    let eventSources: FakeEventSourceFactory;
+
+    beforeEach(() => {
+        eventSources = createFakeEventSourceFactory();
+    });
+
+    function LiveNodeRunDrawer(): JSX.Element | null {
+        const { view } = useLiveRun("run-1", eventSources.createSource);
+        if (!view) {
+            return null;
+        }
+
+        return <NodeRunDrawer view={view} node={developerNodeOf(view)} onClose={() => undefined} />;
+    }
+
+    async function renderLiveDrawer(): Promise<void> {
+        render(
+            <QueryClientProvider client={createTestQueryClient()}>
+                <LiveNodeRunDrawer />
+            </QueryClientProvider>,
+        );
+        await screen.findByRole("list", { name: "Execuções do nó" });
+    }
+
+    it("retries a failed NodeRun and lists the new attempt as it arrives", async () => {
+        const failedNodeRun = developerRun({ status: "FAILED" });
+        const fetchSpy = stubFetchRoutes(fakeLiveRunApi(failedNodeRun));
+        await renderLiveDrawer();
+
+        await selectNodeRun("item #1 · tentativa 1");
+        await userEvent.click(screen.getByRole("button", { name: "Repetir" }));
+        await userEvent.click(screen.getByRole("button", { name: "Repetir execução" }));
+        act(() => eventSources.latestSource().emit(developerAttemptChanges(2, "QUEUED")));
+
+        expect(await screen.findByText("item #1 · tentativa 2")).toBeInTheDocument();
+        expect(listSentWrites(fetchSpy).map((write) => write.url)).toEqual([
+            `${NODE_RUN_URL}/retry`,
+        ]);
+    });
+
+    it("cancels a running NodeRun only after the confirmation", async () => {
+        const runningNodeRun = developerRun({ status: "RUNNING" });
+        const fetchSpy = stubFetchRoutes(fakeLiveRunApi(runningNodeRun));
+        await renderLiveDrawer();
+
+        await selectNodeRun("item #1 · tentativa 1");
+        await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+        expect(listSentWrites(fetchSpy)).toEqual([]);
+        await userEvent.click(screen.getByRole("button", { name: "Cancelar execução" }));
+
+        expect(listSentWrites(fetchSpy).map((write) => write.url)).toEqual([
+            `${NODE_RUN_URL}/cancel`,
+        ]);
+        expect(screen.queryByRole("button", { name: "Cancelar execução" })).not.toBeInTheDocument();
+    });
+});
+
 describe("NodeRunDrawer height", () => {
     it("grows with the arrow keys up to 80% of the window", async () => {
         stubFetchRoutes(fakeNodeRunApi());
@@ -208,6 +274,35 @@ function usageOf(nodeRunId: string, costUsd: number): UsageRecord {
         costUsd,
         priceEstimated: false,
         at: "2026-01-01T12:01:00.000Z",
+    };
+}
+
+function fakeLiveRunApi(nodeRun: SerializedNodeRun): FakeRoutes {
+    const answerNoContent = (): Response => new Response(null, { status: HTTP_NO_CONTENT });
+
+    return {
+        ...fakeNodeRunApi({ details: [detailOf(nodeRun)] }),
+        [`GET ${RUN_URL}`]: () => Response.json(buildSerializedRunView({ nodeRuns: [nodeRun] })),
+        [`POST ${NODE_RUN_URL}/retry`]: answerNoContent,
+        [`POST ${NODE_RUN_URL}/cancel`]: answerNoContent,
+    };
+}
+
+function developerAttemptChanges(attempt: number, status: NodeRunStatusName): EventEnvelope {
+    return {
+        id: 1,
+        at: "2026-01-01T12:10:00.000Z",
+        event: {
+            type: "node_run.updated",
+            runId: "run-1",
+            projectId: "project-1",
+            nodeRunId: `node-run-attempt-${attempt}`,
+            nodeId: DEVELOPER_NODE_ID,
+            workItemId: "1",
+            status,
+            attempt,
+            iteration: 0,
+        },
     };
 }
 
