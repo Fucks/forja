@@ -105,4 +105,45 @@ describe("UsagePage", () => {
             ["Total", "13 mil", "3,2 mil", "50 mil", "US$ 1,75", "6"],
         ]);
     });
+
+    it("shows one bar per day of the last 7 days, including the days without usage", async () => {
+        stubUsageApi({
+            routes: {
+                [usageRoute(LAST_SEVEN_DAYS, "day")]: answer([
+                    buildUsageAggregate({
+                        key: "2026-11-08",
+                        inputTokens: 2_000,
+                        outputTokens: 500,
+                        costUsd: 0.3,
+                    }),
+                    buildUsageAggregate({
+                        key: "2026-11-12",
+                        inputTokens: 1_000,
+                        outputTokens: 100,
+                        costUsd: 0.12,
+                    }),
+                ]),
+            },
+        });
+
+        renderAppAt(USAGE_PAGE_PATH);
+
+        expect(await findChartBars()).toEqual([
+            "06/11: 0 de entrada, 0 de saída, US$ 0,00",
+            "07/11: 0 de entrada, 0 de saída, US$ 0,00",
+            "08/11: 2 mil de entrada, 500 de saída, US$ 0,30",
+            "09/11: 0 de entrada, 0 de saída, US$ 0,00",
+            "10/11: 0 de entrada, 0 de saída, US$ 0,00",
+            "11/11: 0 de entrada, 0 de saída, US$ 0,00",
+            "12/11: 1 mil de entrada, 100 de saída, US$ 0,12",
+        ]);
+    });
 });
+
+async function findChartBars(): Promise<(string | null)[]> {
+    const chart = await screen.findByRole("list", { name: "Tokens por dia" });
+
+    return within(chart)
+        .getAllByRole("listitem")
+        .map((bar) => bar.getAttribute("aria-label"));
+}

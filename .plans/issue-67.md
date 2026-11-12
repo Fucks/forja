@@ -33,7 +33,7 @@
 - [x] 5. `useUsage` hook — `src/web/app/usage/use_usage.ts`
 - [x] 6. Page test + implementation: grouping by node shows each node's cost — `usage_page.tsx`,
       `usage_table.tsx`, `usage_page.test.tsx`
-- [ ] 7. Page test + implementation: 7-day chart with one bar per day, including empty days —
+- [x] 7. Page test + implementation: 7-day chart with one bar per day, including empty days —
       `usage_chart.tsx`
 - [ ] 8. Page test + implementation: clicking a node row filters by that node
 - [ ] 9. Page test + implementation: "Hoje" card vs daily budget (with and without budget, >80%) —

@@ -22,6 +22,7 @@ import {
     toUsagePeriod,
 } from "@/web/app/usage/usage_period.js";
 import type { UsagePeriod } from "@/web/app/usage/usage_period.js";
+import { UsageChart } from "@/web/app/usage/usage_chart.js";
 import { UsageTable } from "@/web/app/usage/usage_table.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
@@ -72,6 +73,7 @@ function UsageDashboard({
     return (
         <>
             <UsageFiltersBar filters={filters} onChange={setFilters} />
+            <UsageChartSection projectId={projectId} period={period} nodeId={filters.nodeId} />
             <UsageTableSection
                 projectId={projectId}
                 period={period}
@@ -80,6 +82,32 @@ function UsageDashboard({
             />
         </>
     );
+}
+
+function UsageChartSection({
+    projectId,
+    period,
+    nodeId,
+}: {
+    projectId: string;
+    period: UsagePeriod;
+    nodeId?: string;
+}): JSX.Element {
+    const dailyQuery = useUsage(projectId, {
+        from: period.from,
+        to: period.to,
+        groupBy: "day",
+        nodeId,
+    });
+
+    if (dailyQuery.isPending) {
+        return <Skeleton className="h-56" />;
+    }
+    if (dailyQuery.isError) {
+        return <LoadError message={dailyQuery.error.message} />;
+    }
+
+    return <UsageChart days={period.days} rows={dailyQuery.data} />;
 }
 
 function UsageTableSection({
