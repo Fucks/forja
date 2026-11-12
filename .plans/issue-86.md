@@ -32,7 +32,7 @@
 
 ## Tasks
 
-- [ ] 1. `createSessionToken` (32 bytes base64url) with test — `session_token.ts`, `session_token.test.ts`
+- [x] 1. `createSessionToken` (32 bytes base64url) with test — `session_token.ts`, `session_token.test.ts`
 - [ ] 2. `checkRequest`: Host/Origin 403 and cookie 401 — `request_guard.ts`, `request_guard.test.ts`
 - [ ] 3. `checkRequest`: `/api/hooks/*` only checks loopback remoteAddress; static paths skip cookie
 - [ ] 4. `NODE_ENV` in env; `ApiProtection` in AppDeps; guard hook in `app.ts` (+ app-level tests, dev port)
