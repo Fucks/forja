@@ -5,7 +5,7 @@ import { autoLayout } from "@/web/canvas/auto_layout.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { useToast } from "@/web/components/ui/toast.js";
 
-export const AUTO_LAYOUT_FAILED_NOTICE = {
+const AUTO_LAYOUT_FAILED_NOTICE = {
     title: "Não foi possível organizar o fluxo",
     description: "Tente novamente.",
     tone: "error",

@@ -36,7 +36,7 @@ export type EditorStore = UseBoundStore<StoreApi<EditorState>>;
 const EMPTY_GRAPH: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
 const NO_REVISION = 0;
 
-export const HISTORY_LIMIT = 100;
+const HISTORY_LIMIT = 100;
 // A drag reports a move on every frame; the changes that follow each other this closely are one step.
 export const HISTORY_MERGE_WINDOW_MS = 500;
 

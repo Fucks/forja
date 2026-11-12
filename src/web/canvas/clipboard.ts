@@ -1,10 +1,11 @@
-import { enclosingGroups, groupAncestors } from "@/engine/graph_queries.js";
 import type { z } from "zod";
 
+import { enclosingGroups, groupAncestors } from "@/engine/graph_queries.js";
 import { flowGraphSchema } from "@/shared/flow_graph.js";
-import type { FlowGraph, Position } from "@/shared/flow_graph.js";
+import type { FlowEdge, FlowGraph, Position } from "@/shared/flow_graph.js";
+import { boundingFrame, nodeFrame } from "@/web/canvas/group_frame_geometry.js";
 
-export const flowFragmentSchema = flowGraphSchema.pick({ nodes: true, edges: true, groups: true });
+const flowFragmentSchema = flowGraphSchema.pick({ nodes: true, edges: true, groups: true });
 export type FlowFragment = z.infer<typeof flowFragmentSchema>;
 
 export interface PastedFragment {
@@ -26,12 +27,8 @@ export function copySelection(graph: FlowGraph, ids: string[]): FlowFragment {
     const nodes = graph.nodes.filter(
         (node) => isSelected(node) || enclosingGroups(graph, node.id).some(isSelected),
     );
-    const copiedIds = new Set([...groups, ...nodes].map((element) => element.id));
-    const edges = graph.edges.filter(
-        (edge) => copiedIds.has(edge.from.nodeId) && copiedIds.has(edge.to.nodeId),
-    );
 
-    return { nodes, edges, groups };
+    return { nodes, edges: listEdgesBetween(graph.edges, [...groups, ...nodes]), groups };
 }
 
 export function pasteFragment(
@@ -76,22 +73,25 @@ export function isEmptyFragment(fragment: FlowFragment): boolean {
 }
 
 export function findTopLeftCorner(fragment: FlowFragment): Position {
-    const positions = [...fragment.nodes, ...fragment.groups].map((element) => element.position);
+    return boundingFrame([...fragment.nodes.map(nodeFrame), ...fragment.groups]).position;
+}
 
-    return {
-        x: Math.min(...positions.map((position) => position.x)),
-        y: Math.min(...positions.map((position) => position.y)),
-    };
+function listEdgesBetween(edges: FlowEdge[], elements: { id: string }[]): FlowEdge[] {
+    const elementIds = new Set(elements.map((element) => element.id));
+
+    return edges.filter(
+        (edge) => elementIds.has(edge.from.nodeId) && elementIds.has(edge.to.nodeId),
+    );
 }
 
 function withoutTriggers(fragment: FlowFragment): FlowFragment {
     const nodes = fragment.nodes.filter((node) => node.type !== "trigger");
-    const remainingIds = new Set([...nodes, ...fragment.groups].map((element) => element.id));
-    const edges = fragment.edges.filter(
-        (edge) => remainingIds.has(edge.from.nodeId) && remainingIds.has(edge.to.nodeId),
-    );
 
-    return { nodes, edges, groups: fragment.groups };
+    return {
+        nodes,
+        edges: listEdgesBetween(fragment.edges, [...nodes, ...fragment.groups]),
+        groups: fragment.groups,
+    };
 }
 
 function copyWithNewIds(fragment: FlowFragment, newId: () => string): FlowFragment {
