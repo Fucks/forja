@@ -188,6 +188,19 @@ describe("git executor", () => {
             );
         });
 
+        it("writes the body from a field of an input port", async () => {
+            const evidence = { checksPassed: true, body: "Evidências da entrega" };
+            const bed = createGitBed(
+                { action: "open_pr", bodyFrom: "evidence.body" },
+                { inputs: { evidence } },
+            );
+            bed.git.setCommitsAhead(BRANCH, 2);
+
+            await bed.execute();
+
+            expect(createdBody(bed)).toMatch(/^Evidências da entrega\n\nCloses #7/);
+        });
+
         it("writes a default summary when the input port has no body", async () => {
             const bed = createGitBed({ action: "open_pr", bodyFrom: "body" });
             bed.git.setCommitsAhead(BRANCH, 2);

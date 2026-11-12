@@ -17,6 +17,7 @@ import type {
     NodeExecutor,
 } from "@/server/runtime/node_executors.js";
 import type { GithubOfProject } from "@/server/work_items/project_github_provider.js";
+import { lookUpPath } from "@/shared/conditions.js";
 import type { GitConfig } from "@/shared/node_configs/git_config.js";
 import type { Project } from "@/shared/project_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
@@ -175,8 +176,12 @@ function summaryFromInputs(inputs: Record<string, unknown>, config: GitConfig): 
         return undefined;
     }
 
-    const body = inputs[config.bodyFrom];
-    return typeof body === "string" && body.trim() !== "" ? body : undefined;
+    const body = lookUpPath(inputs, config.bodyFrom);
+    if (!body.isFound || typeof body.value !== "string" || body.value.trim() === "") {
+        return undefined;
+    }
+
+    return body.value;
 }
 
 // Running the flow again for the same branch must not open a second pull request.
