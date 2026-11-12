@@ -100,11 +100,18 @@ function SelectedNodeRun({
             key={nodeRun.id}
             nodeRun={nodeRun}
             usage={usageByNodeRun.get(nodeRun.id)}
-            approvalPath={
-                approvalProjectId === undefined
-                    ? undefined
-                    : approvalPath(approvalProjectId, nodeRun.id)
-            }
+            approvalPath={findApprovalPath(nodeRun, approvalProjectId)}
         />
     );
+}
+
+function findApprovalPath(
+    gateNodeRun: SerializedNodeRun,
+    approvalProjectId: string | undefined,
+): string | undefined {
+    if (approvalProjectId === undefined) {
+        return undefined;
+    }
+
+    return approvalPath(approvalProjectId, gateNodeRun.id);
 }

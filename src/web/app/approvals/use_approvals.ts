@@ -80,16 +80,6 @@ export function useApprovalArtifacts(approval: Approval): ApprovalArtifacts {
     });
 }
 
-function useApprovals(
-    projectId: string,
-    filter: ApprovalListFilter,
-): UseQueryResult<Approval[], ApiError> {
-    return useQuery({
-        queryKey: [APPROVALS_QUERY_KEY, projectId, filter],
-        queryFn: () => apiClient.get<Approval[]>(projectApprovalsPath(projectId, filter)),
-    });
-}
-
 function useReloadApprovalsOnApprovalEvents(projectId: string): void {
     const queryClient = useQueryClient();
     const reloadOnApprovalEvent = (envelope: EventEnvelope): void => {
@@ -99,6 +89,16 @@ function useReloadApprovalsOnApprovalEvents(projectId: string): void {
     };
 
     useEventStream({ projectId }, reloadOnApprovalEvent);
+}
+
+function useApprovals(
+    projectId: string,
+    filter: ApprovalListFilter,
+): UseQueryResult<Approval[], ApiError> {
+    return useQuery({
+        queryKey: [APPROVALS_QUERY_KEY, projectId, filter],
+        queryFn: () => apiClient.get<Approval[]>(projectApprovalsPath(projectId, filter)),
+    });
 }
 
 function listProducingNodeRuns(

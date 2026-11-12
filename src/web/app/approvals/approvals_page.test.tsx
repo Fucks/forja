@@ -247,7 +247,9 @@ describe("ApprovalsPage", () => {
             renderAppAt(approvalPagePath(PENDING_APPROVAL.nodeRunId));
 
             const detail = await findDetail();
-            expect(within(detail).getByRole("heading", { name: "Revise o diff antes do PR" }));
+            expect(
+                within(detail).getByRole("heading", { name: "Revise o diff antes do PR" }),
+            ).toBeInTheDocument();
             expect(detail).toHaveTextContent("item #42");
             expect(detail).toHaveTextContent("Aguardando aprovação");
         });

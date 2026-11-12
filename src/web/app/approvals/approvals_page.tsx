@@ -27,6 +27,7 @@ function ApprovalsPageContent({ projectId }: { projectId: string }): JSX.Element
     const resolved = useResolvedApprovals(projectId);
     const [searchParams] = useSearchParams();
     const error = pending.error ?? resolved.error;
+
     if (error) {
         return (
             <EmptyState

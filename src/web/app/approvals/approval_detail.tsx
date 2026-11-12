@@ -67,19 +67,6 @@ function ApprovalHeader({ approval }: { approval: Approval }): JSX.Element {
     );
 }
 
-function ApprovalOutcome({ approval }: { approval: Approval }): JSX.Element {
-    return (
-        <section aria-label="Decisão" className="flex flex-col gap-1 text-sm">
-            {approval.resolvedAt && (
-                <p className="text-muted">
-                    Resolvido em {formatDateTime(new Date(approval.resolvedAt))}
-                </p>
-            )}
-            {approval.comment && <p className="whitespace-pre-wrap">{approval.comment}</p>}
-        </section>
-    );
-}
-
 function ApprovalDecisionForm({ approval }: { approval: Approval }): JSX.Element {
     const form = useDecisionForm(approval);
 
@@ -156,6 +143,19 @@ function useDecisionForm(approval: Approval): DecisionForm {
         changeComment,
         decide,
     };
+}
+
+function ApprovalOutcome({ approval }: { approval: Approval }): JSX.Element {
+    return (
+        <section aria-label="Decisão" className="flex flex-col gap-1 text-sm">
+            {approval.resolvedAt && (
+                <p className="text-muted">
+                    Resolvido em {formatDateTime(new Date(approval.resolvedAt))}
+                </p>
+            )}
+            {approval.comment && <p className="whitespace-pre-wrap">{approval.comment}</p>}
+        </section>
+    );
 }
 
 function ApprovalDiff({ diff }: { diff?: string }): JSX.Element {
