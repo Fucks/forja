@@ -3,6 +3,7 @@ import type { GitProvider } from "@/integrations/git/git_provider.js";
 import type { GitHubProvider } from "@/integrations/github/github_provider.js";
 import type { Clock } from "@/lib/clock.js";
 import type { ProjectService } from "@/server/projects/project_types.js";
+import { listArtifactsOfNodeRuns } from "@/server/runs/run_repository.js";
 import type { RunRepository } from "@/server/runs/run_repository.js";
 import type { WorkItemService } from "@/server/work_items/work_item_service.js";
 import type { WorkItem } from "@/shared/work_item_types.js";
@@ -116,17 +117,15 @@ async function listRecentPullRequestUrls(
     deps: PullRequestSyncDeps,
     itemId: string,
 ): Promise<string[]> {
-    const openedSinceMs = deps.clock.now().getTime() - PULL_REQUEST_LOOKBACK_DAYS * MS_PER_DAY;
     const nodeRuns = await deps.runs.listNodeRunsOfItem(itemId);
-    const artifactsByNodeRun = await Promise.all(
-        nodeRuns.map((nodeRun) => deps.runs.listArtifacts(nodeRun.id)),
-    );
+    const artifacts = await listArtifactsOfNodeRuns(deps.runs, nodeRuns);
+    const lookbackStartMs = deps.clock.now().getTime() - PULL_REQUEST_LOOKBACK_DAYS * MS_PER_DAY;
 
-    return artifactsByNodeRun
-        .flat()
+    return artifacts
         .filter((artifact) => artifact.kind === "pr_url")
-        .filter((artifact) => new Date(artifact.createdAt).getTime() >= openedSinceMs)
-        .flatMap((artifact) => (typeof artifact.value === "string" ? [artifact.value] : []));
+        .filter((artifact) => new Date(artifact.createdAt).getTime() >= lookbackStartMs)
+        .map((artifact) => artifact.value)
+        .filter((url): url is string => typeof url === "string");
 }
 
 // The item moves last, so a failure on GitHub or git leaves it to be settled again next round.

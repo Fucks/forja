@@ -7,6 +7,7 @@ import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { Clock } from "@/lib/clock.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
 import { findPrUrl } from "@/server/runs/pr_url_artifact.js";
+import { listArtifactsOfNodeRuns } from "@/server/runs/run_repository.js";
 import type { ArtifactRecord, RunRepository } from "@/server/runs/run_repository.js";
 import { ITEM_OUTCOME_ARTIFACT } from "@/server/runtime/executors/output_executor.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
@@ -151,10 +152,7 @@ async function findLatestRunResults(
     latestNodeRuns: NodeRunState[],
 ): Promise<LatestRunResults> {
     const succeededNodeRuns = latestNodeRuns.filter((nodeRun) => nodeRun.status === "SUCCEEDED");
-    const artifactLists = await Promise.all(
-        succeededNodeRuns.map((nodeRun) => runs.listArtifacts(nodeRun.id)),
-    );
-    const artifacts = artifactLists.flat();
+    const artifacts = await listArtifactsOfNodeRuns(runs, succeededNodeRuns);
 
     return { outcome: findItemOutcome(artifacts), prUrl: findPrUrl(artifacts) };
 }

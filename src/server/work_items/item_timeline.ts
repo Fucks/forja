@@ -2,11 +2,11 @@ import { deriveColumns, stageColumnIdOfNode } from "@/engine/board_columns.js";
 import { findNode } from "@/engine/graph_queries.js";
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
-import { RunNotFoundError } from "@/server/runs/run_repository.js";
+import { findPrUrl } from "@/server/runs/pr_url_artifact.js";
+import { listArtifactsOfNodeRuns, RunNotFoundError } from "@/server/runs/run_repository.js";
 import type { RunRecord, RunRepository } from "@/server/runs/run_repository.js";
 import { findRunOrThrow } from "@/server/runs/run_service.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
-import { findPrUrl } from "@/server/runs/pr_url_artifact.js";
 import type { ItemTimeline, ItemTimelineEntry } from "@/shared/board_types.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { UsageRecord } from "@/shared/usage_types.js";
@@ -135,11 +135,9 @@ async function findLatestPrUrl(
     const succeededNodeRuns = nodeRunsOldestRunFirst.filter(
         (nodeRun) => nodeRun.status === "SUCCEEDED",
     );
-    const artifactLists = await Promise.all(
-        succeededNodeRuns.map((nodeRun) => runs.listArtifacts(nodeRun.id)),
-    );
+    const artifacts = await listArtifactsOfNodeRuns(runs, succeededNodeRuns);
 
-    return findPrUrl(artifactLists.flat());
+    return findPrUrl(artifacts);
 }
 
 function findSpecOfLatestRun(

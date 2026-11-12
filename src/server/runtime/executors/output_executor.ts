@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import { findPrUrl } from "@/server/runs/pr_url_artifact.js";
+import { listArtifactsOfNodeRuns } from "@/server/runs/run_repository.js";
 import type { RunRepository } from "@/server/runs/run_repository.js";
 import { asNodeOfType } from "@/server/runtime/executors/node_of_type.js";
 import { buildRunComment } from "@/server/runtime/executors/run_comment.js";
@@ -100,10 +101,8 @@ async function findPrUrlOfNodeRuns(
     runs: RunRepository,
     nodeRuns: NodeRunState[],
 ): Promise<string | undefined> {
-    const artifactsByNodeRun = await Promise.all(
-        nodeRuns.map((nodeRun) => runs.listArtifacts(nodeRun.id)),
-    );
-    return findPrUrl(artifactsByNodeRun.flat());
+    const artifacts = await listArtifactsOfNodeRuns(runs, nodeRuns);
+    return findPrUrl(artifacts);
 }
 
 // A review that sends the item to a human usually explains itself in `notes` (or `reason`).
