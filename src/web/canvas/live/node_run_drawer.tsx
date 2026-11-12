@@ -39,18 +39,20 @@ export function NodeRunDrawer({
             title={node.label}
             size={heightFraction * window.innerHeight}
         >
-            <DrawerResizeHandle heightFraction={heightFraction} onResize={setHeightFraction} />
-            <div className="flex h-full min-h-0 gap-4">
-                <div className="w-80 shrink-0 overflow-auto">
-                    <NodeRunList
-                        nodeRuns={nodeRuns}
-                        costUsdByNodeRun={costUsdByNodeRun}
-                        selectedNodeRunId={selectedNodeRunId}
-                        onSelect={setSelectedNodeRunId}
-                    />
-                </div>
-                <div className="min-w-0 flex-1 overflow-auto">
-                    <SelectedNodeRun nodeRun={selectedNodeRun} />
+            <div className="flex h-full flex-col">
+                <DrawerResizeHandle heightFraction={heightFraction} onResize={setHeightFraction} />
+                <div className="flex min-h-0 flex-1 gap-4">
+                    <div className="w-80 shrink-0 overflow-auto">
+                        <NodeRunList
+                            nodeRuns={nodeRuns}
+                            costUsdByNodeRun={costUsdByNodeRun}
+                            selectedNodeRunId={selectedNodeRunId}
+                            onSelect={setSelectedNodeRunId}
+                        />
+                    </div>
+                    <div className="min-w-0 flex-1 overflow-auto">
+                        <SelectedNodeRun nodeRun={selectedNodeRun} />
+                    </div>
                 </div>
             </div>
         </Drawer>

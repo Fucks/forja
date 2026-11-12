@@ -36,4 +36,4 @@
 - [x] 8. Test: retrying a failed NodeRun calls the API and the new NodeRun appears live — `use_node_run_actions.ts`
 - [x] 9. Test: cancel a running NodeRun with confirmation
 - [x] 10. Clicking a node in `RunCanvas` opens the drawer — `flow_canvas.tsx`, `run_canvas.tsx`, test in `run_canvas.test.tsx`
-- [ ] 11. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 11. Self-review checklist (section 5) and feedback loops (section 6)
