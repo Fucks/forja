@@ -11,6 +11,7 @@ export interface ApprovalService {
     /** @throws ApprovalNotPendingError (409) when the approval is no longer pending */
     resolve(id: string, decision: ApprovalDecision, comment?: string): Promise<Approval>;
     listPending(projectId: string): Promise<Approval[]>;
+    listResolved(projectId: string): Promise<Approval[]>;
     get(id: string): Promise<Approval>;
     // The gate stopped waiting without a decision: it timed out or its run was canceled.
     expireOfNodeRun(nodeRunId: string): Promise<void>;
@@ -21,6 +22,8 @@ export interface ApprovalServiceDeps {
     events: EventBus;
     clock: Clock;
 }
+
+export const MAX_RESOLVED_APPROVALS_LISTED = 50;
 
 interface Resolution {
     id: string;
@@ -42,6 +45,8 @@ export function createApprovalService(deps: ApprovalServiceDeps): ApprovalServic
         resolve: (id, decision, comment) =>
             resolveWith(() => resolveApproval(deps, { id, decision, comment })),
         listPending: (projectId) => resolveWith(() => repo.listByProject(projectId, "pending")),
+        listResolved: (projectId) =>
+            resolveWith(() => repo.listResolvedByProject(projectId, MAX_RESOLVED_APPROVALS_LISTED)),
         get: (id) => resolveWith(() => findApprovalOrThrow(repo, id)),
         expireOfNodeRun: (nodeRunId) => resolveWith(() => expireOfNodeRun(deps, nodeRunId)),
     };

@@ -27,7 +27,12 @@ export interface Approval {
 
 export type NewApproval = Omit<Approval, "id" | "status" | "createdAt">;
 
-export const listApprovalsQuery = z.object({ status: z.literal("pending").default("pending") });
+export const APPROVAL_LIST_FILTERS = ["pending", "resolved"] as const;
+export type ApprovalListFilter = (typeof APPROVAL_LIST_FILTERS)[number];
+
+export const listApprovalsQuery = z.object({
+    status: z.enum(APPROVAL_LIST_FILTERS).default("pending"),
+});
 
 export const resolveApprovalInput = z.object({
     decision: z.enum(APPROVAL_DECISIONS),

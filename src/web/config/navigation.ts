@@ -36,6 +36,7 @@ const PROJECT_AREA_PATTERN = "/projects/:projectId/:areaId/*";
 
 const TRIGGERS_AREA = projectArea({ id: "triggers", label: "Gatilhos", icon: Zap });
 const RUNS_AREA = projectArea({ id: "runs", label: "Runs", icon: History });
+const APPROVALS_AREA = projectArea({ id: "approvals", label: "Aprovações", icon: ClipboardCheck });
 
 export const PROJECT_NAV: NavItem[] = [
     projectArea({ id: "flows", label: "Fluxos", icon: Workflow }),
@@ -43,7 +44,7 @@ export const PROJECT_NAV: NavItem[] = [
     RUNS_AREA,
     projectArea({ id: "usage", label: "Uso", icon: Gauge }),
     TRIGGERS_AREA,
-    projectArea({ id: "approvals", label: "Aprovações", icon: ClipboardCheck }),
+    APPROVALS_AREA,
     projectArea({ id: "settings", label: "Configurações", icon: Settings }),
 ];
 
@@ -81,6 +82,16 @@ export function runPath(projectId: string, runId: string): string {
 export function nodeRunPath(projectId: string, runId: string, nodeRunId: string): string {
     const query = new URLSearchParams({ [OPEN_NODE_RUN_PARAM]: nodeRunId });
     return `${runPath(projectId, runId)}?${query.toString()}`;
+}
+
+export function approvalsPath(projectId: string): string {
+    return APPROVALS_AREA.path(projectId);
+}
+
+// An approval belongs to a single gate NodeRun, so it is opened by that NodeRun.
+export function approvalPath(projectId: string, gateNodeRunId: string): string {
+    const query = new URLSearchParams({ [OPEN_NODE_RUN_PARAM]: gateNodeRunId });
+    return `${approvalsPath(projectId)}?${query.toString()}`;
 }
 
 export function switchProjectPath(currentPathname: string, projectId: string): string {

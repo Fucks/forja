@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { JSX } from "react";
+import { Link } from "react-router";
 
 import type { NodeRunError } from "@/engine/node_run_state.js";
 import { formatTokens, formatUsd } from "@/lib/format.js";
@@ -12,6 +13,7 @@ import { NodeRunLogs } from "@/web/canvas/live/node_run_logs.js";
 import { describeNodeRun } from "@/web/canvas/live/node_run_sorting.js";
 import { useNodeRunDetail } from "@/web/canvas/live/use_node_run_detail.js";
 import type { NodeRunUsage } from "@/web/canvas/live/use_node_run_usage.js";
+import { Button } from "@/web/components/ui/button.js";
 import { KeyValue } from "@/web/components/ui/key_value.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
@@ -24,9 +26,11 @@ const ESTIMATED_PRICE_MARK = "≈ ";
 export function NodeRunDetail({
     nodeRun,
     usage,
+    approvalPath,
 }: {
     nodeRun: SerializedNodeRun;
     usage?: NodeRunUsage;
+    approvalPath?: string;
 }): JSX.Element {
     const description = describeNodeRun(nodeRun);
 
@@ -35,6 +39,11 @@ export function NodeRunDetail({
             <header className="flex items-center gap-2">
                 <StatusBadge status={nodeRun.status} size="sm" />
                 <h3 className="min-w-0 flex-1 truncate text-sm font-medium">{description}</h3>
+                {approvalPath && (
+                    <Button asChild size="sm">
+                        <Link to={approvalPath}>Abrir aprovação</Link>
+                    </Button>
+                )}
                 <NodeRunActionButtons nodeRun={nodeRun} />
             </header>
             {usage && <NodeRunUsageSummary nodeRunUsage={usage} />}

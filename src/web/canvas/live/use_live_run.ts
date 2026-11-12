@@ -58,7 +58,7 @@ async function reloadRunView(queryClient: QueryClient, runId: string): Promise<v
     await queryClient.invalidateQueries({ queryKey });
 }
 
-function fetchRunView(runId: string): Promise<SerializedRunView> {
+export function fetchRunView(runId: string): Promise<SerializedRunView> {
     return apiClient.get<SerializedRunView>(`/runs/${encodeURIComponent(runId)}`);
 }
 

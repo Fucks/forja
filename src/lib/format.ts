@@ -8,6 +8,15 @@ const SECONDS_PER_MINUTE = 60;
 const MINUTES_PER_HOUR = 60;
 const MS_PER_MINUTE = MS_PER_SECOND * SECONDS_PER_MINUTE;
 const MS_PER_HOUR = MS_PER_MINUTE * MINUTES_PER_HOUR;
+const HOURS_PER_DAY = 24;
+const MS_PER_DAY = MS_PER_HOUR * HOURS_PER_DAY;
+
+const TIME_AGO_UNITS_LARGEST_FIRST = [
+    { size: MS_PER_DAY, suffix: "d" },
+    { size: MS_PER_HOUR, suffix: "h" },
+    { size: MS_PER_MINUTE, suffix: "min" },
+];
+const JUST_NOW = "agora";
 
 const TOKEN_SCALES_LARGEST_FIRST = [
     { size: 1_000_000_000, suffix: "bi" },
@@ -78,6 +87,16 @@ export function formatRelativeOffset(ms: number): string {
     }
 
     return `+${hours}:${padTwoDigits(minutes)}:${padTwoDigits(seconds)}`;
+}
+
+// A clock slightly ahead of the server gives a negative elapsed time, shown as now too.
+export function formatTimeAgo(elapsedMs: number): string {
+    const unit = TIME_AGO_UNITS_LARGEST_FIRST.find(({ size }) => elapsedMs >= size);
+    if (!unit) {
+        return JUST_NOW;
+    }
+
+    return `há ${Math.floor(elapsedMs / unit.size)} ${unit.suffix}`;
 }
 
 export function formatDateTime(at: Date): string {

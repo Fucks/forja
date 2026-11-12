@@ -2,6 +2,7 @@ import { ApprovalRepository } from "@/server/approvals/approval_repository.js";
 import {
     type ApprovalService,
     createApprovalService,
+    MAX_RESOLVED_APPROVALS_LISTED,
 } from "@/server/approvals/approval_service.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { ConflictError, NotFoundError } from "@/server/errors.js";
@@ -97,6 +98,34 @@ describe("ApprovalService", () => {
             const pending = await service.listPending(PROJECT_ID);
 
             expect(pending.map((approval) => approval.id)).toEqual([first.id, second.id]);
+        });
+    });
+
+    describe("listResolved", () => {
+        it("lists only the closed approvals of the project, latest resolved first", async () => {
+            const approved = await service.create(buildNewApproval({ nodeRunId: "nrn_1" }));
+            const rejected = await service.create(buildNewApproval({ nodeRunId: "nrn_2" }));
+            await service.create(buildNewApproval({ nodeRunId: "nrn_3" }));
+            await service.resolve(approved.id, "approved");
+            clock.advance(ONE_MINUTE_MS);
+            await service.resolve(rejected.id, "rejected", "Faltam testes");
+
+            const resolved = await service.listResolved(PROJECT_ID);
+
+            expect(resolved.map((approval) => approval.id)).toEqual([rejected.id, approved.id]);
+        });
+
+        it("keeps only the most recent ones", async () => {
+            for (let index = 0; index <= MAX_RESOLVED_APPROVALS_LISTED; index++) {
+                const created = await service.create(
+                    buildNewApproval({ nodeRunId: `nrn_${index}` }),
+                );
+                await service.resolve(created.id, "approved");
+            }
+
+            const resolved = await service.listResolved(PROJECT_ID);
+
+            expect(resolved).toHaveLength(MAX_RESOLVED_APPROVALS_LISTED);
         });
     });
 
