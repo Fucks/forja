@@ -13,7 +13,8 @@
 - `useNodeRunLogs(nodeRunId, runId, createEventSource?)`: the third optional param mirrors `useLiveRun`
   for tests. No TanStack Query: local state, pages of 2 000 via `GET /api/node-runs/:id/logs?fromSeq=&limit=`,
   then `log.appended` of the run (same nodeRunId) fetches from the event's `fromSeq`; merged events are
-  deduplicated by `seq` and sorted. `startedAt` = `at` of the first event (the hook only has ids).
+  deduplicated by `seq` and sorted. Each (re)connection of the stream, after the history, fetches
+  from the last known seq + 1 (appends announced while the stream was closed are lost to it). `startedAt` = `at` of the first event (the hook only has ids).
 - Filters (`log_filters.tsx`): `"text_and_tools"` (default, hides raw output), `"text_only"`
   (text + error), `"raw"` (everything). UI is the existing `SegmentedControl`.
 - `LogViewer` gets optional `renderLine?: LogLineRenderer` = `(line, searchQuery) => ReactNode`, which
@@ -28,9 +29,9 @@
 - [x] 1. Test + implement `toLogLines` for text, system and offsets — `src/web/logs/to_log_lines.ts`
 - [x] 2. Test + implement tool_call lines (JSON and non-JSON args) — `to_log_lines.ts`
 - [x] 3. Test + implement raw lines: tool results collapsed, other raw as muted system — `to_log_lines.ts`, `log_types.ts`
-- [ ] 4. Test + implement history loading in pages of 2 000 until the end — `src/web/logs/use_node_run_logs.ts`
-- [ ] 5. Test + implement incremental loading on `log.appended` with dedupe by seq — `use_node_run_logs.ts`
-- [ ] 6. Test + implement the error when the logs cannot be loaded — `use_node_run_logs.ts`
+- [x] 4. Test + implement history loading in pages of 2 000 until the end — `src/web/logs/use_node_run_logs.ts`
+- [x] 5. Test + implement incremental loading on `log.appended` with dedupe by seq — `use_node_run_logs.ts`
+- [x] 6. Test + implement the error when the logs cannot be loaded — `use_node_run_logs.ts`
 - [ ] 7. Test + implement the `renderLine` prop of `LogViewer` — `log_viewer.tsx`, `log_line_list.tsx`, `log_line.tsx`
 - [ ] 8. Implement `renderAgentEventLine` — `src/web/logs/event_renderers.tsx`
 - [ ] 9. Implement the log filters — `src/web/logs/log_filters.tsx`
