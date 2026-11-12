@@ -4,7 +4,12 @@ import {
     buildSerializedNodeRun,
     buildSerializedRunView,
 } from "@/test/factories/run_view_factory.js";
-import { aggregateNodeStates, applyEvent, flowingEdges } from "@/web/canvas/live/run_view_model.js";
+import {
+    aggregateNodeStates,
+    applyEvent,
+    flowingEdges,
+    listRunItems,
+} from "@/web/canvas/live/run_view_model.js";
 
 const DEVELOPER_NODE_ID = "dev";
 const DEVELOP_GROUP_ID = "develop";
@@ -293,6 +298,20 @@ describe("flowingEdges", () => {
         ]);
 
         expect(flowingEdges(view)).toEqual(new Set([SOURCE_TO_SPEC_EDGE_ID]));
+    });
+});
+
+describe("listRunItems", () => {
+    it("lists the items of the run and the ones its NodeRuns brought, once each", () => {
+        const view = {
+            ...viewWithDeveloperRuns([
+                { workItemId: "41", status: "SUCCEEDED" },
+                { workItemId: "42", status: "RUNNING" },
+            ]),
+            run: { ...buildSerializedRunView().run, itemIds: ["41"] },
+        };
+
+        expect(listRunItems(view)).toEqual(["41", "42"]);
     });
 });
 

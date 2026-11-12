@@ -64,6 +64,19 @@ export function aggregateNodeStates(
     return liveStates;
 }
 
+export function describeItem(workItemId: string): string {
+    return `item #${workItemId}`;
+}
+
+// A source node may bring items the run did not start with, so the NodeRuns are listed too.
+export function listRunItems(view: SerializedRunView): string[] {
+    const itemsOfNodeRuns = view.nodeRuns.flatMap((nodeRun) =>
+        nodeRun.workItemId === undefined ? [] : [nodeRun.workItemId],
+    );
+
+    return [...new Set([...view.run.itemIds, ...itemsOfNodeRuns])];
+}
+
 // NodeRuns without an item (the trigger, the source) belong to every item, so the filter keeps them.
 function keepNodeRunsOfItem(
     nodeRuns: SerializedNodeRun[],
@@ -158,7 +171,7 @@ function toNodeLiveState({ status, currentItems }: NodeAggregate): NodeLiveState
 function describeCurrentItems(currentItems: string[]): string {
     const [onlyItem] = currentItems;
     if (currentItems.length === 1 && onlyItem !== undefined) {
-        return `item #${onlyItem}`;
+        return describeItem(onlyItem);
     }
 
     return formatCount(currentItems.length, ITEM_NOUNS);
