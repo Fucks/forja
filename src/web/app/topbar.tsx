@@ -1,13 +1,15 @@
 import { clsx } from "clsx";
-import { Moon, PauseCircle, Sun } from "lucide-react";
+import { Hand, Moon, PauseCircle, Sun } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { JSX } from "react";
 import { Link } from "react-router";
 
+import { formatCount } from "@/lib/format.js";
+import { usePendingApprovals } from "@/web/app/approvals/use_approvals.js";
 import { useSetTriggersPaused, useTriggersPaused } from "@/web/app/triggers/use_triggers.js";
 import { Button } from "@/web/components/ui/button.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
-import { projectPath } from "@/web/config/navigation.js";
+import { approvalsPath, projectPath } from "@/web/config/navigation.js";
 import type { ThemeName } from "@/web/styles/theme.js";
 import { useTheme } from "@/web/styles/use_theme.js";
 
@@ -16,6 +18,8 @@ interface ThemeSwitch {
     label: string;
     icon: LucideIcon;
 }
+
+const PENDING_APPROVAL_NOUNS = { one: "aprovação pendente", other: "aprovações pendentes" };
 
 const THEME_SWITCHES: Record<ThemeName, ThemeSwitch> = {
     dark: { nextTheme: "light", label: "Usar tema claro", icon: Sun },
@@ -38,10 +42,29 @@ export function Topbar({
                     </Link>
                 )}
             </div>
+            {projectId && <PendingApprovalsCounter projectId={projectId} />}
             <TriggersPausedIndicator />
             <LiveIndicator connected={connected} />
             <ThemeToggle />
         </header>
+    );
+}
+
+function PendingApprovalsCounter({ projectId }: { projectId: string }): JSX.Element | null {
+    const pendingCount = usePendingApprovals(projectId).data?.length ?? 0;
+    if (pendingCount === 0) {
+        return null;
+    }
+
+    return (
+        <Link
+            to={approvalsPath(projectId)}
+            aria-label={formatCount(pendingCount, PENDING_APPROVAL_NOUNS)}
+            className="inline-flex items-center gap-1.5 text-xs text-status-waiting-approval hover:underline"
+        >
+            <Hand aria-hidden className="size-3.5" />
+            {pendingCount}
+        </Link>
     );
 }
 

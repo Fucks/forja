@@ -14,7 +14,9 @@
   (`useEventStream({ projectId })`). The topbar counter reuses `usePendingApprovals`.
 - Artifacts = artifacts of the NodeRuns of the same run and item (spec, Reviewer summary), loaded
   through the run view + NodeRun details; rendered with the existing `NodeRunArtifacts` (JsonView).
-- Logs link goes to the run page (`runPath`).
+- Logs link goes to the run page with the gate NodeRun open (`nodeRunPath`).
+- Extra files: `approval_list.tsx` (left list), `approval_status.tsx` (labels + badge);
+  `formatTimeAgo` in `src/lib/format.ts` for the age of pending approvals.
 - Diff colors follow `prompt_line_diff.tsx` (`bg-status-succeeded/15`, `bg-status-failed/15`).
 - Gate drawer: `NodeRunDrawer` passes `approvalPath` to `NodeRunDetail` only for gate nodes.
 
@@ -23,11 +25,11 @@
 - [x] 1. Test + implement `parseUnifiedDiff` (files, hunks, add/del/ctx counts) — `parse_unified_diff.ts`
 - [x] 2. Test + implement binary, renamed, new/deleted files and the leading stat — `parse_unified_diff.ts`
 - [x] 3. Backend: list resolved approvals (`status=resolved`) — `approval_types.ts`, repo, service, routes + tests
-- [ ] 4. Test + implement the page list: pending first with item and age, then resolved — `approvals_page.tsx`, `use_approvals.ts`
-- [ ] 5. Test + implement the detail: message, item, `StatusBadge`, collapsible diff per file — `approval_detail.tsx`, `diff_viewer.tsx`
-- [ ] 6. Test + implement artifacts (JsonView) and the logs link — `approval_detail.tsx`, `use_approvals.ts`
-- [ ] 7. Test + implement approve (no comment) and reject (comment required) — `approval_detail.tsx`, `use_approvals.ts`
-- [ ] 8. Test + implement live updates on `approval.*` — `use_approvals.ts`
-- [ ] 9. Test + implement the topbar pending counter — `topbar.tsx`
+- [x] 4. Test + implement the page list: pending first with item and age, then resolved — `approvals_page.tsx`, `use_approvals.ts`
+- [x] 5. Test + implement the detail: message, item, `StatusBadge`, collapsible diff per file — `approval_detail.tsx`, `diff_viewer.tsx`
+- [x] 6. Test + implement artifacts (JsonView) and the logs link — `approval_detail.tsx`, `use_approvals.ts`
+- [x] 7. Test + implement approve (no comment) and reject (comment required) — `approval_detail.tsx`, `use_approvals.ts`
+- [x] 8. Test + implement live updates on `approval.*` — `use_approvals.ts`
+- [x] 9. Test + implement the topbar pending counter — `topbar.tsx`
 - [ ] 10. Test + implement the gate drawer "Abrir aprovação" link — `node_run_detail.tsx`, `node_run_drawer.tsx`
 - [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)

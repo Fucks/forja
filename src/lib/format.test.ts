@@ -4,6 +4,7 @@ import {
     formatDateTime,
     formatDuration,
     formatRelativeOffset,
+    formatTimeAgo,
     formatTimeOfDay,
     formatTokens,
     formatUsd,
@@ -83,6 +84,23 @@ describe("formatRelativeOffset", () => {
 
     it.each([-1, Number.NaN])("rejects %d ms", (ms) => {
         expect(() => formatRelativeOffset(ms)).toThrow(RangeError);
+    });
+});
+
+describe("formatTimeAgo", () => {
+    it.each([
+        { elapsedMs: 0, expected: "agora" },
+        { elapsedMs: 59_999, expected: "agora" },
+        { elapsedMs: 60_000, expected: "há 1 min" },
+        { elapsedMs: 59 * 60_000, expected: "há 59 min" },
+        { elapsedMs: 3 * 60 * 60_000, expected: "há 3 h" },
+        { elapsedMs: 2 * 24 * 60 * 60_000, expected: "há 2 d" },
+    ])("shows $elapsedMs ms as '$expected'", ({ elapsedMs, expected }) => {
+        expect(formatTimeAgo(elapsedMs)).toBe(expected);
+    });
+
+    it("shows a moment in the future as now", () => {
+        expect(formatTimeAgo(-1_000)).toBe("agora");
     });
 });
 

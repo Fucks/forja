@@ -13,7 +13,10 @@ export function useNodeRunDetail(
 ): UseQueryResult<SerializedNodeRunDetail, ApiError> {
     return useQuery<SerializedNodeRunDetail, ApiError>({
         queryKey: [NODE_RUN_DETAIL_QUERY_KEY, nodeRun.id, nodeRun.status],
-        queryFn: () =>
-            apiClient.get<SerializedNodeRunDetail>(`/node-runs/${encodeURIComponent(nodeRun.id)}`),
+        queryFn: () => fetchNodeRunDetail(nodeRun.id),
     });
+}
+
+export function fetchNodeRunDetail(nodeRunId: string): Promise<SerializedNodeRunDetail> {
+    return apiClient.get<SerializedNodeRunDetail>(`/node-runs/${encodeURIComponent(nodeRunId)}`);
 }
