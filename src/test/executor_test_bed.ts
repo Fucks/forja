@@ -25,13 +25,18 @@ import { FlowRepository } from "@/server/flows/flow_repository.js";
 import { createFlowService, type FlowService } from "@/server/flows/flow_service.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { createProjectService } from "@/server/projects/project_service.js";
+import type { ProjectService } from "@/server/projects/project_types.js";
 import type { RunRecord, RunTransition } from "@/server/runs/run_repository.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import { createEventBus, type EventBus } from "@/server/runtime/event_bus.js";
 import { createExecutor, type Executor, type ItemSource } from "@/server/runtime/executor.js";
 import type { LogStore } from "@/server/runtime/log_store.js";
 import { createOutputExecutor } from "@/server/runtime/executors/output_executor.js";
-import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
+import {
+    createNodeExecutors,
+    nodeExecutors,
+    type NodeExecutorRegistry,
+} from "@/server/runtime/node_executors.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService, type SettingsService } from "@/server/settings/settings_service.js";
@@ -42,6 +47,11 @@ import {
 } from "@/server/tool_profiles/tool_profile_service.js";
 import { createAppUsageService } from "@/server/usage/app_usage_service.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
+import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
+import {
+    createWorkItemService,
+    type WorkItemService,
+} from "@/server/work_items/work_item_service.js";
 import type { ForjaEvent } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { ENV_VAR_BY_KIND } from "@/shared/credential_types.js";
@@ -58,6 +68,7 @@ import { createTestLogStore } from "@/test/test_log_store.js";
 import { createTestSecretBox } from "@/test/test_secrets.js";
 
 export const TEST_PROJECT_ID = "prj_forja";
+export const TEST_GITHUB_REPO = "Fucks/forja";
 export const PROJECT_SYSTEM_PROMPT = "Escreva testes antes do código.";
 export const TEST_CLAUDE_API_KEY = "sk-ant-api03-test-bed-abcdefghijklmnop-a1b2";
 
@@ -67,8 +78,8 @@ const SEEDED_AT = "2026-01-01T00:00:00.000Z";
 const TIME_STEP_MS = 1_000;
 const MAX_DRIVEN_MS = 6 * 60 * 60 * 1_000;
 
-// The source reads work items the test bed does not store; the git node gets its executor in #79.
-const NOT_YET_IMPLEMENTED_EXECUTORS: NodeExecutorRegistry = {
+// Without GitHub the source hands over the items of the run and the git node does nothing.
+const WITHOUT_GITHUB_EXECUTORS: NodeExecutorRegistry = {
     source: (context) => Promise.resolve({ outputs: { items: context.inputs.trigger } }),
     git: () => Promise.resolve({ outputs: { result: {} } }),
 };
@@ -85,6 +96,13 @@ interface PreviousProcess {
     openWorkspaces: OpenWorkspaceSummary[];
 }
 
+export interface ExecutorTestBedOptions {
+    // With it the project has a GitHub repository: the source syncs its issues, the git node
+    // pushes to the bed's git and opens pull requests on it.
+    github?: FakeGitHubProvider;
+    previous?: PreviousProcess;
+}
+
 export class ExecutorTestBed {
     readonly clock: FakeClock;
     readonly runtime: FakeAgentRuntime;
@@ -93,12 +111,15 @@ export class ExecutorTestBed {
     readonly journal: JournalEntry[] = [];
     readonly runs: JournalingRunRepository;
     readonly flows: FlowService;
+    readonly workItems: WorkItemService;
     readonly settings: SettingsService;
     readonly usage: UsageService;
     readonly approvals: ApprovalService;
     readonly toolProfiles: ToolProfileService;
     readonly credentials: CredentialService;
     readonly redactor: SecretRedactor = createSecretRedactor();
+    readonly git = new FakeGitProvider();
+    readonly github: FakeGitHubProvider | undefined;
     // The repository of the test project has a package.json only when a test says so.
     readonly existingFiles = new Set<string>();
     readonly executor: Executor;
@@ -106,18 +127,24 @@ export class ExecutorTestBed {
 
     constructor(
         private readonly items: WorkItemSnapshot[],
-        previous?: PreviousProcess,
+        { github, previous }: ExecutorTestBedOptions = {},
     ) {
+        this.github = github;
         this.clock = new FakeClock(previous?.stoppedAt);
         this.runtime = new FakeAgentRuntime({
             clock: this.clock,
             openWorkspaces: previous?.openWorkspaces,
         });
         this.events = createEventBus(this.clock);
-        this.database = previous?.database ?? createDatabaseWithProject();
+        this.database = previous?.database ?? createDatabaseWithProject({ github });
         this.logs = createTestLogStore(this.database.db, this.clock, this.redactor);
         this.runs = new JournalingRunRepository(this.database, this.clock, this.journal);
         this.flows = this.createFlowService();
+        this.workItems = createWorkItemService({
+            repo: new WorkItemRepository(this.database.db),
+            events: this.events,
+            clock: this.clock,
+        });
         this.settings = this.createSettingsService();
         this.usage = createAppUsageService({
             db: this.database.db,
@@ -161,9 +188,12 @@ export class ExecutorTestBed {
     // The old executor is abandoned with its clock, so nothing it started ever reports back.
     async restartServer(): Promise<ExecutorTestBed> {
         return new ExecutorTestBed(this.items, {
-            database: this.database,
-            stoppedAt: this.clock.now(),
-            openWorkspaces: await this.runtime.listOpenWorkspaces(),
+            github: this.github,
+            previous: {
+                database: this.database,
+                stoppedAt: this.clock.now(),
+                openWorkspaces: await this.runtime.listOpenWorkspaces(),
+            },
         });
     }
 
@@ -264,22 +294,12 @@ export class ExecutorTestBed {
     }
 
     private createExecutor(): Executor {
-        const items: ItemSource = {
-            getItems: (_projectId, ids) =>
-                Promise.resolve(this.items.filter((item) => ids.includes(item.id))),
-        };
-
         return createExecutor({
             runs: this.runs,
             flows: this.flows,
-            projects: createProjectService({
-                repo: new ProjectRepository(this.database.db),
-                git: new FakeGitProvider(),
-                fileExists: existsSync,
-                clock: this.clock,
-            }),
+            projects: this.createProjectService(),
             settings: this.settings,
-            items,
+            items: this.createItemSource(),
             runtime: this.runtime,
             events: this.events,
             logs: this.logs,
@@ -291,14 +311,54 @@ export class ExecutorTestBed {
             fileExists: (filePath) => this.existingFiles.has(filePath),
             clock: this.clock,
             newId,
-            nodeExecutors: {
-                ...nodeExecutors,
-                ...NOT_YET_IMPLEMENTED_EXECUTORS,
-                output: createOutputExecutor({
-                    runs: this.runs,
-                    githubOf: () => Promise.resolve(new FakeGitHubProvider()),
-                }),
-            },
+            nodeExecutors: this.createNodeExecutors(),
+        });
+    }
+
+    // With GitHub the items are the issues the source synced; without it, the items of the bed.
+    private createItemSource(): ItemSource {
+        if (this.github) {
+            return { getItems: (projectId, ids) => this.workItems.snapshots(projectId, ids) };
+        }
+
+        return {
+            getItems: (_projectId, ids) =>
+                Promise.resolve(this.items.filter((item) => ids.includes(item.id))),
+        };
+    }
+
+    private createProjectService(): ProjectService {
+        return createProjectService({
+            repo: new ProjectRepository(this.database.db),
+            git: this.git,
+            fileExists: existsSync,
+            clock: this.clock,
+        });
+    }
+
+    private createNodeExecutors(): NodeExecutorRegistry {
+        if (this.github) {
+            return this.createGithubNodeExecutors(this.github);
+        }
+
+        return {
+            ...nodeExecutors,
+            ...WITHOUT_GITHUB_EXECUTORS,
+            output: createOutputExecutor({
+                runs: this.runs,
+                githubOf: () => Promise.resolve(new FakeGitHubProvider()),
+            }),
+        };
+    }
+
+    private createGithubNodeExecutors(github: FakeGitHubProvider): NodeExecutorRegistry {
+        return createNodeExecutors({
+            workItems: this.workItems,
+            runs: this.runs,
+            projects: this.createProjectService(),
+            git: this.git,
+            clock: this.clock,
+            githubOf: () => Promise.resolve(github),
         });
     }
 }
@@ -322,9 +382,12 @@ class JournalingRunRepository extends SqliteRunRepository {
     }
 }
 
-function createDatabaseWithProject(): DatabaseHandle {
+function createDatabaseWithProject({
+    github,
+}: Pick<ExecutorTestBedOptions, "github">): DatabaseHandle {
     const database = createTestDb();
-    new ProjectRepository(database.db).insert(buildProject({ id: TEST_PROJECT_ID }));
+    const githubRepo = github ? TEST_GITHUB_REPO : undefined;
+    new ProjectRepository(database.db).insert(buildProject({ id: TEST_PROJECT_ID, githubRepo }));
     configureDefaultClaudeCredential(database);
 
     return database;

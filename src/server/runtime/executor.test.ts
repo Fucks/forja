@@ -13,8 +13,11 @@ import {
     PROJECT_SYSTEM_PROMPT,
     peakOverlapOf,
     TEST_CLAUDE_API_KEY,
+    TEST_GITHUB_REPO,
     TEST_PROJECT_ID,
 } from "@/test/executor_test_bed.js";
+import { buildGithubIssue } from "@/test/factories/work_item_factory.js";
+import { FakeGitHubProvider } from "@/test/fakes/fake_github_provider.js";
 
 const ISSUE_2 = buildIssueSnapshot(2);
 const FOUR_ISSUES = [buildIssueSnapshot(1), ISSUE_2, buildIssueSnapshot(3), buildIssueSnapshot(4)];
@@ -86,7 +89,21 @@ describe("executor", () => {
 
             const developer = await bed.findNodeRun(started.id, "dev");
             expect(developer.inputs).toMatchObject({ spec: "ok" });
-            expect(developer.outputs).toEqual({ summary: "ok" });
+            expect(developer.outputs).toEqual({ result: { commits: 0 }, summary: "ok" });
+        });
+
+        it("reports how many commits an agent without output schema made", async () => {
+            bed.runtime.script({
+                match: { promptIncludes: DEV_PROMPT },
+                durationMs: DEV_DURATION_MS,
+                result: { commits: [{ sha: "a1b2c3d" }, { sha: "e4f5a6b" }] },
+            });
+            const started = await bed.startRun(flowId);
+
+            await bed.runUntilFinished(started.id);
+
+            const developer = await bed.findNodeRun(started.id, "dev");
+            expect(developer.outputs).toMatchObject({ result: { commits: 2 } });
         });
     });
 
@@ -109,6 +126,25 @@ describe("executor", () => {
 
             const techLeadIds = (await bed.nodeRunsOf(started.id, "tl")).map(({ id }) => id);
             expect(nodeRunIdsOf(callsOf("headless")).sort()).toEqual(techLeadIds.sort());
+        });
+
+        it("works on the items a source picked during the run and closes their workspaces", async () => {
+            const github = new FakeGitHubProvider();
+            github.addIssue(
+                TEST_GITHUB_REPO,
+                buildGithubIssue({ number: 5, labels: ["Sandcastle"] }),
+            );
+            const githubBed = new ExecutorTestBed([], { github });
+            const githubFlowId = await githubBed.publishFlow(buildCanonicalFlow());
+            const started = await githubBed.startRun(githubFlowId);
+
+            const finished = await githubBed.runUntilFinished(started.id);
+
+            const developers = await githubBed.nodeRunsOf(started.id, "dev");
+            expect(finished.status).toBe("SUCCEEDED");
+            expect(developers.map((developer) => developer.status)).toEqual(["SUCCEEDED"]);
+            await expect(githubBed.runtime.listOpenWorkspaces()).resolves.toEqual([]);
+            githubBed.close();
         });
     });
 
