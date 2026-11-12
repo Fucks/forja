@@ -41,8 +41,8 @@ interface SeedBed {
 describe("seedDemo", () => {
     const beds: SeedBed[] = [];
 
-    afterEach(async () => {
-        await Promise.all(beds.map(removeDemoRepos));
+    afterEach(() => {
+        beds.forEach(removeDemoReposAndCloseDatabase);
         beds.length = 0;
     });
 
@@ -205,10 +205,8 @@ function removeProjectAndItsRepo(bed: SeedBed, projectId: string): void {
     rmSync(project.repoPath, { recursive: true, force: true });
 }
 
-function removeDemoRepos(bed: SeedBed): Promise<void> {
+function removeDemoReposAndCloseDatabase(bed: SeedBed): void {
     const projects = new ProjectRepository(bed.database.db).list();
     projects.forEach((project) => rmSync(project.repoPath, { recursive: true, force: true }));
     bed.database.close();
-
-    return Promise.resolve();
 }

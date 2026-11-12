@@ -67,8 +67,7 @@ async function buildAppOwningDatabase(
         redactor,
         clock: systemClock,
     });
-    const agentRuntime = createAgentRuntime(deps, commands);
-    const executor = createAppExecutor({
+    const services: AppServices = {
         db: database.db,
         events,
         logs,
@@ -76,21 +75,13 @@ async function buildAppOwningDatabase(
         commands,
         secrets,
         redactor,
-        runtime: agentRuntime,
         clock: systemClock,
-    });
+    };
+    const agentRuntime = createAgentRuntime(deps, commands);
+    const executor = createAppExecutor({ ...services, runtime: agentRuntime });
     try {
         await recoverRunsOfPreviousProcess(database, executor, agentRuntime);
-        await seedDemoIfRequested(deps.options, {
-            db: database.db,
-            events,
-            logs,
-            git,
-            commands,
-            secrets,
-            redactor,
-            clock: systemClock,
-        });
+        await seedDemoIfRequested(deps.options, services);
         const app = await buildApp({
             ...deps,
             db: database.db,

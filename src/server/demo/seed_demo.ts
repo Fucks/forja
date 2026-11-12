@@ -47,14 +47,8 @@ export async function seedDemo(deps: AppServices): Promise<SeedDemoResult> {
     }
 
     const project = await createDemoProject(deps);
-    const items = await createDemoItems(deps, project.id);
-    await createItemBranches(
-        deps.commands,
-        project.repoPath,
-        items.map((item) => item.branch),
-    );
-    await assignDemoCredential(deps, project.id);
-    await startAgentsWithoutPacing(deps);
+    const items = await createDemoItemsWithBranches(deps, project);
+    await prepareSimulatedAgents(deps, project.id);
     const flowId = await publishDemoFlow(deps, project.id);
     await runDemoFlowToTheEnd(deps, {
         projectId: project.id,
@@ -87,6 +81,20 @@ async function createDemoProject(deps: AppServices): Promise<Project> {
     return projects.create({ name: DEMO_PROJECT_NAME, repoPath, baseBranch: DEMO_BASE_BRANCH });
 }
 
+async function createDemoItemsWithBranches(
+    deps: AppServices,
+    project: Project,
+): Promise<WorkItem[]> {
+    const items = await createDemoItems(deps, project.id);
+    await createItemBranches(
+        deps.commands,
+        project.repoPath,
+        items.map((item) => item.branch),
+    );
+
+    return items;
+}
+
 async function createDemoItems(deps: AppServices, projectId: string): Promise<WorkItem[]> {
     const workItems = createWorkItemService({
         repo: new WorkItemRepository(deps.db),
@@ -100,6 +108,11 @@ async function createDemoItems(deps: AppServices, projectId: string): Promise<Wo
     }
 
     return items;
+}
+
+async function prepareSimulatedAgents(deps: AppServices, projectId: string): Promise<void> {
+    await assignDemoCredential(deps, projectId);
+    await startAgentsWithoutPacing(deps);
 }
 
 // The agents need a credential to start; the simulated ones never use it.
