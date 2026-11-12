@@ -138,6 +138,57 @@ describe("UsagePage", () => {
             "12/11: 1 mil de entrada, 100 de saída, US$ 0,12",
         ]);
     });
+
+    it("filters the page by the node whose row is clicked", async () => {
+        const reviewerRow = buildUsageAggregate({ key: "reviewer", costUsd: 0.5 });
+        stubUsageApi({
+            routes: {
+                [usageRoute(LAST_SEVEN_DAYS, "node")]: answer([
+                    buildUsageAggregate({ key: "dev", costUsd: 1.25 }),
+                    reviewerRow,
+                ]),
+                [usageRoute(LAST_SEVEN_DAYS, "node", { nodeId: "reviewer" })]: answer([
+                    reviewerRow,
+                ]),
+                [usageRoute(LAST_SEVEN_DAYS, "day", { nodeId: "reviewer" })]: answer([
+                    buildUsageAggregate({ key: "2026-11-12", costUsd: 0.5 }),
+                ]),
+            },
+        });
+        renderAppAt(USAGE_PAGE_PATH);
+        await chooseGrouping("Nó");
+
+        await userEvent.click(await screen.findByRole("button", { name: "reviewer" }));
+
+        expect(await screen.findByText("Filtrando pelo nó reviewer")).toBeInTheDocument();
+        expect(await findTableRows("Uso por nó")).toEqual([
+            ["reviewer", "1 mil", "200", "0", "US$ 0,50", "1"],
+            ["Total", "1 mil", "200", "0", "US$ 0,50", "1"],
+        ]);
+        expect((await findChartBars()).at(-1)).toBe(
+            "12/11: 1 mil de entrada, 200 de saída, US$ 0,50",
+        );
+    });
+
+    it("clears the node filter", async () => {
+        stubUsageApi({
+            routes: {
+                [usageRoute(LAST_SEVEN_DAYS, "node")]: answer([
+                    buildUsageAggregate({ key: "dev" }),
+                ]),
+                [usageRoute(LAST_SEVEN_DAYS, "node", { nodeId: "dev" })]: answer([
+                    buildUsageAggregate({ key: "dev" }),
+                ]),
+            },
+        });
+        renderAppAt(USAGE_PAGE_PATH);
+        await chooseGrouping("Nó");
+        await userEvent.click(await screen.findByRole("button", { name: "dev" }));
+
+        await userEvent.click(await screen.findByRole("button", { name: "Limpar filtro" }));
+
+        expect(screen.queryByText("Filtrando pelo nó dev")).not.toBeInTheDocument();
+    });
 });
 
 async function findChartBars(): Promise<(string | null)[]> {

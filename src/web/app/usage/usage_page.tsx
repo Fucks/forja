@@ -1,5 +1,5 @@
 import type { UseQueryResult } from "@tanstack/react-query";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, X } from "lucide-react";
 import { useState } from "react";
 import type { JSX } from "react";
 import { useParams } from "react-router";
@@ -24,6 +24,7 @@ import {
 import type { UsagePeriod } from "@/web/app/usage/usage_period.js";
 import { UsageChart } from "@/web/app/usage/usage_chart.js";
 import { UsageTable } from "@/web/app/usage/usage_table.js";
+import { Button } from "@/web/components/ui/button.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 
@@ -73,6 +74,12 @@ function UsageDashboard({
     return (
         <>
             <UsageFiltersBar filters={filters} onChange={setFilters} />
+            {filters.nodeId !== undefined && (
+                <NodeFilterNotice
+                    nodeId={filters.nodeId}
+                    onClear={() => setFilters({ ...filters, nodeId: undefined })}
+                />
+            )}
             <UsageChartSection projectId={projectId} period={period} nodeId={filters.nodeId} />
             <UsageTableSection
                 projectId={projectId}
@@ -81,6 +88,24 @@ function UsageDashboard({
                 onSelectNode={(nodeId) => setFilters({ ...filters, nodeId })}
             />
         </>
+    );
+}
+
+function NodeFilterNotice({
+    nodeId,
+    onClear,
+}: {
+    nodeId: string;
+    onClear: () => void;
+}): JSX.Element {
+    return (
+        <div className="flex items-center gap-2 text-sm">
+            <span>Filtrando pelo nó {nodeId}</span>
+            <Button size="sm" onClick={onClear}>
+                <X aria-hidden className="size-3.5" />
+                Limpar filtro
+            </Button>
+        </div>
     );
 }
 

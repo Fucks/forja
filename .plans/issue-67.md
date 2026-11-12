@@ -35,7 +35,7 @@
       `usage_table.tsx`, `usage_page.test.tsx`
 - [x] 7. Page test + implementation: 7-day chart with one bar per day, including empty days —
       `usage_chart.tsx`
-- [ ] 8. Page test + implementation: clicking a node row filters by that node
+- [x] 8. Page test + implementation: clicking a node row filters by that node
 - [ ] 9. Page test + implementation: "Hoje" card vs daily budget (with and without budget, >80%) —
       `usage_today_card.tsx`
 - [ ] 10. Page test + implementation: custom period
