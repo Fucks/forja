@@ -42,24 +42,30 @@ const EDGE_TYPES: EdgeTypes = { [FLOW_EDGE_TYPE]: FlowEdge };
 
 type FlowCanvasProps =
     | { readOnly?: false; store: EditorStore; issuesByTarget: IssuesByTarget }
-    | { readOnly: true; store: EditorStore; flowingEdgeIds: ReadonlySet<string> };
+    | ReadOnlyFlowCanvasProps;
+
+interface ReadOnlyFlowCanvasProps {
+    readOnly: true;
+    store: EditorStore;
+    flowingEdgeIds: ReadonlySet<string>;
+    onNodeClick: (nodeId: string) => void;
+}
 
 export function FlowCanvas(props: FlowCanvasProps): JSX.Element {
     if (props.readOnly) {
-        return <ReadOnlyFlowCanvas store={props.store} flowingEdgeIds={props.flowingEdgeIds} />;
+        return <ReadOnlyFlowCanvas {...props} />;
     }
 
     return <EditableFlowCanvas store={props.store} issuesByTarget={props.issuesByTarget} />;
 }
 
-// Shows a run: the graph can be panned and zoomed, but not selected, moved, connected or edited.
+// Shows a run: the graph can be panned, zoomed and its nodes clicked, but not selected, moved,
+// connected or edited.
 function ReadOnlyFlowCanvas({
     store,
     flowingEdgeIds,
-}: {
-    store: EditorStore;
-    flowingEdgeIds: ReadonlySet<string>;
-}): JSX.Element {
+    onNodeClick,
+}: ReadOnlyFlowCanvasProps): JSX.Element {
     const { nodes, edges, onNodesChange } = useCanvasElements(store);
     const edgesWithFlow = useMemo(
         () => markFlowingEdges(edges, flowingEdgeIds),
@@ -73,6 +79,7 @@ function ReadOnlyFlowCanvas({
             nodeTypes={nodeTypes}
             edgeTypes={EDGE_TYPES}
             onNodesChange={onNodesChange}
+            onNodeClick={(_event, node) => onNodeClick(node.id)}
             nodesDraggable={false}
             nodesConnectable={false}
             elementsSelectable={false}
