@@ -2,6 +2,8 @@ import { History } from "lucide-react";
 import type { JSX } from "react";
 import { Link } from "react-router";
 
+import type { FlowSummary } from "@/shared/flow_types.js";
+import { ExportFlowMenu } from "@/web/app/flows/export_flow_menu.js";
 import { PageTitle } from "@/web/app/page_title.js";
 import type { SaveState } from "@/web/canvas/editor_store.js";
 import { Button } from "@/web/components/ui/button.js";
@@ -18,19 +20,19 @@ const SAVE_STATE_LABELS: Record<SaveState, string> = {
 };
 
 export function EditorTopBar({
-    flowName,
+    flow,
     saveState,
     dirty,
     versionsPath,
 }: {
-    flowName?: string;
+    flow: FlowSummary | undefined;
     saveState: SaveState;
     dirty: boolean;
     versionsPath: string;
 }): JSX.Element {
     return (
         <header className="flex items-baseline justify-between gap-4">
-            <PageTitle>{flowName ?? UNTITLED_FLOW_TITLE}</PageTitle>
+            <PageTitle>{flow?.name ?? UNTITLED_FLOW_TITLE}</PageTitle>
             <div className="flex items-center gap-3">
                 <span role="status" className="text-xs text-muted">
                     {describeSaveState(saveState, dirty)}
@@ -41,6 +43,7 @@ export function EditorTopBar({
                         Versões
                     </Link>
                 </Button>
+                {flow && <ExportFlowMenu flow={flow} />}
             </div>
         </header>
     );

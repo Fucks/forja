@@ -88,7 +88,7 @@ export function usePublishVersion(
     });
 }
 
-function flowPath(flowId: string): string {
+export function flowPath(flowId: string): string {
     return `/flows/${encodeURIComponent(flowId)}`;
 }
 

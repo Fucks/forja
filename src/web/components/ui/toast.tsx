@@ -81,6 +81,12 @@ export function useToast(): ToastApi {
     return toastApi;
 }
 
+export function useFailureToast(): (title: string, error: Error) => void {
+    const toast = useToast();
+
+    return (title, error) => toast.show({ tone: "error", title, description: error.message });
+}
+
 function ToastCard({
     toast,
     onDismiss,

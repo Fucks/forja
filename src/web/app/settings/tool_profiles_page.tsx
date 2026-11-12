@@ -18,7 +18,7 @@ import { Button } from "@/web/components/ui/button.js";
 import { Dialog } from "@/web/components/ui/dialog.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
-import { useToast } from "@/web/components/ui/toast.js";
+import { useFailureToast } from "@/web/components/ui/toast.js";
 
 type ToolProfileEditor =
     { mode: "closed" } | { mode: "create" } | { mode: "edit"; profile: ToolProfile };
@@ -127,10 +127,4 @@ function ToolProfileEditorDialog({
             />
         </Dialog>
     );
-}
-
-function useFailureToast(): (title: string, error: Error) => void {
-    const toast = useToast();
-
-    return (title, error) => toast.show({ tone: "error", title, description: error.message });
 }
