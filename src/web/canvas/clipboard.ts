@@ -41,7 +41,7 @@ export function pasteFragment(
     newId: () => string,
 ): PastedFragment {
     const pastable = withoutTriggers(fragment);
-    if (pastable.nodes.length === 0 && pastable.groups.length === 0) {
+    if (isEmptyFragment(pastable)) {
         return { graph, pastedIds: [] };
     }
 
@@ -69,6 +69,19 @@ export function parseFlowFragment(text: string): FlowFragment | undefined {
     const parsed = flowFragmentSchema.safeParse(parseJson(text));
 
     return parsed.success ? parsed.data : undefined;
+}
+
+export function isEmptyFragment(fragment: FlowFragment): boolean {
+    return fragment.nodes.length === 0 && fragment.groups.length === 0;
+}
+
+export function findTopLeftCorner(fragment: FlowFragment): Position {
+    const positions = [...fragment.nodes, ...fragment.groups].map((element) => element.position);
+
+    return {
+        x: Math.min(...positions.map((position) => position.x)),
+        y: Math.min(...positions.map((position) => position.y)),
+    };
 }
 
 function withoutTriggers(fragment: FlowFragment): FlowFragment {
@@ -132,15 +145,6 @@ function moveTopLeftCornerTo(fragment: FlowFragment, at: Position): FlowFragment
         ...fragment,
         nodes: fragment.nodes.map((node) => ({ ...node, position: shift(node.position) })),
         groups: fragment.groups.map((group) => ({ ...group, position: shift(group.position) })),
-    };
-}
-
-function findTopLeftCorner(fragment: FlowFragment): Position {
-    const positions = [...fragment.nodes, ...fragment.groups].map((element) => element.position);
-
-    return {
-        x: Math.min(...positions.map((position) => position.x)),
-        y: Math.min(...positions.map((position) => position.y)),
     };
 }
 
