@@ -1,4 +1,4 @@
-import { dayRangeEndingOn, toUsagePeriod } from "@/web/app/usage/usage_period.js";
+import { dayRangeEndingOn, dayRangeOfChoice, toUsagePeriod } from "@/web/app/usage/usage_period.js";
 
 describe("dayRangeEndingOn", () => {
     it("answers the last days up to today", () => {
@@ -13,6 +13,29 @@ describe("dayRangeEndingOn", () => {
             firstDay: "2026-11-12",
             lastDay: "2026-11-12",
         });
+    });
+});
+
+describe("dayRangeOfChoice", () => {
+    const CUSTOM_RANGE = { firstDay: "2026-10-01", lastDay: "2026-10-15" };
+
+    it.each([
+        ["today", "2026-11-12"],
+        ["7d", "2026-11-06"],
+        ["30d", "2026-10-14"],
+    ] as const)("answers the days of %s up to today", (choice, firstDay) => {
+        const range = dayRangeOfChoice(choice, { today: "2026-11-12", customRange: CUSTOM_RANGE });
+
+        expect(range).toEqual({ firstDay, lastDay: "2026-11-12" });
+    });
+
+    it("answers the custom range when the period is custom", () => {
+        const range = dayRangeOfChoice("custom", {
+            today: "2026-11-12",
+            customRange: CUSTOM_RANGE,
+        });
+
+        expect(range).toEqual(CUSTOM_RANGE);
     });
 });
 

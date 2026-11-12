@@ -1,5 +1,9 @@
 import { addDays, startOfLocalDay } from "@/lib/local_day.js";
 
+export const USAGE_PERIOD_CHOICES = ["today", "7d", "30d", "custom"] as const;
+
+export type UsagePeriodChoice = (typeof USAGE_PERIOD_CHOICES)[number];
+
 export interface DayRange {
     firstDay: string;
     lastDay: string;
@@ -9,6 +13,25 @@ export interface UsagePeriod {
     from: string;
     to: string;
     days: string[];
+}
+
+export const DEFAULT_PERIOD_DAY_COUNT = 7;
+
+const DAY_COUNTS: Record<Exclude<UsagePeriodChoice, "custom">, number> = {
+    today: 1,
+    "7d": DEFAULT_PERIOD_DAY_COUNT,
+    "30d": 30,
+};
+
+export function dayRangeOfChoice(
+    choice: UsagePeriodChoice,
+    { today, customRange }: { today: string; customRange: DayRange },
+): DayRange {
+    if (choice === "custom") {
+        return customRange;
+    }
+
+    return dayRangeEndingOn(today, DAY_COUNTS[choice]);
 }
 
 export function dayRangeEndingOn(today: string, dayCount: number): DayRange {

@@ -30,8 +30,8 @@
 - [x] 2. `startOfLocalDay` and `addDays` — `src/lib/local_day.ts` (+ test)
 - [x] 3. `formatCalendarDay` ("12/11") — `src/lib/format.ts` (+ test)
 - [x] 4. Period choices to `{ from, to, days }` — `src/web/app/usage/usage_period.ts` (+ test)
-- [ ] 5. `useUsage` hook — `src/web/app/usage/use_usage.ts`
-- [ ] 6. Page test + implementation: grouping by node shows each node's cost — `usage_page.tsx`,
+- [x] 5. `useUsage` hook — `src/web/app/usage/use_usage.ts`
+- [x] 6. Page test + implementation: grouping by node shows each node's cost — `usage_page.tsx`,
       `usage_table.tsx`, `usage_page.test.tsx`
 - [ ] 7. Page test + implementation: 7-day chart with one bar per day, including empty days —
       `usage_chart.tsx`
