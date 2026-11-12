@@ -1,9 +1,14 @@
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import type { InfiniteData, UseInfiniteQueryResult } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type {
+    InfiniteData,
+    UseInfiniteQueryResult,
+    UseMutationResult,
+} from "@tanstack/react-query";
+import type { z } from "zod";
 
 import { RUN_TERMINAL } from "@/engine/run_state.js";
 import type { EventEnvelope, ForjaEventType, RunStatusName } from "@/shared/events.js";
-import type { RunListItem } from "@/shared/run_types.js";
+import type { RunListItem, SerializedRunRecord, startRunInput } from "@/shared/run_types.js";
 import { apiClient } from "@/web/api/api_client.js";
 import type { ApiError } from "@/web/api/api_client.js";
 import { useEventStream } from "@/web/api/use_event_stream.js";
@@ -12,6 +17,8 @@ export interface RunFilters {
     flowId?: string;
     status?: RunStatusName[];
 }
+
+export type StartRunInput = z.input<typeof startRunInput>;
 
 const RUNS_QUERY_KEY = "runs";
 const RUNS_PAGE_SIZE = 50;
@@ -42,8 +49,16 @@ export function useRuns(
     });
 }
 
-export function isActiveRun(run: RunListItem): boolean {
-    return !RUN_TERMINAL.has(run.status);
+export function useStartRun(
+    projectId: string,
+): UseMutationResult<SerializedRunRecord, ApiError, StartRunInput> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (input: StartRunInput) =>
+            apiClient.post<SerializedRunRecord>(projectRunsPath(projectId), input),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [RUNS_QUERY_KEY, projectId] }),
+    });
 }
 
 function useReloadRunsOnRunEvents(projectId: string): void {
@@ -64,6 +79,10 @@ function findNextPageCursor(page: RunListItem[]): string | undefined {
     }
 
     return page.at(-1)?.id;
+}
+
+function isActiveRun(run: RunListItem): boolean {
+    return !RUN_TERMINAL.has(run.status);
 }
 
 function listActiveRunsFirst(data: InfiniteData<RunListItem[]>): RunListItem[] {

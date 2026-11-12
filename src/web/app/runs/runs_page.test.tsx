@@ -8,7 +8,7 @@ import type { RunListItem } from "@/shared/run_types.js";
 import { buildRunStartedEvent } from "@/test/factories/forja_event_factory.js";
 import { buildRunListItem } from "@/test/factories/run_list_item_factory.js";
 import { captureBrowserEventSources } from "@/test/fakes/fake_event_source.js";
-import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { listSentWrites, respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
 
@@ -49,6 +49,17 @@ const RUNNING_RUN = buildRunListItem({
     costUsd: 0.2,
 });
 
+const DRAFT_ONLY_FLOW: FlowSummary = {
+    ...DELIVERY_FLOW,
+    id: "flw_rascunho",
+    name: "Rascunho",
+    isDefault: false,
+    latestVersion: undefined,
+};
+
+const HTTP_CREATED = 201;
+const HTTP_UNPROCESSABLE_ENTITY = 422;
+
 const RUN_FINISHED_ENVELOPE = {
     id: 1,
     at: "2026-11-12T00:00:00.000Z",
@@ -72,6 +83,18 @@ async function chooseFilter(label: string, option: string): Promise<void> {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("combobox", { name: label }));
     await user.click(await screen.findByRole("option", { name: option }));
+}
+
+async function openNewRunDialog(): Promise<HTMLElement> {
+    await userEvent.setup().click(await screen.findByRole("button", { name: "Nova run" }));
+    const dialog = await screen.findByRole("dialog", { name: "Nova run" });
+    await waitFor(() =>
+        expect(within(dialog).getByRole("combobox", { name: "Fluxo" })).toHaveTextContent(
+            "Entrega",
+        ),
+    );
+
+    return dialog;
 }
 
 async function findRunRows(): Promise<HTMLElement[]> {
@@ -190,6 +213,61 @@ describe("RunsPage", () => {
         await waitFor(async () => {
             const [finishedRow] = await findRunRows();
             expect(finishedRow).toHaveTextContent("Sucesso");
+        });
+    });
+
+    describe("Nova run", () => {
+        it("starts a run of the chosen flow with the typed items and opens it", async () => {
+            const fetchSpy = stubRunsApi({
+                [`POST ${RUNS_API}`]: () =>
+                    Response.json(buildRunListItem({ id: "run_nova" }), { status: HTTP_CREATED }),
+            });
+            const router = renderAppAt(RUNS_PAGE_PATH);
+            const dialog = await openNewRunDialog();
+            const user = userEvent.setup();
+
+            await user.type(within(dialog).getByLabelText("Itens"), "issue-1, issue-2 issue-3");
+            await user.click(within(dialog).getByRole("button", { name: "Executar" }));
+
+            await waitFor(() =>
+                expect(router.state.location.pathname).toBe(`${RUNS_PAGE_PATH}/run_nova`),
+            );
+            expect(listSentWrites(fetchSpy)).toEqual([
+                {
+                    method: "POST",
+                    url: RUNS_API,
+                    body: { flowId: DELIVERY_FLOW.id, itemIds: ["issue-1", "issue-2", "issue-3"] },
+                },
+            ]);
+        });
+
+        it("offers only the published flows", async () => {
+            stubRunsApi({
+                "GET /api/projects/prj_forja/flows": () =>
+                    Response.json([DELIVERY_FLOW, DRAFT_ONLY_FLOW]),
+            });
+            renderAppAt(RUNS_PAGE_PATH);
+            const dialog = await openNewRunDialog();
+
+            await userEvent.setup().click(within(dialog).getByRole("combobox", { name: "Fluxo" }));
+
+            expect(screen.getByRole("option", { name: "Entrega" })).toBeInTheDocument();
+            expect(screen.queryByRole("option", { name: "Rascunho" })).not.toBeInTheDocument();
+        });
+
+        it("shows why the run could not start", async () => {
+            stubRunsApi({
+                [`POST ${RUNS_API}`]: () =>
+                    respondWithApiError(HTTP_UNPROCESSABLE_ENTITY, "Publique o fluxo antes."),
+            });
+            renderAppAt(RUNS_PAGE_PATH);
+            const dialog = await openNewRunDialog();
+
+            await userEvent.setup().click(within(dialog).getByRole("button", { name: "Executar" }));
+
+            expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+                "Publique o fluxo antes.",
+            );
         });
     });
 
