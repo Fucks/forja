@@ -1,9 +1,11 @@
-import { RefreshCw, Zap } from "lucide-react";
+import { Plus, RefreshCw, Zap } from "lucide-react";
 import { useState } from "react";
 import type { JSX } from "react";
 
 import type { BoardColumnDef } from "@/engine/board_columns.js";
 import type { BoardCard, BoardView } from "@/shared/board_types.js";
+import type { WorkItem } from "@/shared/work_item_types.js";
+import { NewItemDialog } from "@/web/board/new_item_dialog.js";
 import { useBoard, useSyncBoard } from "@/web/board/use_board.js";
 import type { CreateEventSource } from "@/web/api/use_event_stream.js";
 import { BoardDragAndDrop, DraggableCard, useColumnDropTarget } from "@/web/board/board_dnd.js";
@@ -15,7 +17,7 @@ import { cn } from "@/web/components/ui/cn.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { useToast } from "@/web/components/ui/toast.js";
 
-const SYNC_ICON_SIZE_PX = 14;
+const TOOLBAR_ICON_SIZE_PX = 14;
 const TRIGGER_ICON_SIZE_PX = 14;
 
 const DROP_STATE_CLASSES: Record<ColumnDropState, string> = {
@@ -35,11 +37,42 @@ export function ProjectBoard({
 
     return (
         <div className="flex min-h-0 flex-col gap-4">
-            <SyncButton projectId={projectId} />
+            <div className="flex gap-2">
+                <NewItemButton
+                    projectId={projectId}
+                    blockerCandidates={listOpenItems(boardQuery.data)}
+                />
+                <SyncButton projectId={projectId} />
+            </div>
             {boardQuery.isError && <p role="alert">Não foi possível carregar o board.</p>}
             {boardQuery.isPending && <Skeleton className="h-64" />}
             {boardQuery.isSuccess && <BoardColumns projectId={projectId} board={boardQuery.data} />}
         </div>
+    );
+}
+
+function NewItemButton({
+    projectId,
+    blockerCandidates,
+}: {
+    projectId: string;
+    blockerCandidates: WorkItem[];
+}): JSX.Element {
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    return (
+        <>
+            <Button variant="primary" onClick={() => setIsDialogOpen(true)}>
+                <Plus size={TOOLBAR_ICON_SIZE_PX} aria-hidden="true" />
+                Novo item
+            </Button>
+            <NewItemDialog
+                projectId={projectId}
+                blockerCandidates={blockerCandidates}
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+            />
+        </>
     );
 }
 
@@ -58,11 +91,16 @@ function SyncButton({ projectId }: { projectId: string }): JSX.Element {
         });
 
     return (
-        <Button className="self-start" loading={sync.isPending} onClick={syncAndReportFailure}>
-            {!sync.isPending && <RefreshCw size={SYNC_ICON_SIZE_PX} aria-hidden="true" />}
+        <Button loading={sync.isPending} onClick={syncAndReportFailure}>
+            {!sync.isPending && <RefreshCw size={TOOLBAR_ICON_SIZE_PX} aria-hidden="true" />}
             Sincronizar
         </Button>
     );
+}
+
+function listOpenItems(board: BoardView | undefined): WorkItem[] {
+    const items = board?.cards.map((card) => card.item) ?? [];
+    return items.filter((item) => item.state === "open");
 }
 
 function BoardColumns({ projectId, board }: { projectId: string; board: BoardView }): JSX.Element {

@@ -39,6 +39,6 @@
       item; cancelling does not fire — start run confirmation dialog
 - [x] 6. Drag highlight (forbidden columns dimmed, allowed accent border) and `Zap` icon on trigger
       columns
-- [ ] 7. Test + implement the new item dialog (title, description, labels, blocked by) that creates
+- [x] 7. Test + implement the new item dialog (title, description, labels, blocked by) that creates
       the item in the Backlog — `new_item_dialog.tsx`, `board_view.tsx`, `board_view.test.tsx`
 - [ ] 8. Self-review checklist (section 5) and feedback loops (section 6)

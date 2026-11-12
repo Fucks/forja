@@ -18,7 +18,8 @@ import { ToastProvider } from "@/web/components/ui/toast.js";
 
 const PROJECT_ID = "prj_forja";
 const BOARD_URL = `/api/projects/${PROJECT_ID}/board`;
-const SYNC_URL = `/api/projects/${PROJECT_ID}/work-items/sync`;
+const WORK_ITEMS_URL = `/api/projects/${PROJECT_ID}/work-items`;
+const SYNC_URL = `${WORK_ITEMS_URL}/sync`;
 const PR_URL = "https://github.com/Fucks/forja/pull/12";
 const TIMELINE_URL = `/api/work-items/itm_42/timeline`;
 const COLUMN_URL = `/api/work-items/itm_42/column`;
@@ -231,6 +232,59 @@ describe("ProjectBoard", () => {
         expect(within(drawer).getByRole("list", { name: "Bloqueado por" })).toHaveTextContent(
             "#41 Modelo de usuário",
         );
+    });
+
+    it("creates a local item and shows it in the Backlog", async () => {
+        const user = userEvent.setup();
+        const blocker = buildWorkItem({ id: "itm_41", number: 41, title: "Modelo de usuário" });
+        const localItem = buildWorkItem({
+            id: "itm_local",
+            source: "local",
+            number: undefined,
+            title: "Tela de cadastro",
+        });
+        let board: BoardView = {
+            ...buildBoard([]),
+            cards: [{ item: blocker, columnId: "backlog" }],
+        };
+        const fetchSpy = stubFetchRoutes({
+            [`GET ${BOARD_URL}`]: () => Response.json(board),
+            [`POST ${WORK_ITEMS_URL}`]: () => {
+                board = {
+                    ...board,
+                    cards: [...board.cards, { item: localItem, columnId: "backlog" }],
+                };
+                return Response.json(localItem, { status: 201 });
+            },
+        });
+        renderBoard();
+
+        await user.click(await screen.findByRole("button", { name: "Novo item" }));
+        const dialog = screen.getByRole("dialog", { name: "Novo item" });
+        await user.type(within(dialog).getByLabelText("Título"), "Tela de cadastro");
+        await user.type(within(dialog).getByLabelText("Descrição"), "Formulário com e-mail");
+        await user.type(within(dialog).getByLabelText("Labels"), "frontend, auth");
+        await user.click(within(dialog).getByRole("checkbox", { name: "#41 Modelo de usuário" }));
+        await user.click(within(dialog).getByRole("button", { name: "Criar item" }));
+
+        expect(
+            await within(columnNamed("Backlog")).findByRole("article", {
+                name: "Tela de cadastro",
+            }),
+        ).toBeInTheDocument();
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(listSentWrites(fetchSpy)).toEqual([
+            {
+                method: "POST",
+                url: WORK_ITEMS_URL,
+                body: {
+                    title: "Tela de cadastro",
+                    body: "Formulário com e-mail",
+                    labels: ["frontend", "auth"],
+                    blockedBy: [blocker.id],
+                },
+            },
+        ]);
     });
 
     it("asks to publish a default flow when the project has none", async () => {
