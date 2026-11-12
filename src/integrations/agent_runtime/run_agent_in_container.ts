@@ -12,13 +12,13 @@ import {
     runClaudeIteration,
     type ClaudeIteration,
 } from "@/integrations/agent_runtime/claude_iteration.js";
-import { addUsage, EMPTY_USAGE } from "@/integrations/agent_runtime/claude_result.js";
 import { readStructuredOutput } from "@/integrations/agent_runtime/output_schema.js";
 import {
     startRunDeadlines,
     type RunDeadlines,
 } from "@/integrations/agent_runtime/run_deadlines.js";
 import type { Clock } from "@/lib/clock.js";
+import { addTokenUsage, EMPTY_TOKEN_USAGE } from "@/shared/usage_types.js";
 
 export interface RunAgentInContainerDeps {
     clock: Clock;
@@ -129,8 +129,8 @@ function summarizeIterations(
 ): Omit<AgentRunResult, "commits"> {
     const last = iterations.at(-1);
     const usage = iterations
-        .map((iteration) => iteration.result?.usage ?? EMPTY_USAGE)
-        .reduce(addUsage, EMPTY_USAGE);
+        .map((iteration) => iteration.result?.usage ?? EMPTY_TOKEN_USAGE)
+        .reduce(addTokenUsage, EMPTY_TOKEN_USAGE);
 
     return {
         output: structuredOutputOf(request, last),

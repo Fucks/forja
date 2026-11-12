@@ -23,6 +23,12 @@ const twoDecimals = new Intl.NumberFormat(LOCALE, {
 const twoSignificantDigits = new Intl.NumberFormat(LOCALE, { maximumSignificantDigits: 2 });
 const shortDateTime = new Intl.DateTimeFormat(LOCALE, { dateStyle: "short", timeStyle: "short" });
 const shortTime = new Intl.DateTimeFormat(LOCALE, { timeStyle: "short" });
+// A calendar day has no time zone, so it is read and shown as UTC to keep the same date.
+const dayAndMonth = new Intl.DateTimeFormat(LOCALE, {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "UTC",
+});
 
 export function formatDuration(ms: number): string {
     assertNonNegativeFinite(ms);
@@ -80,6 +86,10 @@ export function formatDateTime(at: Date): string {
 
 export function formatTimeOfDay(at: Date): string {
     return shortTime.format(at);
+}
+
+export function formatCalendarDay(isoDay: string): string {
+    return dayAndMonth.format(new Date(isoDay));
 }
 
 export function formatCount(count: number, nouns: { one: string; other: string }): string {

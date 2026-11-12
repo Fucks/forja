@@ -1,5 +1,5 @@
 import type { NewUsageRecord } from "@/server/usage/usage_service.js";
-import type { TokenUsage } from "@/shared/usage_types.js";
+import type { TokenUsage, UsageAggregate } from "@/shared/usage_types.js";
 
 export function buildTokenUsage(overrides: Partial<TokenUsage> = {}): TokenUsage {
     return {
@@ -22,6 +22,21 @@ export function buildNewUsageRecord(overrides: Partial<NewUsageRecord> = {}): Ne
         iteration: 0,
         model: "claude-opus-5-5",
         usage: buildTokenUsage(),
+        ...overrides,
+    };
+}
+
+export function buildUsageAggregate(overrides: Partial<UsageAggregate> = {}): UsageAggregate {
+    const key = overrides.key ?? "dev";
+
+    return {
+        key,
+        label: key,
+        inputTokens: 1_000,
+        outputTokens: 200,
+        cacheReadTokens: 0,
+        costUsd: 0.5,
+        nodeRuns: 1,
         ...overrides,
     };
 }

@@ -126,6 +126,7 @@ function whereQueryMatches(query: UsageQuery): SQL | undefined {
         gte(usageRecords.at, query.from.toISOString()),
         lt(usageRecords.at, query.to.toISOString()),
         query.flowId === undefined ? undefined : eq(usageRecords.flowId, query.flowId),
+        query.nodeId === undefined ? undefined : eq(usageRecords.nodeId, query.nodeId),
     );
 }
 

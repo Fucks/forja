@@ -4,19 +4,19 @@ import type { JSX } from "react";
 import { formatDuration, formatUsd } from "@/lib/format.js";
 import type { SerializedNodeRun } from "@/shared/run_types.js";
 import { describeNodeRun } from "@/web/canvas/live/node_run_sorting.js";
-import type { CostUsdByNodeRun } from "@/web/canvas/live/use_node_run_costs.js";
+import type { UsageByNodeRun } from "@/web/canvas/live/use_node_run_usage.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 
 const NO_VALUE = "—";
 
 export function NodeRunList({
     nodeRuns,
-    costUsdByNodeRun,
+    usageByNodeRun,
     selectedNodeRunId,
     onSelect,
 }: {
     nodeRuns: SerializedNodeRun[];
-    costUsdByNodeRun: CostUsdByNodeRun;
+    usageByNodeRun: UsageByNodeRun;
     selectedNodeRunId?: string;
     onSelect: (nodeRunId: string) => void;
 }): JSX.Element {
@@ -30,7 +30,7 @@ export function NodeRunList({
                 <li key={nodeRun.id}>
                     <NodeRunRow
                         nodeRun={nodeRun}
-                        costUsd={costUsdByNodeRun.get(nodeRun.id)}
+                        costUsd={usageByNodeRun.get(nodeRun.id)?.costUsd}
                         isSelected={nodeRun.id === selectedNodeRunId}
                         onSelect={() => onSelect(nodeRun.id)}
                     />

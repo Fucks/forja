@@ -7,6 +7,22 @@ export interface TokenUsage {
     cacheCreationInputTokens: number;
 }
 
+export const EMPTY_TOKEN_USAGE: TokenUsage = {
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheReadInputTokens: 0,
+    cacheCreationInputTokens: 0,
+};
+
+export function addTokenUsage(total: TokenUsage, usage: TokenUsage): TokenUsage {
+    return {
+        inputTokens: total.inputTokens + usage.inputTokens,
+        outputTokens: total.outputTokens + usage.outputTokens,
+        cacheReadInputTokens: total.cacheReadInputTokens + usage.cacheReadInputTokens,
+        cacheCreationInputTokens: total.cacheCreationInputTokens + usage.cacheCreationInputTokens,
+    };
+}
+
 export const modelPriceSchema = z.object({
     inputPerMTok: z.number(),
     outputPerMTok: z.number(),
@@ -44,6 +60,7 @@ export interface UsageQuery {
     to: Date;
     groupBy: UsageGroupBy;
     flowId?: string;
+    nodeId?: string;
 }
 
 export interface UsageAggregate {
@@ -62,6 +79,7 @@ export const usageQueryParams = z
         to: z.coerce.date(),
         groupBy: z.enum(USAGE_GROUP_BYS),
         flowId: z.string().min(1).optional(),
+        nodeId: z.string().min(1).optional(),
     })
     .refine(({ from, to }) => from < to, {
         message: "O início do período precisa ser antes do fim.",

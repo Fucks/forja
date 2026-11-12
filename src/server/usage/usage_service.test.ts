@@ -237,6 +237,15 @@ describe("UsageService", () => {
             expect(groups.map(({ key }) => key)).toEqual(["dev"]);
         });
 
+        it("counts only the usage of the node when one is given", async () => {
+            await service.record(buildNewUsageRecord({ nodeId: "dev", model: "claude-opus-5-5" }));
+            await service.record(buildNewUsageRecord({ nodeId: "tl", model: "claude-haiku-5-5" }));
+
+            const groups = await aggregate("model", { nodeId: "dev" });
+
+            expect(groups.map(({ key }) => key)).toEqual(["claude-opus-5-5"]);
+        });
+
         it("answers no groups when nothing was spent in the period", async () => {
             await expect(aggregate("day")).resolves.toEqual([]);
         });
