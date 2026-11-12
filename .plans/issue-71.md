@@ -31,7 +31,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement the minimal valid value for a JSON Schema — `minimal_schema_value.ts` (+ test)
+- [x] 1. Test + implement the minimal valid value for a JSON Schema — `minimal_schema_value.ts` (+ test)
 - [ ] 2. Test + implement a headless agent run that lasts 3–8 s / speed and emits text and tool calls
       (Read, Grep, Edit, Bash "npm run test") — `scripted_agent_runtime.ts`, `demo_script.ts`
 - [ ] 3. Test + implement determinism by `nodeRunId` (events, duration, usage)
