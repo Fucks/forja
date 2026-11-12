@@ -8,7 +8,7 @@ import type { WorkItemService } from "@/server/work_items/work_item_service.js";
 import type { WorkItem } from "@/shared/work_item_types.js";
 
 const PULL_REQUEST_LOOKBACK_DAYS = 30;
-const DAY_MS = 24 * 60 * 60_000;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const NOTHING_SYNCED: PullRequestSyncResult = { merged: 0, closedIssues: 0, deletedBranches: 0 };
 
 export interface PullRequestSyncDeps {
@@ -116,7 +116,7 @@ async function listRecentPullRequestUrls(
     deps: PullRequestSyncDeps,
     itemId: string,
 ): Promise<string[]> {
-    const openedSinceMs = deps.clock.now().getTime() - PULL_REQUEST_LOOKBACK_DAYS * DAY_MS;
+    const openedSinceMs = deps.clock.now().getTime() - PULL_REQUEST_LOOKBACK_DAYS * MS_PER_DAY;
     const nodeRuns = await deps.runs.listNodeRunsOfItem(itemId);
     const artifactsByNodeRun = await Promise.all(
         nodeRuns.map((nodeRun) => deps.runs.listArtifacts(nodeRun.id)),

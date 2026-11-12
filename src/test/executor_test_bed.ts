@@ -30,6 +30,7 @@ import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import { createEventBus, type EventBus } from "@/server/runtime/event_bus.js";
 import { createExecutor, type Executor, type ItemSource } from "@/server/runtime/executor.js";
 import type { LogStore } from "@/server/runtime/log_store.js";
+import { createOutputExecutor } from "@/server/runtime/executors/output_executor.js";
 import { nodeExecutors, type NodeExecutorRegistry } from "@/server/runtime/node_executors.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
@@ -49,6 +50,7 @@ import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { FakeAgentRuntime } from "@/test/fakes/fake_agent_runtime.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
+import { FakeGitHubProvider } from "@/test/fakes/fake_github_provider.js";
 import { FakeGitProvider } from "@/test/fakes/fake_git_provider.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
@@ -289,7 +291,14 @@ export class ExecutorTestBed {
             fileExists: (filePath) => this.existingFiles.has(filePath),
             clock: this.clock,
             newId,
-            nodeExecutors: { ...nodeExecutors, ...NOT_YET_IMPLEMENTED_EXECUTORS },
+            nodeExecutors: {
+                ...nodeExecutors,
+                ...NOT_YET_IMPLEMENTED_EXECUTORS,
+                output: createOutputExecutor({
+                    runs: this.runs,
+                    githubOf: () => Promise.resolve(new FakeGitHubProvider()),
+                }),
+            },
         });
     }
 }

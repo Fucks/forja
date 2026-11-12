@@ -32,5 +32,5 @@
 - [x] 4. Test + implement: repeated sync does nothing more; already-closed issue is not closed again; local item has no issue to close
 - [x] 5. Test + implement: branch held by a worktree is kept and the rest still happens; project without GitHub repo syncs nothing
 - [x] 6. Job in `project_github_sync.ts` and route `POST /api/projects/:projectId/pull-requests/sync` — `work_items_routes.ts` (+ route test)
-- [ ] 7. Test + implement: `output` with `commentOnIssue` comments on the issue once per run — `output_executor.ts`, `deterministic_executors.test.ts`, `node_executors.ts`, test bed
+- [x] 7. Test + implement: `output` with `commentOnIssue` comments on the issue once per run — `output_executor.ts`, `deterministic_executors.test.ts`, `node_executors.ts`, test bed
 - [ ] 8. Self-review checklist and feedback loops

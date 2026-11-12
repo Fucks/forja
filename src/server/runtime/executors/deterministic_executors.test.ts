@@ -1,11 +1,12 @@
 import type { AgentEvent } from "@/integrations/agent_runtime/agent_runtime.js";
 import { executeConditionNode } from "@/server/runtime/executors/condition_executor.js";
-import { executeOutputNode } from "@/server/runtime/executors/output_executor.js";
-import type { NodeExecutionContext } from "@/server/runtime/node_executors.js";
+import { createOutputExecutor } from "@/server/runtime/executors/output_executor.js";
+import type { NodeExecutionContext, NodeExecutionResult } from "@/server/runtime/node_executors.js";
 import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
 import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.js";
 import type { Condition } from "@/shared/conditions.js";
 import type { FlowEdge, FlowGraph, FlowNode, Port } from "@/shared/flow_graph.js";
+import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 import { buildIssueSnapshot, ExecutorTestBed } from "@/test/executor_test_bed.js";
 import { buildLoopFlow, connect, createNodeOfType } from "@/test/factories/flow_graph_factory.js";
 import {
@@ -15,8 +16,14 @@ import {
     updateNode,
 } from "@/test/factories/flow_graph_variations.js";
 import { buildNodeExecutionContext } from "@/test/factories/node_execution_context_factory.js";
+import { buildNodeRunState } from "@/test/factories/node_run_state_factory.js";
+import { buildProject } from "@/test/factories/project_factory.js";
+import { buildArtifactRecord, buildRunRecord } from "@/test/factories/run_record_factory.js";
+import { buildGithubIssue } from "@/test/factories/work_item_factory.js";
 import { FakeAgentRuntime, type ScriptedExec } from "@/test/fakes/fake_agent_runtime.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
+import { FakeGitHubProvider } from "@/test/fakes/fake_github_provider.js";
+import { InMemoryRunRepository } from "@/test/fakes/in_memory_run_repository.js";
 
 const POSITION = { x: 0, y: 0 };
 const ISSUE_1 = buildIssueSnapshot(1);
@@ -126,15 +133,80 @@ describe("deterministic executors", () => {
     });
 
     describe("output", () => {
-        it("records where the item moves as the item_outcome artifact", async () => {
-            const output = createNodeOfType("output", "needs_human", POSITION);
-            const node = {
-                ...output,
-                config: { ...output.config, moveItemTo: "needs_human" as const },
-            };
-            const context = buildNodeExecutionContext(node, { item: ISSUE_1 });
+        const GITHUB_REPO = "Fucks/forja";
+        const ISSUE_NUMBER = 1;
+        const RUN_ID = "run-1";
+        const OUTPUT_NODE_RUN_ID = "nr_output";
+        const PR_URL = "https://github.com/Fucks/forja/pull/1007";
 
-            const result = await executeOutputNode(context);
+        let runs: InMemoryRunRepository;
+        let github: FakeGitHubProvider;
+
+        beforeEach(async () => {
+            runs = new InMemoryRunRepository();
+            github = new FakeGitHubProvider();
+            github.addIssue(GITHUB_REPO, buildGithubIssue({ number: ISSUE_NUMBER }));
+            await runs.createRun(buildRunRecord({ id: RUN_ID }));
+        });
+
+        function executeOutput(context: NodeExecutionContext): Promise<NodeExecutionResult> {
+            const execute = createOutputExecutor({ runs, githubOf: () => Promise.resolve(github) });
+            return execute(context);
+        }
+
+        function buildOutputContext(
+            config: Partial<OutputConfig>,
+            overrides: Partial<NodeExecutionContext> = {},
+        ): NodeExecutionContext {
+            const output = createNodeOfType("output", "output", POSITION);
+            const node = { ...output, config: { ...output.config, ...config } };
+
+            return buildNodeExecutionContext(node, {
+                item: ISSUE_1,
+                project: buildProject({ githubRepo: GITHUB_REPO }),
+                run: buildRunRecord({ id: RUN_ID }),
+                nodeRun: buildNodeRunState({
+                    id: OUTPUT_NODE_RUN_ID,
+                    runId: RUN_ID,
+                    nodeId: "output",
+                    workItemId: ISSUE_1.id,
+                    status: "RUNNING",
+                }),
+                ...overrides,
+            });
+        }
+
+        async function recordPullRequestOfRun(): Promise<void> {
+            await runs.saveTransition({
+                nodeRuns: [
+                    buildNodeRunState({
+                        id: "nr_open_pr",
+                        runId: RUN_ID,
+                        nodeId: "open_pr",
+                        workItemId: ISSUE_1.id,
+                        status: "SUCCEEDED",
+                    }),
+                ],
+                artifacts: [
+                    buildArtifactRecord({
+                        nodeRunId: "nr_open_pr",
+                        runId: RUN_ID,
+                        name: "pr_url",
+                        kind: "pr_url",
+                        value: PR_URL,
+                    }),
+                ],
+            });
+        }
+
+        function commentBodies(): string[] {
+            return github.comments.map((comment) => comment.body);
+        }
+
+        it("records where the item moves as the item_outcome artifact", async () => {
+            const context = buildOutputContext({ moveItemTo: "needs_human" });
+
+            const result = await executeOutput(context);
 
             expect(result).toEqual({
                 outputs: {},
@@ -142,6 +214,73 @@ describe("deterministic executors", () => {
                     { name: "item_outcome", kind: "json", value: { moveItemTo: "needs_human" } },
                 ],
             });
+        });
+
+        it("does not comment on the issue unless commentOnIssue is on", async () => {
+            await recordPullRequestOfRun();
+
+            await executeOutput(buildOutputContext({ moveItemTo: "done" }));
+
+            expect(github.comments).toEqual([]);
+        });
+
+        it("comments on the issue with the pull request the run opened", async () => {
+            await recordPullRequestOfRun();
+
+            await executeOutput(buildOutputContext({ moveItemTo: "done", commentOnIssue: true }));
+
+            expect(github.comments).toEqual([
+                {
+                    repo: GITHUB_REPO,
+                    issueNumber: ISSUE_NUMBER,
+                    body: `Forja: run ${RUN_ID} concluída — PR #1007 aberto.`,
+                },
+            ]);
+        });
+
+        it("comments that the item needs human review and why", async () => {
+            const context = buildOutputContext(
+                { moveItemTo: "needs_human", commentOnIssue: true },
+                { inputs: { item: { approved: false, notes: "faltam testes" } } },
+            );
+
+            await executeOutput(context);
+
+            expect(commentBodies()).toEqual([
+                `Forja: run ${RUN_ID} concluída — item precisa de revisão humana (faltam testes).`,
+            ]);
+        });
+
+        it("comments only that the run finished when there is no pull request", async () => {
+            await executeOutput(buildOutputContext({ commentOnIssue: true }));
+
+            expect(commentBodies()).toEqual([`Forja: run ${RUN_ID} concluída.`]);
+        });
+
+        it("comments once per run, even when the output runs again", async () => {
+            await runs.saveTransition({
+                nodeRuns: [
+                    buildNodeRunState({
+                        id: "nr_output_before",
+                        runId: RUN_ID,
+                        nodeId: "output",
+                        workItemId: ISSUE_1.id,
+                        status: "SUCCEEDED",
+                    }),
+                ],
+            });
+
+            await executeOutput(buildOutputContext({ commentOnIssue: true }));
+
+            expect(github.comments).toEqual([]);
+        });
+
+        it("does not comment for an item without an issue", async () => {
+            const localItem = { ...ISSUE_1, number: undefined, url: undefined };
+
+            await executeOutput(buildOutputContext({ commentOnIssue: true }, { item: localItem }));
+
+            expect(github.comments).toEqual([]);
         });
     });
 

@@ -6,6 +6,7 @@ import { findNode } from "@/engine/graph_queries.js";
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { Clock } from "@/lib/clock.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
+import { findPrUrl } from "@/server/runs/pr_url_artifact.js";
 import type { ArtifactRecord, RunRepository } from "@/server/runs/run_repository.js";
 import { ITEM_OUTCOME_ARTIFACT } from "@/server/runtime/executors/output_executor.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
@@ -22,7 +23,6 @@ const START_OF_USAGE_HISTORY = new Date(0);
 const EMPTY_FLOW_GRAPH: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
 
 const itemOutcomeSchema = z.object({ moveItemTo: z.enum(ITEM_DESTINATIONS).optional() });
-const prUrlSchema = z.string();
 
 export interface BoardService {
     getBoard(projectId: string): Promise<BoardView>;
@@ -168,15 +168,6 @@ function findItemOutcome(artifacts: ArtifactRecord[]): ItemOutcome | undefined {
     }
 
     return itemOutcomeSchema.parse(outcomeArtifact.value).moveItemTo;
-}
-
-export function findPrUrl(artifacts: ArtifactRecord[]): string | undefined {
-    const prUrlArtifact = artifacts.findLast((artifact) => artifact.kind === "pr_url");
-    if (!prUrlArtifact) {
-        return undefined;
-    }
-
-    return prUrlSchema.parse(prUrlArtifact.value);
 }
 
 function labelOfNode(graph: FlowGraph, nodeId: string | undefined): string | undefined {

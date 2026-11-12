@@ -6,7 +6,7 @@ import { RunNotFoundError } from "@/server/runs/run_repository.js";
 import type { RunRecord, RunRepository } from "@/server/runs/run_repository.js";
 import { findRunOrThrow } from "@/server/runs/run_service.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
-import { findPrUrl } from "@/server/work_items/board_service.js";
+import { findPrUrl } from "@/server/runs/pr_url_artifact.js";
 import type { ItemTimeline, ItemTimelineEntry } from "@/shared/board_types.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { UsageRecord } from "@/shared/usage_types.js";
