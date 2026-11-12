@@ -3,6 +3,7 @@ import { screen, within } from "@testing-library/react";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { FlowDraft, FlowVersion, FlowVersionSummary } from "@/shared/flow_types.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import { updateAgentConfig, updateNode } from "@/test/factories/flow_graph_variations.js";
 import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
@@ -78,5 +79,39 @@ describe("VersionsPage", () => {
         renderAppAt(VERSIONS_PATH);
 
         expect(await screen.findByText("Nenhuma versão publicada")).toBeInTheDocument();
+    });
+
+    describe("comparing", () => {
+        it("compares the latest version with the one before it by default", async () => {
+            const before = updateAgentConfig(buildCanonicalFlow(), "reviewer", {
+                effort: "medium",
+            });
+            stubFetchRoutes(
+                fakeVersionsApi({
+                    versions: [buildVersion(1, before), buildVersion(2, buildCanonicalFlow())],
+                }),
+            );
+
+            renderAppAt(VERSIONS_PATH);
+
+            const reviewerChanges = await screen.findByRole("article", { name: "Reviewer" });
+            expect(reviewerChanges).toHaveTextContent("config.effort: medium → high");
+        });
+
+        it("shows no differences when the nodes only moved", async () => {
+            const moved = updateNode(buildCanonicalFlow(), "dev", (node) => ({
+                ...node,
+                position: { x: node.position.x + 120, y: node.position.y + 80 },
+            }));
+            stubFetchRoutes(
+                fakeVersionsApi({
+                    versions: [buildVersion(1, buildCanonicalFlow()), buildVersion(2, moved)],
+                }),
+            );
+
+            renderAppAt(VERSIONS_PATH);
+
+            expect(await screen.findByText("Nenhuma diferença entre v1 e v2.")).toBeInTheDocument();
+        });
     });
 });

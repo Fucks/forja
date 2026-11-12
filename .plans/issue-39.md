@@ -25,7 +25,7 @@
 - [ ] 4. Hooks `useFlowVersions`, `useSavedFlowDraft`, `useRestoreVersion` — `use_flow_versions.ts`
 - [ ] 5. Test + implement: versions page lists versions (number, date, note) — `versions_page.tsx`,
       `versions_page.test.tsx`
-- [ ] 6. Test + implement: diff with previous version shows `config.effort: medium → high` on "Reviewer",
+- [x] 6. Test + implement: diff with previous version shows `config.effort: medium → high` on "Reviewer",
       and "no differences" for position-only change — `version_diff_view.tsx`
 - [ ] 7. Test + implement: prompt changes show a line diff — `version_diff_view.tsx`
 - [ ] 8. Test + implement: compare with the draft — `versions_page.tsx`

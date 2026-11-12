@@ -3,16 +3,30 @@ import { useState } from "react";
 import type { JSX } from "react";
 import { Link, useParams } from "react-router";
 
-import { formatDateTime } from "@/lib/format.js";
+import { assertNever } from "@/lib/assert_never.js";
 import type { FlowVersionSummary } from "@/shared/flow_types.js";
 import { useFlowVersions } from "@/web/app/flows/use_flow_versions.js";
+import {
+    DRAFT_LABEL,
+    useVersionComparison,
+    versionLabel,
+} from "@/web/app/flows/use_version_comparison.js";
+import type { ComparisonTarget } from "@/web/app/flows/use_version_comparison.js";
+import { findLatestVersion, VersionList } from "@/web/app/flows/version_list.js";
+import { VersionDiffView } from "@/web/app/flows/version_diff_view.js";
 import { PageTitle } from "@/web/app/page_title.js";
 import { Button } from "@/web/components/ui/button.js";
-import { cn } from "@/web/components/ui/cn.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
+import { Field } from "@/web/components/ui/field.js";
+import { Select } from "@/web/components/ui/select.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 
-const NO_NOTE_LABEL = "Sem nota";
+const COMPARISON_TARGET_FIELD_ID = "comparison-target";
+
+interface ComparisonOption {
+    value: ComparisonTarget;
+    label: string;
+}
 
 export function VersionsPage(): JSX.Element {
     const { projectId = "", flowId = "" } = useParams();
@@ -59,12 +73,16 @@ function FlowVersionsBrowser({ flowId }: { flowId: string }): JSX.Element {
 }
 
 function VersionsWorkspace({
+    flowId,
     versions,
 }: {
     flowId: string;
     versions: FlowVersionSummary[];
 }): JSX.Element {
     const [selectedVersion, setSelectedVersion] = useState(findLatestVersion(versions));
+    const [target, setTarget] = useState<ComparisonTarget>("previous");
+    const previousVersion = findPreviousVersion(versions, selectedVersion);
+    const comparedTarget = previousVersion === undefined ? "draft" : target;
 
     return (
         <div className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border">
@@ -73,71 +91,96 @@ function VersionsWorkspace({
                 selectedVersion={selectedVersion}
                 onSelect={setSelectedVersion}
             />
+            <section aria-label="Comparação" className="flex min-w-0 flex-1 flex-col">
+                <div className="flex items-end gap-3 border-b border-border bg-surface px-3 py-2">
+                    <ComparisonTargetPicker
+                        target={comparedTarget}
+                        previousVersion={previousVersion}
+                        onChange={setTarget}
+                    />
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                    <VersionComparisonResult
+                        flowId={flowId}
+                        selectedVersion={selectedVersion}
+                        previousVersion={previousVersion}
+                        target={comparedTarget}
+                    />
+                </div>
+            </section>
         </div>
     );
 }
 
-function VersionList({
-    versions,
-    selectedVersion,
-    onSelect,
+function ComparisonTargetPicker({
+    target,
+    previousVersion,
+    onChange,
 }: {
-    versions: FlowVersionSummary[];
+    target: ComparisonTarget;
+    previousVersion: number | undefined;
+    onChange: (target: ComparisonTarget) => void;
+}): JSX.Element {
+    return (
+        <div className="w-64">
+            <Field label="Comparar com" htmlFor={COMPARISON_TARGET_FIELD_ID}>
+                <Select
+                    value={target}
+                    onChange={onChange}
+                    options={listComparisonOptions(previousVersion)}
+                />
+            </Field>
+        </div>
+    );
+}
+
+function VersionComparisonResult(props: {
+    flowId: string;
     selectedVersion: number;
-    onSelect: (version: number) => void;
+    previousVersion: number | undefined;
+    target: ComparisonTarget;
 }): JSX.Element {
-    const newestFirst = [...versions].reverse();
+    const comparison = useVersionComparison(props);
 
-    return (
-        <ul
-            aria-label="Versões publicadas"
-            className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-surface"
-        >
-            {newestFirst.map((version) => (
-                <li key={version.version}>
-                    <VersionListEntry
-                        version={version}
-                        isSelected={version.version === selectedVersion}
-                        onSelect={() => onSelect(version.version)}
-                    />
-                </li>
-            ))}
-        </ul>
-    );
+    switch (comparison.status) {
+        case "loading":
+            return <Skeleton className="m-4 h-40" />;
+        case "failed":
+            return (
+                <EmptyState
+                    icon={TriangleAlert}
+                    title="Não foi possível comparar as versões"
+                    description={comparison.message}
+                />
+            );
+        case "ready":
+            return <VersionDiffView before={comparison.before} after={comparison.after} />;
+        default:
+            return assertNever(comparison);
+    }
 }
 
-function VersionListEntry({
-    version,
-    isSelected,
-    onSelect,
-}: {
-    version: FlowVersionSummary;
-    isSelected: boolean;
-    onSelect: () => void;
-}): JSX.Element {
-    return (
-        <button
-            type="button"
-            aria-pressed={isSelected}
-            onClick={onSelect}
-            className={cn(
-                "flex w-full flex-col gap-0.5 border-b border-border px-3 py-2 text-left",
-                isSelected ? "bg-surface-raised" : "hover:bg-surface-raised",
-            )}
-        >
-            <span className="flex items-baseline justify-between gap-2">
-                <span className="font-medium">v{version.version}</span>
-                <span className="text-xs text-muted">
-                    {formatDateTime(new Date(version.publishedAt))}
-                </span>
-            </span>
-            <span className="truncate text-xs text-muted">{version.note ?? NO_NOTE_LABEL}</span>
-        </button>
-    );
+function listComparisonOptions(previousVersion: number | undefined): ComparisonOption[] {
+    const draftOption: ComparisonOption = { value: "draft", label: DRAFT_LABEL };
+    if (previousVersion === undefined) {
+        return [draftOption];
+    }
+
+    return [
+        { value: "previous", label: `Versão anterior (${versionLabel(previousVersion)})` },
+        draftOption,
+    ];
 }
 
-function findLatestVersion(versions: FlowVersionSummary[]): number {
-    return Math.max(...versions.map((version) => version.version));
+function findPreviousVersion(
+    versions: FlowVersionSummary[],
+    selectedVersion: number,
+): number | undefined {
+    const olderVersions = versions
+        .map((version) => version.version)
+        .filter((version) => version < selectedVersion);
+
+    return olderVersions.length === 0 ? undefined : Math.max(...olderVersions);
 }
 
 function editorPath(projectId: string, flowId: string): string {
