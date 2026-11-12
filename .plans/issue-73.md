@@ -25,7 +25,7 @@
 - [x] 2. Test + implement `buildItemTimeline` entries of all runs, newest first, with flow name and node label — `src/server/work_items/item_timeline.ts`, `.test.ts`, `src/shared/board_types.ts`
 - [x] 3. Test + implement entry cost and total cost — `item_timeline.ts`
 - [x] 4. Test + implement `prUrl` and `spec` — `item_timeline.ts`, `src/engine/board_columns.ts`
-- [ ] 5. Route `GET /api/work-items/:id/timeline` + route test — `work_items_routes.ts`, `work_items_routes.test.ts`
+- [x] 5. Route `GET /api/work-items/:id/timeline` + route test — `work_items_routes.ts`, `work_items_routes.test.ts`
 - [ ] 6. Run page opens the NodeRun given by `?nodeRun=` — `navigation.ts`, `run_page.tsx`, `run_canvas.tsx`, `node_run_drawer.tsx`, `run_canvas.test.tsx`
 - [ ] 7. Test + implement drawer header, description, blockers, spec, timeline (entry links to run with NodeRun) — `work_item_drawer.tsx`, `item_timeline.tsx`, `use_board.ts`, `work_item_drawer.test.tsx`
 - [ ] 8. Test + implement manual column actions — `work_item_drawer.tsx`, `use_board.ts`

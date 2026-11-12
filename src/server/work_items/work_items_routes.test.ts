@@ -4,7 +4,7 @@ import { buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
-import type { BoardView } from "@/shared/board_types.js";
+import type { BoardView, ItemTimeline } from "@/shared/board_types.js";
 import type { LocalItemInput, WorkItem } from "@/shared/work_item_types.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildWorkItem } from "@/test/factories/work_item_factory.js";
@@ -366,6 +366,23 @@ describe("work items routes", () => {
 
         it("answers 404 for an unknown project", async () => {
             const response = await app.inject({ method: "GET", url: "/api/projects/nope/board" });
+
+            expect(response.statusCode).toBe(404);
+        });
+    });
+
+    describe("GET /api/work-items/:id/timeline", () => {
+        it("answers an empty timeline for an item that never ran", async () => {
+            const item = await createItem();
+
+            const response = await app.inject({ url: `/api/work-items/${item.id}/timeline` });
+
+            expect(response.statusCode).toBe(200);
+            expect(response.json<ItemTimeline>()).toEqual({ entries: [], totalCostUsd: 0 });
+        });
+
+        it("answers 404 for an unknown item", async () => {
+            const response = await app.inject({ url: "/api/work-items/itm_missing/timeline" });
 
             expect(response.statusCode).toBe(404);
         });
