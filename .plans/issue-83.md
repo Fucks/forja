@@ -41,5 +41,5 @@
 - [x] 10. Test bed: `github` option with real source/git/output executors — `src/test/executor_test_bed.ts`
 - [x] 11. E2E test: unblocked item gets PR with evidence body and `Closes #N`; blocked item not in run; failed checks → needs human with failure summary — `sandcastle_pipeline.test.ts`
 - [x] 12. E2E test: implementer without commits → needs human — `sandcastle_pipeline.test.ts`
-- [ ] 13. README section "Migrando do `.sandcastle/main.mts`" — `README.md`
+- [x] 13. README section "Migrando do `.sandcastle/main.mts`" — `README.md`
 - [ ] 14. Self-review checklist (section 5) and feedback loops (section 6)
