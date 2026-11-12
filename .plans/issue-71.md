@@ -47,7 +47,7 @@
 - [x] 7. Test + implement `open_pr` without commits ahead not requiring a GitHub repo — `git_executor.ts`
 - [x] 8. Test + implement `seedDemo` creating project, 5 local items, published flow and a finished run
       with logs and usage — `seed_demo.ts`, `seed_demo.test.ts`
-- [ ] 9. Test + implement `seedDemo` idempotency (`app_meta.demo_seeded`)
+- [x] 9. Test + implement `seedDemo` idempotency (`app_meta.demo_seeded`)
 - [ ] 10. Wire `main.ts`: `FORJA_AGENT_RUNTIME=fake` → scripted runtime; `options.seedDemo` → `seedDemo()`
       before listening; delete `UnavailableAgentRuntime` if unused
 - [ ] 11. Manual check: `FORJA_DATA_DIR=<empty> FORJA_AGENT_RUNTIME=fake npm run start -- --no-open --seed-demo`

@@ -126,6 +126,37 @@ describe("seedDemo", () => {
         },
         SEED_TIMEOUT_MS,
     );
+
+    it(
+        "does nothing when the demo was seeded before",
+        async () => {
+            const bed = createSeedBed();
+            const first = await seedDemo(bed.services);
+
+            const second = await seedDemo(bed.services);
+
+            const runs = new SqliteRunRepository(bed.database.db, systemClock);
+            expect(second).toEqual({ created: false, projectId: first.projectId });
+            expect(new ProjectRepository(bed.database.db).list()).toHaveLength(1);
+            expect(await runs.listRuns(first.projectId, RUNS_PAGE)).toHaveLength(1);
+        },
+        SEED_TIMEOUT_MS,
+    );
+
+    it(
+        "seeds the demo again when its project was removed",
+        async () => {
+            const bed = createSeedBed();
+            const first = await seedDemo(bed.services);
+            removeProjectAndItsRepo(bed, first.projectId);
+
+            const second = await seedDemo(bed.services);
+
+            expect(second.created).toBe(true);
+            expect(second.projectId).not.toBe(first.projectId);
+        },
+        SEED_TIMEOUT_MS,
+    );
 });
 
 function buildSeedBed(): SeedBed {
@@ -166,6 +197,12 @@ function gitCallsIn(bed: SeedBed, repoPath: string): string[][] {
     return bed.commands.calls
         .filter((call) => call.command === "git" && call.options.cwd === repoPath)
         .map((call) => call.args);
+}
+
+function removeProjectAndItsRepo(bed: SeedBed, projectId: string): void {
+    const project = findProject(bed, projectId);
+    new ProjectRepository(bed.database.db).delete(projectId);
+    rmSync(project.repoPath, { recursive: true, force: true });
 }
 
 function removeDemoRepos(bed: SeedBed): Promise<void> {
