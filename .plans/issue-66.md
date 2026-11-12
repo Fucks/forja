@@ -35,4 +35,4 @@
 - [x] 8. Test + impl: "Nova run" starts the run and opens it — `new_run_dialog.tsx`
 - [x] 9. Test + impl: "Últimas runs" card on the project overview — `recent_runs_card.tsx`,
       `project_page.tsx`
-- [ ] 10. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 10. Self-review checklist (section 5) and feedback loops (section 6)

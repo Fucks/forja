@@ -272,6 +272,16 @@ describe("RunsPage", () => {
         });
     });
 
+    it("tells when no run matches the filters", async () => {
+        stubRunsApi({ [`GET ${FIRST_PAGE_URL}&status=CANCELED`]: () => Response.json([]) });
+        renderAppAt(RUNS_PAGE_PATH);
+        await findRunRows();
+
+        await chooseFilter("Estado", "Cancelado");
+
+        expect(await screen.findByText("Nenhuma run com esses filtros")).toBeInTheDocument();
+    });
+
     it("explains when there are no runs yet", async () => {
         stubRunsApi({ [`GET ${FIRST_PAGE_URL}`]: () => Response.json([]) });
 

@@ -1,7 +1,7 @@
 import type { RunRecord } from "@/server/runs/run_repository.js";
 import type { RunListItem } from "@/shared/run_types.js";
 
-export interface RunListContext {
+interface RunListContext {
     flowName: string;
     costUsd: number;
     triggerName?: string;

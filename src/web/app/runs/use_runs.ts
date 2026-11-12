@@ -18,7 +18,7 @@ export interface RunFilters {
     status?: RunStatusName[];
 }
 
-export type StartRunInput = z.input<typeof startRunInput>;
+type StartRunInput = z.input<typeof startRunInput>;
 
 const RUNS_QUERY_KEY = "runs";
 const RUNS_PAGE_SIZE = 50;
@@ -85,8 +85,8 @@ function isActiveRun(run: RunListItem): boolean {
     return !RUN_TERMINAL.has(run.status);
 }
 
-function listActiveRunsFirst(data: InfiniteData<RunListItem[]>): RunListItem[] {
-    const runs = data.pages.flat();
+function listActiveRunsFirst(loadedPages: InfiniteData<RunListItem[]>): RunListItem[] {
+    const runs = loadedPages.pages.flat();
     const activeRuns = runs.filter(isActiveRun);
     const finishedRuns = runs.filter((run) => !isActiveRun(run));
 

@@ -60,13 +60,7 @@ function RunsContent({
         );
     }
     if (runsQuery.data.length === 0) {
-        return (
-            <EmptyState
-                icon={History}
-                title="Nenhuma run ainda"
-                description="Inicie uma run de um fluxo publicado para acompanhar a execução aqui."
-            />
-        );
+        return <NoRunsState isFiltered={hasAnyFilter(filters)} />;
     }
 
     return (
@@ -82,4 +76,28 @@ function RunsContent({
             )}
         </div>
     );
+}
+
+function NoRunsState({ isFiltered }: { isFiltered: boolean }): JSX.Element {
+    if (isFiltered) {
+        return (
+            <EmptyState
+                icon={History}
+                title="Nenhuma run com esses filtros"
+                description="Troque o fluxo ou o estado para ver outras runs."
+            />
+        );
+    }
+
+    return (
+        <EmptyState
+            icon={History}
+            title="Nenhuma run ainda"
+            description="Inicie uma run de um fluxo publicado para acompanhar a execução aqui."
+        />
+    );
+}
+
+function hasAnyFilter(filters: RunFilters): boolean {
+    return filters.flowId !== undefined || filters.status !== undefined;
 }
