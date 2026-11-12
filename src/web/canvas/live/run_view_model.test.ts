@@ -1,12 +1,15 @@
+import type { EventEnvelope, ForjaEvent } from "@/shared/events.js";
 import type { SerializedNodeRun, SerializedRunView } from "@/shared/run_types.js";
 import {
     buildSerializedNodeRun,
     buildSerializedRunView,
 } from "@/test/factories/run_view_factory.js";
-import { aggregateNodeStates } from "@/web/canvas/live/run_view_model.js";
+import { aggregateNodeStates, applyEvent } from "@/web/canvas/live/run_view_model.js";
 
 const DEVELOPER_NODE_ID = "dev";
 const DEVELOP_GROUP_ID = "develop";
+const EVENT_AT = "2026-01-01T12:10:00.000Z";
+const RESUME_AT = "2026-01-01T15:05:00.000Z";
 
 describe("aggregateNodeStates", () => {
     it("shows every node of the graph as pending before it runs", () => {
@@ -137,6 +140,130 @@ describe("aggregateNodeStates filtered by item", () => {
     });
 });
 
+describe("applyEvent", () => {
+    it("adds the NodeRun that a node_run.updated announces", () => {
+        const view = buildSerializedRunView();
+
+        const updated = applyEvent(view, envelopeOf(nodeRunUpdated({ status: "RUNNING" })));
+
+        expect(updated.nodeRuns).toEqual([
+            buildSerializedNodeRun({
+                id: "node-run-7",
+                nodeId: DEVELOPER_NODE_ID,
+                workItemId: "42",
+                status: "RUNNING",
+            }),
+        ]);
+    });
+
+    it("changes the status of a NodeRun the view already has", () => {
+        const view = applyEvent(
+            buildSerializedRunView(),
+            envelopeOf(nodeRunUpdated({ status: "RUNNING" }), 1),
+        );
+
+        const updated = applyEvent(view, envelopeOf(nodeRunUpdated({ status: "SUCCEEDED" }), 2));
+
+        expect(updated.nodeRuns.map((nodeRun) => nodeRun.status)).toEqual(["SUCCEEDED"]);
+    });
+
+    it("replaces the counters of the group a group.progress names", () => {
+        const view = buildSerializedRunView();
+
+        const updated = applyEvent(
+            view,
+            envelopeOf({
+                type: "group.progress",
+                runId: "run-1",
+                projectId: "project-1",
+                groupId: DEVELOP_GROUP_ID,
+                queued: 1,
+                running: 2,
+                succeeded: 3,
+                failed: 0,
+            }),
+        );
+
+        expect(updated.groups[DEVELOP_GROUP_ID]).toEqual({
+            queued: 1,
+            running: 2,
+            succeeded: 3,
+            failed: 0,
+        });
+    });
+
+    it("finishes the run when run.finished arrives", () => {
+        const view = buildSerializedRunView();
+
+        const updated = applyEvent(
+            view,
+            envelopeOf({
+                type: "run.finished",
+                runId: "run-1",
+                projectId: "project-1",
+                flowId: "flow-1",
+                status: "SUCCEEDED",
+            }),
+        );
+
+        expect(updated.run).toMatchObject({ status: "SUCCEEDED", finishedAt: EVENT_AT });
+    });
+
+    it("pauses the run with the reason and resume time of run.paused", () => {
+        const view = buildSerializedRunView();
+
+        const updated = applyEvent(
+            view,
+            envelopeOf({
+                type: "run.paused",
+                runId: "run-1",
+                projectId: "project-1",
+                reason: "usage_limit",
+                resumeAt: RESUME_AT,
+            }),
+        );
+
+        expect(updated.run).toMatchObject({
+            status: "PAUSED",
+            pauseReason: "usage_limit",
+            resumeAt: RESUME_AT,
+        });
+    });
+
+    it("clears the pause when run.resumed arrives", () => {
+        const pausedRun = {
+            ...buildSerializedRunView().run,
+            status: "PAUSED" as const,
+            pauseReason: "user" as const,
+        };
+        const view = buildSerializedRunView({ run: pausedRun });
+
+        const updated = applyEvent(
+            view,
+            envelopeOf({ type: "run.resumed", runId: "run-1", projectId: "project-1" }),
+        );
+
+        expect(updated.run.status).toBe("RUNNING");
+        expect(updated.run.pauseReason).toBeUndefined();
+    });
+
+    it("remembers the id of the last event it applied", () => {
+        const view = buildSerializedRunView({ lastEventId: 10 });
+
+        const updated = applyEvent(view, envelopeOf(nodeRunUpdated({ status: "RUNNING" }), 11));
+
+        expect(updated.lastEventId).toBe(11);
+    });
+
+    it("ignores an event the view already reflects", () => {
+        const view = buildSerializedRunView({ lastEventId: 10 });
+
+        const updated = applyEvent(view, envelopeOf(nodeRunUpdated({ status: "RUNNING" }), 10));
+
+        expect(updated).toBe(view);
+    });
+});
+
 function viewWithDeveloperRuns(nodeRuns: Partial<SerializedNodeRun>[]): SerializedRunView {
     return buildSerializedRunView({
         nodeRuns: nodeRuns.map((nodeRun, index) =>
@@ -147,4 +274,25 @@ function viewWithDeveloperRuns(nodeRuns: Partial<SerializedNodeRun>[]): Serializ
             }),
         ),
     });
+}
+
+function nodeRunUpdated(
+    overrides: Partial<Extract<ForjaEvent, { type: "node_run.updated" }>>,
+): ForjaEvent {
+    return {
+        type: "node_run.updated",
+        runId: "run-1",
+        projectId: "project-1",
+        nodeRunId: "node-run-7",
+        nodeId: DEVELOPER_NODE_ID,
+        workItemId: "42",
+        status: "PENDING",
+        attempt: 1,
+        iteration: 0,
+        ...overrides,
+    };
+}
+
+function envelopeOf(event: ForjaEvent, id = 1): EventEnvelope {
+    return { id, at: EVENT_AT, event };
 }

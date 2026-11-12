@@ -1,8 +1,19 @@
 import type { MapProgress } from "@/engine/map_group.js";
 import { progressOfMaps } from "@/engine/map_progress.js";
+import { RUN_TERMINAL } from "@/engine/run_state.js";
+import { assertNever } from "@/lib/assert_never.js";
 import { formatCount } from "@/lib/format.js";
-import type { NodeRunStatusName } from "@/shared/events.js";
-import type { SerializedNodeRun, SerializedRunView } from "@/shared/run_types.js";
+import type {
+    EventEnvelope,
+    ForjaEvent,
+    NodeRunStatusName,
+    RunStatusName,
+} from "@/shared/events.js";
+import type {
+    SerializedNodeRun,
+    SerializedRunRecord,
+    SerializedRunView,
+} from "@/shared/run_types.js";
 import type { NodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
 import type { ExecutionStatus } from "@/web/components/ui/execution_status.js";
 
@@ -24,6 +35,11 @@ const CONCLUDED_STATUSES: ReadonlySet<NodeRunStatusName> = new Set<NodeRunStatus
     "SUCCEEDED",
     "SKIPPED",
 ]);
+
+type ViewedRun = SerializedRunView["run"];
+type NodeRunUpdatedEvent = Extract<ForjaEvent, { type: "node_run.updated" }>;
+type RunPausedEvent = Extract<ForjaEvent, { type: "run.paused" }>;
+type GroupProgressEvent = Extract<ForjaEvent, { type: "group.progress" }>;
 
 const ITEM_NOUNS = { one: "item", other: "itens" };
 const WITHOUT_ITEM = "";
@@ -166,4 +182,107 @@ function latestNodeRunByItem(nodeRuns: SerializedNodeRun[]): Map<string, Seriali
 
 function itemKeyOf(nodeRun: SerializedNodeRun): string {
     return nodeRun.workItemId ?? WITHOUT_ITEM;
+}
+
+// The view already reflects every event up to its lastEventId, so an event received twice (the
+// stream and a reload overlap) changes nothing.
+export function applyEvent(view: SerializedRunView, envelope: EventEnvelope): SerializedRunView {
+    if (envelope.id <= view.lastEventId) {
+        return view;
+    }
+
+    return { ...applyRunEvent(view, envelope.event, envelope.at), lastEventId: envelope.id };
+}
+
+function applyRunEvent(view: SerializedRunView, event: ForjaEvent, at: string): SerializedRunView {
+    switch (event.type) {
+        case "node_run.updated":
+            return { ...view, nodeRuns: upsertNodeRun(view.nodeRuns, event) };
+        case "group.progress":
+            return { ...view, groups: { ...view.groups, [event.groupId]: progressOf(event) } };
+        case "run.created":
+        case "run.started":
+        case "run.finished":
+            return { ...view, run: changeRunStatus(view.run, event.status, at) };
+        case "run.paused":
+            return { ...view, run: pauseRun(view.run, event) };
+        case "run.resumed":
+            return { ...view, run: resumeRun(view.run, at) };
+        case "log.appended":
+        case "usage.recorded":
+        case "usage.limit_reached":
+        case "usage.limit_reset":
+        case "work_item.created":
+        case "work_item.updated":
+        case "approval.requested":
+        case "approval.resolved":
+        case "trigger.fired":
+        case "flow.published":
+            return view;
+        default:
+            return assertNever(event);
+    }
+}
+
+function upsertNodeRun(
+    nodeRuns: SerializedNodeRun[],
+    event: NodeRunUpdatedEvent,
+): SerializedNodeRun[] {
+    const { nodeRunId, status, attempt, iteration } = event;
+    if (!nodeRuns.some((nodeRun) => nodeRun.id === nodeRunId)) {
+        return [...nodeRuns, newNodeRunOf(event)];
+    }
+
+    return nodeRuns.map((nodeRun) =>
+        nodeRun.id === nodeRunId ? { ...nodeRun, status, attempt, iteration } : nodeRun,
+    );
+}
+
+// The event does not carry the group path; the node drawer loads the full NodeRun when opened.
+function newNodeRunOf(event: NodeRunUpdatedEvent): SerializedNodeRun {
+    return {
+        id: event.nodeRunId,
+        runId: event.runId,
+        nodeId: event.nodeId,
+        workItemId: event.workItemId,
+        iteration: event.iteration,
+        attempt: event.attempt,
+        groupPath: [],
+        status: event.status,
+    };
+}
+
+function progressOf({ queued, running, succeeded, failed }: GroupProgressEvent): MapProgress {
+    return { queued, running, succeeded, failed };
+}
+
+function changeRunStatus(run: ViewedRun, status: RunStatusName, at: string): ViewedRun {
+    return { ...run, status, ...runTimestampsOnEntering(run, status, at) };
+}
+
+function runTimestampsOnEntering(
+    run: ViewedRun,
+    status: RunStatusName,
+    at: string,
+): Pick<SerializedRunRecord, "startedAt" | "finishedAt"> {
+    if (status === "RUNNING") {
+        return { startedAt: run.startedAt ?? at };
+    }
+    if (RUN_TERMINAL.has(status)) {
+        return { finishedAt: at };
+    }
+
+    return {};
+}
+
+function pauseRun(run: ViewedRun, { reason, resumeAt }: RunPausedEvent): ViewedRun {
+    return { ...run, status: "PAUSED", pauseReason: reason, resumeAt };
+}
+
+function resumeRun(run: ViewedRun, at: string): ViewedRun {
+    return {
+        ...changeRunStatus(run, "RUNNING", at),
+        pauseReason: undefined,
+        resumeAt: undefined,
+    };
 }
