@@ -27,10 +27,10 @@
 ## Tasks
 
 - [x] 1. `deleteLocalBranch` + `BranchInUseError` in `git_provider.ts`, `cli_git_provider.ts` (+ test) and `fake_git_provider.ts`
-- [ ] 2. Test + implement: merged PR moves the item to done, closes the open issue, deletes the branch — `pull_request_sync.ts`
-- [ ] 3. Test + implement: closed-without-merge PR, PR not opened by Forja, PR older than 30 days change nothing
-- [ ] 4. Test + implement: repeated sync does nothing more; already-closed issue is not closed again; local item has no issue to close
-- [ ] 5. Test + implement: branch held by a worktree is kept and the rest still happens; project without GitHub repo syncs nothing
+- [x] 2. Test + implement: merged PR moves the item to done, closes the open issue, deletes the branch — `pull_request_sync.ts`
+- [x] 3. Test + implement: closed-without-merge PR, PR not opened by Forja, PR older than 30 days change nothing
+- [x] 4. Test + implement: repeated sync does nothing more; already-closed issue is not closed again; local item has no issue to close
+- [x] 5. Test + implement: branch held by a worktree is kept and the rest still happens; project without GitHub repo syncs nothing
 - [ ] 6. Job in `project_github_sync.ts` and route `POST /api/projects/:projectId/pull-requests/sync` — `work_items_routes.ts` (+ route test)
 - [ ] 7. Test + implement: `output` with `commentOnIssue` comments on the issue once per run — `output_executor.ts`, `deterministic_executors.test.ts`, `node_executors.ts`, test bed
 - [ ] 8. Self-review checklist and feedback loops
