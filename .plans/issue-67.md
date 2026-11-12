@@ -27,8 +27,8 @@
 
 - [x] 1. Server: filter the usage by node when `nodeId` is given — `usage_types.ts`,
       `usage_repository.ts`, `usage_service.test.ts`
-- [ ] 2. `startOfLocalDay` and `addDays` — `src/lib/local_day.ts` (+ test)
-- [ ] 3. `formatCalendarDay` ("12/11") — `src/lib/format.ts` (+ test)
+- [x] 2. `startOfLocalDay` and `addDays` — `src/lib/local_day.ts` (+ test)
+- [x] 3. `formatCalendarDay` ("12/11") — `src/lib/format.ts` (+ test)
 - [ ] 4. Period choices to `{ from, to, days }` — `src/web/app/usage/usage_period.ts` (+ test)
 - [ ] 5. `useUsage` hook — `src/web/app/usage/use_usage.ts`
 - [ ] 6. Page test + implementation: grouping by node shows each node's cost — `usage_page.tsx`,

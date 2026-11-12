@@ -1,4 +1,5 @@
 import {
+    formatCalendarDay,
     formatCount,
     formatDateTime,
     formatDuration,
@@ -108,5 +109,11 @@ describe("formatCount", () => {
 
     it.each([0, 2])("uses the plural noun for %i", (count) => {
         expect(formatCount(count, { one: "erro", other: "erros" })).toBe(`${count} erros`);
+    });
+});
+
+describe("formatCalendarDay", () => {
+    it("shows the day and the month of a calendar day", () => {
+        expect(formatCalendarDay("2026-11-02")).toBe("02/11");
     });
 });
