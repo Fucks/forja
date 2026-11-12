@@ -2,6 +2,7 @@ import type { JSX } from "react";
 
 import { formatDateTime } from "@/lib/format.js";
 import type { FlowVersionSummary } from "@/shared/flow_types.js";
+import { versionLabel } from "@/web/app/flows/use_version_comparison.js";
 import { cn } from "@/web/components/ui/cn.js";
 
 const NO_NOTE_LABEL = "Sem nota";
@@ -55,7 +56,7 @@ function VersionListEntry({
             )}
         >
             <span className="flex items-baseline justify-between gap-2">
-                <span className="font-medium">v{version.version}</span>
+                <span className="font-medium">{versionLabel(version.version)}</span>
                 <span className="text-xs text-muted">
                     {formatDateTime(new Date(version.publishedAt))}
                 </span>
@@ -63,8 +64,4 @@ function VersionListEntry({
             <span className="truncate text-xs text-muted">{version.note ?? NO_NOTE_LABEL}</span>
         </button>
     );
-}
-
-export function findLatestVersion(versions: FlowVersionSummary[]): number {
-    return Math.max(...versions.map((version) => version.version));
 }

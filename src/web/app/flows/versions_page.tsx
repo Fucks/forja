@@ -5,12 +5,12 @@ import { Link, useParams } from "react-router";
 
 import { assertNever } from "@/lib/assert_never.js";
 import type { FlowVersionSummary } from "@/shared/flow_types.js";
+import { ComparisonTargetPicker } from "@/web/app/flows/comparison_target_picker.js";
 import { RestoreVersionDialog } from "@/web/app/flows/restore_version_dialog.js";
 import { useFlowVersions } from "@/web/app/flows/use_flow_versions.js";
-import { ComparisonTargetPicker } from "@/web/app/flows/comparison_target_picker.js";
 import { useVersionComparison } from "@/web/app/flows/use_version_comparison.js";
 import type { ComparisonTarget } from "@/web/app/flows/use_version_comparison.js";
-import { findLatestVersion, VersionList } from "@/web/app/flows/version_list.js";
+import { VersionList } from "@/web/app/flows/version_list.js";
 import { VersionDiffView } from "@/web/app/flows/version_diff_view.js";
 import { PageTitle } from "@/web/app/page_title.js";
 import { Button } from "@/web/components/ui/button.js";
@@ -152,6 +152,10 @@ function VersionComparisonResult(props: {
         default:
             return assertNever(comparison);
     }
+}
+
+function findLatestVersion(versions: FlowVersionSummary[]): number {
+    return Math.max(...versions.map((version) => version.version));
 }
 
 function findPreviousVersion(
