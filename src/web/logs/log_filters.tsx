@@ -14,7 +14,7 @@ const LOG_FILTER_OPTIONS: { value: LogFilter; label: string }[] = [
 ];
 
 const SHOWS_LINE: Record<LogFilter, (line: LogLine) => boolean> = {
-    text_and_tools: (line) => line.isRawOutput !== true,
+    text_and_tools: (line) => !line.isRawOutput,
     text_only: (line) => line.kind === "text" || line.kind === "error",
     raw: () => true,
 };

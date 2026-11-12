@@ -6,8 +6,8 @@ import type { SerializedNodeRun, SerializedNodeRunDetail } from "@/shared/run_ty
 import { JsonView } from "@/web/canvas/live/json_view.js";
 import { NodeRunActionButtons } from "@/web/canvas/live/node_run_action_buttons.js";
 import { NodeRunArtifacts } from "@/web/canvas/live/node_run_artifacts.js";
-import { NodeRunLogs } from "@/web/canvas/live/node_run_logs.js";
 import { NODE_RUN_ERROR_LABELS } from "@/web/canvas/live/node_run_error_labels.js";
+import { NodeRunLogs } from "@/web/canvas/live/node_run_logs.js";
 import { describeNodeRun } from "@/web/canvas/live/node_run_sorting.js";
 import { useNodeRunDetail } from "@/web/canvas/live/use_node_run_detail.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";

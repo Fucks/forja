@@ -154,9 +154,9 @@ function fetchLogPage(nodeRunId: string, fromSeq: number): Promise<LogPage> {
     return apiClient.get<LogPage>(`/node-runs/${encodeURIComponent(nodeRunId)}/logs?${query}`);
 }
 
-async function reportApiError(loading: Promise<void>, reportError: ReportError): Promise<void> {
+async function reportApiError(pendingLoad: Promise<void>, reportError: ReportError): Promise<void> {
     try {
-        await loading;
+        await pendingLoad;
     } catch (error) {
         if (!(error instanceof ApiError)) {
             throw error;
