@@ -20,16 +20,16 @@
 
 ## Tasks
 
-- [ ] 1. Test + impl: empty list offers "Novo fluxo" — `flows_page.test.tsx`, `flows_page.tsx`, `use_flows.ts`
-- [ ] 2. Test + impl: table lists name, default star, latest version, updated at — `flows_table.tsx`
-- [ ] 3. Test + impl: archived hidden, "Mostrar arquivados" shows them — `flows_page.tsx`
-- [ ] 4. Test + impl: create from "Fábrica básica" posts from-template and opens editor; blank creates
+- [x] 1. Test + impl: empty list offers "Novo fluxo" — `flows_page.test.tsx`, `flows_page.tsx`, `use_flows.ts`
+- [x] 2. Test + impl: table lists name, default star, latest version, updated at — `flows_table.tsx`
+- [x] 3. Test + impl: archived hidden, "Mostrar arquivados" shows them — `flows_page.tsx`
+- [x] 4. Test + impl: create from "Fábrica básica" posts from-template and opens editor; blank creates
       without template; name required — `new_flow_dialog.tsx`, `use_flows.ts`
-- [ ] 5. Test + impl: import posts the file and opens the editor; invalid YAML shows the line —
+- [x] 5. Test + impl: import posts the file and opens the editor; invalid YAML shows the line —
       `import_flow_button.tsx`, `use_flows.ts`
-- [ ] 6. Test + impl: marking default posts and the previous default loses the star — `flows_table.tsx`
-- [ ] 7. Test + impl: rename dialog — `rename_flow_dialog.tsx`
-- [ ] 8. Test + impl: archive action — `flows_table.tsx`
+- [x] 6. Test + impl: marking default posts and the previous default loses the star — `flows_table.tsx`
+- [x] 7. Test + impl: rename dialog — `rename_flow_dialog.tsx`
+- [x] 8. Test + impl: archive action — `flows_table.tsx`
 - [ ] 9. Test + impl: export links (version and draft) in rows and in the editor top bar —
       `export_flow_menu.tsx`, `editor_top_bar.tsx`, `flow_editor_page.tsx`, `flow_editor_page.test.tsx`
 - [ ] 10. Self-review checklist and feedback loops (typecheck, lint, test)

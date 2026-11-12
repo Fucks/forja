@@ -31,6 +31,6 @@ function projectFlowsQuery(projectId: string): {
     };
 }
 
-function projectFlowsPath(projectId: string): string {
+export function projectFlowsPath(projectId: string): string {
     return `/projects/${encodeURIComponent(projectId)}/flows`;
 }

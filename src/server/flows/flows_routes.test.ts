@@ -445,6 +445,15 @@ describe("flows routes", () => {
             },
         );
 
+        it("accepts the file sent as a JSON string, as the web client sends it", async () => {
+            const yaml = buildFlowYaml("Importado", buildCanonicalFlow());
+
+            const response = await importFlow(JSON.stringify(yaml), "application/json");
+
+            expect(response.statusCode).toBe(201);
+            expect(response.json<FlowSummary>()).toMatchObject({ name: "Importado" });
+        });
+
         it("answers 422 with the line and column of broken YAML", async () => {
             const response = await importFlow("forja: 1\nname: [Importado\ngraph: {}\n");
 
