@@ -35,7 +35,10 @@ describe("checkRequest", () => {
         });
 
         it("accepts a POST whose origin is the app itself", () => {
-            const request = apiRequest({ method: "POST", ...withHeaders({ origin: LOCAL_ORIGIN }) });
+            const request = apiRequest({
+                method: "POST",
+                ...withHeaders({ origin: LOCAL_ORIGIN }),
+            });
 
             expect(checkRequest(request, CONTEXT)).toEqual({ ok: true });
         });
@@ -47,7 +50,10 @@ describe("checkRequest", () => {
         });
 
         it("answers 401 with a session cookie of another boot", () => {
-            const result = checkRequest(apiRequest({ cookies: { forja_session: "velho" } }), CONTEXT);
+            const result = checkRequest(
+                apiRequest({ cookies: { forja_session: "velho" } }),
+                CONTEXT,
+            );
 
             expect(result).toMatchObject({ ok: false, status: 401 });
         });
