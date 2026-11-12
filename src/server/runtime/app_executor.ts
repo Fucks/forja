@@ -20,6 +20,7 @@ import type { EventBus } from "@/server/runtime/event_bus.js";
 import { createExecutor, type Executor, type ItemSource } from "@/server/runtime/executor.js";
 import type { LogStore } from "@/server/runtime/log_store.js";
 import { createNodeExecutors } from "@/server/runtime/node_executors.js";
+import { createAuditLog } from "@/server/security/audit_log.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService } from "@/server/settings/settings_service.js";
@@ -88,6 +89,7 @@ export function createAppExecutor({
             secrets,
             redactor,
             clock,
+            audit: createAuditLog({ db, clock }),
         }),
         redactor,
         fileExists: existsSync,

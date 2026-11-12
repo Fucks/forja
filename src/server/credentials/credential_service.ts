@@ -9,6 +9,7 @@ import type {
     StoredCredential,
 } from "@/server/credentials/credential_repository.js";
 import { DomainValidationError, NotFoundError } from "@/server/errors.js";
+import type { AuditAction, AuditLog } from "@/server/security/audit_log.js";
 import { ENV_VAR_BY_KIND, GENERIC_ENV_VAR_REQUIRED_MESSAGE } from "@/shared/credential_types.js";
 import type {
     CredentialInput,
@@ -46,17 +47,20 @@ export interface CredentialServiceDeps {
     secrets: SecretBox;
     redactor: SecretRedactor;
     clock: Clock;
+    audit: AuditLog;
 }
 
 type ValueProtectionDeps = Pick<CredentialServiceDeps, "secrets" | "redactor">;
 
 export function createCredentialService(deps: CredentialServiceDeps): CredentialService {
     return {
-        create: (input) => resolveWith(() => createCredential(deps, input)),
+        create: (input) => createAuditedCredential(deps, input),
         list: () => resolveWith(() => deps.repo.list().map(toCredentialSummary)),
-        rename: (id, name) => resolveWith(() => renameCredential(deps, id, name)),
-        replaceValue: (id, value) => resolveWith(() => replaceCredentialValue(deps, id, value)),
-        remove: (id) => resolveWith(() => removeCredential(deps.repo, id)),
+        rename: (id, name) =>
+            updateAuditedCredential(deps, "name", () => renameCredential(deps, id, name)),
+        replaceValue: (id, value) =>
+            updateAuditedCredential(deps, "value", () => replaceCredentialValue(deps, id, value)),
+        remove: (id) => removeAuditedCredential(deps, id),
         revealForRuntime: (id) => resolveWith(() => revealCredential(deps, id)),
         recordCheck: (id, ok, at) =>
             resolveWith(() => recordCredentialCheck(deps.repo, id, ok, at)),
@@ -70,6 +74,44 @@ export function registerStoredCredentialValues(
     for (const credential of deps.repo.list()) {
         deps.redactor.register(deps.secrets.open(credential.sealedValue));
     }
+}
+
+async function createAuditedCredential(
+    deps: CredentialServiceDeps,
+    input: CredentialInput,
+): Promise<CredentialSummary> {
+    const created = await resolveWith(() => createCredential(deps, input));
+    await recordCredentialAction(deps.audit, "credential.created", created.id, {
+        kind: created.kind,
+    });
+
+    return created;
+}
+
+async function updateAuditedCredential(
+    deps: CredentialServiceDeps,
+    changedField: "name" | "value",
+    update: () => CredentialSummary,
+): Promise<CredentialSummary> {
+    const updated = await resolveWith(update);
+    await recordCredentialAction(deps.audit, "credential.updated", updated.id, { changedField });
+
+    return updated;
+}
+
+async function removeAuditedCredential(deps: CredentialServiceDeps, id: string): Promise<void> {
+    await resolveWith(() => removeCredential(deps.repo, id));
+    await recordCredentialAction(deps.audit, "credential.deleted", id);
+}
+
+// The details never carry the value, so the audit log is no copy of the secrets.
+function recordCredentialAction(
+    audit: AuditLog,
+    action: AuditAction,
+    credentialId: string,
+    details?: Record<string, unknown>,
+): Promise<void> {
+    return audit.record(action, { kind: "credential", id: credentialId }, details);
 }
 
 function createCredential(deps: CredentialServiceDeps, input: CredentialInput): CredentialSummary {

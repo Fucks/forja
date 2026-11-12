@@ -168,6 +168,7 @@ export class ExecutorTestBed {
             secrets: createTestSecretBox(),
             redactor: this.redactor,
             clock: this.clock,
+            audit: this.audit,
         });
         this.events.subscribe((envelope) => {
             this.journal.push({ kind: "published", event: envelope.event });

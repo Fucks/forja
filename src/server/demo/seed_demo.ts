@@ -15,6 +15,7 @@ import { runDemoFlowToTheEnd } from "@/server/demo/demo_run.js";
 import { DEMO_ITEMS } from "@/server/demo/demo_script.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { createProjectService } from "@/server/projects/project_service.js";
+import { createAuditLog } from "@/server/security/audit_log.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService, type SettingsService } from "@/server/settings/settings_service.js";
@@ -122,6 +123,7 @@ async function assignDemoCredential(deps: AppServices, projectId: string): Promi
         secrets: deps.secrets,
         redactor: deps.redactor,
         clock: deps.clock,
+        audit: createAuditLog({ db: deps.db, clock: deps.clock }),
     });
     const settings = createDemoSettingsService(deps);
     const [credential, projectSettings] = await Promise.all([

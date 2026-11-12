@@ -3,6 +3,7 @@ import { CredentialRepository } from "@/server/credentials/credential_repository
 import { createCredentialService } from "@/server/credentials/credential_service.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
+import { createAuditLog } from "@/server/security/audit_log.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService } from "@/server/settings/settings_service.js";
@@ -35,6 +36,7 @@ describe("resolveGithubEnv", () => {
                 secrets: createTestSecretBox(),
                 redactor: createSecretRedactor(),
                 clock,
+                audit: createAuditLog({ db: database.db, clock }),
             }),
         };
     });
