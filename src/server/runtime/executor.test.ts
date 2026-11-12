@@ -86,7 +86,21 @@ describe("executor", () => {
 
             const developer = await bed.findNodeRun(started.id, "dev");
             expect(developer.inputs).toMatchObject({ spec: "ok" });
-            expect(developer.outputs).toEqual({ summary: "ok" });
+            expect(developer.outputs).toEqual({ result: { commits: 0 }, summary: "ok" });
+        });
+
+        it("reports how many commits an agent without output schema made", async () => {
+            bed.runtime.script({
+                match: { promptIncludes: DEV_PROMPT },
+                durationMs: DEV_DURATION_MS,
+                result: { commits: [{ sha: "a1b2c3d" }, { sha: "e4f5a6b" }] },
+            });
+            const started = await bed.startRun(flowId);
+
+            await bed.runUntilFinished(started.id);
+
+            const developer = await bed.findNodeRun(started.id, "dev");
+            expect(developer.outputs).toMatchObject({ result: { commits: 2 } });
         });
     });
 

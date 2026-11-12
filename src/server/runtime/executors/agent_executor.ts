@@ -43,7 +43,7 @@ export async function executeAgentNode(
     const result = await target.run(request);
 
     return {
-        outputs: { result: result.output, summary: result.summary },
+        outputs: { result: resultOfAgent(node, result), summary: result.summary },
         usage: { model: request.model, tokens: result.usage },
     };
 }
@@ -142,4 +142,13 @@ function appendProjectConventions(prompt: string, systemPrompt: string): string 
     }
 
     return `${prompt}\n\n${PROJECT_CONVENTIONS_HEADING}\n\n${systemPrompt}`;
+}
+
+// Without a schema the agent answers in free text, so its result is what it left on the branch.
+function resultOfAgent(node: AgentNode, result: AgentRunResult): unknown {
+    if (node.config.outputSchema) {
+        return result.output;
+    }
+
+    return { commits: result.commits.length };
 }
