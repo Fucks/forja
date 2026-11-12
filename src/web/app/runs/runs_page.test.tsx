@@ -5,6 +5,7 @@ import type { MockInstance } from "vitest";
 import { formatDateTime, formatDuration, formatUsd } from "@/lib/format.js";
 import type { FlowSummary } from "@/shared/flow_types.js";
 import type { RunListItem } from "@/shared/run_types.js";
+import { buildProject } from "@/test/factories/project_factory.js";
 import { buildRunStartedEvent } from "@/test/factories/forja_event_factory.js";
 import { buildRunListItem } from "@/test/factories/run_list_item_factory.js";
 import { captureBrowserEventSources } from "@/test/fakes/fake_event_source.js";
@@ -277,5 +278,28 @@ describe("RunsPage", () => {
         renderAppAt(RUNS_PAGE_PATH);
 
         expect(await screen.findByText("Nenhuma run ainda")).toBeInTheDocument();
+    });
+});
+
+describe("Últimas runs on the project overview", () => {
+    it("shows the five latest runs, each opening its run, and links to the history", async () => {
+        const latestRuns = Array.from({ length: 6 }, (_, index) =>
+            buildRunListItem({ id: `run_${index}`, flowVersion: index + 1 }),
+        );
+        stubRunsApi({
+            "GET /api/projects/prj_forja": () => Response.json(buildProject({ id: "prj_forja" })),
+            [`GET ${FIRST_PAGE_URL}`]: () => Response.json(latestRuns),
+        });
+
+        renderAppAt("/projects/prj_forja");
+
+        const card = await screen.findByRole("region", { name: "Últimas runs" });
+        const runLinks = await within(card).findAllByRole("link", { name: /Entrega/ });
+        expect(runLinks).toHaveLength(5);
+        expect(runLinks[0]).toHaveAttribute("href", `${RUNS_PAGE_PATH}/run_0`);
+        expect(within(card).getByRole("link", { name: "Ver todas" })).toHaveAttribute(
+            "href",
+            RUNS_PAGE_PATH,
+        );
     });
 });

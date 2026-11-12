@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 
 import { formatDateTime, formatDuration, formatUsd } from "@/lib/format.js";
 import type { RunListItem } from "@/shared/run_types.js";
+import { describeRunFlow } from "@/web/app/runs/describe_run_flow.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 import { runPath } from "@/web/config/navigation.js";
 
@@ -57,7 +58,7 @@ function RunRow({ projectId, run }: { projectId: string; run: RunListItem }): JS
                     onClick={keepClickOffTheRow}
                     className="hover:underline focus-visible:outline-accent"
                 >
-                    {`${run.flowName} · v${run.flowVersion}`}
+                    {describeRunFlow(run)}
                 </Link>
             </td>
             <td className="py-1.5 pr-4">{describeItems(run)}</td>

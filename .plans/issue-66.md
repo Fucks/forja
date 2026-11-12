@@ -33,6 +33,6 @@
 - [x] 6. Test + impl: "Carregar mais" pages by the `before` cursor — `use_runs.ts`, `runs_page.tsx`
 - [x] 7. Test + impl: a `run.*` event reloads the list — `use_runs.ts`
 - [x] 8. Test + impl: "Nova run" starts the run and opens it — `new_run_dialog.tsx`
-- [ ] 9. Test + impl: "Últimas runs" card on the project overview — `recent_runs_card.tsx`,
+- [x] 9. Test + impl: "Últimas runs" card on the project overview — `recent_runs_card.tsx`,
       `project_page.tsx`
 - [ ] 10. Self-review checklist (section 5) and feedback loops (section 6)
