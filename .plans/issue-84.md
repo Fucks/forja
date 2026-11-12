@@ -29,5 +29,5 @@
 - [x] 5. Scenario live_run: 3 local items, start run, Dev "Rodando" + group counters, drawer with logs, "Sucesso" — `e2e/live_run.spec.ts`
 - [x] 6. Scenario board: cards move and end in "Concluído"; drag a new item to the trigger column starts a run — `e2e/board.spec.ts`
 - [x] 7. Scenario approvals: flow with a gate, approve with a comment, the flow goes on — `e2e/approvals.spec.ts`
-- [ ] 8. CI job `e2e` (ubuntu, `needs: checks`, report artifact on failure) — `.github/workflows/ci.yml`
+- [x] 8. CI job `e2e` (ubuntu, `needs: checks`, report artifact on failure) — `.github/workflows/ci.yml`
 - [ ] 9. Self-review checklist and feedback loops (typecheck, lint, test, test:e2e)
