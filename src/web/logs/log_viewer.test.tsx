@@ -263,6 +263,17 @@ describe("LogViewer", () => {
         expect(onDownloadRaw).toHaveBeenCalledOnce();
     });
 
+    it("renders each line with the renderer given by the parent", () => {
+        render(
+            <LogViewer
+                lines={buildLogLines(1)}
+                renderLine={(line) => <strong>{line.text.toUpperCase()}</strong>}
+            />,
+        );
+
+        expect(screen.getByText("LINHA 1").tagName).toBe("STRONG");
+    });
+
     it("hides the download button when the parent cannot provide the raw log", () => {
         render(<LogViewer lines={buildLogLines(3)} />);
 

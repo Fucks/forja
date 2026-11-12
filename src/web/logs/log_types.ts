@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export type LogLineKind = "text" | "tool_call" | "tool_result" | "error" | "system" | "usage";
 
 export interface LogLine {
@@ -7,4 +9,7 @@ export interface LogLine {
     text: string;
     detail?: string;
     toolName?: string;
+    isRawOutput?: boolean;
 }
+
+export type LogLineRenderer = (line: LogLine, searchQuery: string) => ReactNode;
