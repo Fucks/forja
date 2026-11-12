@@ -30,4 +30,4 @@
 - [x] 6. Scenario board: cards move and end in "Concluído"; drag a new item to the trigger column starts a run — `e2e/board.spec.ts`
 - [x] 7. Scenario approvals: flow with a gate, approve with a comment, the flow goes on — `e2e/approvals.spec.ts`
 - [x] 8. CI job `e2e` (ubuntu, `needs: checks`, report artifact on failure) — `.github/workflows/ci.yml`
-- [ ] 9. Self-review checklist and feedback loops (typecheck, lint, test, test:e2e)
+- [x] 9. Self-review checklist and feedback loops (typecheck, lint, test, test:e2e)

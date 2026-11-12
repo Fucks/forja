@@ -11,12 +11,12 @@ import { ForjaApi } from "./forja_api.js";
 
 export { expect } from "@playwright/test";
 
-export interface TemporaryGitRepo {
+interface TemporaryGitRepo {
     path: string;
     createBranches(branches: string[]): void;
 }
 
-export interface RunnableProject {
+interface RunnableProject {
     id: string;
     flowId: string;
     /**

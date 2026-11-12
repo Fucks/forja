@@ -9,12 +9,12 @@ export interface PublishedFlowInput {
     graph: FlowGraph;
 }
 
-export interface StartRunInput {
+interface StartRunInput {
     flowId: string;
     itemIds: string[];
 }
 
-export interface BoardColumnTriggerInput {
+interface BoardColumnTriggerInput {
     flowId: string;
     columnId: string;
 }
@@ -22,7 +22,7 @@ export interface BoardColumnTriggerInput {
 const createdRecordSchema = z.object({ id: z.string() });
 const workItemsSchema = z.array(z.object({ id: z.string(), branch: z.string() }));
 
-export type CreatedWorkItem = z.infer<typeof workItemsSchema>[number];
+type ListedWorkItem = z.infer<typeof workItemsSchema>[number];
 
 const SIMULATED_CREDENTIAL = {
     name: "E2E — chave fictícia",
@@ -74,7 +74,7 @@ export class ForjaApi {
         return createdRecordSchema.parse(started).id;
     }
 
-    async listWorkItems(projectId: string): Promise<CreatedWorkItem[]> {
+    async listWorkItems(projectId: string): Promise<ListedWorkItem[]> {
         const items = await this.send("get", `/api/projects/${projectId}/work-items`);
         return workItemsSchema.parse(items);
     }
