@@ -7,6 +7,7 @@ import type { FlowService } from "@/server/flows/flow_service.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { createEventBus } from "@/server/runtime/event_bus.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import { type AuditLog, createAuditLog } from "@/server/security/audit_log.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { buildProject } from "@/test/factories/project_factory.js";
@@ -25,6 +26,7 @@ describe("FlowService", () => {
     let clock: FakeClock;
     let events: EventBus;
     let validationContext: ValidationContext;
+    let audit: AuditLog;
     let service: FlowService;
 
     beforeEach(() => {
@@ -35,10 +37,12 @@ describe("FlowService", () => {
         clock = new FakeClock(CREATED_AT);
         events = createEventBus(clock);
         validationContext = {};
+        audit = createAuditLog({ db: database.db, clock });
         service = createFlowService({
             repo: new FlowRepository(database.db),
             events,
             clock,
+            audit,
             validationContext: () => Promise.resolve(validationContext),
         });
     });
@@ -270,6 +274,29 @@ describe("FlowService", () => {
             expect(events.since(0).map((envelope) => envelope.event)).toEqual([
                 { type: "flow.published", projectId: PROJECT_ID, flowId: flow.id, version: 1 },
             ]);
+        });
+
+        it("records the publication in the audit log", async () => {
+            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
+
+            await service.publish(flow.id);
+
+            await expect(audit.list(10)).resolves.toEqual([
+                expect.objectContaining({
+                    action: "flow.published",
+                    target: { kind: "flow", id: flow.id },
+                    details: { version: 1 },
+                }),
+            ]);
+        });
+
+        it("records nothing in the audit log when the publication is refused", async () => {
+            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
+            await service.saveDraft(flow.id, GRAPH_WITHOUT_TRIGGER, 1);
+
+            await captureRejection(service.publish(flow.id));
+
+            await expect(audit.list(10)).resolves.toEqual([]);
         });
 
         it("refuses a graph with errors and reports the validation issues", async () => {

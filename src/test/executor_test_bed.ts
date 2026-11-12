@@ -37,6 +37,7 @@ import {
     nodeExecutors,
     type NodeExecutorRegistry,
 } from "@/server/runtime/node_executors.js";
+import { type AuditLog, createAuditLog } from "@/server/security/audit_log.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService, type SettingsService } from "@/server/settings/settings_service.js";
@@ -118,6 +119,7 @@ export class ExecutorTestBed {
     readonly toolProfiles: ToolProfileService;
     readonly credentials: CredentialService;
     readonly redactor: SecretRedactor = createSecretRedactor();
+    readonly audit: AuditLog;
     readonly git = new FakeGitProvider();
     readonly github: FakeGitHubProvider | undefined;
     // The repository of the test project has a package.json only when a test says so.
@@ -139,6 +141,7 @@ export class ExecutorTestBed {
         this.database = previous?.database ?? createDatabaseWithProject({ github });
         this.logs = createTestLogStore(this.database.db, this.clock, this.redactor);
         this.runs = new JournalingRunRepository(this.database, this.clock, this.journal);
+        this.audit = createAuditLog({ db: this.database.db, clock: this.clock });
         this.flows = this.createFlowService();
         this.workItems = createWorkItemService({
             repo: new WorkItemRepository(this.database.db),
@@ -281,6 +284,7 @@ export class ExecutorTestBed {
             repo: new FlowRepository(this.database.db),
             events: this.events,
             clock: this.clock,
+            audit: this.audit,
             validationContext: () => Promise.resolve({}),
         });
     }
