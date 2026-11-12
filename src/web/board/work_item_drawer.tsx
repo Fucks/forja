@@ -84,26 +84,29 @@ function ManualColumnActions({
     projectId: string;
     card: BoardCard;
 }): JSX.Element {
-    const moveItem = useMoveItemToColumn(projectId, card.item.id);
+    const moveItem = useMoveItemToColumn(projectId);
     const toast = useToast();
     const movesToOtherColumns = MANUAL_MOVES.filter((move) => move.column !== card.columnId);
 
     const moveAndReportFailure = (column: ManualColumn): void =>
-        moveItem.mutate(column, {
-            onError: (error) =>
-                toast.show({
-                    tone: "error",
-                    title: "Não foi possível mover o item.",
-                    description: error.message,
-                }),
-        });
+        moveItem.mutate(
+            { itemId: card.item.id, column },
+            {
+                onError: (error) =>
+                    toast.show({
+                        tone: "error",
+                        title: "Não foi possível mover o item.",
+                        description: error.message,
+                    }),
+            },
+        );
 
     return (
         <div className="flex flex-wrap gap-2">
             {movesToOtherColumns.map((move) => (
                 <Button
                     key={move.column}
-                    loading={moveItem.isPending && moveItem.variables === move.column}
+                    loading={moveItem.isPending && moveItem.variables?.column === move.column}
                     onClick={() => moveAndReportFailure(move.column)}
                 >
                     {move.label}

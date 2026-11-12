@@ -121,14 +121,17 @@ function useFireTriggerWithFeedback(): (triggerId: string) => void {
     const toast = useToast();
 
     return (triggerId) =>
-        fireTrigger.mutate(triggerId, {
-            onError: (error) =>
-                toast.show({
-                    title: "Não foi possível disparar",
-                    description: error.message,
-                    tone: "error",
-                }),
-        });
+        fireTrigger.mutate(
+            { triggerId },
+            {
+                onError: (error) =>
+                    toast.show({
+                        title: "Não foi possível disparar",
+                        description: error.message,
+                        tone: "error",
+                    }),
+            },
+        );
 }
 
 function describeNextFire(trigger: ListedTrigger): string {

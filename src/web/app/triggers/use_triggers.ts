@@ -10,6 +10,7 @@ import type {
     ListedTrigger,
     Trigger,
     TriggerFire,
+    TriggerKind,
     TriggersPaused,
     TriggerWithToken,
     updateTriggerInput,
@@ -26,10 +27,17 @@ export interface TriggerUpdate {
     changes: UpdateTriggerInput;
 }
 
+/** Without item ids, the run gets the items of the source of the flow. */
+export interface TriggerFireRequest {
+    triggerId: string;
+    itemIds?: string[];
+}
+
 const TRIGGERS_QUERY_KEY = "triggers";
 const TRIGGER_HISTORY_QUERY_KEY = "trigger-history";
 const TRIGGERS_PAUSED_QUERY_KEY = ["triggers-paused"];
 const TRIGGERS_PAUSED_PATH = "/triggers/paused";
+const BOARD_COLUMN_KIND: TriggerKind = "board_column";
 
 export function useTriggers(projectId: string): UseQueryResult<ListedTrigger[], ApiError> {
     return useQuery({
@@ -56,9 +64,21 @@ export function useRemoveTrigger(): UseMutationResult<void, ApiError, string> {
     return useTriggersMutation((id: string) => apiClient.delete<void>(triggerPath(id)));
 }
 
-export function useFireTrigger(): UseMutationResult<TriggerFire, ApiError, string> {
-    return useTriggersMutation((id: string) =>
-        apiClient.post<TriggerFire>(`${triggerPath(id)}/fire`, {}),
+export function useBoardColumnTriggers(
+    projectId: string,
+): UseQueryResult<ListedTrigger[], ApiError> {
+    return useQuery({
+        queryKey: [TRIGGERS_QUERY_KEY, projectId, BOARD_COLUMN_KIND],
+        queryFn: () =>
+            apiClient.get<ListedTrigger[]>(
+                `${projectTriggersPath(projectId)}?kind=${BOARD_COLUMN_KIND}`,
+            ),
+    });
+}
+
+export function useFireTrigger(): UseMutationResult<TriggerFire, ApiError, TriggerFireRequest> {
+    return useTriggersMutation(({ triggerId, itemIds }: TriggerFireRequest) =>
+        apiClient.post<TriggerFire>(`${triggerPath(triggerId)}/fire`, { itemIds }),
     );
 }
 
