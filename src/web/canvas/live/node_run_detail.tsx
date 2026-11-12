@@ -16,13 +16,13 @@ import { Tabs } from "@/web/components/ui/tabs.js";
 type DetailTab = "logs" | "inputs" | "outputs" | "artifacts";
 
 export function NodeRunDetail({ nodeRun }: { nodeRun: SerializedNodeRun }): JSX.Element {
+    const description = describeNodeRun(nodeRun);
+
     return (
-        <article aria-label={describeNodeRun(nodeRun)} className="flex flex-col gap-3">
+        <article aria-label={description} className="flex flex-col gap-3">
             <header className="flex items-center gap-2">
                 <StatusBadge status={nodeRun.status} size="sm" />
-                <h3 className="min-w-0 flex-1 truncate text-sm font-medium">
-                    {describeNodeRun(nodeRun)}
-                </h3>
+                <h3 className="min-w-0 flex-1 truncate text-sm font-medium">{description}</h3>
                 <NodeRunActionButtons nodeRun={nodeRun} />
             </header>
             <NodeRunDetailContent nodeRun={nodeRun} />

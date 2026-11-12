@@ -11,7 +11,6 @@ const KEYBOARD_STEPS: Partial<Record<string, number>> = {
     ArrowDown: -KEYBOARD_STEP_FRACTION,
 };
 
-// The drawer sits at the bottom of the window, so its height is what lies below the pointer.
 export function DrawerResizeHandle({
     heightFraction,
     onResize,
@@ -58,6 +57,7 @@ export function DrawerResizeHandle({
     );
 }
 
+// The drawer sits at the bottom of the window, so its height is what lies below the pointer.
 function fractionBelow(clientY: number): number {
     return (window.innerHeight - clientY) / window.innerHeight;
 }

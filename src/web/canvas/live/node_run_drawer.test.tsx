@@ -110,6 +110,7 @@ describe("NodeRunDrawer detail", () => {
 
         expect(inputs).toHaveTextContent(longText);
     });
+
     it("shows the translated kind and the message of a structured output error", async () => {
         const nodeRun = developerRun({
             status: "FAILED",
