@@ -4,16 +4,17 @@ import { Link } from "react-router";
 
 import { formatDateTime } from "@/lib/format.js";
 import type { FlowSummary } from "@/shared/flow_types.js";
-import type { ApiError } from "@/web/api/api_client.js";
 import { ExportFlowMenu } from "@/web/app/flows/export_flow_menu.js";
 import { useArchiveFlow, useSetDefaultFlow } from "@/web/app/flows/use_flows.js";
 import { versionLabel } from "@/web/app/flows/use_version_comparison.js";
 import { cn } from "@/web/components/ui/cn.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
-import { useToast } from "@/web/components/ui/toast.js";
+import { useFailureToast } from "@/web/components/ui/toast.js";
 import { flowEditorPath } from "@/web/config/navigation.js";
 
 const UNPUBLISHED_LABEL = "Não publicado";
+const SET_DEFAULT_FAILED_TITLE = "Não foi possível marcar como padrão";
+const ARCHIVE_FAILED_TITLE = "Não foi possível arquivar";
 
 export function FlowsTable({
     flows,
@@ -70,7 +71,7 @@ function FlowRow({ flow, onRename }: { flow: FlowSummary; onRename: () => void }
 
 function DefaultFlowStar({ flow }: { flow: FlowSummary }): JSX.Element {
     const setDefaultFlow = useSetDefaultFlow();
-    const showFailure = useFailureToast("Não foi possível marcar como padrão");
+    const showFailure = useFailureToast();
 
     return (
         <IconButton
@@ -78,7 +79,11 @@ function DefaultFlowStar({ flow }: { flow: FlowSummary }): JSX.Element {
             icon={Star}
             aria-pressed={flow.isDefault}
             disabled={flow.isDefault || flow.archived || setDefaultFlow.isPending}
-            onClick={() => setDefaultFlow.mutate(flow.id, { onError: showFailure })}
+            onClick={() =>
+                setDefaultFlow.mutate(flow.id, {
+                    onError: (error) => showFailure(SET_DEFAULT_FAILED_TITLE, error),
+                })
+            }
             className={cn(flow.isDefault && "text-accent [&_svg]:fill-current")}
         />
     );
@@ -92,7 +97,7 @@ function FlowRowActions({
     onRename: () => void;
 }): JSX.Element {
     const archiveFlow = useArchiveFlow();
-    const showFailure = useFailureToast("Não foi possível arquivar");
+    const showFailure = useFailureToast();
 
     return (
         <div className="flex items-center justify-end gap-1">
@@ -103,17 +108,15 @@ function FlowRowActions({
                     label={`Arquivar ${flow.name}`}
                     icon={Archive}
                     disabled={archiveFlow.isPending}
-                    onClick={() => archiveFlow.mutate(flow.id, { onError: showFailure })}
+                    onClick={() =>
+                        archiveFlow.mutate(flow.id, {
+                            onError: (error) => showFailure(ARCHIVE_FAILED_TITLE, error),
+                        })
+                    }
                 />
             )}
         </div>
     );
-}
-
-function useFailureToast(title: string): (error: ApiError) => void {
-    const toast = useToast();
-
-    return (error) => toast.show({ title, description: error.message, tone: "error" });
 }
 
 function describeLatestVersion(latestVersion: number | undefined): string {

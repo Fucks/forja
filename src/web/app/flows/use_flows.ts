@@ -10,6 +10,7 @@ import { flowPath } from "@/web/app/flows/use_flow_versions.js";
 const FLOW_TEMPLATES_PATH = "/flow-templates";
 const FLOW_TEMPLATES_QUERY_KEY = ["flow-templates"];
 const WITH_ARCHIVED_QUERY_KEY = "with-archived";
+const INCLUDE_ARCHIVED_SEARCH = "?includeArchived=true";
 
 interface CreateFlowRequest {
     name: string;
@@ -26,7 +27,9 @@ export function useFlows(projectId: string): UseQueryResult<FlowSummary[]> {
     return useQuery({
         queryKey: [PROJECT_FLOWS_QUERY_KEY, projectId, WITH_ARCHIVED_QUERY_KEY],
         queryFn: () =>
-            apiClient.get<FlowSummary[]>(`${projectFlowsPath(projectId)}?includeArchived=true`),
+            apiClient.get<FlowSummary[]>(
+                `${projectFlowsPath(projectId)}${INCLUDE_ARCHIVED_SEARCH}`,
+            ),
     });
 }
 
