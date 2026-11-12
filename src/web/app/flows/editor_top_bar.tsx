@@ -1,7 +1,10 @@
+import { History } from "lucide-react";
 import type { JSX } from "react";
+import { Link } from "react-router";
 
 import { PageTitle } from "@/web/app/page_title.js";
 import type { SaveState } from "@/web/canvas/editor_store.js";
+import { Button } from "@/web/components/ui/button.js";
 
 const UNTITLED_FLOW_TITLE = "Editor de fluxo";
 const UNSAVED_CHANGES_LABEL = "Alterações não salvas";
@@ -18,17 +21,27 @@ export function EditorTopBar({
     flowName,
     saveState,
     dirty,
+    versionsPath,
 }: {
     flowName?: string;
     saveState: SaveState;
     dirty: boolean;
+    versionsPath: string;
 }): JSX.Element {
     return (
         <header className="flex items-baseline justify-between gap-4">
             <PageTitle>{flowName ?? UNTITLED_FLOW_TITLE}</PageTitle>
-            <span role="status" className="text-xs text-muted">
-                {describeSaveState(saveState, dirty)}
-            </span>
+            <div className="flex items-center gap-3">
+                <span role="status" className="text-xs text-muted">
+                    {describeSaveState(saveState, dirty)}
+                </span>
+                <Button asChild variant="ghost" size="sm">
+                    <Link to={versionsPath}>
+                        <History aria-hidden="true" className="size-3.5" />
+                        Versões
+                    </Link>
+                </Button>
+            </div>
         </header>
     );
 }

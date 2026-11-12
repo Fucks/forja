@@ -55,6 +55,14 @@ export function projectPath(projectId: string): string {
     return `/projects/${encodeURIComponent(projectId)}`;
 }
 
+export function flowEditorPath(projectId: string, flowId: string): string {
+    return `${projectPath(projectId)}/flows/${encodeURIComponent(flowId)}`;
+}
+
+export function flowVersionsPath(projectId: string, flowId: string): string {
+    return `${flowEditorPath(projectId, flowId)}/versions`;
+}
+
 export function triggersPath(projectId: string): string {
     return TRIGGERS_AREA.path(projectId);
 }
