@@ -37,6 +37,8 @@ export interface RunRepository {
     getRun(id: string): Promise<RunRecord | undefined>;
     listRuns(projectId: string, options: ListRunsOptions): Promise<RunRecord[]>;
     listNodeRuns(runId: string): Promise<NodeRunState[]>;
+    // Oldest run first; inside a run, in the order the NodeRuns were saved.
+    listNodeRunsOfItem(itemId: string): Promise<NodeRunState[]>;
     getNodeRun(id: string): Promise<NodeRunState | undefined>;
     listArtifacts(nodeRunId: string): Promise<ArtifactRecord[]>;
     listItemIdsWithArtifact(projectId: string, kind: ArtifactKind): Promise<string[]>;

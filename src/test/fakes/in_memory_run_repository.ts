@@ -67,6 +67,15 @@ export class InMemoryRunRepository implements RunRepository {
         return Promise.resolve(structuredClone(nodeRunsOfRun));
     }
 
+    listNodeRunsOfItem(itemId: string): Promise<NodeRunState[]> {
+        const nodeRunsOfItem = this.runsOldestFirst().flatMap((run) =>
+            [...this.nodeRuns.values()].filter(
+                (nodeRun) => nodeRun.runId === run.id && nodeRun.workItemId === itemId,
+            ),
+        );
+        return Promise.resolve(structuredClone(nodeRunsOfItem));
+    }
+
     getNodeRun(id: string): Promise<NodeRunState | undefined> {
         return Promise.resolve(structuredClone(this.nodeRuns.get(id)));
     }

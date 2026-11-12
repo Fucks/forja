@@ -21,7 +21,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `listNodeRunsOfItem` across runs — `run_repository.ts`, `sqlite_run_repository.ts`, `in_memory_run_repository.ts`, `sqlite_run_repository.test.ts`
+- [x] 1. Test + implement `listNodeRunsOfItem` across runs — `run_repository.ts`, `sqlite_run_repository.ts`, `in_memory_run_repository.ts`, `sqlite_run_repository.test.ts`
 - [ ] 2. Test + implement `buildItemTimeline` entries of all runs, newest first, with flow name and node label — `src/server/work_items/item_timeline.ts`, `.test.ts`, `src/shared/board_types.ts`
 - [ ] 3. Test + implement entry cost and total cost — `item_timeline.ts`
 - [ ] 4. Test + implement `prUrl` and `spec` — `item_timeline.ts`, `src/engine/board_columns.ts`
