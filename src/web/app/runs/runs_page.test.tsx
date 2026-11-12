@@ -11,7 +11,8 @@ import { renderAppAt } from "@/test/render_app_at.js";
 
 const RUNS_PAGE_PATH = "/projects/prj_forja/runs";
 const RUNS_API = "/api/projects/prj_forja/runs";
-const FIRST_PAGE_URL = `${RUNS_API}?limit=50`;
+const RUNS_PAGE_SIZE = 50;
+const FIRST_PAGE_URL = `${RUNS_API}?limit=${RUNS_PAGE_SIZE}`;
 
 const DELIVERY_FLOW: FlowSummary = {
     id: "flw_entrega",
@@ -140,6 +141,25 @@ describe("RunsPage", () => {
         await chooseFilter("Fluxo", "Entrega");
 
         await waitFor(async () => expect(await findRunRows()).toHaveLength(1));
+    });
+
+    it("loads the older runs through the cursor of the last run", async () => {
+        const fullPage = Array.from({ length: RUNS_PAGE_SIZE }, (_, index) =>
+            buildRunListItem({ id: `run_${index}` }),
+        );
+        const lastRunOfPage = fullPage.at(-1)?.id ?? "";
+        const olderRun = buildRunListItem({ id: "run_antiga", triggerName: "Antigo" });
+        stubRunsApi({
+            [`GET ${FIRST_PAGE_URL}`]: () => Response.json(fullPage),
+            [`GET ${FIRST_PAGE_URL}&before=${lastRunOfPage}`]: () => Response.json([olderRun]),
+        });
+        renderAppAt(RUNS_PAGE_PATH);
+
+        await userEvent.setup().click(await screen.findByRole("button", { name: "Carregar mais" }));
+
+        expect(await screen.findByRole("row", { name: /Antigo/ })).toBeInTheDocument();
+        expect(await findRunRows()).toHaveLength(RUNS_PAGE_SIZE + 1);
+        expect(screen.queryByRole("button", { name: "Carregar mais" })).not.toBeInTheDocument();
     });
 
     it("explains when there are no runs yet", async () => {

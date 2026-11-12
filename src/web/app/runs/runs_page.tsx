@@ -8,6 +8,7 @@ import { ALL_RUNS_CHOICE, RunFiltersBar, toRunFilters } from "@/web/app/runs/run
 import { RunsTable } from "@/web/app/runs/runs_table.js";
 import { useRuns } from "@/web/app/runs/use_runs.js";
 import type { RunFilters } from "@/web/app/runs/use_runs.js";
+import { Button } from "@/web/components/ui/button.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 
@@ -55,5 +56,17 @@ function RunsContent({
         );
     }
 
-    return <RunsTable projectId={projectId} runs={runsQuery.data} />;
+    return (
+        <div className="flex flex-col items-start gap-3">
+            <RunsTable projectId={projectId} runs={runsQuery.data} />
+            {runsQuery.hasNextPage && (
+                <Button
+                    loading={runsQuery.isFetchingNextPage}
+                    onClick={() => void runsQuery.fetchNextPage()}
+                >
+                    Carregar mais
+                </Button>
+            )}
+        </div>
+    );
 }
