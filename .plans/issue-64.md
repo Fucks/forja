@@ -12,6 +12,8 @@
   alias of `SerializedArtifact` (artifacts are already JSON).
 - The list comes from the live `view.nodeRuns` (events keep it current); the detail is fetched with
   `GET /api/node-runs/:id`, keyed by id + status so it reloads when the NodeRun changes.
+- Detail query in `use_node_run_detail.ts`; artifacts rendered by `node_run_artifacts.tsx`. The detail opens
+  on the "Entradas" tab (Logs stays empty until #65). No NodeRun is selected when the drawer opens.
 - Cost per NodeRun: `GET /api/runs/:runId/usage`, summed by `nodeRunId` (`use_node_run_costs.ts`).
 - Actions in `use_node_run_actions.ts`: POST `/node-runs/:id/cancel|retry`, then invalidate the run view.
   Cancel for RUNNING/QUEUED, Repetir for FAILED/CANCELED/SUCCEEDED, each with a confirmation Dialog.
@@ -27,8 +29,8 @@
 - [x] 2. Test + implement `describeNodeRun` — same files
 - [x] 3. Shared types for the NodeRun detail (move ARTIFACT_KINDS) — `src/shared/run_types.ts`, server imports
 - [x] 4. `JsonView` (collapsible tree, truncation with "ver tudo", copy) — `json_view.tsx`
-- [ ] 5. Test: drawer lists the node's NodeRuns sorted, RUNNING first, with cost — `node_run_drawer.test.tsx`; implement `node_run_drawer.tsx`, `node_run_list.tsx`, `use_node_run_costs.ts`, `drawer_resize_handle.tsx`
-- [ ] 6. Test: selecting a NodeRun shows inputs and outputs as JSON — implement `node_run_detail.tsx`
+- [x] 5. Test: drawer lists the node's NodeRuns sorted, RUNNING first, with cost — `node_run_drawer.test.tsx`; implement `node_run_drawer.tsx`, `node_run_list.tsx`, `use_node_run_costs.ts`, `drawer_resize_handle.tsx`
+- [x] 6. Test: selecting a NodeRun shows inputs and outputs as JSON — implement `node_run_detail.tsx`
 - [ ] 7. Test: structured output error shows translated kind and message — `node_run_error_labels.ts`
 - [ ] 8. Test: retrying a failed NodeRun calls the API and the new NodeRun appears live — `use_node_run_actions.ts`
 - [ ] 9. Test: cancel a running NodeRun with confirmation
