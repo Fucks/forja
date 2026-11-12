@@ -106,13 +106,6 @@ function BlockerPicker({
         return null;
     }
 
-    const toggle = (itemId: string): void =>
-        onChange(
-            selectedIds.includes(itemId)
-                ? selectedIds.filter((selectedId) => selectedId !== itemId)
-                : [...selectedIds, itemId],
-        );
-
     return (
         <fieldset className="flex max-h-40 flex-col gap-1 overflow-y-auto">
             <legend className="mb-1 text-sm font-medium">Bloqueado por</legend>
@@ -121,7 +114,7 @@ function BlockerPicker({
                     <input
                         type="checkbox"
                         checked={selectedIds.includes(candidate.id)}
-                        onChange={() => toggle(candidate.id)}
+                        onChange={() => onChange(toggleSelection(selectedIds, candidate.id))}
                         className="accent-accent"
                     />
                     <span>
@@ -134,6 +127,14 @@ function BlockerPicker({
             ))}
         </fieldset>
     );
+}
+
+function toggleSelection(selectedIds: string[], itemId: string): string[] {
+    if (selectedIds.includes(itemId)) {
+        return selectedIds.filter((selectedId) => selectedId !== itemId);
+    }
+
+    return [...selectedIds, itemId];
 }
 
 function parseLabels(labelsText: string): string[] {

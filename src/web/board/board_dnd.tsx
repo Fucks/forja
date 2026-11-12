@@ -65,12 +65,13 @@ export function BoardDragAndDrop({
     const [draggedCard, setDraggedCard] = useState<BoardCard>();
     const [runToConfirm, setRunToConfirm] = useState<RunToConfirm>();
     const sensors = useBoardSensors();
-    const applyDropAction = useDropActionApplier(projectId, (card, triggerId) => {
+    const askToConfirmRun = (card: BoardCard, triggerId: string): void => {
         const trigger = triggers.find((candidate) => candidate.id === triggerId);
         if (trigger) {
             setRunToConfirm({ card, trigger });
         }
-    });
+    };
+    const applyDropAction = useDropActionApplier(projectId, askToConfirmRun);
 
     const decideDropOn = (card: BoardCard, column: BoardColumnDef): DropAction => {
         const blockerReferences = findBlockers(board, card.item).map(itemReference);

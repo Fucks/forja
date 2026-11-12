@@ -12,7 +12,7 @@ import {
 } from "@/web/app/triggers/use_triggers.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { Switch } from "@/web/components/ui/switch.js";
-import { useToast } from "@/web/components/ui/toast.js";
+import { useFailureToast } from "@/web/components/ui/toast.js";
 
 export interface TriggerActions {
     onEdit: (trigger: ListedTrigger) => void;
@@ -118,19 +118,12 @@ function TriggerRowActions({
 
 function useFireTriggerWithFeedback(): (triggerId: string) => void {
     const fireTrigger = useFireTrigger();
-    const toast = useToast();
+    const showFailure = useFailureToast();
 
     return (triggerId) =>
         fireTrigger.mutate(
             { triggerId },
-            {
-                onError: (error) =>
-                    toast.show({
-                        title: "Não foi possível disparar",
-                        description: error.message,
-                        tone: "error",
-                    }),
-            },
+            { onError: (error) => showFailure("Não foi possível disparar", error) },
         );
 }
 

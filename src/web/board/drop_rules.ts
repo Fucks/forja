@@ -1,8 +1,8 @@
 import { BLOCKED_COLUMN } from "@/engine/board_columns.js";
 import type { BoardColumnDef } from "@/engine/board_columns.js";
-import { assertNever } from "@/lib/assert_never.js";
 import { NODE_RUN_TERMINAL } from "@/engine/node_run_state.js";
-import type { BoardView } from "@/shared/board_types.js";
+import { assertNever } from "@/lib/assert_never.js";
+import type { BoardCard } from "@/shared/board_types.js";
 import type { Trigger } from "@/shared/trigger_types.js";
 
 export type DropAction =
@@ -15,8 +15,6 @@ export interface BoardColumnTrigger {
     columnId: string;
 }
 
-type DroppedCard = BoardView["cards"][number];
-
 const RUNNING_ITEM_REASON = "O item está em execução";
 const STAGE_WITHOUT_TRIGGER_REASON = "Esta etapa é movida pela execução";
 const BLOCKED_COLUMN_REASON = "O item fica em Bloqueado enquanto depender de outro item aberto";
@@ -24,7 +22,7 @@ const BLOCKED_ITEM_REASON = "Item bloqueado";
 
 /** `blockerReferences` (e.g. `["#12"]`) name the blockers when a blocked item is refused. */
 export function decideDrop(
-    card: DroppedCard,
+    card: BoardCard,
     target: BoardColumnDef,
     boardTriggers: BoardColumnTrigger[],
     blockerReferences: readonly string[] = [],
@@ -50,12 +48,12 @@ export function listBoardColumnTriggers(triggers: Trigger[]): BoardColumnTrigger
     });
 }
 
-function isRunning(card: DroppedCard): boolean {
+function isRunning(card: BoardCard): boolean {
     return card.status !== undefined && !NODE_RUN_TERMINAL.has(card.status);
 }
 
 function decideTriggerDrop(
-    card: DroppedCard,
+    card: BoardCard,
     trigger: BoardColumnTrigger,
     blockerReferences: readonly string[],
 ): DropAction {

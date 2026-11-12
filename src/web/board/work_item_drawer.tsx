@@ -10,7 +10,7 @@ import { itemReference, PullRequestLink } from "@/web/board/work_item_card.js";
 import { Button } from "@/web/components/ui/button.js";
 import { Drawer } from "@/web/components/ui/drawer.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
-import { useToast } from "@/web/components/ui/toast.js";
+import { useFailureToast } from "@/web/components/ui/toast.js";
 import { runPath } from "@/web/config/navigation.js";
 
 const ITEM_STATE_LABELS: Record<WorkItemState, string> = {
@@ -85,20 +85,13 @@ function ManualColumnActions({
     card: BoardCard;
 }): JSX.Element {
     const moveItem = useMoveItemToColumn(projectId);
-    const toast = useToast();
+    const showFailure = useFailureToast();
     const movesToOtherColumns = MANUAL_MOVES.filter((move) => move.column !== card.columnId);
 
     const moveAndReportFailure = (column: ManualColumn): void =>
         moveItem.mutate(
             { itemId: card.item.id, column },
-            {
-                onError: (error) =>
-                    toast.show({
-                        tone: "error",
-                        title: "Não foi possível mover o item.",
-                        description: error.message,
-                    }),
-            },
+            { onError: (error) => showFailure("Não foi possível mover o item.", error) },
         );
 
     return (
