@@ -1,9 +1,11 @@
 import { useState } from "react";
 import type { JSX } from "react";
 
+import type { NodeRunError } from "@/engine/node_run_state.js";
 import type { SerializedNodeRun, SerializedNodeRunDetail } from "@/shared/run_types.js";
 import { JsonView } from "@/web/canvas/live/json_view.js";
 import { NodeRunArtifacts } from "@/web/canvas/live/node_run_artifacts.js";
+import { NODE_RUN_ERROR_LABELS } from "@/web/canvas/live/node_run_error_labels.js";
 import { describeNodeRun } from "@/web/canvas/live/node_run_sorting.js";
 import { useNodeRunDetail } from "@/web/canvas/live/use_node_run_detail.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
@@ -39,7 +41,24 @@ function NodeRunDetailContent({ nodeRun }: { nodeRun: SerializedNodeRun }): JSX.
         return <Skeleton className="h-32" />;
     }
 
-    return <NodeRunTabs detail={detail} />;
+    return (
+        <>
+            {detail.nodeRun.error && <NodeRunErrorNotice error={detail.nodeRun.error} />}
+            <NodeRunTabs detail={detail} />
+        </>
+    );
+}
+
+function NodeRunErrorNotice({ error }: { error: NodeRunError }): JSX.Element {
+    return (
+        <section
+            aria-label="Erro"
+            className="rounded-sm border border-status-failed p-2 text-sm text-status-failed"
+        >
+            <p className="font-medium">{NODE_RUN_ERROR_LABELS[error.kind]}</p>
+            <p className="whitespace-pre-wrap">{error.message}</p>
+        </section>
+    );
 }
 
 function NodeRunTabs({ detail }: { detail: SerializedNodeRunDetail }): JSX.Element {

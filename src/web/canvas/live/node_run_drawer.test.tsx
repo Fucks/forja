@@ -102,6 +102,20 @@ describe("NodeRunDrawer detail", () => {
 
         expect(inputs).toHaveTextContent(longText);
     });
+    it("shows the translated kind and the message of a structured output error", async () => {
+        const nodeRun = developerRun({
+            status: "FAILED",
+            error: { kind: "structured_output", message: "O campo approved está ausente." },
+        });
+        stubFetchRoutes(fakeNodeRunApi({ details: [detailOf(nodeRun)] }));
+        renderDrawer(buildSerializedRunView({ nodeRuns: [nodeRun] }));
+
+        await selectNodeRun("item #1 · tentativa 1");
+
+        const error = await screen.findByRole("region", { name: "Erro" });
+        expect(error).toHaveTextContent("Saída estruturada inválida");
+        expect(error).toHaveTextContent("O campo approved está ausente.");
+    });
 });
 
 describe("NodeRunDrawer height", () => {

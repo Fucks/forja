@@ -31,7 +31,7 @@
 - [x] 4. `JsonView` (collapsible tree, truncation with "ver tudo", copy) — `json_view.tsx`
 - [x] 5. Test: drawer lists the node's NodeRuns sorted, RUNNING first, with cost — `node_run_drawer.test.tsx`; implement `node_run_drawer.tsx`, `node_run_list.tsx`, `use_node_run_costs.ts`, `drawer_resize_handle.tsx`
 - [x] 6. Test: selecting a NodeRun shows inputs and outputs as JSON — implement `node_run_detail.tsx`
-- [ ] 7. Test: structured output error shows translated kind and message — `node_run_error_labels.ts`
+- [x] 7. Test: structured output error shows translated kind and message — `node_run_error_labels.ts`
 - [ ] 8. Test: retrying a failed NodeRun calls the API and the new NodeRun appears live — `use_node_run_actions.ts`
 - [ ] 9. Test: cancel a running NodeRun with confirmation
 - [ ] 10. Clicking a node in `RunCanvas` opens the drawer — `flow_canvas.tsx`, `run_canvas.tsx`, test in `run_canvas.test.tsx`
