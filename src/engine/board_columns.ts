@@ -22,7 +22,7 @@ export interface BoardColumnDef {
 }
 
 const BACKLOG_COLUMN: BoardColumnDef = { id: "backlog", label: "Backlog", kind: "backlog" };
-const BLOCKED_COLUMN: BoardColumnDef = { id: "blocked", label: "Bloqueado", kind: "blocked" };
+export const BLOCKED_COLUMN: BoardColumnDef = { id: "blocked", label: "Bloqueado", kind: "blocked" };
 const NEEDS_HUMAN_COLUMN: BoardColumnDef = {
     id: "needs_human",
     label: "Precisa de humano",
