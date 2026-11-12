@@ -8,6 +8,7 @@ import type { RunListItem } from "@/shared/run_types.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildRunStartedEvent } from "@/test/factories/forja_event_factory.js";
 import { buildRunListItem } from "@/test/factories/run_list_item_factory.js";
+import { buildRunRecord } from "@/test/factories/run_record_factory.js";
 import { captureBrowserEventSources } from "@/test/fakes/fake_event_source.js";
 import { listSentWrites, respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
@@ -221,7 +222,7 @@ describe("RunsPage", () => {
         it("starts a run of the chosen flow with the typed items and opens it", async () => {
             const fetchSpy = stubRunsApi({
                 [`POST ${RUNS_API}`]: () =>
-                    Response.json(buildRunListItem({ id: "run_nova" }), { status: HTTP_CREATED }),
+                    Response.json(buildRunRecord({ id: "run_nova" }), { status: HTTP_CREATED }),
             });
             const router = renderAppAt(RUNS_PAGE_PATH);
             const dialog = await openNewRunDialog();

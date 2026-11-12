@@ -40,7 +40,7 @@ export function useRuns(
     useReloadRunsOnRunEvents(projectId);
 
     return useInfiniteQuery({
-        queryKey: [RUNS_QUERY_KEY, projectId, filters],
+        queryKey: [...projectRunsQueryKey(projectId), filters],
         queryFn: ({ pageParam }) =>
             apiClient.get<RunListItem[]>(runsPagePath(projectId, filters, pageParam)),
         initialPageParam: FIRST_PAGE_CURSOR,
@@ -57,7 +57,8 @@ export function useStartRun(
     return useMutation({
         mutationFn: (input: StartRunInput) =>
             apiClient.post<SerializedRunRecord>(projectRunsPath(projectId), input),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: [RUNS_QUERY_KEY, projectId] }),
+        onSuccess: () =>
+            queryClient.invalidateQueries({ queryKey: projectRunsQueryKey(projectId) }),
     });
 }
 
@@ -65,32 +66,15 @@ function useReloadRunsOnRunEvents(projectId: string): void {
     const queryClient = useQueryClient();
     const reloadOnRunEvent = (envelope: EventEnvelope): void => {
         if (RUN_LIFECYCLE_EVENTS.has(envelope.event.type)) {
-            void queryClient.invalidateQueries({ queryKey: [RUNS_QUERY_KEY, projectId] });
+            void queryClient.invalidateQueries({ queryKey: projectRunsQueryKey(projectId) });
         }
     };
 
     useEventStream({ projectId }, reloadOnRunEvent);
 }
 
-// A page shorter than the page size is the last one.
-function findNextPageCursor(page: RunListItem[]): string | undefined {
-    if (page.length < RUNS_PAGE_SIZE) {
-        return undefined;
-    }
-
-    return page.at(-1)?.id;
-}
-
-function isActiveRun(run: RunListItem): boolean {
-    return !RUN_TERMINAL.has(run.status);
-}
-
-function listActiveRunsFirst(loadedPages: InfiniteData<RunListItem[]>): RunListItem[] {
-    const runs = loadedPages.pages.flat();
-    const activeRuns = runs.filter(isActiveRun);
-    const finishedRuns = runs.filter((run) => !isActiveRun(run));
-
-    return [...activeRuns, ...finishedRuns];
+function projectRunsQueryKey(projectId: string): string[] {
+    return [RUNS_QUERY_KEY, projectId];
 }
 
 function runsPagePath(projectId: string, filters: RunFilters, before?: string): string {
@@ -108,4 +92,25 @@ function runsPagePath(projectId: string, filters: RunFilters, before?: string): 
 
 function projectRunsPath(projectId: string): string {
     return `/projects/${encodeURIComponent(projectId)}/runs`;
+}
+
+// A page shorter than the page size is the last one.
+function findNextPageCursor(page: RunListItem[]): string | undefined {
+    if (page.length < RUNS_PAGE_SIZE) {
+        return undefined;
+    }
+
+    return page.at(-1)?.id;
+}
+
+function listActiveRunsFirst(loadedPages: InfiniteData<RunListItem[]>): RunListItem[] {
+    const runs = loadedPages.pages.flat();
+    const activeRuns = runs.filter(isActiveRun);
+    const finishedRuns = runs.filter((run) => !isActiveRun(run));
+
+    return [...activeRuns, ...finishedRuns];
+}
+
+function isActiveRun(run: RunListItem): boolean {
+    return !RUN_TERMINAL.has(run.status);
 }

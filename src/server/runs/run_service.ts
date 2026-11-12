@@ -88,8 +88,7 @@ async function listRuns(
             toRunListItem(run, {
                 flowName: flowNames.get(run.flowId) ?? run.flowId,
                 costUsd: await sumRunCostUsd(deps.usage, run.id),
-                triggerName:
-                    run.triggerId === undefined ? undefined : triggerNames.get(run.triggerId),
+                triggerName: findTriggerName(triggerNames, run),
             }),
         ),
     );
@@ -106,6 +105,14 @@ function findTriggerNames(
     projectId: string,
 ): Map<string, string> {
     return new Map(triggers.listByProject(projectId).map((trigger) => [trigger.id, trigger.name]));
+}
+
+function findTriggerName(triggerNames: Map<string, string>, run: RunRecord): string | undefined {
+    if (run.triggerId === undefined) {
+        return undefined;
+    }
+
+    return triggerNames.get(run.triggerId);
 }
 
 async function sumRunCostUsd(usage: RunServiceDeps["usage"], runId: string): Promise<number> {
