@@ -1,23 +1,25 @@
 import { CircleAlert, History } from "lucide-react";
+import { useState } from "react";
 import type { JSX } from "react";
 import { useParams } from "react-router";
 
 import { PageTitle } from "@/web/app/page_title.js";
+import { ALL_RUNS_CHOICE, RunFiltersBar, toRunFilters } from "@/web/app/runs/run_filters_bar.js";
 import { RunsTable } from "@/web/app/runs/runs_table.js";
 import { useRuns } from "@/web/app/runs/use_runs.js";
 import type { RunFilters } from "@/web/app/runs/use_runs.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 
-const NO_FILTERS: RunFilters = {};
-
 export function RunsPage(): JSX.Element {
     const { projectId = "" } = useParams();
+    const [filterChoice, setFilterChoice] = useState(ALL_RUNS_CHOICE);
 
     return (
         <div className="flex flex-col gap-4">
             <PageTitle>Runs</PageTitle>
-            <RunsContent projectId={projectId} filters={NO_FILTERS} />
+            <RunFiltersBar projectId={projectId} choice={filterChoice} onChange={setFilterChoice} />
+            <RunsContent projectId={projectId} filters={toRunFilters(filterChoice)} />
         </div>
     );
 }

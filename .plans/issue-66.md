@@ -29,7 +29,7 @@
 - [x] 3. Test: the runs page lists runs with state, flow/version, items, duration, cost and trigger, active on
       top; impl `use_runs.ts`, `runs_table.tsx`, `runs_page.tsx` — `src/web/app/runs/runs_page.test.tsx`
 - [x] 4. Test + impl: clicking a row opens the run — `runs_table.tsx`
-- [ ] 5. Test + impl: status and flow filters ("Falha" shows only failed runs) — `runs_page.tsx`
+- [x] 5. Test + impl: status and flow filters ("Falha" shows only failed runs) — `runs_page.tsx`
 - [ ] 6. Test + impl: "Carregar mais" pages by the `before` cursor — `use_runs.ts`, `runs_page.tsx`
 - [ ] 7. Test + impl: a `run.*` event reloads the list — `use_runs.ts`
 - [ ] 8. Test + impl: "Nova run" starts the run and opens it — `new_run_dialog.tsx`

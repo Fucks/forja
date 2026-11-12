@@ -53,6 +53,12 @@ function stubRunsApi(routes: FakeRoutes = {}): MockInstance<typeof fetch> {
     });
 }
 
+async function chooseFilter(label: string, option: string): Promise<void> {
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("combobox", { name: label }));
+    await user.click(await screen.findByRole("option", { name: option }));
+}
+
 async function findRunRows(): Promise<HTMLElement[]> {
     const table = await screen.findByRole("table", { name: "Runs" });
     const [, ...bodyRows] = await within(table).findAllByRole("row");
@@ -97,6 +103,43 @@ describe("RunsPage", () => {
         await waitFor(() =>
             expect(router.state.location.pathname).toBe(`${RUNS_PAGE_PATH}/${FAILED_RUN.id}`),
         );
+    });
+
+    it("shows only the failed runs when filtering by the Falha state", async () => {
+        stubRunsApi({
+            [`GET ${FIRST_PAGE_URL}&status=FAILED`]: () => Response.json([FAILED_RUN]),
+        });
+        renderAppAt(RUNS_PAGE_PATH);
+        await findRunRows();
+
+        await chooseFilter("Estado", "Falha");
+
+        await waitFor(async () => expect(await findRunRows()).toHaveLength(1));
+        const [onlyRow] = await findRunRows();
+        expect(onlyRow).toHaveTextContent("Falha");
+    });
+
+    it("asks for the active states together when filtering by Ativas", async () => {
+        const activeUrl = `${FIRST_PAGE_URL}&status=QUEUED&status=RUNNING&status=PAUSED`;
+        stubRunsApi({ [`GET ${activeUrl}`]: () => Response.json([RUNNING_RUN]) });
+        renderAppAt(RUNS_PAGE_PATH);
+        await findRunRows();
+
+        await chooseFilter("Estado", "Ativas");
+
+        await waitFor(async () => expect(await findRunRows()).toHaveLength(1));
+    });
+
+    it("shows only the runs of the chosen flow", async () => {
+        stubRunsApi({
+            [`GET ${FIRST_PAGE_URL}&flowId=flw_entrega`]: () => Response.json([RUNNING_RUN]),
+        });
+        renderAppAt(RUNS_PAGE_PATH);
+        await findRunRows();
+
+        await chooseFilter("Fluxo", "Entrega");
+
+        await waitFor(async () => expect(await findRunRows()).toHaveLength(1));
     });
 
     it("explains when there are no runs yet", async () => {
