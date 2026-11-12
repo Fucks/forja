@@ -16,6 +16,7 @@ import { useNodeRunUsage } from "@/web/canvas/live/use_node_run_usage.js";
 import type { UsageByNodeRun } from "@/web/canvas/live/use_node_run_usage.js";
 import { Drawer } from "@/web/components/ui/drawer.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
+import { approvalPath } from "@/web/config/navigation.js";
 
 export function NodeRunDrawer({
     view,
@@ -57,6 +58,7 @@ export function NodeRunDrawer({
                         <SelectedNodeRun
                             nodeRun={selectedNodeRun}
                             usageByNodeRun={usageByNodeRun}
+                            approvalProjectId={isGate(node) ? view.run.projectId : undefined}
                         />
                     </div>
                 </div>
@@ -69,12 +71,19 @@ function countFinished(nodeRuns: SerializedNodeRun[]): number {
     return nodeRuns.filter((nodeRun) => NODE_RUN_TERMINAL.has(nodeRun.status)).length;
 }
 
+function isGate(node: FlowNode): boolean {
+    return node.type === "gate";
+}
+
+// Only a gate NodeRun has an approval, which lives in its project's approvals page.
 function SelectedNodeRun({
     nodeRun,
     usageByNodeRun,
+    approvalProjectId,
 }: {
     nodeRun?: SerializedNodeRun;
     usageByNodeRun: UsageByNodeRun;
+    approvalProjectId?: string;
 }): JSX.Element {
     if (!nodeRun) {
         return (
@@ -87,6 +96,15 @@ function SelectedNodeRun({
     }
 
     return (
-        <NodeRunDetail key={nodeRun.id} nodeRun={nodeRun} usage={usageByNodeRun.get(nodeRun.id)} />
+        <NodeRunDetail
+            key={nodeRun.id}
+            nodeRun={nodeRun}
+            usage={usageByNodeRun.get(nodeRun.id)}
+            approvalPath={
+                approvalProjectId === undefined
+                    ? undefined
+                    : approvalPath(approvalProjectId, nodeRun.id)
+            }
+        />
     );
 }

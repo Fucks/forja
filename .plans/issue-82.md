@@ -31,5 +31,5 @@
 - [x] 7. Test + implement approve (no comment) and reject (comment required) — `approval_detail.tsx`, `use_approvals.ts`
 - [x] 8. Test + implement live updates on `approval.*` — `use_approvals.ts`
 - [x] 9. Test + implement the topbar pending counter — `topbar.tsx`
-- [ ] 10. Test + implement the gate drawer "Abrir aprovação" link — `node_run_detail.tsx`, `node_run_drawer.tsx`
+- [x] 10. Test + implement the gate drawer "Abrir aprovação" link — `node_run_detail.tsx`, `node_run_drawer.tsx`
 - [ ] 11. Self-review checklist and feedback loops (typecheck, lint, test)

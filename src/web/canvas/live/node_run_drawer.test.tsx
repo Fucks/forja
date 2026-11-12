@@ -2,6 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { JSX } from "react";
+import { MemoryRouter } from "react-router";
 
 import type { EventEnvelope, NodeRunStatusName } from "@/shared/events.js";
 import type { FlowNode } from "@/shared/flow_graph.js";
@@ -12,6 +13,7 @@ import type {
     SerializedRunView,
 } from "@/shared/run_types.js";
 import type { TokenUsage, UsageRecord } from "@/shared/usage_types.js";
+import { buildApprovalFlow } from "@/test/factories/flow_graph_factory.js";
 import {
     buildSerializedNodeRun,
     buildSerializedRunView,
@@ -27,6 +29,7 @@ import { NodeRunDrawer } from "@/web/canvas/live/node_run_drawer.js";
 import { useLiveRun } from "@/web/canvas/live/use_live_run.js";
 
 const DEVELOPER_NODE_ID = "dev";
+const GATE_NODE_ID = "gate";
 const RUN_URL = "/api/runs/run-1";
 const RUN_USAGE_URL = `${RUN_URL}/usage`;
 const NODE_RUN_URL = "/api/node-runs/node-run-0";
@@ -84,6 +87,35 @@ describe("NodeRunDrawer", () => {
 });
 
 describe("NodeRunDrawer detail", () => {
+    it("links a gate NodeRun to its approval", async () => {
+        const gateRun = buildSerializedNodeRun({
+            id: "node-run-gate",
+            nodeId: GATE_NODE_ID,
+            workItemId: "1",
+            status: "WAITING_APPROVAL",
+        });
+        stubFetchRoutes(fakeNodeRunApi({ details: [detailOf(gateRun)] }));
+        const view = buildSerializedRunView({ graph: buildApprovalFlow(), nodeRuns: [gateRun] });
+        renderGateDrawer(view);
+
+        await selectNodeRun("item #1 · tentativa 1");
+
+        expect(screen.getByRole("link", { name: "Abrir aprovação" })).toHaveAttribute(
+            "href",
+            "/projects/project-1/approvals?nodeRun=node-run-gate",
+        );
+    });
+
+    it("offers no approval link outside a gate", async () => {
+        const nodeRun = developerRun();
+        stubFetchRoutes(fakeNodeRunApi({ details: [detailOf(nodeRun)] }));
+        renderDrawer(buildSerializedRunView({ nodeRuns: [nodeRun] }));
+
+        await selectNodeRun("item #1 · tentativa 1");
+
+        expect(screen.queryByRole("link", { name: "Abrir aprovação" })).not.toBeInTheDocument();
+    });
+
     it("shows the tokens, the model and the cost of the selected NodeRun", async () => {
         const nodeRun = developerRun();
         stubFetchRoutes(
@@ -366,6 +398,21 @@ function renderDrawer(view: SerializedRunView): void {
         <QueryClientProvider client={createTestQueryClient()}>
             <NodeRunDrawer view={view} node={developerNodeOf(view)} onClose={() => undefined} />
         </QueryClientProvider>,
+    );
+}
+
+function renderGateDrawer(view: SerializedRunView): void {
+    const gateNode = view.graph.nodes.find((node) => node.id === GATE_NODE_ID);
+    if (!gateNode) {
+        throw new Error("The approval flow has no gate node");
+    }
+
+    render(
+        <MemoryRouter>
+            <QueryClientProvider client={createTestQueryClient()}>
+                <NodeRunDrawer view={view} node={gateNode} onClose={() => undefined} />
+            </QueryClientProvider>
+        </MemoryRouter>,
     );
 }
 
