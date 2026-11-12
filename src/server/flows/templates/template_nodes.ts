@@ -18,7 +18,7 @@ export interface AgentNodeSpec {
 }
 
 const SANDCASTLE_LABEL = "Sandcastle";
-const COMPLETION_SIGNAL = "<promise>COMPLETE</promise>";
+export const COMPLETION_SIGNAL = "<promise>COMPLETE</promise>";
 const DEVELOPER_MAX_ITERATIONS = 50;
 const SUMMARY_PORT = "summary";
 const OPEN_PULL_REQUEST_NODE_ID = "open_pr";
@@ -154,7 +154,7 @@ export function buildOutput(spec: {
     };
 }
 
-function createAgentNode(spec: AgentNodeSpec): NodeOfType<"agent"> {
+export function createAgentNode(spec: AgentNodeSpec): NodeOfType<"agent"> {
     const agent = createTemplateNode("agent", spec.id, spec.cell);
     const inputs = spec.extraInput ? [...agent.inputs, spec.extraInput] : agent.inputs;
 

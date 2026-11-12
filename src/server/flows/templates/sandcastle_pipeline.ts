@@ -13,8 +13,10 @@ import {
     buildOpenPullRequest,
     buildOutput,
     buildSandcastleIssuesSource,
+    COMPLETION_SIGNAL,
     connect,
     connectPullRequestToDoneOutput,
+    createAgentNode,
 } from "@/server/flows/templates/template_nodes.js";
 import { CODEGRAPH_PRESET_ID } from "@/server/tool_profiles/tool_profile_presets.js";
 import type { FlowGraph, FlowNode, NodeOfType, Port } from "@/shared/flow_graph.js";
@@ -25,7 +27,6 @@ const SOURCE_LIMIT = 10;
 const ITEMS_IN_PARALLEL = 1;
 const IMPLEMENTER_MAX_ITERATIONS = 100;
 const IMPLEMENTER_IDLE_TIMEOUT_MINUTES = 15;
-const COMPLETION_SIGNAL = "<promise>COMPLETE</promise>";
 const EVIDENCE_BODY_PATH = "evidence.body";
 
 // Edges are the only ordering between nodes: each of these inputs makes a step wait for the one
@@ -213,13 +214,10 @@ function buildNeedsHumanAfterFailedChecks(): FlowNode {
 }
 
 function buildAgentStep(step: AgentStep): NodeOfType<"agent"> {
-    const agent = createTemplateNode("agent", step.id, step.cell);
-    const inputs = step.extraInput ? [...agent.inputs, step.extraInput] : agent.inputs;
+    const agent = createAgentNode(step);
 
     return {
         ...agent,
-        label: step.label,
-        inputs,
         config: {
             ...agent.config,
             prompt: loadPrompt(step.prompt),
