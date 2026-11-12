@@ -1,4 +1,5 @@
 import type { ResultMessage } from "@/integrations/agent_runtime/stream_json_messages.js";
+import { addTokenUsage, EMPTY_TOKEN_USAGE } from "@/shared/usage_types.js";
 import type { TokenUsage } from "@/shared/usage_types.js";
 
 type KnownResultSubtype =
@@ -25,13 +26,6 @@ export interface ClaudeResult {
     permissionDenials: { toolName: string; reason?: string }[];
     errors: string[];
 }
-
-export const EMPTY_USAGE: TokenUsage = {
-    inputTokens: 0,
-    outputTokens: 0,
-    cacheReadInputTokens: 0,
-    cacheCreationInputTokens: 0,
-};
 
 export function toClaudeResult(message: ResultMessage): ClaudeResult {
     return {
@@ -64,11 +58,11 @@ function nonEmptyText(text: string | undefined): string | undefined {
 function totalUsageOf(message: ResultMessage): TokenUsage {
     const perModelUsage = Object.values(message.modelUsage ?? {});
     if (perModelUsage.length > 0) {
-        return perModelUsage.reduce(addUsage, EMPTY_USAGE);
+        return perModelUsage.reduce(addTokenUsage, EMPTY_TOKEN_USAGE);
     }
 
     if (!message.usage) {
-        return EMPTY_USAGE;
+        return EMPTY_TOKEN_USAGE;
     }
 
     return {
@@ -76,14 +70,5 @@ function totalUsageOf(message: ResultMessage): TokenUsage {
         outputTokens: message.usage.output_tokens,
         cacheReadInputTokens: message.usage.cache_read_input_tokens,
         cacheCreationInputTokens: message.usage.cache_creation_input_tokens,
-    };
-}
-
-export function addUsage(total: TokenUsage, usage: TokenUsage): TokenUsage {
-    return {
-        inputTokens: total.inputTokens + usage.inputTokens,
-        outputTokens: total.outputTokens + usage.outputTokens,
-        cacheReadInputTokens: total.cacheReadInputTokens + usage.cacheReadInputTokens,
-        cacheCreationInputTokens: total.cacheCreationInputTokens + usage.cacheCreationInputTokens,
     };
 }
