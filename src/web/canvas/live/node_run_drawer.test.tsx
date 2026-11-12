@@ -5,6 +5,7 @@ import type { JSX } from "react";
 
 import type { EventEnvelope, NodeRunStatusName } from "@/shared/events.js";
 import type { FlowNode } from "@/shared/flow_graph.js";
+import type { LogPage, StoredLogEvent } from "@/shared/log_types.js";
 import type {
     SerializedNodeRun,
     SerializedNodeRunDetail,
@@ -15,7 +16,9 @@ import {
     buildSerializedNodeRun,
     buildSerializedRunView,
 } from "@/test/factories/run_view_factory.js";
-import { createFakeEventSourceFactory } from "@/test/fakes/fake_event_source.js";
+import { buildStoredLogEvent } from "@/test/factories/stored_log_event_factory.js";
+import { stubElementSizes } from "@/test/fakes/fake_element_size.js";
+import { createFakeEventSourceFactory, FakeEventSource } from "@/test/fakes/fake_event_source.js";
 import type { FakeEventSourceFactory } from "@/test/fakes/fake_event_source.js";
 import { listSentWrites, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
@@ -29,6 +32,8 @@ const RUN_USAGE_URL = `${RUN_URL}/usage`;
 const NODE_RUN_URL = "/api/node-runs/node-run-0";
 const HTTP_NO_CONTENT = 204;
 const LONG_TEXT_LENGTH = 500;
+const LOG_VIEWPORT_HEIGHT_PX = 400;
+const LOG_ROW_HEIGHT_PX = 20;
 
 describe("NodeRunDrawer", () => {
     it("lists the NodeRuns of the node with the running one on top", () => {
@@ -185,6 +190,126 @@ describe("NodeRunDrawer actions", () => {
     });
 });
 
+describe("NodeRunDrawer logs", () => {
+    const READ_CALL = buildStoredLogEvent({
+        seq: 2,
+        kind: "tool_call",
+        name: "Read",
+        args: '{"file_path":"src/app.tsx"}',
+    });
+    const NPM_WARNING = buildStoredLogEvent({ seq: 3, kind: "raw", line: "npm WARN deprecated" });
+    const STORED_EVENTS = [
+        buildStoredLogEvent({ seq: 1, kind: "system", message: "Container iniciado" }),
+        READ_CALL,
+        NPM_WARNING,
+        buildStoredLogEvent({ seq: 4, kind: "text", text: "Pronto." }),
+    ];
+
+    let eventSources: FakeEventSourceFactory;
+
+    beforeEach(() => {
+        stubElementSizes({
+            viewportHeightPx: LOG_VIEWPORT_HEIGHT_PX,
+            rowHeightPx: LOG_ROW_HEIGHT_PX,
+        });
+        eventSources = createFakeEventSourceFactory();
+        vi.stubGlobal("EventSource", function OpenFakeEventSource(url: string) {
+            return eventSources.createSource(url);
+        });
+    });
+
+    afterEach(() => {
+        vi.stubGlobal("EventSource", FakeEventSource);
+    });
+
+    async function openLogsOf(nodeRun: SerializedNodeRun, storedEvents: StoredLogEvent[]) {
+        const fetchSpy = stubFetchRoutes({
+            ...fakeNodeRunApi({ details: [detailOf(nodeRun)] }),
+            [`GET ${NODE_RUN_URL}/logs?fromSeq=1&limit=2000`]: () =>
+                Response.json(logPageOf(storedEvents)),
+            [`GET ${NODE_RUN_URL}/logs?fromSeq=5&limit=2000`]: () =>
+                Response.json(logPageOf(storedEvents.slice(4))),
+        });
+        renderDrawer(buildSerializedRunView({ nodeRuns: [nodeRun] }));
+        await selectNodeRun("item #1 · tentativa 1");
+        await userEvent.click(await screen.findByRole("tab", { name: "Logs" }));
+        await screen.findByRole("log");
+
+        return fetchSpy;
+    }
+
+    function shownLogLines(container: HTMLElement = screen.getByRole("log")): string[] {
+        return within(container)
+            .getAllByRole("listitem")
+            .map((row) => row.textContent);
+    }
+
+    it("shows every event of a finished NodeRun in order", async () => {
+        await openLogsOf(developerRun(), STORED_EVENTS);
+
+        expect(shownLogLines()).toEqual([
+            "+00:00Container iniciado",
+            "+00:01▸ Read",
+            "+00:03Pronto.",
+        ]);
+    });
+
+    it("shows the new events of a running NodeRun without reloading", async () => {
+        const storedEvents = STORED_EVENTS.slice(0, 4);
+        await openLogsOf(developerRun({ status: "RUNNING" }), storedEvents);
+
+        storedEvents.push(buildStoredLogEvent({ seq: 5, kind: "text", text: "Testes passando." }));
+        act(() => eventSources.latestSource().emit(logAppendedTo("node-run-0", 5)));
+
+        expect(await screen.findByText("Testes passando.")).toBeInTheDocument();
+    });
+
+    it("shows a tool call collapsed and its arguments when expanded", async () => {
+        await openLogsOf(developerRun(), STORED_EVENTS);
+        const toolCall = screen.getByRole("button", { name: "Read" });
+        expect(toolCall).toHaveAttribute("aria-expanded", "false");
+
+        await userEvent.click(toolCall);
+
+        expect(screen.getByText(/"file_path": "src\/app.tsx"/)).toBeInTheDocument();
+    });
+
+    it("shows the raw lines only with the raw filter", async () => {
+        await openLogsOf(developerRun(), STORED_EVENTS);
+        expect(screen.queryByText("npm WARN deprecated")).not.toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole("radio", { name: "Bruto" }));
+
+        expect(screen.getByText("npm WARN deprecated")).toBeInTheDocument();
+    });
+
+    it("downloads the raw NDJSON of the NodeRun", async () => {
+        const clickedLinks: HTMLAnchorElement[] = [];
+        vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+            this: HTMLAnchorElement,
+        ) {
+            clickedLinks.push(this);
+        });
+        await openLogsOf(developerRun(), STORED_EVENTS);
+
+        await userEvent.click(screen.getByRole("button", { name: "Baixar log bruto" }));
+
+        expect(clickedLinks.map((link) => new URL(link.href).pathname)).toEqual([
+            `${NODE_RUN_URL}/logs/raw`,
+        ]);
+        expect(clickedLinks[0]).toHaveAttribute("download");
+    });
+
+    it("opens the logs in full screen", async () => {
+        await openLogsOf(developerRun(), STORED_EVENTS);
+
+        await userEvent.click(screen.getByRole("button", { name: "Tela cheia" }));
+
+        const dialog = await screen.findByRole("dialog", { name: "Logs" });
+        expect(shownLogLines(within(dialog).getByRole("log"))).toHaveLength(3);
+    });
+});
+
 describe("NodeRunDrawer height", () => {
     it("grows with the arrow keys up to 80% of the window", async () => {
         stubFetchRoutes(fakeNodeRunApi());
@@ -236,6 +361,26 @@ function developerRun(overrides: Partial<SerializedNodeRun> = {}): SerializedNod
         status: "SUCCEEDED",
         ...overrides,
     });
+}
+
+function logPageOf(events: StoredLogEvent[]): LogPage {
+    const lastSeq = events.at(-1)?.seq ?? 0;
+    return { events, nextSeq: lastSeq + 1, total: lastSeq };
+}
+
+function logAppendedTo(nodeRunId: string, seq: number): EventEnvelope {
+    return {
+        id: seq,
+        at: "2026-01-01T12:10:00.000Z",
+        event: {
+            type: "log.appended",
+            runId: "run-1",
+            projectId: "project-1",
+            nodeRunId,
+            fromSeq: seq,
+            toSeq: seq,
+        },
+    };
 }
 
 function detailOf(nodeRun: SerializedNodeRun): SerializedNodeRunDetail {

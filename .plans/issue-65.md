@@ -35,8 +35,8 @@
 - [x] 7. Test + implement the `renderLine` prop of `LogViewer` — `log_viewer.tsx`, `log_line_list.tsx`, `log_line.tsx`
 - [x] 8. Implement `renderAgentEventLine` — `src/web/logs/event_renderers.tsx`
 - [x] 9. Implement the log filters — `src/web/logs/log_filters.tsx`
-- [ ] 10. Test (drawer) + implement the Logs tab: events in order, tool call expands — `node_run_logs.tsx`, `node_run_detail.tsx`
-- [ ] 11. Test + implement the filter "Bruto" showing raw lines — `node_run_logs.tsx`
-- [ ] 12. Test + implement the raw download — `node_run_logs.tsx`
-- [ ] 13. Test + implement full screen dialog — `node_run_logs.tsx`
+- [x] 10. Test (drawer) + implement the Logs tab: events in order, tool call expands — `node_run_logs.tsx`, `node_run_detail.tsx`
+- [x] 11. Test + implement the filter "Bruto" showing raw lines — `node_run_logs.tsx`
+- [x] 12. Test + implement the raw download — `node_run_logs.tsx`
+- [x] 13. Test + implement full screen dialog — `node_run_logs.tsx`
 - [ ] 14. Self-review checklist and feedback loops (typecheck, lint, test)
