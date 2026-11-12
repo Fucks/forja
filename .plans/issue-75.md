@@ -31,13 +31,13 @@
 - [x] 2. API hooks: `useBoardColumnTriggers`, `useFireTrigger` with item ids, `useMoveItemToColumn`
       with item id variables, `useCreateLocalItem` — `use_triggers.ts`, `use_board.ts`,
       `trigger_row.tsx`, `work_item_drawer.tsx`
-- [ ] 3. Test: dropping by keyboard on a "Concluído" column saves the manual column —
+- [x] 3. Test: dropping by keyboard on a "Concluído" column saves the manual column —
       `board_dnd.test.tsx`; implement DnD context, draggable cards, droppable columns —
       `board_dnd.tsx`, `board_view.tsx`
-- [ ] 4. Test: dropping on a stage without trigger is refused with the reason (toast, no writes)
-- [ ] 5. Test: dropping on the trigger column asks for confirmation and fires the trigger with the
+- [x] 4. Test: dropping on a stage without trigger is refused with the reason (toast, no writes)
+- [x] 5. Test: dropping on the trigger column asks for confirmation and fires the trigger with the
       item; cancelling does not fire — start run confirmation dialog
-- [ ] 6. Drag highlight (forbidden columns dimmed, allowed accent border) and `Zap` icon on trigger
+- [x] 6. Drag highlight (forbidden columns dimmed, allowed accent border) and `Zap` icon on trigger
       columns
 - [ ] 7. Test + implement the new item dialog (title, description, labels, blocked by) that creates
       the item in the Backlog — `new_item_dialog.tsx`, `board_view.tsx`, `board_view.test.tsx`
