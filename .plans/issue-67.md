@@ -25,7 +25,7 @@
 
 ## Tasks
 
-- [ ] 1. Server: filter the usage by node when `nodeId` is given — `usage_types.ts`,
+- [x] 1. Server: filter the usage by node when `nodeId` is given — `usage_types.ts`,
       `usage_repository.ts`, `usage_service.test.ts`
 - [ ] 2. `startOfLocalDay` and `addDays` — `src/lib/local_day.ts` (+ test)
 - [ ] 3. `formatCalendarDay` ("12/11") — `src/lib/format.ts` (+ test)

@@ -88,6 +88,15 @@ describe("usage routes", () => {
             expect(response.json<UsageAggregate[]>().map(({ key }) => key)).toEqual(["dev"]);
         });
 
+        it("answers only the usage of the node when nodeId is given", async () => {
+            await usage.record(buildNewUsageRecord({ nodeId: "dev", nodeRunId: "nrn_1" }));
+            await usage.record(buildNewUsageRecord({ nodeId: "tl", nodeRunId: "nrn_2" }));
+
+            const response = await get(`${PROJECT_USAGE_URL}?${NOVEMBER}&groupBy=node&nodeId=tl`);
+
+            expect(response.json<UsageAggregate[]>().map(({ key }) => key)).toEqual(["tl"]);
+        });
+
         it.each([
             ["the period is missing", "groupBy=day"],
             ["a date is not a date", "from=ontem&to=2026-12-01T00:00:00Z&groupBy=day"],

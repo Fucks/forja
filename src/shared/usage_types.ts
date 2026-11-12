@@ -44,6 +44,7 @@ export interface UsageQuery {
     to: Date;
     groupBy: UsageGroupBy;
     flowId?: string;
+    nodeId?: string;
 }
 
 export interface UsageAggregate {
@@ -62,6 +63,7 @@ export const usageQueryParams = z
         to: z.coerce.date(),
         groupBy: z.enum(USAGE_GROUP_BYS),
         flowId: z.string().min(1).optional(),
+        nodeId: z.string().min(1).optional(),
     })
     .refine(({ from, to }) => from < to, {
         message: "O início do período precisa ser antes do fim.",
