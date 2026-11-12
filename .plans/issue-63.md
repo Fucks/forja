@@ -31,8 +31,8 @@
 - [x] 4. Test+impl: filter by item (node states and map progress) — `run_view_model.ts`
 - [x] 5. Test+impl: `applyEvent` for node_run.updated, group.progress, run.* — `run_view_model.ts`
 - [x] 6. Test+impl: `flowingEdges` — `run_view_model.ts`
-- [ ] 7. Test+impl: `useLiveRun` loads the view and applies events — `use_live_run.ts`
-- [ ] 8. Test+impl: `useLiveRun` reloads on reconnection and replays events during the load
+- [x] 7. Test+impl: `useLiveRun` loads the view and applies events — `use_live_run.ts`
+- [x] 8. Test+impl: `useLiveRun` reloads on reconnection and replays events during the load
 - [ ] 9. Impl: `FlowCanvas` read-only mode — `flow_canvas.tsx` (+ test in `flow_canvas.test.tsx`)
 - [ ] 10. Test+impl: `RunCanvas` renders node states, group counters, flowing edges — `run_canvas.tsx`
 - [ ] 11. Test+impl: run actions (pause/resume/cancel with confirmation, raise budget) —

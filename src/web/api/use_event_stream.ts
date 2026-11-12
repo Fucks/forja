@@ -36,7 +36,7 @@ export interface EventStreamFilter {
     runId?: string;
 }
 
-type CreateEventSource = (url: string) => EventSource;
+export type CreateEventSource = (url: string) => EventSource;
 type EventEnvelopeListener = (envelope: EventEnvelope) => void;
 
 export function useEventStream(
