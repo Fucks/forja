@@ -69,6 +69,7 @@ export function createProjectGithubSync(deps: ProjectGithubSyncDeps): ProjectGit
         clock: systemClock,
         intervalMs: GITHUB_SYNC_INTERVAL_MS,
         listProjectIds: () => listGithubProjectIds(projects),
+        // Pull requests first, so the issues their merge closed reach the items in the same round.
         sync: async (projectId) => {
             await syncPullRequestsLoggingFailures({ syncProjectPullRequests, log, projectId });
             return syncLoggingFailures({ syncProject, log, projectId });
