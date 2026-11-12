@@ -2,16 +2,14 @@ import { ScrollText } from "lucide-react";
 import type { JSX } from "react";
 import { Link } from "react-router";
 
-import { formatUsd } from "@/lib/format.js";
 import type { ItemTimelineEntry } from "@/shared/board_types.js";
 import { toApiUrl } from "@/web/api/api_client.js";
-import { formatNodeRunDuration } from "@/web/canvas/live/node_run_list.js";
+import { formatNodeRunCost, formatNodeRunDuration } from "@/web/canvas/live/node_run_list.js";
 import { describeNodeRun } from "@/web/canvas/live/node_run_sorting.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 import { nodeRunPath } from "@/web/config/navigation.js";
 
 const LOGS_ICON_SIZE_PX = 14;
-const NO_VALUE = "—";
 
 export function ItemTimeline({
     projectId,
@@ -58,7 +56,7 @@ function TimelineEntryLink({
             </span>
             <span className="font-mono text-muted">{formatNodeRunDuration(entry)}</span>
             <span className="w-16 text-right font-mono text-muted">
-                {entry.costUsd === undefined ? NO_VALUE : formatUsd(entry.costUsd)}
+                {formatNodeRunCost(entry.costUsd)}
             </span>
         </Link>
     );
