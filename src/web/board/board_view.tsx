@@ -4,7 +4,7 @@ import type { JSX } from "react";
 import type { BoardColumnDef } from "@/engine/board_columns.js";
 import type { BoardCard, BoardView } from "@/shared/board_types.js";
 import { useBoard, useSyncBoard } from "@/web/board/use_board.js";
-import type { CreateEventSource } from "@/web/board/use_board.js";
+import type { CreateEventSource } from "@/web/api/use_event_stream.js";
 import { WorkItemCard } from "@/web/board/work_item_card.js";
 import { Button } from "@/web/components/ui/button.js";
 import { cn } from "@/web/components/ui/cn.js";

@@ -13,7 +13,7 @@ const ACTION_ICON_CLASSES = "size-3.5";
 
 type OpenDialog = "none" | "cancel" | "raiseBudget";
 
-export function RunActions({ run }: { run: SerializedRunRecord }): JSX.Element {
+export function RunActionButtons({ run }: { run: SerializedRunRecord }): JSX.Element {
     const actions = useRunActions(run.id);
     const [openDialog, setOpenDialog] = useState<OpenDialog>("none");
     const closeDialog = (): void => setOpenDialog("none");

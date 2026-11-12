@@ -36,14 +36,13 @@ const CONCLUDED_STATUSES: ReadonlySet<NodeRunStatusName> = new Set<NodeRunStatus
     "SUCCEEDED",
     "SKIPPED",
 ]);
+const ITEM_NOUNS = { one: "item", other: "itens" };
+const WITHOUT_ITEM = "";
 
 type ViewedRun = SerializedRunView["run"];
 type NodeRunUpdatedEvent = Extract<ForjaEvent, { type: "node_run.updated" }>;
 type RunPausedEvent = Extract<ForjaEvent, { type: "run.paused" }>;
 type GroupProgressEvent = Extract<ForjaEvent, { type: "group.progress" }>;
-
-const ITEM_NOUNS = { one: "item", other: "itens" };
-const WITHOUT_ITEM = "";
 
 export function aggregateNodeStates(
     view: SerializedRunView,

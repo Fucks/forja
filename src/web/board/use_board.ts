@@ -6,6 +6,7 @@ import type { EventEnvelope, ForjaEventType } from "@/shared/events.js";
 import { apiClient } from "@/web/api/api_client.js";
 import type { ApiError } from "@/web/api/api_client.js";
 import { useEventStream } from "@/web/api/use_event_stream.js";
+import type { CreateEventSource } from "@/web/api/use_event_stream.js";
 
 const BOARD_QUERY_KEY = ["board"];
 
@@ -15,8 +16,6 @@ const BOARD_CHANGING_EVENTS: ReadonlySet<ForjaEventType> = new Set<ForjaEventTyp
     "work_item.created",
     "work_item.updated",
 ]);
-
-export type CreateEventSource = (url: string) => EventSource;
 
 export function useBoard(
     projectId: string,

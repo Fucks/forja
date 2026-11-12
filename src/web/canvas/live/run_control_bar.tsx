@@ -6,7 +6,7 @@ import { systemClock } from "@/lib/clock.js";
 import type { Clock } from "@/lib/clock.js";
 import { formatDuration, formatTimeOfDay } from "@/lib/format.js";
 import type { SerializedRunRecord, SerializedRunView } from "@/shared/run_types.js";
-import { RunActions } from "@/web/canvas/live/run_actions.js";
+import { RunActionButtons } from "@/web/canvas/live/run_action_buttons.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 
 const DURATION_TICK_MS = 1_000;
@@ -47,7 +47,7 @@ export function RunControlBar({
             )}
             <div className="ml-auto flex items-center gap-2">
                 {children}
-                <RunActions run={run} />
+                <RunActionButtons run={run} />
             </div>
         </section>
     );
