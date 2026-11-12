@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
+import { assertNever } from "@/lib/assert_never.js";
 import { systemClock } from "@/lib/clock.js";
 import type { AppDeps } from "@/server/app.js";
 import { ApprovalRepository } from "@/server/approvals/approval_repository.js";
@@ -11,7 +12,12 @@ import {
 } from "@/server/approvals/approval_service.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import type { Executor } from "@/server/runtime/executor.js";
-import { listApprovalsQuery, resolveApprovalInput } from "@/shared/approval_types.js";
+import {
+    type Approval,
+    type ApprovalListFilter,
+    listApprovalsQuery,
+    resolveApprovalInput,
+} from "@/shared/approval_types.js";
 
 const PROJECT_APPROVALS_PATH = "/projects/:projectId/approvals";
 const APPROVAL_PATH = "/approvals/:id";
@@ -41,12 +47,27 @@ function registerReadRoutes(app: FastifyInstance, approvals: ApprovalService): v
     typedApp.get(
         PROJECT_APPROVALS_PATH,
         { schema: { params: projectParamsSchema, querystring: listApprovalsQuery } },
-        (request) => approvals.listPending(request.params.projectId),
+        (request) => listApprovals(approvals, request.params.projectId, request.query.status),
     );
 
     typedApp.get(APPROVAL_PATH, { schema: { params: approvalParamsSchema } }, (request) =>
         approvals.get(request.params.id),
     );
+}
+
+function listApprovals(
+    approvals: ApprovalService,
+    projectId: string,
+    filter: ApprovalListFilter,
+): Promise<Approval[]> {
+    switch (filter) {
+        case "pending":
+            return approvals.listPending(projectId);
+        case "resolved":
+            return approvals.listResolved(projectId);
+        default:
+            return assertNever(filter);
+    }
 }
 
 // The executor resolves it, so the gate waiting for the approval goes on right away.

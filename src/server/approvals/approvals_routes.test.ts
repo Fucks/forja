@@ -16,6 +16,7 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
 const HTTP_CONFLICT = 409;
 const PENDING_APPROVALS_URL = `/api/projects/${TEST_PROJECT_ID}/approvals?status=pending`;
+const RESOLVED_APPROVALS_URL = `/api/projects/${TEST_PROJECT_ID}/approvals?status=resolved`;
 
 describe("approvals routes", () => {
     let bed: ExecutorTestBed;
@@ -78,6 +79,25 @@ describe("approvals routes", () => {
                     status: "pending",
                 }),
             ]);
+        });
+    });
+
+    describe("GET /api/projects/:projectId/approvals?status=resolved", () => {
+        it("lists the approvals already decided, with the comment", async () => {
+            await startRunWaitingAtGate();
+            const pending = await theOnlyPendingApproval();
+            await resolve(pending.id, { decision: "rejected", comment: "Faltam testes" });
+
+            const response = await app.inject({ method: "GET", url: RESOLVED_APPROVALS_URL });
+
+            expect(response.json()).toEqual([
+                expect.objectContaining({
+                    id: pending.id,
+                    status: "rejected",
+                    comment: "Faltam testes",
+                }),
+            ]);
+            expect(await pendingApprovals()).toEqual([]);
         });
     });
 

@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 
 import type { ForjaDb } from "@/server/db/client.js";
@@ -44,6 +44,17 @@ export class ApprovalRepository {
             .from(approvals)
             .where(and(eq(approvals.projectId, projectId), eq(approvals.status, status)))
             .orderBy(asc(approvals.createdAt), asc(approvals.id))
+            .all()
+            .map(toApproval);
+    }
+
+    listResolvedByProject(projectId: string, limit: number): Approval[] {
+        return this.db
+            .select()
+            .from(approvals)
+            .where(and(eq(approvals.projectId, projectId), ne(approvals.status, "pending")))
+            .orderBy(desc(approvals.resolvedAt), desc(approvals.id))
+            .limit(limit)
             .all()
             .map(toApproval);
     }

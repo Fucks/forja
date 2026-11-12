@@ -22,7 +22,7 @@
 
 - [x] 1. Test + implement `parseUnifiedDiff` (files, hunks, add/del/ctx counts) — `parse_unified_diff.ts`
 - [x] 2. Test + implement binary, renamed, new/deleted files and the leading stat — `parse_unified_diff.ts`
-- [ ] 3. Backend: list resolved approvals (`status=resolved`) — `approval_types.ts`, repo, service, routes + tests
+- [x] 3. Backend: list resolved approvals (`status=resolved`) — `approval_types.ts`, repo, service, routes + tests
 - [ ] 4. Test + implement the page list: pending first with item and age, then resolved — `approvals_page.tsx`, `use_approvals.ts`
 - [ ] 5. Test + implement the detail: message, item, `StatusBadge`, collapsible diff per file — `approval_detail.tsx`, `diff_viewer.tsx`
 - [ ] 6. Test + implement artifacts (JsonView) and the logs link — `approval_detail.tsx`, `use_approvals.ts`
