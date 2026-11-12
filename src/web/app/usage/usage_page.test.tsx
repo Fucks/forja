@@ -189,6 +189,63 @@ describe("UsagePage", () => {
 
         expect(screen.queryByText("Filtrando pelo nó dev")).not.toBeInTheDocument();
     });
+
+    describe("the today card", () => {
+        it("compares the spending of today with the daily budget", async () => {
+            stubUsageApi({
+                settings: { ...PROJECT_SETTINGS, dailyBudgetUsd: 10 },
+                routes: {
+                    [usageRoute(TODAY, "day")]: answer([
+                        buildUsageAggregate({ key: "2026-11-12", costUsd: 3.5 }),
+                    ]),
+                },
+            });
+
+            renderAppAt(USAGE_PAGE_PATH);
+
+            const card = await screen.findByRole("region", { name: "Hoje" });
+            expect(await within(card).findByText("US$ 3,50")).toBeInTheDocument();
+            expect(within(card).getByText("de US$ 10,00")).toBeInTheDocument();
+            expect(
+                within(card).getByRole("progressbar", { name: "Orçamento diário" }),
+            ).toHaveAttribute("aria-valuenow", "35");
+            expect(within(card).queryByText(/Acima de 80%/)).not.toBeInTheDocument();
+        });
+
+        it("warns when the spending of today passes 80% of the daily budget", async () => {
+            stubUsageApi({
+                settings: { ...PROJECT_SETTINGS, dailyBudgetUsd: 10 },
+                routes: {
+                    [usageRoute(TODAY, "day")]: answer([
+                        buildUsageAggregate({ key: "2026-11-12", costUsd: 8.5 }),
+                    ]),
+                },
+            });
+
+            renderAppAt(USAGE_PAGE_PATH);
+
+            const card = await screen.findByRole("region", { name: "Hoje" });
+            expect(await within(card).findByText("Acima de 80% do orçamento")).toBeInTheDocument();
+            expect(within(card).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "85");
+        });
+
+        it("shows the spending of today without a comparison when there is no daily budget", async () => {
+            stubUsageApi({
+                routes: {
+                    [usageRoute(TODAY, "day")]: answer([
+                        buildUsageAggregate({ key: "2026-11-12", costUsd: 3.5 }),
+                    ]),
+                },
+            });
+
+            renderAppAt(USAGE_PAGE_PATH);
+
+            const card = await screen.findByRole("region", { name: "Hoje" });
+            expect(await within(card).findByText("US$ 3,50")).toBeInTheDocument();
+            expect(within(card).getByText("Sem orçamento diário configurado.")).toBeInTheDocument();
+            expect(within(card).queryByRole("progressbar")).not.toBeInTheDocument();
+        });
+    });
 });
 
 async function findChartBars(): Promise<(string | null)[]> {

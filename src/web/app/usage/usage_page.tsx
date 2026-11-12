@@ -24,6 +24,7 @@ import {
 import type { UsagePeriod } from "@/web/app/usage/usage_period.js";
 import { UsageChart } from "@/web/app/usage/usage_chart.js";
 import { UsageTable } from "@/web/app/usage/usage_table.js";
+import { UsageTodayCard } from "@/web/app/usage/usage_today_card.js";
 import { Button } from "@/web/components/ui/button.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
@@ -66,6 +67,7 @@ function UsageDashboard({
         customRange: dayRangeEndingOn(today, DEFAULT_PERIOD_DAY_COUNT),
         groupBy: "day",
     }));
+    const todayPeriod = toUsagePeriod({ firstDay: today, lastDay: today }, settings.timezone);
     const period = toUsagePeriod(
         dayRangeOfChoice(filters.periodChoice, { today, customRange: filters.customRange }),
         settings.timezone,
@@ -80,7 +82,20 @@ function UsageDashboard({
                     onClear={() => setFilters({ ...filters, nodeId: undefined })}
                 />
             )}
-            <UsageChartSection projectId={projectId} period={period} nodeId={filters.nodeId} />
+            <div className="flex flex-wrap items-start gap-4">
+                <UsageTodayCard
+                    projectId={projectId}
+                    today={todayPeriod}
+                    dailyBudgetUsd={settings.dailyBudgetUsd}
+                />
+                <div className="min-w-80 flex-1">
+                    <UsageChartSection
+                        projectId={projectId}
+                        period={period}
+                        nodeId={filters.nodeId}
+                    />
+                </div>
+            </div>
             <UsageTableSection
                 projectId={projectId}
                 period={period}
