@@ -32,7 +32,7 @@
 - [x] 4. Implement `bodyFrom` as a path — `src/server/runtime/executors/git_executor.ts`
 - [x] 5. Test: the needs-human comment uses `failureSummary` as reason — `src/server/runtime/executors/deterministic_executors.test.ts` (or output tests)
 - [x] 6. Implement `failureSummary` reason — `src/server/runtime/executors/output_executor.ts`
-- [ ] 7. Adapted prompts `sandcastle_implement.md`, `sandcastle_review.md`, `sandcastle_evidence.md` + `TemplatePromptName`
+- [x] 7. Adapted prompts `sandcastle_implement.md`, `sandcastle_review.md`, `sandcastle_evidence.md` + `TemplatePromptName`
 - [ ] 8. Test: template is listed and publishes without errors; structure (nodes, concurrency 1, configs) — `sandcastle_pipeline.test.ts`, `flow_templates.test.ts`
 - [ ] 9. Implement the template and register it — `sandcastle_pipeline.ts`, `flow_template_registry.ts`
 - [ ] 10. Test bed: `github` option with real source/git/output executors — `src/test/executor_test_bed.ts`

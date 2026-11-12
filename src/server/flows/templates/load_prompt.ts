@@ -2,7 +2,13 @@ import { readFileSync } from "node:fs";
 
 import { runtimeAssetPath } from "@/lib/paths.js";
 
-export type TemplatePromptName = "tl_spec" | "developer" | "reviewer";
+export type TemplatePromptName =
+    | "tl_spec"
+    | "developer"
+    | "reviewer"
+    | "sandcastle_implement"
+    | "sandcastle_review"
+    | "sandcastle_evidence";
 
 export interface PromptSection {
     title: string;
