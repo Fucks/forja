@@ -86,6 +86,19 @@ export class SqliteRunRepository implements RunRepository {
         );
     }
 
+    listNodeRunsOfItem(itemId: string): Promise<NodeRunState[]> {
+        return resolveWith(() =>
+            this.db
+                .select({ nodeRun: nodeRuns })
+                .from(nodeRuns)
+                .innerJoin(runs, eq(runs.id, nodeRuns.runId))
+                .where(eq(nodeRuns.workItemId, itemId))
+                .orderBy(asc(runs.createdAt), asc(runs.id), NODE_RUN_INSERTION_ORDER)
+                .all()
+                .map(({ nodeRun }) => toNodeRunState(nodeRun)),
+        );
+    }
+
     getNodeRun(id: string): Promise<NodeRunState | undefined> {
         return resolveWith(() => {
             const row = this.db.select().from(nodeRuns).where(eq(nodeRuns.id, id)).get();

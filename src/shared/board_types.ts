@@ -18,3 +18,24 @@ export interface BoardView {
     columns: BoardColumnDef[];
     cards: BoardCard[];
 }
+
+export interface ItemTimelineEntry {
+    runId: string;
+    flowName: string;
+    nodeRunId: string;
+    nodeLabel: string;
+    status: NodeRunStatusName;
+    iteration: number;
+    attempt: number;
+    startedAt?: string;
+    finishedAt?: string;
+    costUsd?: number;
+    summary?: string;
+}
+
+export interface ItemTimeline {
+    entries: ItemTimelineEntry[];
+    totalCostUsd: number;
+    prUrl?: string;
+    spec?: string;
+}

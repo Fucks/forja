@@ -8,13 +8,23 @@ import { StatusBadge } from "@/web/components/ui/status_badge.js";
 
 const PR_ICON_SIZE_PX = 14;
 
-export function WorkItemCard({ card }: { card: BoardCard }): JSX.Element {
+export function WorkItemCard({
+    card,
+    onOpen,
+}: {
+    card: BoardCard;
+    onOpen: () => void;
+}): JSX.Element {
     return (
         <article
             aria-label={card.item.title}
             className="flex animate-card-enter flex-col gap-2 rounded-md border border-border bg-surface p-3"
         >
-            <h3 className="line-clamp-2 text-sm font-medium">{card.item.title}</h3>
+            <h3 className="line-clamp-2 text-sm font-medium">
+                <button type="button" onClick={onOpen} className="text-left hover:underline">
+                    {card.item.title}
+                </button>
+            </h3>
             <CurrentStep card={card} />
             <div className="flex items-center gap-2 text-xs text-muted">
                 <span className="font-mono">{itemReference(card.item)}</span>
@@ -40,7 +50,7 @@ function CurrentStep({ card }: { card: BoardCard }): JSX.Element | null {
     );
 }
 
-function PullRequestLink({ url }: { url: string }): JSX.Element {
+export function PullRequestLink({ url }: { url: string }): JSX.Element {
     return (
         <a href={url} target="_blank" rel="noreferrer" aria-label="Pull request">
             <GitPullRequest size={PR_ICON_SIZE_PX} aria-hidden="true" className="text-steel" />
@@ -48,6 +58,6 @@ function PullRequestLink({ url }: { url: string }): JSX.Element {
     );
 }
 
-function itemReference(item: WorkItem): string {
+export function itemReference(item: WorkItem): string {
     return item.number === undefined ? "local" : `#${item.number}`;
 }

@@ -19,14 +19,16 @@ import { EmptyState } from "@/web/components/ui/empty_state.js";
 export function NodeRunDrawer({
     view,
     node,
+    initialNodeRunId,
     onClose,
 }: {
     view: SerializedRunView;
     node: FlowNode;
+    initialNodeRunId?: string;
     onClose: () => void;
 }): JSX.Element {
     const [heightFraction, setHeightFraction] = useState(DEFAULT_DRAWER_HEIGHT_FRACTION);
-    const [selectedNodeRunId, setSelectedNodeRunId] = useState<string>();
+    const [selectedNodeRunId, setSelectedNodeRunId] = useState(initialNodeRunId);
     const nodeRuns = sortNodeRuns(view.nodeRuns.filter((nodeRun) => nodeRun.nodeId === node.id));
     const costUsdByNodeRun = useNodeRunCosts(view.run.id, countFinished(nodeRuns));
     const selectedNodeRun = nodeRuns.find((nodeRun) => nodeRun.id === selectedNodeRunId);

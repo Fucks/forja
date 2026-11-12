@@ -365,6 +365,30 @@ describe.each(IMPLEMENTATIONS)("$name", ({ open }) => {
         });
     });
 
+    describe("listNodeRunsOfItem", () => {
+        it("lists the item's NodeRuns of every run, oldest run first", async () => {
+            await repository.createRun(
+                buildRunRecord({ id: "new", createdAt: minutesAfterNoon(2) }),
+            );
+            await repository.createRun(
+                buildRunRecord({ id: "old", createdAt: minutesAfterNoon(1) }),
+            );
+            const oldNodeRun = buildNodeRunState({ id: "old-dev", runId: "old", workItemId: "a" });
+            const newNodeRun = buildNodeRunState({ id: "new-dev", runId: "new", workItemId: "a" });
+            const otherItemNodeRun = buildNodeRunState({
+                id: "old-dev-b",
+                runId: "old",
+                workItemId: "b",
+            });
+            await repository.saveTransition({ nodeRuns: [newNodeRun] });
+            await repository.saveTransition({ nodeRuns: [oldNodeRun, otherItemNodeRun] });
+
+            const nodeRunsOfItem = await repository.listNodeRunsOfItem("a");
+
+            expect(nodeRunsOfItem).toEqual([oldNodeRun, newNodeRun]);
+        });
+    });
+
     describe("listItemIdsWithArtifact", () => {
         it("lists once each item of the project whose NodeRuns saved an artifact of the kind", async () => {
             await repository.createRun(buildRunRecord({ id: "first" }));

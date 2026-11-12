@@ -159,7 +159,7 @@ function placeInStageOfCurrentNode(context: ItemPlacementContext): ItemPlacement
     return undefined;
 }
 
-function stageColumnIdOfNode(graph: FlowGraph, nodeId: string): string | undefined {
+export function stageColumnIdOfNode(graph: FlowGraph, nodeId: string): string | undefined {
     const stage = stageOfNode(graph, nodeId);
     if (!stage) {
         return undefined;

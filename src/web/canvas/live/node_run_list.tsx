@@ -65,14 +65,21 @@ function NodeRunRow({
             <span className="min-w-0 flex-1 truncate">{describeNodeRun(nodeRun)}</span>
             <span className="font-mono text-muted">{formatNodeRunDuration(nodeRun)}</span>
             <span className="w-16 text-right font-mono text-muted">
-                {costUsd === undefined ? NO_VALUE : formatUsd(costUsd)}
+                {formatNodeRunCost(costUsd)}
             </span>
         </button>
     );
 }
 
+export function formatNodeRunCost(costUsd: number | undefined): string {
+    return costUsd === undefined ? NO_VALUE : formatUsd(costUsd);
+}
+
 // The live events do not carry the times, so a NodeRun they created shows its duration on reload.
-function formatNodeRunDuration({ startedAt, finishedAt }: SerializedNodeRun): string {
+export function formatNodeRunDuration({
+    startedAt,
+    finishedAt,
+}: Pick<SerializedNodeRun, "startedAt" | "finishedAt">): string {
     if (startedAt === undefined || finishedAt === undefined) {
         return NO_VALUE;
     }

@@ -170,7 +170,7 @@ function findItemOutcome(artifacts: ArtifactRecord[]): ItemOutcome | undefined {
     return itemOutcomeSchema.parse(outcomeArtifact.value).moveItemTo;
 }
 
-function findPrUrl(artifacts: ArtifactRecord[]): string | undefined {
+export function findPrUrl(artifacts: ArtifactRecord[]): string | undefined {
     const prUrlArtifact = artifacts.findLast((artifact) => artifact.kind === "pr_url");
     if (!prUrlArtifact) {
         return undefined;

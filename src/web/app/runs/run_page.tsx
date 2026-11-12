@@ -1,7 +1,7 @@
 import { TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import type { JSX } from "react";
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 
 import type { SerializedRunView } from "@/shared/run_types.js";
 import { PageTitle } from "@/web/app/page_title.js";
@@ -12,6 +12,7 @@ import { listRunItems } from "@/web/canvas/live/run_view_model.js";
 import { useLiveRun } from "@/web/canvas/live/use_live_run.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
+import { OPEN_NODE_RUN_PARAM } from "@/web/config/navigation.js";
 
 export function RunPage(): JSX.Element {
     const { runId = "" } = useParams();
@@ -44,6 +45,8 @@ function RunPageContent({ view, error }: { view?: SerializedRunView; error?: Err
 
 function LiveRunScreen({ view }: { view: SerializedRunView }): JSX.Element {
     const [filterItemId, setFilterItemId] = useState<string>();
+    const [searchParams] = useSearchParams();
+    const openNodeRunId = searchParams.get(OPEN_NODE_RUN_PARAM) ?? undefined;
 
     return (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border">
@@ -55,7 +58,7 @@ function LiveRunScreen({ view }: { view: SerializedRunView }): JSX.Element {
                 />
             </RunControlBar>
             <div className="min-h-0 flex-1">
-                <RunCanvas view={view} filterItemId={filterItemId} />
+                <RunCanvas view={view} filterItemId={filterItemId} openNodeRunId={openNodeRunId} />
             </div>
         </div>
     );

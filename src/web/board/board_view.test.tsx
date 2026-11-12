@@ -1,9 +1,10 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 
 import { deriveColumns } from "@/engine/board_columns.js";
-import type { BoardCard, BoardView } from "@/shared/board_types.js";
+import type { BoardCard, BoardView, ItemTimeline } from "@/shared/board_types.js";
 import type { EventEnvelope } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
@@ -19,6 +20,9 @@ const PROJECT_ID = "prj_forja";
 const BOARD_URL = `/api/projects/${PROJECT_ID}/board`;
 const SYNC_URL = `/api/projects/${PROJECT_ID}/work-items/sync`;
 const PR_URL = "https://github.com/Fucks/forja/pull/12";
+const TIMELINE_URL = `/api/work-items/itm_42/timeline`;
+const COLUMN_URL = `/api/work-items/itm_42/column`;
+const EMPTY_TIMELINE: ItemTimeline = { entries: [], totalCostUsd: 0 };
 
 const ITEM = buildWorkItem({ id: "itm_42", number: 42, title: "Tela de login" });
 const COLUMNS = deriveColumns(buildCanonicalFlow());
@@ -63,10 +67,12 @@ describe("ProjectBoard", () => {
         render(
             <QueryClientProvider client={createTestQueryClient()}>
                 <ToastProvider>
-                    <ProjectBoard
-                        projectId={PROJECT_ID}
-                        createEventSource={eventSources.createSource}
-                    />
+                    <MemoryRouter>
+                        <ProjectBoard
+                            projectId={PROJECT_ID}
+                            createEventSource={eventSources.createSource}
+                        />
+                    </MemoryRouter>
                 </ToastProvider>
             </QueryClientProvider>,
         );
@@ -164,6 +170,67 @@ describe("ProjectBoard", () => {
 
         expect(await screen.findByRole("article", { name: "Tela de login" })).toBeInTheDocument();
         expect(listSentWrites(fetchSpy).map((write) => write.url)).toEqual([SYNC_URL]);
+    });
+
+    it("opens the item drawer when the card is clicked", async () => {
+        const user = userEvent.setup();
+        stubFetchRoutes({
+            [`GET ${BOARD_URL}`]: () => Response.json(buildBoard([{ columnId: "backlog" }])),
+            [`GET ${TIMELINE_URL}`]: () => Response.json(EMPTY_TIMELINE),
+        });
+        renderBoard();
+
+        await user.click(await screen.findByRole("button", { name: "Tela de login" }));
+
+        expect(screen.getByRole("dialog", { name: "Tela de login" })).toBeInTheDocument();
+    });
+
+    it("shows the card in Precisa de humano after the drawer moves it there", async () => {
+        const user = userEvent.setup();
+        let board = buildBoard([{ columnId: "backlog" }]);
+        stubFetchRoutes({
+            [`GET ${BOARD_URL}`]: () => Response.json(board),
+            [`GET ${TIMELINE_URL}`]: () => Response.json(EMPTY_TIMELINE),
+            [`POST ${COLUMN_URL}`]: () => {
+                board = buildBoard([{ columnId: "needs_human" }]);
+                return Response.json({ ...ITEM, manualColumn: "needs_human" });
+            },
+        });
+        renderBoard();
+        await user.click(await screen.findByRole("button", { name: "Tela de login" }));
+
+        await user.click(screen.getByRole("button", { name: "Mover para Precisa de humano" }));
+        await user.keyboard("{Escape}");
+
+        expect(
+            await within(columnNamed("Precisa de humano")).findByRole("article"),
+        ).toBeInTheDocument();
+        expect(within(columnNamed("Backlog")).queryByRole("article")).not.toBeInTheDocument();
+    });
+
+    it("lists the blockers of the item in its drawer", async () => {
+        const user = userEvent.setup();
+        const blocker = buildWorkItem({ id: "itm_41", number: 41, title: "Modelo de usuário" });
+        const blockedItem = { ...ITEM, blockedBy: [blocker.id] };
+        const board: BoardView = {
+            ...buildBoard([]),
+            cards: [
+                { item: blockedItem, columnId: "blocked" },
+                { item: blocker, columnId: "backlog" },
+            ],
+        };
+        stubFetchRoutes({
+            [`GET ${BOARD_URL}`]: () => Response.json(board),
+            [`GET ${TIMELINE_URL}`]: () => Response.json(EMPTY_TIMELINE),
+        });
+        renderBoard();
+
+        await user.click(await screen.findByRole("button", { name: "Tela de login" }));
+
+        const drawer = screen.getByRole("dialog", { name: "Tela de login" });
+        expect(within(drawer).getByRole("list", { name: "Bloqueado por" })).toHaveTextContent(
+            "#41 Modelo de usuário",
+        );
     });
 
     it("asks to publish a default flow when the project has none", async () => {
