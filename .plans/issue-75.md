@@ -26,7 +26,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `decideDrop` and `listBoardColumnTriggers` — `src/web/board/drop_rules.ts`,
+- [x] 1. Test + implement `decideDrop` and `listBoardColumnTriggers` — `src/web/board/drop_rules.ts`,
       `drop_rules.test.ts`, export `BLOCKED_COLUMN` in `src/engine/board_columns.ts`
 - [ ] 2. API hooks: `useBoardColumnTriggers`, `useFireTrigger` with item ids, `useMoveItemToColumn`
       with item id variables, `useCreateLocalItem` — `use_triggers.ts`, `use_board.ts`,
