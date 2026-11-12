@@ -40,6 +40,6 @@
       `usage_today_card.tsx`
 - [x] 10. Page test + implementation: custom period
 - [x] 11. Move `addUsage`/`EMPTY_USAGE` to `src/shared/usage_types.ts`
-- [ ] 12. Drawer test + implementation: NodeRun detail shows tokens and cost — `use_node_run_usage.ts`,
+- [x] 12. Drawer test + implementation: NodeRun detail shows tokens and cost — `use_node_run_usage.ts`,
       `node_run_list.tsx`, `node_run_drawer.tsx`, `node_run_detail.tsx`
 - [ ] 13. Self-review checklist and feedback loops (typecheck, lint, test)

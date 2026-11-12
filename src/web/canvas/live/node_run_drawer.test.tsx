@@ -11,7 +11,7 @@ import type {
     SerializedNodeRunDetail,
     SerializedRunView,
 } from "@/shared/run_types.js";
-import type { UsageRecord } from "@/shared/usage_types.js";
+import type { TokenUsage, UsageRecord } from "@/shared/usage_types.js";
 import {
     buildSerializedNodeRun,
     buildSerializedRunView,
@@ -84,6 +84,43 @@ describe("NodeRunDrawer", () => {
 });
 
 describe("NodeRunDrawer detail", () => {
+    it("shows the tokens, the model and the cost of the selected NodeRun", async () => {
+        const nodeRun = developerRun();
+        stubFetchRoutes(
+            fakeNodeRunApi({
+                details: [detailOf(nodeRun)],
+                usage: [
+                    usageOf("node-run-0", 0.1, { inputTokens: 1_500, cacheReadInputTokens: 900 }),
+                    usageOf("node-run-0", 0.25, { outputTokens: 2_000 }),
+                    usageOf("node-run-other", 3),
+                ],
+            }),
+        );
+        renderDrawer(buildSerializedRunView({ nodeRuns: [nodeRun] }));
+
+        await selectNodeRun("item #1 · tentativa 1");
+
+        expect(await findUsageOfDetail()).toEqual([
+            ["Modelo", "claude-opus-5-5"],
+            ["Tokens de entrada", "1,5 mil"],
+            ["Tokens de saída", "2 mil"],
+            ["Cache lido", "900"],
+            ["Cache gravado", "0"],
+            ["Custo", "US$ 0,35"],
+        ]);
+    });
+
+    it("marks the cost as approximate when the price of the model was estimated", async () => {
+        const nodeRun = developerRun();
+        const estimatedUsage = { ...usageOf("node-run-0", 0.4), priceEstimated: true };
+        stubFetchRoutes(fakeNodeRunApi({ details: [detailOf(nodeRun)], usage: [estimatedUsage] }));
+        renderDrawer(buildSerializedRunView({ nodeRuns: [nodeRun] }));
+
+        await selectNodeRun("item #1 · tentativa 1");
+
+        expect(await findUsageOfDetail()).toContainEqual(["Custo", "≈ US$ 0,40"]);
+    });
+
     it("shows the inputs and the outputs of the selected NodeRun as JSON", async () => {
         const nodeRun = developerRun({
             inputs: { spec: { title: "Login com GitHub" } },
@@ -401,7 +438,19 @@ function fakeNodeRunApi({ usage = [], details = [] }: FakeNodeRunApiOptions = {}
     return routes;
 }
 
-function usageOf(nodeRunId: string, costUsd: number): UsageRecord {
+async function findUsageOfDetail(): Promise<[string | null, string | null][]> {
+    const usage = await screen.findByRole("region", { name: "Uso" });
+    const terms = within(usage).getAllByRole("term");
+    const definitions = within(usage).getAllByRole("definition");
+
+    return terms.map((term, index) => [term.textContent, definitions[index]?.textContent ?? null]);
+}
+
+function usageOf(
+    nodeRunId: string,
+    costUsd: number,
+    tokens: Partial<TokenUsage> = {},
+): UsageRecord {
     return {
         id: `usage-${nodeRunId}-${costUsd}`,
         projectId: "project-1",
@@ -416,6 +465,7 @@ function usageOf(nodeRunId: string, costUsd: number): UsageRecord {
             outputTokens: 1,
             cacheReadInputTokens: 0,
             cacheCreationInputTokens: 0,
+            ...tokens,
         },
         costUsd,
         priceEstimated: false,

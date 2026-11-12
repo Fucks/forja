@@ -12,7 +12,8 @@ import {
 import { NodeRunDetail } from "@/web/canvas/live/node_run_detail.js";
 import { NodeRunList } from "@/web/canvas/live/node_run_list.js";
 import { sortNodeRuns } from "@/web/canvas/live/node_run_sorting.js";
-import { useNodeRunCosts } from "@/web/canvas/live/use_node_run_costs.js";
+import { useNodeRunUsage } from "@/web/canvas/live/use_node_run_usage.js";
+import type { UsageByNodeRun } from "@/web/canvas/live/use_node_run_usage.js";
 import { Drawer } from "@/web/components/ui/drawer.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 
@@ -30,7 +31,7 @@ export function NodeRunDrawer({
     const [heightFraction, setHeightFraction] = useState(DEFAULT_DRAWER_HEIGHT_FRACTION);
     const [selectedNodeRunId, setSelectedNodeRunId] = useState(initialNodeRunId);
     const nodeRuns = sortNodeRuns(view.nodeRuns.filter((nodeRun) => nodeRun.nodeId === node.id));
-    const costUsdByNodeRun = useNodeRunCosts(view.run.id, countFinished(nodeRuns));
+    const usageByNodeRun = useNodeRunUsage(view.run.id, countFinished(nodeRuns));
     const selectedNodeRun = nodeRuns.find((nodeRun) => nodeRun.id === selectedNodeRunId);
 
     return (
@@ -47,13 +48,16 @@ export function NodeRunDrawer({
                     <div className="w-80 shrink-0 overflow-auto">
                         <NodeRunList
                             nodeRuns={nodeRuns}
-                            costUsdByNodeRun={costUsdByNodeRun}
+                            usageByNodeRun={usageByNodeRun}
                             selectedNodeRunId={selectedNodeRunId}
                             onSelect={setSelectedNodeRunId}
                         />
                     </div>
                     <div className="min-w-0 flex-1 overflow-auto">
-                        <SelectedNodeRun nodeRun={selectedNodeRun} />
+                        <SelectedNodeRun
+                            nodeRun={selectedNodeRun}
+                            usageByNodeRun={usageByNodeRun}
+                        />
                     </div>
                 </div>
             </div>
@@ -65,7 +69,13 @@ function countFinished(nodeRuns: SerializedNodeRun[]): number {
     return nodeRuns.filter((nodeRun) => NODE_RUN_TERMINAL.has(nodeRun.status)).length;
 }
 
-function SelectedNodeRun({ nodeRun }: { nodeRun?: SerializedNodeRun }): JSX.Element {
+function SelectedNodeRun({
+    nodeRun,
+    usageByNodeRun,
+}: {
+    nodeRun?: SerializedNodeRun;
+    usageByNodeRun: UsageByNodeRun;
+}): JSX.Element {
     if (!nodeRun) {
         return (
             <EmptyState
@@ -76,5 +86,7 @@ function SelectedNodeRun({ nodeRun }: { nodeRun?: SerializedNodeRun }): JSX.Elem
         );
     }
 
-    return <NodeRunDetail key={nodeRun.id} nodeRun={nodeRun} />;
+    return (
+        <NodeRunDetail key={nodeRun.id} nodeRun={nodeRun} usage={usageByNodeRun.get(nodeRun.id)} />
+    );
 }

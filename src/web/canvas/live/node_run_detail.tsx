@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { JSX } from "react";
 
 import type { NodeRunError } from "@/engine/node_run_state.js";
+import { formatTokens, formatUsd } from "@/lib/format.js";
 import type { SerializedNodeRun, SerializedNodeRunDetail } from "@/shared/run_types.js";
 import { JsonView } from "@/web/canvas/live/json_view.js";
 import { NodeRunActionButtons } from "@/web/canvas/live/node_run_action_buttons.js";
@@ -10,13 +11,23 @@ import { NODE_RUN_ERROR_LABELS } from "@/web/canvas/live/node_run_error_labels.j
 import { NodeRunLogs } from "@/web/canvas/live/node_run_logs.js";
 import { describeNodeRun } from "@/web/canvas/live/node_run_sorting.js";
 import { useNodeRunDetail } from "@/web/canvas/live/use_node_run_detail.js";
+import type { NodeRunUsage } from "@/web/canvas/live/use_node_run_usage.js";
+import { KeyValue } from "@/web/components/ui/key_value.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 import { Tabs } from "@/web/components/ui/tabs.js";
 
 type DetailTab = "logs" | "inputs" | "outputs" | "artifacts";
 
-export function NodeRunDetail({ nodeRun }: { nodeRun: SerializedNodeRun }): JSX.Element {
+const ESTIMATED_PRICE_MARK = "≈ ";
+
+export function NodeRunDetail({
+    nodeRun,
+    usage,
+}: {
+    nodeRun: SerializedNodeRun;
+    usage?: NodeRunUsage;
+}): JSX.Element {
     const description = describeNodeRun(nodeRun);
 
     return (
@@ -26,9 +37,39 @@ export function NodeRunDetail({ nodeRun }: { nodeRun: SerializedNodeRun }): JSX.
                 <h3 className="min-w-0 flex-1 truncate text-sm font-medium">{description}</h3>
                 <NodeRunActionButtons nodeRun={nodeRun} />
             </header>
+            {usage && <NodeRunUsageSummary nodeRunUsage={usage} />}
             <NodeRunDetailContent nodeRun={nodeRun} />
         </article>
     );
+}
+
+function NodeRunUsageSummary({ nodeRunUsage }: { nodeRunUsage: NodeRunUsage }): JSX.Element {
+    const tokens = nodeRunUsage.usage;
+
+    return (
+        <section aria-label="Uso" className="text-sm">
+            <KeyValue
+                items={[
+                    { label: "Modelo", value: nodeRunUsage.models.join(", "), mono: true },
+                    { label: "Tokens de entrada", value: formatTokens(tokens.inputTokens) },
+                    { label: "Tokens de saída", value: formatTokens(tokens.outputTokens) },
+                    { label: "Cache lido", value: formatTokens(tokens.cacheReadInputTokens) },
+                    {
+                        label: "Cache gravado",
+                        value: formatTokens(tokens.cacheCreationInputTokens),
+                    },
+                    { label: "Custo", value: formatNodeRunUsageCost(nodeRunUsage) },
+                ]}
+            />
+        </section>
+    );
+}
+
+// An unknown model is priced as opus, so its cost is only an estimate.
+function formatNodeRunUsageCost({ costUsd, priceEstimated }: NodeRunUsage): string {
+    const cost = formatUsd(costUsd);
+
+    return priceEstimated ? ESTIMATED_PRICE_MARK + cost : cost;
 }
 
 function NodeRunDetailContent({ nodeRun }: { nodeRun: SerializedNodeRun }): JSX.Element {
