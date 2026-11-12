@@ -9,6 +9,7 @@ import type {
     NodeRunStatusName,
     RunStatusName,
 } from "@/shared/events.js";
+import type { FlowEdge } from "@/shared/flow_graph.js";
 import type {
     SerializedNodeRun,
     SerializedRunRecord,
@@ -161,6 +162,34 @@ function describeCurrentItems(currentItems: string[]): string {
     }
 
     return formatCount(currentItems.length, ITEM_NOUNS);
+}
+
+export function flowingEdges(view: SerializedRunView): Set<string> {
+    const latestByNode = new Map(
+        [...groupByNode(view.nodeRuns)].map(([nodeId, nodeRuns]) => [
+            nodeId,
+            latestNodeRunByItem(nodeRuns),
+        ]),
+    );
+    const isFlowing = (edge: FlowEdge): boolean =>
+        isCarryingAnItem(latestByNode.get(edge.from.nodeId), latestByNode.get(edge.to.nodeId));
+
+    return new Set(view.graph.edges.filter(isFlowing).map((edge) => edge.id));
+}
+
+// A source that ran once, without an item, handed its outputs to every item.
+function isCarryingAnItem(
+    sourceByItem: Map<string, SerializedNodeRun> | undefined,
+    targetByItem: Map<string, SerializedNodeRun> | undefined,
+): boolean {
+    if (!sourceByItem || !targetByItem) {
+        return false;
+    }
+
+    return [...targetByItem].some(([itemKey, targetNodeRun]) => {
+        const sourceNodeRun = sourceByItem.get(itemKey) ?? sourceByItem.get(WITHOUT_ITEM);
+        return targetNodeRun.status === "RUNNING" && sourceNodeRun?.status === "SUCCEEDED";
+    });
 }
 
 function groupByNode(nodeRuns: SerializedNodeRun[]): Map<string, SerializedNodeRun[]> {

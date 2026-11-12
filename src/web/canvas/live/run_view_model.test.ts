@@ -4,10 +4,12 @@ import {
     buildSerializedNodeRun,
     buildSerializedRunView,
 } from "@/test/factories/run_view_factory.js";
-import { aggregateNodeStates, applyEvent } from "@/web/canvas/live/run_view_model.js";
+import { aggregateNodeStates, applyEvent, flowingEdges } from "@/web/canvas/live/run_view_model.js";
 
 const DEVELOPER_NODE_ID = "dev";
 const DEVELOP_GROUP_ID = "develop";
+const SPEC_TO_DEVELOPER_EDGE_ID = "tl.summary->dev.spec";
+const SOURCE_TO_SPEC_EDGE_ID = "source.items->tl.item";
 const EVENT_AT = "2026-01-01T12:10:00.000Z";
 const RESUME_AT = "2026-01-01T15:05:00.000Z";
 
@@ -264,12 +266,45 @@ describe("applyEvent", () => {
     });
 });
 
+describe("flowingEdges", () => {
+    it("animates the edge into a node running an item its source just concluded", () => {
+        const view = viewWithNodeRuns([
+            { nodeId: "tl", workItemId: "42", status: "SUCCEEDED" },
+            { nodeId: DEVELOPER_NODE_ID, workItemId: "42", status: "RUNNING" },
+        ]);
+
+        expect(flowingEdges(view)).toEqual(new Set([SPEC_TO_DEVELOPER_EDGE_ID]));
+    });
+
+    it("does not animate the edge when the running item came from another source run", () => {
+        const view = viewWithNodeRuns([
+            { nodeId: "tl", workItemId: "41", status: "SUCCEEDED" },
+            { nodeId: "tl", workItemId: "42", status: "RUNNING" },
+            { nodeId: DEVELOPER_NODE_ID, workItemId: "41", status: "SUCCEEDED" },
+        ]);
+
+        expect(flowingEdges(view)).toEqual(new Set());
+    });
+
+    it("animates the edge from a node that ran once for every item", () => {
+        const view = viewWithNodeRuns([
+            { nodeId: "source", status: "SUCCEEDED" },
+            { nodeId: "tl", workItemId: "42", status: "RUNNING" },
+        ]);
+
+        expect(flowingEdges(view)).toEqual(new Set([SOURCE_TO_SPEC_EDGE_ID]));
+    });
+});
+
 function viewWithDeveloperRuns(nodeRuns: Partial<SerializedNodeRun>[]): SerializedRunView {
+    return viewWithNodeRuns(nodeRuns.map((nodeRun) => ({ nodeId: DEVELOPER_NODE_ID, ...nodeRun })));
+}
+
+function viewWithNodeRuns(nodeRuns: Partial<SerializedNodeRun>[]): SerializedRunView {
     return buildSerializedRunView({
         nodeRuns: nodeRuns.map((nodeRun, index) =>
             buildSerializedNodeRun({
                 id: `node-run-${index}`,
-                nodeId: DEVELOPER_NODE_ID,
                 ...nodeRun,
             }),
         ),
