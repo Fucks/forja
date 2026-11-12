@@ -18,7 +18,10 @@ import { createBoardService } from "@/server/work_items/board_service.js";
 import type { BoardService } from "@/server/work_items/board_service.js";
 import { buildItemTimeline } from "@/server/work_items/item_timeline.js";
 import { createProjectGithubSync } from "@/server/work_items/project_github_sync.js";
-import type { SyncProject } from "@/server/work_items/project_github_sync.js";
+import type {
+    SyncProject,
+    SyncProjectPullRequests,
+} from "@/server/work_items/project_github_sync.js";
 import type { SyncScheduler } from "@/server/work_items/sync_scheduler.js";
 import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
 import { createWorkItemService } from "@/server/work_items/work_item_service.js";
@@ -32,6 +35,7 @@ import {
 
 const PROJECT_WORK_ITEMS_PATH = "/projects/:projectId/work-items";
 const PROJECT_WORK_ITEMS_SYNC_PATH = `${PROJECT_WORK_ITEMS_PATH}/sync`;
+const PROJECT_PULL_REQUESTS_SYNC_PATH = "/projects/:projectId/pull-requests/sync";
 const PROJECT_BOARD_PATH = "/projects/:projectId/board";
 const WORK_ITEM_PATH = "/work-items/:id";
 const WORK_ITEM_COLUMN_PATH = `${WORK_ITEM_PATH}/column`;
@@ -62,6 +66,7 @@ export const registerWorkItemsRoutes: RouteModule = (app, deps) => {
 
     registerProjectWorkItemsRoutes(app, workItems);
     registerSyncRoute(app, githubSync.syncProject);
+    registerPullRequestSyncRoute(app, githubSync.syncProjectPullRequests);
     registerBoardRoute(app, createBoardService({ ...runHistory, workItems, clock: systemClock }));
     registerWorkItemRoutes(app, workItems);
     registerTimelineRoute(app, workItems, runHistory);
@@ -103,6 +108,17 @@ function registerSyncRoute(app: FastifyInstance, syncProject: SyncProject): void
         PROJECT_WORK_ITEMS_SYNC_PATH,
         { schema: { params: projectParamsSchema, querystring: syncQuerySchema } },
         (request) => syncProject(request.params.projectId, { label: request.query.label }),
+    );
+}
+
+function registerPullRequestSyncRoute(
+    app: FastifyInstance,
+    syncProjectPullRequests: SyncProjectPullRequests,
+): void {
+    app.withTypeProvider<ZodTypeProvider>().post(
+        PROJECT_PULL_REQUESTS_SYNC_PATH,
+        { schema: { params: projectParamsSchema } },
+        (request) => syncProjectPullRequests(request.params.projectId),
     );
 }
 

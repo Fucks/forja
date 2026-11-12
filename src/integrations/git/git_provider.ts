@@ -20,6 +20,11 @@ export interface GitProvider {
     push(root: string, branch: string, env: Record<string, string>): Promise<void>;
     /** Commits of `branch` missing from `base` (ahead) and the reverse (behind). @throws GitCommandError */
     aheadBehind(root: string, branch: string, base: string): Promise<CommitCounts>;
+    /**
+     * False when there is no local branch to delete.
+     * @throws BranchInUseError when a worktree holds the branch; GitCommandError otherwise
+     */
+    deleteLocalBranch(root: string, branch: string): Promise<boolean>;
 }
 
 export class NotARepoError extends Error {
@@ -36,5 +41,15 @@ export class GitCommandError extends Error {
     ) {
         super(`${message}: ${stderr.trim()}`);
         this.name = "GitCommandError";
+    }
+}
+
+export class BranchInUseError extends GitCommandError {
+    constructor(
+        readonly branch: string,
+        stderr: string,
+    ) {
+        super(`O branch ${branch} está em uso por um worktree`, stderr);
+        this.name = "BranchInUseError";
     }
 }

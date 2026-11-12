@@ -8,7 +8,10 @@ import {
     createGitExecutor,
     type GitExecutorDeps,
 } from "@/server/runtime/executors/git_executor.js";
-import { executeOutputNode } from "@/server/runtime/executors/output_executor.js";
+import {
+    createOutputExecutor,
+    type OutputExecutorDeps,
+} from "@/server/runtime/executors/output_executor.js";
 import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
 import {
     createSourceExecutor,
@@ -77,17 +80,21 @@ export function isWaitingForApproval(outcome: NodeExecutionOutcome): outcome is 
 }
 
 // The executors that need nothing beyond the context; the executor adds the gate's, which needs
-// the approvals.
+// the approvals, and `createNodeExecutors` the ones that need repositories or providers.
 export const nodeExecutors: NodeExecutorRegistry = {
     trigger: executeTriggerNode,
     agent: executeAgentNode,
     script: executeScriptNode,
     condition: executeConditionNode,
-    output: executeOutputNode,
 };
 
-export type NodeExecutorDeps = SourceExecutorDeps & GitExecutorDeps;
+export type NodeExecutorDeps = SourceExecutorDeps & GitExecutorDeps & OutputExecutorDeps;
 
 export function createNodeExecutors(deps: NodeExecutorDeps): NodeExecutorRegistry {
-    return { ...nodeExecutors, source: createSourceExecutor(deps), git: createGitExecutor(deps) };
+    return {
+        ...nodeExecutors,
+        source: createSourceExecutor(deps),
+        git: createGitExecutor(deps),
+        output: createOutputExecutor(deps),
+    };
 }

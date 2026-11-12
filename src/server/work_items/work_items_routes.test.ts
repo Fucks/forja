@@ -1,12 +1,16 @@
 import type { FastifyInstance } from "fastify";
 
+import { systemClock } from "@/lib/clock.js";
 import { buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
+import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
 import type { BoardView, ItemTimeline } from "@/shared/board_types.js";
 import type { LocalItemInput, WorkItem } from "@/shared/work_item_types.js";
+import { buildNodeRunState } from "@/test/factories/node_run_state_factory.js";
 import { buildProject } from "@/test/factories/project_factory.js";
+import { buildArtifactRecord, buildRunRecord } from "@/test/factories/run_record_factory.js";
 import { buildWorkItem } from "@/test/factories/work_item_factory.js";
 import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
@@ -23,6 +27,16 @@ const OPEN_ISSUE_JSON = {
     url: "https://github.com/Fucks/forja/issues/17",
     labels: [{ name: "forja" }],
     state: "OPEN",
+};
+
+const PR_BRANCH = "forja/issue-17";
+const MERGED_PULL_REQUEST_JSON = {
+    number: 40,
+    url: "https://github.com/Fucks/forja/pull/40",
+    state: "MERGED",
+    headRefName: PR_BRANCH,
+    baseRefName: "main",
+    mergedAt: "2026-11-12T10:00:00Z",
 };
 
 function isGhIssueList(args: string[]): boolean {
@@ -334,6 +348,28 @@ describe("work items routes", () => {
         });
     });
 
+    describe("POST /api/projects/:projectId/pull-requests/sync", () => {
+        function syncPullRequests(projectId: string) {
+            return app.inject({
+                method: "POST",
+                url: `/api/projects/${projectId}/pull-requests/sync`,
+            });
+        }
+
+        it("answers what the sync did with the pull requests of the project", async () => {
+            const response = await syncPullRequests(GITHUB_PROJECT_ID);
+
+            expect(response.statusCode).toBe(200);
+            expect(response.json()).toEqual({ merged: 0, closedIssues: 0, deletedBranches: 0 });
+        });
+
+        it("answers 404 for an unknown project", async () => {
+            const response = await syncPullRequests("prj_desconhecido");
+
+            expect(response.statusCode).toBe(404);
+        });
+    });
+
     describe("GET /api/projects/:projectId/board", () => {
         it("shows the items in the backlog of the fixed columns while no flow is published", async () => {
             const item = await createItem();
@@ -403,5 +439,53 @@ describe("work items routes", () => {
             const listedRepos = commands.calls.map((call) => repoArgumentOf(call.args));
             expect(listedRepos).toEqual([GITHUB_REPO]);
         });
+
+        it("moves the items whose pull request was merged to Concluído in the same round", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+            const item = await insertItemWithForjaPullRequest();
+            scriptMergedPullRequestOnGithub();
+            await app.ready();
+
+            await vi.advanceTimersByTimeAsync(GITHUB_SYNC_INTERVAL_MS);
+
+            const response = await app.inject({ method: "GET", url: `/api/work-items/${item.id}` });
+            expect(response.json<WorkItem>().manualColumn).toBe("done");
+        });
+
+        async function insertItemWithForjaPullRequest(): Promise<WorkItem> {
+            const item = buildWorkItem({ projectId: GITHUB_PROJECT_ID, branch: PR_BRANCH });
+            new WorkItemRepository(database.db).insert(item);
+            const runs = new SqliteRunRepository(database.db, systemClock);
+            await runs.createRun(buildRunRecord({ id: "run_pr", projectId: GITHUB_PROJECT_ID }));
+            await runs.saveTransition({
+                nodeRuns: [
+                    buildNodeRunState({ id: "nr_pr", runId: "run_pr", workItemId: item.id }),
+                ],
+                artifacts: [
+                    buildArtifactRecord({
+                        nodeRunId: "nr_pr",
+                        runId: "run_pr",
+                        name: "pr_url",
+                        kind: "pr_url",
+                        value: MERGED_PULL_REQUEST_JSON.url,
+                        createdAt: systemClock.now().toISOString(),
+                    }),
+                ],
+            });
+            return item;
+        }
+
+        function scriptMergedPullRequestOnGithub(): void {
+            commands
+                .when("gh", (args) => args[0] === "pr" && args[1] === "list")
+                .returns({ stdout: JSON.stringify([MERGED_PULL_REQUEST_JSON]) });
+            commands
+                .when("gh", (args) => args[0] === "issue" && args[1] === "view")
+                .returns({ stdout: JSON.stringify({ ...OPEN_ISSUE_JSON, state: "CLOSED" }) });
+            commands
+                .when("gh", (args) => args[0] === "api")
+                .returns({ exitCode: 1, stderr: "gh: Not Found (HTTP 404)" });
+            commands.when("gh", isGhIssueList).returns({ stdout: "[]" });
+        }
     });
 });

@@ -91,3 +91,13 @@ export function keepNodeRunsOfLatestRunPerItem(
 
     return Object.fromEntries(itemIds.map((itemId) => [itemId, nodeRunsOfLatestRun(itemId)]));
 }
+
+export async function listArtifactsOfNodeRuns(
+    runs: Pick<RunRepository, "listArtifacts">,
+    nodeRuns: NodeRunState[],
+): Promise<ArtifactRecord[]> {
+    const artifactsByNodeRun = await Promise.all(
+        nodeRuns.map((nodeRun) => runs.listArtifacts(nodeRun.id)),
+    );
+    return artifactsByNodeRun.flat();
+}
