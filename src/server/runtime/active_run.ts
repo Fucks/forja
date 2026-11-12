@@ -48,6 +48,7 @@ export interface ActiveRunDeps {
     toolProfiles: RunToolProfiles;
     credentials: RunCredentials;
     items: WorkItemSnapshot[];
+    loadItem(itemId: string): Promise<WorkItemSnapshot | undefined>;
     scheduler: Scheduler;
     runs: RunRepository;
     events: EventBus;
@@ -70,9 +71,11 @@ export class ActiveRun {
     private readonly runningExecutions = new Map<string, NodeRunExecution>();
     private readonly pendingWakeups = new Set<CancelTimeout>();
     private readonly logAnnouncer: LogAnnouncer;
+    private readonly itemsById: Map<string, WorkItemSnapshot>;
 
     constructor(private readonly deps: ActiveRunDeps) {
         this.record = deps.record;
+        this.itemsById = new Map(deps.items.map((item) => [item.id, item]));
         this.workspaces = createWorkspacePool({
             runtime: deps.runtime,
             specOf: (item) =>
@@ -140,7 +143,7 @@ export class ActiveRun {
     private async executeCommand(command: SchedulerCommand): Promise<void> {
         switch (command.type) {
             case "start_node_run":
-                this.startNodeRun(command);
+                await this.startNodeRun(command);
                 break;
             case "cancel_node_run":
                 this.runningExecutions.get(command.nodeRunId)?.cancel();
@@ -171,13 +174,13 @@ export class ActiveRun {
         }
     }
 
-    private startNodeRun({ nodeRun, inputs }: StartNodeRunCommand): void {
+    private async startNodeRun({ nodeRun, inputs }: StartNodeRunCommand): Promise<void> {
         const { deps } = this;
         const execution = new NodeRunExecution({
             run: this.record,
             nodeRun,
             inputs,
-            item: deps.items.find((item) => item.id === nodeRun.workItemId),
+            item: await this.findItemOf(nodeRun),
             runItems: deps.items,
             graph: deps.graph,
             project: deps.project,
@@ -199,6 +202,27 @@ export class ActiveRun {
         this.inBackground(
             execution.execute().finally(() => this.runningExecutions.delete(nodeRun.id)),
         );
+    }
+
+    // A source picks its items while the run goes on, so the run learns of each one the first time
+    // one of its NodeRuns starts.
+    private async findItemOf(nodeRun: NodeRunState): Promise<WorkItemSnapshot | undefined> {
+        const { workItemId } = nodeRun;
+        if (workItemId === undefined) {
+            return undefined;
+        }
+
+        const knownItem = this.itemsById.get(workItemId);
+        if (knownItem) {
+            return knownItem;
+        }
+
+        const loadedItem = await this.deps.loadItem(workItemId);
+        if (loadedItem) {
+            this.itemsById.set(workItemId, loadedItem);
+        }
+
+        return loadedItem;
     }
 
     private recordAgentEvent(nodeRunId: string, event: AgentEvent): void {
@@ -240,9 +264,9 @@ export class ActiveRun {
 
     // The workspace closes as soon as the item has nothing left to run in the whole run.
     private async releaseWorkspacesOfFinishedItems(): Promise<void> {
-        const itemIdsWithWorkspace = this.deps.items
-            .map((item) => item.id)
-            .filter((itemId) => this.workspaces.hasWorkspace(itemId));
+        const itemIdsWithWorkspace = [...this.itemsById.keys()].filter((itemId) =>
+            this.workspaces.hasWorkspace(itemId),
+        );
         if (itemIdsWithWorkspace.length === 0) {
             return;
         }

@@ -22,6 +22,9 @@
   the summary of the failed checks. Needs-human outputs of this template comment on the issue.
 - E2E test uses `ExecutorTestBed` with a new `github` option: real source, git and output executors over a
   `FakeGitHubProvider`, the bed's `FakeGitProvider` and a project with a GitHub repo.
+- `ActiveRun` loads the item of a NodeRun it does not know yet through the executor's `ItemSource`
+  (`loadItem`): items picked by a source during the run were never in the run's items, so their agents
+  failed with "precisa de um item de trabalho". `runItems` stays the run's own items.
 - No README existed: create `README.md` with the "Migrando do `.sandcastle/main.mts`" section.
 
 ## Tasks
@@ -35,8 +38,8 @@
 - [x] 7. Adapted prompts `sandcastle_implement.md`, `sandcastle_review.md`, `sandcastle_evidence.md` + `TemplatePromptName`
 - [x] 8. Test: template is listed and publishes without errors; structure (nodes, concurrency 1, configs) — `sandcastle_pipeline.test.ts`, `flow_templates.test.ts`
 - [x] 9. Implement the template and register it — `sandcastle_pipeline.ts`, `flow_template_registry.ts`
-- [ ] 10. Test bed: `github` option with real source/git/output executors — `src/test/executor_test_bed.ts`
-- [ ] 11. E2E test: unblocked item gets PR with evidence body and `Closes #N`; blocked item not in run; failed checks → needs human with failure summary — `sandcastle_pipeline.test.ts`
-- [ ] 12. E2E test: implementer without commits → needs human — `sandcastle_pipeline.test.ts`
+- [x] 10. Test bed: `github` option with real source/git/output executors — `src/test/executor_test_bed.ts`
+- [x] 11. E2E test: unblocked item gets PR with evidence body and `Closes #N`; blocked item not in run; failed checks → needs human with failure summary — `sandcastle_pipeline.test.ts`
+- [x] 12. E2E test: implementer without commits → needs human — `sandcastle_pipeline.test.ts`
 - [ ] 13. README section "Migrando do `.sandcastle/main.mts`" — `README.md`
 - [ ] 14. Self-review checklist (section 5) and feedback loops (section 6)

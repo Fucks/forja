@@ -310,6 +310,7 @@ class RunExecutor implements Executor {
             toolProfiles: setup.toolProfiles,
             credentials: setup.credentials,
             items: setup.items,
+            loadItem: (itemId) => this.loadItem(record.projectId, itemId),
             scheduler: createScheduler(
                 version.graph,
                 record,
@@ -322,6 +323,14 @@ class RunExecutor implements Executor {
         this.activeRuns.set(record.id, activeRun);
 
         return activeRun;
+    }
+
+    private async loadItem(
+        projectId: string,
+        itemId: string,
+    ): Promise<WorkItemSnapshot | undefined> {
+        const [item] = await this.deps.items.getItems(projectId, [itemId]);
+        return item;
     }
 
     private schedulerOptionsOf(

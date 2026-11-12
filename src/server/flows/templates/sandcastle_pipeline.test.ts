@@ -2,7 +2,15 @@ import { findGroup, findNode } from "@/engine/graph_queries.js";
 import { sandcastlePipelineTemplate } from "@/server/flows/templates/sandcastle_pipeline.js";
 import { CODEGRAPH_PRESET_ID } from "@/server/tool_profiles/tool_profile_presets.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+import { ExecutorTestBed, TEST_GITHUB_REPO } from "@/test/executor_test_bed.js";
+import { buildGithubIssue } from "@/test/factories/work_item_factory.js";
+import { FakeGitHubProvider } from "@/test/fakes/fake_github_provider.js";
 import { agentPromptOf, publishErrorsOf } from "@/test/flow_template_inspection.js";
+
+const SANDCASTLE_LABEL = "Sandcastle";
+const AGENT_DURATION_MS = 60_000;
+const FAILED_CHECKS_SUMMARY = "npm run test falhou em 2 testes";
+const IMPLEMENTER_PROMPT_START = "Implement issue #";
 
 describe("Pipeline Sandcastle template", () => {
     let graph: FlowGraph;
@@ -118,6 +126,123 @@ describe("Pipeline Sandcastle template", () => {
         expect(findNode(graph, "output")).toMatchObject({ config: { moveItemTo: "done" } });
         expect(findNode(graph, "needs_human_failed_checks")).toMatchObject({
             config: { moveItemTo: "needs_human", commentOnIssue: true },
+        });
+    });
+});
+
+describe("Pipeline Sandcastle run with the fake runtime", () => {
+    let github: FakeGitHubProvider;
+    let bed: ExecutorTestBed;
+
+    beforeEach(() => {
+        github = new FakeGitHubProvider();
+        bed = new ExecutorTestBed([], { github });
+    });
+
+    afterEach(() => {
+        bed.close();
+    });
+
+    async function runPipelineUntilFinished(): Promise<void> {
+        const flowId = await bed.publishFlow(sandcastlePipelineTemplate.build());
+        const started = await bed.startRun(flowId);
+
+        await bed.runUntilFinished(started.id);
+    }
+
+    function addSandcastleIssue(number: number, blockedByNumbers: number[] = []): void {
+        github.addIssue(
+            TEST_GITHUB_REPO,
+            buildGithubIssue({ number, labels: [SANDCASTLE_LABEL], blockedByNumbers }),
+        );
+    }
+
+    function scriptImplementerWithCommit(issueNumber: number): void {
+        bed.git.setCommitsAhead(`forja/issue-${issueNumber}`, 1);
+        bed.runtime.script({
+            match: { promptIncludes: `${IMPLEMENTER_PROMPT_START}${issueNumber}:` },
+            durationMs: AGENT_DURATION_MS,
+            result: { commits: [{ sha: `sha${issueNumber}` }] },
+        });
+    }
+
+    function scriptEvidence(issueNumber: number, output: Record<string, unknown>): void {
+        bed.runtime.script({
+            match: { promptIncludes: `Issue #${issueNumber}: Issue ${issueNumber} is implemented` },
+            durationMs: AGENT_DURATION_MS,
+            result: { output },
+        });
+    }
+
+    function implementerPrompts(): string[] {
+        return bed.runtime.requests
+            .map((request) => request.prompt)
+            .filter((prompt) => prompt.includes(IMPLEMENTER_PROMPT_START));
+    }
+
+    function commentsOnIssue(issueNumber: number): string[] {
+        return github.comments
+            .filter((comment) => comment.issueNumber === issueNumber)
+            .map((comment) => comment.body);
+    }
+
+    describe("with an unblocked item, an item blocked by it and an item whose checks fail", () => {
+        beforeEach(async () => {
+            addSandcastleIssue(1);
+            addSandcastleIssue(2, [1]);
+            addSandcastleIssue(3);
+            scriptImplementerWithCommit(1);
+            scriptImplementerWithCommit(3);
+            scriptEvidence(1, { checksPassed: true, body: "Evidências da issue 1" });
+            scriptEvidence(3, {
+                checksPassed: false,
+                failureSummary: FAILED_CHECKS_SUMMARY,
+                body: "Evidências da issue 3",
+            });
+
+            await runPipelineUntilFinished();
+        });
+
+        it("opens the pull request of the unblocked item with the evidence body", () => {
+            expect(github.createdPullRequests).toEqual([
+                expect.objectContaining({
+                    head: "forja/issue-1",
+                    body: "Evidências da issue 1\n\nCloses #1\n\n🤖 Gerado pela Forja",
+                }),
+            ]);
+        });
+
+        it("does not start the item blocked by an open issue", () => {
+            expect(implementerPrompts()).toEqual([
+                expect.stringContaining("Implement issue #1:"),
+                expect.stringContaining("Implement issue #3:"),
+            ]);
+        });
+
+        it("sends the item whose checks failed to a human with the failure summary", () => {
+            expect(commentsOnIssue(3)).toEqual([
+                expect.stringContaining(
+                    `item precisa de revisão humana (${FAILED_CHECKS_SUMMARY})`,
+                ),
+            ]);
+        });
+    });
+
+    describe("with an implementer that made no commits", () => {
+        beforeEach(async () => {
+            addSandcastleIssue(4);
+
+            await runPipelineUntilFinished();
+        });
+
+        it("sends the item to a human without reviewing it", () => {
+            const prompts = bed.runtime.requests.map((request) => request.prompt);
+
+            expect(prompts).toEqual([expect.stringContaining(`${IMPLEMENTER_PROMPT_START}4:`)]);
+            expect(commentsOnIssue(4)).toEqual([
+                expect.stringContaining("item precisa de revisão humana"),
+            ]);
+            expect(github.createdPullRequests).toEqual([]);
         });
     });
 });
