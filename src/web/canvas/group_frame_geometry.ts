@@ -4,8 +4,8 @@ export type Frame = Pick<FlowGroup, "position" | "size">;
 
 // The graph keeps no node sizes; every node card is drawn 240 px wide (`w-60`).
 const NODE_FRAME_SIZE: FlowGroup["size"] = { width: 240, height: 120 };
-const GROUP_PADDING_PX = 40;
-const GROUP_LABEL_HEIGHT_PX = 32;
+export const GROUP_PADDING_PX = 40;
+export const GROUP_LABEL_HEIGHT_PX = 32;
 
 export function nodeFrame(node: FlowNode): Frame {
     return { position: node.position, size: NODE_FRAME_SIZE };

@@ -2,7 +2,7 @@ import type { JSX } from "react";
 
 import { GROUP_KIND_ICONS } from "@/web/canvas/base/group_frame.js";
 import type { GroupingVerdict, GroupKind } from "@/web/canvas/grouping.js";
-import { GROUPING_SHORTCUT_LABELS } from "@/web/canvas/use_grouping_shortcuts.js";
+import { GROUPING_SHORTCUT_LABELS } from "@/web/canvas/shortcuts.js";
 import { Button } from "@/web/components/ui/button.js";
 import { Tooltip } from "@/web/components/ui/tooltip.js";
 

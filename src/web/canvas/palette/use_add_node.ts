@@ -27,7 +27,7 @@ export function useAddNode(store: EditorStore): NodeAdder {
     return { addNodeAtPoint, addNodeAtViewportCenter };
 }
 
-function findViewportCenter({
+export function findViewportCenter({
     width,
     height,
     transform: [panX, panY, zoom],
