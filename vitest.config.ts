@@ -9,7 +9,13 @@ export default defineConfig({
     test: {
         globals: true,
         setupFiles: ["src/test/setup.ts"],
-        exclude: ["**/*.integration.test.ts", "e2e/**", ".sandcastle/**", "node_modules/**"],
+        exclude: [
+            "**/*.integration.test.ts",
+            "**/*.perf.test.{ts,tsx}",
+            "e2e/**",
+            ".sandcastle/**",
+            "node_modules/**",
+        ],
         maxWorkers: readMaxWorkersFromEnvironment(),
         projects: [
             {

@@ -17,8 +17,8 @@
 
 ## Tasks
 
-- [ ] 1. `buildLargeFlow` factory — `src/test/factories/large_flow_factory.ts`
-- [ ] 2. Perf config and `test:perf` script; exclude perf tests from `npm run test` — `vitest.perf.config.ts`, `vitest.config.ts`, `package.json`
+- [x] 1. `buildLargeFlow` factory — `src/test/factories/large_flow_factory.ts`
+- [x] 2. Perf config and `test:perf` script; exclude perf tests from `npm run test` — `vitest.perf.config.ts`, `vitest.config.ts`, `package.json`
 - [ ] 3. Test: canvas mounts 150 nodes within the target — `src/web/canvas/canvas.perf.test.tsx`
 - [ ] 4. Test (RED): 500 `node_run.updated` events re-render only the affected nodes — `src/web/canvas/canvas.perf.test.tsx`
 - [ ] 5. Make live states a per-node subscribable store so the test passes — `node_live_context.ts`, `run_canvas.tsx`, `nodes.test.tsx`
