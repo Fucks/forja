@@ -25,6 +25,6 @@
 - [x] 2. Smoke test of the package — `scripts/smoke_test_package.mjs`
 - [x] 3. Manual release workflow — `.github/workflows/release.yml`
 - [x] 4. Server image — `Dockerfile.server`, `.dockerignore`
-- [ ] 5. Optional compose — `docker-compose.yml`
+- [x] 5. Optional compose — `docker-compose.yml`
 - [ ] 6. README covering every topic of the issue — `README.md`
 - [ ] 7. Self-review checklist and feedback loops (typecheck, lint, test, smoke test)
