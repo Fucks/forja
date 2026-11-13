@@ -44,5 +44,5 @@
 - [x] 10. Audit credential created/updated/deleted — `credential_service.ts` + callers
 - [x] 11. Audit `approval.resolved` — `approval_service.ts` + callers
 - [x] 12. Audit `run.canceled` — `run_service.ts` + callers
-- [ ] 13. `secret_leak.test.ts`: secret absent from log file and argv
+- [x] 13. `secret_leak.test.ts`: secret absent from log file and argv
 - [ ] 14. Self-review checklist and feedback loops
