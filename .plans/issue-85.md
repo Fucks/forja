@@ -19,9 +19,9 @@
 
 - [x] 1. `buildLargeFlow` factory — `src/test/factories/large_flow_factory.ts`
 - [x] 2. Perf config and `test:perf` script; exclude perf tests from `npm run test` — `vitest.perf.config.ts`, `vitest.config.ts`, `package.json`
-- [ ] 3. Test: canvas mounts 150 nodes within the target — `src/web/canvas/canvas.perf.test.tsx`
-- [ ] 4. Test (RED): 500 `node_run.updated` events re-render only the affected nodes — `src/web/canvas/canvas.perf.test.tsx`
-- [ ] 5. Make live states a per-node subscribable store so the test passes — `node_live_context.ts`, `run_canvas.tsx`, `nodes.test.tsx`
+- [x] 3. Test: canvas mounts 150 nodes within the target — `src/web/canvas/canvas.perf.test.tsx`
+- [x] 4. Test (RED): 500 `node_run.updated` events re-render only the affected nodes — `src/web/canvas/canvas.perf.test.tsx`
+- [x] 5. Make live states a per-node subscribable store so the test passes — `node_live_context.ts`, `run_canvas.tsx`, `nodes.test.tsx`
 - [ ] 6. Test: LogViewer mounts 100k lines and appends 1 000 within the targets (optimize if needed) — `src/web/logs/log_viewer.perf.test.tsx`
 - [ ] 7. Record handle durations in the harness — `src/test/factories/scheduler_harness.ts`
 - [ ] 8. Test: scheduler 100 items × 5 nodes averages under the handle target (optimize if needed) — `src/engine/scheduler.perf.test.ts`
