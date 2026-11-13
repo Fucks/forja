@@ -86,6 +86,7 @@ export class SchedulerHarness {
     readonly timeline: TimelineEntry[] = [];
     readonly commands: SchedulerCommand[] = [];
     readonly expiredApprovalNodeRunIds: string[] = [];
+    readonly handleDurationsMs: number[] = [];
     private currentRun: RunState;
     private scheduler: Scheduler;
     private readonly plan: FlowPlan;
@@ -252,7 +253,10 @@ export class SchedulerHarness {
     }
 
     private deliver(event: SchedulerEvent): void {
-        this.execute(this.scheduler.handle(event));
+        const handleStartedAtMs = performance.now();
+        const commands = this.scheduler.handle(event);
+        this.handleDurationsMs.push(performance.now() - handleStartedAtMs);
+        this.execute(commands);
     }
 
     private execute(commands: SchedulerCommand[]): void {
