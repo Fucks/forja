@@ -21,9 +21,11 @@ interface FakeRepo {
 // A branch has no commits ahead of its base until a test says otherwise.
 export class FakeGitProvider implements GitProvider {
     readonly pushes: FakePush[] = [];
+    readonly prunedRoots: string[] = [];
     private repos: FakeRepo[] = [];
     private readonly commitsAheadByBranch = new Map<string, number>();
     private readonly branchesInWorktrees = new Set<string>();
+    private readonly worktreePathsByRoot = new Map<string, string[]>();
 
     addRepo(repoInfo: RepoInfo, options: FakeRepoOptions = {}): void {
         const { subdirectories = [], branches = [] } = options;
@@ -41,6 +43,11 @@ export class FakeGitProvider implements GitProvider {
 
     holdBranchInWorktree(branch: string): void {
         this.branchesInWorktrees.add(branch);
+    }
+
+    registerWorktree(root: string, worktreePath: string): void {
+        const registered = this.worktreePathsByRoot.get(root) ?? [];
+        this.worktreePathsByRoot.set(root, [...registered, worktreePath]);
     }
 
     inspectRepo(path: string): Promise<RepoInfo> {
@@ -85,5 +92,14 @@ export class FakeGitProvider implements GitProvider {
             candidate === repo ? repoWithoutBranch : candidate,
         );
         return Promise.resolve(true);
+    }
+
+    listWorktreePaths(root: string): Promise<string[]> {
+        return Promise.resolve([root, ...(this.worktreePathsByRoot.get(root) ?? [])]);
+    }
+
+    pruneWorktrees(root: string): Promise<void> {
+        this.prunedRoots.push(root);
+        return Promise.resolve();
     }
 }

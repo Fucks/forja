@@ -13,6 +13,7 @@ const NODE_RUN_ID = "node-run-1";
 const LOGS_URL = `/api/node-runs/${NODE_RUN_ID}/logs`;
 const PAGE_SIZE = 2_000;
 const HTTP_NOT_FOUND = 404;
+const HTTP_GONE = 410;
 
 describe("useNodeRunLogs", () => {
     let eventSources: FakeEventSourceFactory;
@@ -116,6 +117,19 @@ describe("useNodeRunLogs", () => {
 
         await waitFor(() => expect(result.current.error?.message).toBe("O NodeRun não existe."));
         expect(result.current.loading).toBe(false);
+    });
+
+    it("explains that the retention removed the logs when they are gone", async () => {
+        stubFetchRoutes({
+            [`GET ${LOGS_URL}?fromSeq=1&limit=${PAGE_SIZE}`]: () =>
+                respondWithApiError(HTTP_GONE, "Gone"),
+        });
+
+        const { result } = renderNodeRunLogs();
+
+        await waitFor(() =>
+            expect(result.current.error?.message).toBe("Logs removidos pela política de retenção"),
+        );
     });
 });
 

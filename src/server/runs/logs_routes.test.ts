@@ -3,7 +3,9 @@ import type { FastifyInstance } from "fastify";
 import type { AgentEvent } from "@/integrations/agent_runtime/agent_runtime.js";
 import { buildApp, type AppDeps } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
+import type { CleanupReport } from "@/server/maintenance/cleanup_service.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
+import type { ApiErrorBody } from "@/shared/api_types.js";
 import { storedLogEventSchema, type LogPage } from "@/shared/log_types.js";
 import { buildNodeRunState } from "@/test/factories/node_run_state_factory.js";
 import { buildRunRecord } from "@/test/factories/run_record_factory.js";
@@ -22,6 +24,9 @@ const MAX_LOG_PAGE_SIZE = 2_000;
 const HTTP_OK = 200;
 const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
+const HTTP_GONE = 410;
+const CLEANUP_URL = "/api/maintenance/cleanup";
+const LONG_AGO = new Date("2020-01-01T00:00:00Z");
 
 function textEvent(text: string): AgentEvent {
     return { kind: "text", text, at: EVENT_AT, iteration: 1 };
@@ -49,7 +54,9 @@ describe("logs routes", () => {
 
     async function saveNodeRun(): Promise<void> {
         const runs = new SqliteRunRepository(database.db, new FakeClock());
-        await runs.createRun(buildRunRecord({ id: RUN_ID }));
+        await runs.createRun(
+            buildRunRecord({ id: RUN_ID, status: "SUCCEEDED", finishedAt: LONG_AGO }),
+        );
         await runs.saveTransition({
             nodeRuns: [buildNodeRunState({ id: NODE_RUN_ID, runId: RUN_ID })],
         });
@@ -57,6 +64,10 @@ describe("logs routes", () => {
 
     async function get(url: string) {
         return app.inject({ method: "GET", url });
+    }
+
+    async function cleanUp() {
+        return app.inject({ method: "POST", url: CLEANUP_URL });
     }
 
     describe("GET /api/node-runs/:id/logs", () => {
@@ -111,6 +122,32 @@ describe("logs routes", () => {
             const response = await get(`/api/node-runs/${MISSING_NODE_RUN_ID}/logs/raw`);
 
             expect(response.statusCode).toBe(HTTP_NOT_FOUND);
+        });
+    });
+
+    describe("POST /api/maintenance/cleanup", () => {
+        it("cleans up on demand and reports what it removed", async () => {
+            const loggedBytes = (await deps.logs.stats(NODE_RUN_ID)).bytes;
+
+            const response = await cleanUp();
+
+            expect(response.statusCode).toBe(HTTP_OK);
+            expect(response.json<CleanupReport>()).toEqual({
+                deletedRuns: 1,
+                freedBytes: loggedBytes,
+                prunedWorktrees: 0,
+            });
+        });
+    });
+
+    describe("logs removed by the retention", () => {
+        it.each([LOGS_URL, RAW_LOGS_URL])("answers 410 logs_expired at %s", async (url) => {
+            await cleanUp();
+
+            const response = await get(url);
+
+            expect(response.statusCode).toBe(HTTP_GONE);
+            expect(response.json<ApiErrorBody>().error.code).toBe("logs_expired");
         });
     });
 });

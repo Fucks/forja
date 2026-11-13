@@ -1,3 +1,5 @@
+import { hostTimeZone } from "@/lib/local_day.js";
+
 export type UsageLimitParse = { isLimit: false } | { isLimit: true; resetAt?: Date };
 
 const USAGE_LIMIT_PATTERN =
@@ -43,10 +45,6 @@ export function parseUsageLimit(
     }
 
     return { isLimit: true, resetAt };
-}
-
-function hostTimeZone(): string {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
 function parseEpochReset(message: string): Date | undefined {

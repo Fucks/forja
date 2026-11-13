@@ -1,6 +1,6 @@
 import { commandSucceeded } from "@/integrations/process/command_runner.js";
 import type { CommandResult, CommandRunner } from "@/integrations/process/command_runner.js";
-import { formatDuration } from "@/lib/format.js";
+import { formatDuration, formatMegabytes } from "@/lib/format.js";
 import type { DiagnosticItem } from "@/shared/diagnostic_types.js";
 
 interface DiagnosticCheckDeps {
@@ -11,6 +11,11 @@ interface DiagnosticCheckDeps {
 export type DiagnosticCheck = (deps: DiagnosticCheckDeps) => Promise<DiagnosticItem>;
 
 type ItemIdentity = Pick<DiagnosticItem, "id" | "label">;
+
+export interface ForjaDiskUsage {
+    logsBytes: number;
+    maxLogsBytes: number;
+}
 
 interface DiagnosticCommand {
     command: string;
@@ -26,6 +31,8 @@ const DOCKER_ITEM: ItemIdentity = { id: "docker", label: "Docker" };
 const GH_ITEM: ItemIdentity = { id: "gh", label: "GitHub CLI (gh)" };
 const GH_AUTH_ITEM: ItemIdentity = { id: "gh-auth", label: "Autenticação do gh" };
 const AGENT_IMAGE_LABEL = "Imagem do agente";
+const FORJA_DISK_ITEM: ItemIdentity = { id: "forja-disk", label: "Espaço em disco da Forja" };
+const LOGS_NEAR_CEILING_RATIO = 0.9;
 
 const GIT_VERSION: DiagnosticCommand = { command: "git", args: ["--version"] };
 const DOCKER_CLIENT_VERSION: DiagnosticCommand = { command: "docker", args: ["--version"] };
@@ -69,6 +76,25 @@ export function createAgentImageCheck(image: string): DiagnosticCheck {
         }
 
         return { ...identity, status: "ok", detail: `Imagem ${image} pronta` };
+    };
+}
+
+export function createForjaDiskUsageCheck(
+    readDiskUsage: () => Promise<ForjaDiskUsage>,
+): DiagnosticCheck {
+    return async function checkForjaDiskUsage() {
+        const { logsBytes, maxLogsBytes } = await readDiskUsage();
+        const detail = `Logs ocupam ${formatMegabytes(logsBytes)} de ${formatMegabytes(maxLogsBytes)}`;
+        if (logsBytes >= maxLogsBytes * LOGS_NEAR_CEILING_RATIO) {
+            return {
+                ...FORJA_DISK_ITEM,
+                status: "warning",
+                detail,
+                fix: "Diminua a retenção ou aumente o teto de logs nas configurações globais",
+            };
+        }
+
+        return { ...FORJA_DISK_ITEM, status: "ok", detail };
     };
 }
 

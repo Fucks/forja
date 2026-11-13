@@ -233,6 +233,67 @@ describe("LogStore", () => {
         });
     });
 
+    describe("listRunLogSizes", () => {
+        it("sums the bytes of the NodeRuns of each run", async () => {
+            await logs.append(REF, textEvent("um"));
+            await logs.append({ runId: RUN_ID, nodeRunId: "nrn_review" }, textEvent("dois"));
+            await logs.append({ runId: "run_outra", nodeRunId: "nrn_outra" }, textEvent("três"));
+            const bytesOf = async (nodeRunId: string) => (await logs.stats(nodeRunId)).bytes;
+
+            const sizes = await logs.listRunLogSizes();
+
+            expect(sizes).toEqual(
+                expect.arrayContaining([
+                    {
+                        runId: RUN_ID,
+                        bytes: (await bytesOf(NODE_RUN_ID)) + (await bytesOf("nrn_review")),
+                    },
+                    { runId: "run_outra", bytes: await bytesOf("nrn_outra") },
+                ]),
+            );
+            expect(sizes).toHaveLength(2);
+        });
+    });
+
+    describe("expireRun", () => {
+        it("removes the logs of the run and remembers that they expired", async () => {
+            await appendTexts(2);
+
+            await logs.expireRun(RUN_ID);
+
+            expect(existsSync(path.join(logsDir, RUN_ID))).toBe(false);
+            expect(await logs.stats(NODE_RUN_ID)).toEqual({ count: 0, bytes: 0 });
+            expect(await logs.listRunLogSizes()).toEqual([]);
+            expect(await logs.hasExpired(REF)).toBe(true);
+        });
+
+        it("does not report as expired the logs that are kept", async () => {
+            await appendTexts(1);
+
+            expect(await logs.hasExpired(REF)).toBe(false);
+        });
+
+        it("does not report as expired a NodeRun that logged after its run was reopened", async () => {
+            await appendTexts(1);
+            await logs.expireRun(RUN_ID);
+            const reopenedRef = { runId: RUN_ID, nodeRunId: "nrn_reaberta" };
+
+            await logs.append(reopenedRef, textEvent("de novo"));
+
+            expect(await logs.hasExpired(reopenedRef)).toBe(false);
+            expect(await logs.hasExpired(REF)).toBe(true);
+        });
+
+        it("can expire the same run twice", async () => {
+            await appendTexts(1);
+            await logs.expireRun(RUN_ID);
+
+            await logs.expireRun(RUN_ID);
+
+            expect(await logs.hasExpired(REF)).toBe(true);
+        });
+    });
+
     describe("rawStream", () => {
         it("streams the whole NDJSON file", async () => {
             await appendTexts(3);

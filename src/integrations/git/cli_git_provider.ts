@@ -15,6 +15,7 @@ const ORIGIN_HEAD_REF = "refs/remotes/origin/HEAD";
 const ORIGIN_BRANCH_PREFIX = "refs/remotes/origin/";
 const LOCAL_BRANCH_PREFIX = "refs/heads/";
 const COUNTS_SEPARATOR = /\s+/;
+const PORCELAIN_WORKTREE_PREFIX = "worktree ";
 // Newer git says "used by worktree at", older git says "checked out at".
 const BRANCH_IN_WORKTREE_PATTERN = /used by worktree|checked out at/;
 const GITHUB_REMOTE_PATTERN =
@@ -97,6 +98,25 @@ export class CliGitProvider implements GitProvider {
         throw new GitCommandError(`Não foi possível apagar o branch ${branch}`, result.stderr);
     }
 
+    async listWorktreePaths(root: string): Promise<string[]> {
+        const result = await this.runGit(root, ["worktree", "list", "--porcelain"]);
+        if (!commandSucceeded(result)) {
+            throw new GitCommandError("Não foi possível listar os worktrees", result.stderr);
+        }
+
+        return parseWorktreePaths(result.stdout);
+    }
+
+    async pruneWorktrees(root: string): Promise<void> {
+        const result = await this.runGit(root, ["worktree", "prune"]);
+        if (!commandSucceeded(result)) {
+            throw new GitCommandError(
+                "Não foi possível limpar a lista de worktrees",
+                result.stderr,
+            );
+        }
+    }
+
     private async findRepoRoot(path: string): Promise<string> {
         const result = await this.runGit(path, ["rev-parse", "--show-toplevel"]);
         if (!commandSucceeded(result)) {
@@ -149,4 +169,12 @@ export function parseGithubRepo(remoteUrl: string): string | undefined {
 
     const [, owner, name] = match;
     return `${owner}/${name}`;
+}
+
+/** Paths in the output of `git worktree list --porcelain`. */
+export function parseWorktreePaths(porcelain: string): string[] {
+    return porcelain
+        .split("\n")
+        .filter((line) => line.startsWith(PORCELAIN_WORKTREE_PREFIX))
+        .map((line) => line.slice(PORCELAIN_WORKTREE_PREFIX.length).trim());
 }

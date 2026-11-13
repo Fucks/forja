@@ -258,3 +258,52 @@ describe("CliGitProvider.deleteLocalBranch", () => {
         await expect(deleting).rejects.toThrow(GitCommandError);
     });
 });
+
+describe("CliGitProvider.listWorktreePaths", () => {
+    const LIST_WORKTREES = ["worktree", "list", "--porcelain"];
+
+    it("lists the path of every worktree git knows about", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("git", LIST_WORKTREES).returns({
+            stdout:
+                `worktree ${REPO_ROOT}\nHEAD abc\nbranch refs/heads/main\n\n` +
+                "worktree /wt/prj_1/forja__issue-7\nHEAD def\nbranch refs/heads/forja/issue-7\n",
+        });
+
+        const paths = await new CliGitProvider(commands).listWorktreePaths(REPO_ROOT);
+
+        expect(paths).toEqual([REPO_ROOT, "/wt/prj_1/forja__issue-7"]);
+        expect(commands.calls[0]?.options.cwd).toBe(REPO_ROOT);
+    });
+
+    it("rejects with GitCommandError when git fails", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("git", LIST_WORKTREES).returns({ exitCode: 128, stderr: "fatal: no repo" });
+
+        const listing = new CliGitProvider(commands).listWorktreePaths(REPO_ROOT);
+
+        await expect(listing).rejects.toThrow(GitCommandError);
+    });
+});
+
+describe("CliGitProvider.pruneWorktrees", () => {
+    const PRUNE_WORKTREES = ["worktree", "prune"];
+
+    it("asks git to forget the worktrees whose directory is gone", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("git", PRUNE_WORKTREES).returns({});
+
+        await new CliGitProvider(commands).pruneWorktrees(REPO_ROOT);
+
+        expect(commands.calls.map((call) => call.args)).toEqual([PRUNE_WORKTREES]);
+    });
+
+    it("rejects with GitCommandError when git fails", async () => {
+        const commands = new FakeCommandRunner();
+        commands.when("git", PRUNE_WORKTREES).returns({ exitCode: 1, stderr: "fatal: locked" });
+
+        const pruning = new CliGitProvider(commands).pruneWorktrees(REPO_ROOT);
+
+        await expect(pruning).rejects.toThrow(GitCommandError);
+    });
+});

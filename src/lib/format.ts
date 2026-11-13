@@ -17,6 +17,7 @@ const TIME_AGO_UNITS_LARGEST_FIRST = [
     { size: MS_PER_MINUTE, suffix: "min" },
 ];
 const JUST_NOW = "agora";
+export const BYTES_PER_MB = 1024 * 1024;
 
 const TOKEN_SCALES_LARGEST_FIRST = [
     { size: 1_000_000_000, suffix: "bi" },
@@ -109,6 +110,10 @@ export function formatTimeOfDay(at: Date): string {
 
 export function formatCalendarDay(isoDay: string): string {
     return dayAndMonth.format(new Date(isoDay));
+}
+
+export function formatMegabytes(bytes: number): string {
+    return `${upToOneDecimal.format(bytes / BYTES_PER_MB)} MB`;
 }
 
 export function formatCount(count: number, nouns: { one: string; other: string }): string {

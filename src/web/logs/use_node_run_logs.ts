@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { EventEnvelope } from "@/shared/events.js";
-import { FIRST_LOG_SEQ } from "@/shared/log_types.js";
+import { FIRST_LOG_SEQ, LOGS_EXPIRED_MESSAGE } from "@/shared/log_types.js";
 import type { LogPage, StoredLogEvent } from "@/shared/log_types.js";
 import { apiClient, ApiError } from "@/web/api/api_client.js";
 import { useEventStream } from "@/web/api/use_event_stream.js";
@@ -10,6 +10,7 @@ import type { LogLine } from "@/web/logs/log_types.js";
 import { toLogLines } from "@/web/logs/to_log_lines.js";
 
 const LOG_PAGE_SIZE = 2_000;
+const HTTP_GONE = 410;
 
 export interface NodeRunLogs {
     lines: LogLine[];
@@ -161,8 +162,16 @@ async function reportApiError(pendingLoad: Promise<void>, reportError: ReportErr
         if (!(error instanceof ApiError)) {
             throw error;
         }
-        reportError(error);
+        reportError(explainExpiredLogs(error));
     }
+}
+
+function explainExpiredLogs(error: ApiError): ApiError {
+    if (error.status !== HTTP_GONE) {
+        return error;
+    }
+
+    return new ApiError({ status: error.status, code: error.code, message: LOGS_EXPIRED_MESSAGE });
 }
 
 // A range announced by log.appended may overlap the pages already loaded.

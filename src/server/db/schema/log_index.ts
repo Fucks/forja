@@ -9,3 +9,9 @@ export const logIndex = sqliteTable("log_index", {
 });
 
 export type LogIndexRow = typeof logIndex.$inferSelect;
+
+// The runs whose logs the retention removed, so reading them can say so instead of showing nothing.
+export const expiredRunLogs = sqliteTable("expired_run_logs", {
+    runId: text("run_id").primaryKey(),
+    expiredAt: text("expired_at").notNull(),
+});

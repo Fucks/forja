@@ -1,6 +1,7 @@
 import {
     checkNodeVersion,
     createAgentImageCheck,
+    createForjaDiskUsageCheck,
     DIAGNOSTIC_CHECKS,
 } from "@/server/diagnostics/diagnostic_checks.js";
 import { createDiagnosticService } from "@/server/diagnostics/diagnostic_service.js";
@@ -15,6 +16,7 @@ const COMMAND_NOT_FOUND = 127;
 const DOCKER_SERVER_VERSION_ARGS = ["version", "--format", "{{.Server.Version}}"];
 const AGENT_IMAGE = "forja-agent:latest";
 const IMAGE_NOT_FOUND = 1;
+const BYTES_PER_MB = 1024 * 1024;
 
 function scriptHealthyMachine(commands: FakeCommandRunner): void {
     commands.when("git", ["--version"]).returns({ stdout: "git version 2.47.1" });
@@ -224,5 +226,41 @@ describe("createAgentImageCheck", () => {
         const item = await checkAgentImage();
 
         expect(item).toMatchObject({ status: "ok", detail: "Imagem forja-agent:latest pronta" });
+    });
+});
+
+describe("createForjaDiskUsageCheck", () => {
+    function checkDiskUsage(logsMb: number, maxLogsMb: number): Promise<DiagnosticItem> {
+        const readDiskUsage = () =>
+            Promise.resolve({
+                logsBytes: logsMb * BYTES_PER_MB,
+                maxLogsBytes: maxLogsMb * BYTES_PER_MB,
+            });
+
+        return createForjaDiskUsageCheck(readDiskUsage)({
+            commands: new FakeCommandRunner(),
+            nodeVersion: "22.0.0",
+        });
+    }
+
+    it("reports how much of the log ceiling the logs use", async () => {
+        const item = await checkDiskUsage(120, 2_048);
+
+        expect(item).toEqual({
+            id: "forja-disk",
+            label: "Espaço em disco da Forja",
+            status: "ok",
+            detail: "Logs ocupam 120 MB de 2.048 MB",
+        });
+    });
+
+    it("warns when the logs are close to the ceiling", async () => {
+        const item = await checkDiskUsage(1_900, 2_048);
+
+        expect(item).toMatchObject({
+            status: "warning",
+            detail: "Logs ocupam 1.900 MB de 2.048 MB",
+        });
+        expect(item.fix).toBeDefined();
     });
 });

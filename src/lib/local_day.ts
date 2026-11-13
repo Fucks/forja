@@ -30,6 +30,10 @@ const wallClockFormatOf = cachePerTimeZone(
         }),
 );
 
+export function hostTimeZone(): string {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
 // "YYYY-MM-DD" of the instant on the calendar of the time zone.
 export function localDayOf(instant: Date, timeZone: string): string {
     return dayFormatOf(timeZone).format(instant);
