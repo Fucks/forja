@@ -27,8 +27,8 @@
 
 ## Tasks
 
-- [ ] 1. Test+impl: `planCleanup` removes inactive runs finished more than `retentionDays` ago, never active ones — `plan_cleanup.ts`, `plan_cleanup.test.ts`
-- [ ] 2. Test+impl: `planCleanup` removes the oldest kept inactive runs until the total fits the ceiling (active ones count but stay; orphans without `finishedAt` are expired) — same files
+- [x] 1. Test+impl: `planCleanup` removes inactive runs finished more than `retentionDays` ago, never active ones — `plan_cleanup.ts`, `plan_cleanup.test.ts`
+- [x] 2. Test+impl: `planCleanup` removes the oldest kept inactive runs until the total fits the ceiling (active ones count but stay; orphans without `finishedAt` are expired) — same files
 - [ ] 3. Test+impl: `LogStore.listRunLogSizes` sums the bytes of each run — `log_store.ts`, `log_store.test.ts`
 - [ ] 4. Test+impl: `LogStore.expireRun` + `hasExpired` with migration `0611_expired_run_logs.sql` — `log_store.ts`, schema `log_index.ts`
 - [ ] 5. Test+impl: `GitProvider.pruneWorktrees` / `listWorktreePaths` in CliGitProvider and FakeGitProvider; worktree_manager reuses it
