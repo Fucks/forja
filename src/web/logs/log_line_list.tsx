@@ -25,6 +25,10 @@ export function LogLineList({
     selectedMatchSeq: number | null;
     renderLine: LogLineRenderer;
 }): JSX.Element {
+    const virtualRows = virtualizer.getVirtualItems();
+    // The rows follow one another, so only the block that holds them moves to the first row.
+    const firstRowStartPx = virtualRows[0]?.start ?? 0;
+
     return (
         <div
             ref={scrollElementRef}
@@ -39,19 +43,19 @@ export function LogLineList({
                 className="relative w-full"
                 style={{ height: virtualizer.getTotalSize() }}
             >
-                {virtualizer.getVirtualItems().map((virtualRow) => {
-                    const line = lines[virtualRow.index];
-                    if (!line) {
-                        return null;
-                    }
+                <div
+                    className="absolute top-0 left-0 w-full"
+                    style={{ transform: `translateY(${firstRowStartPx}px)` }}
+                >
+                    {virtualRows.map((virtualRow) => {
+                        const line = lines[virtualRow.index];
+                        if (!line) {
+                            return null;
+                        }
 
-                    return (
-                        <div
-                            key={virtualRow.key}
-                            className="absolute top-0 left-0 w-full"
-                            style={{ transform: `translateY(${virtualRow.start}px)` }}
-                        >
+                        return (
                             <LogLine
+                                key={virtualRow.key}
                                 line={line}
                                 index={virtualRow.index}
                                 measureRef={virtualizer.measureElement}
@@ -61,9 +65,9 @@ export function LogLineList({
                                 isSelectedMatch={line.seq === selectedMatchSeq}
                                 renderLine={renderLine}
                             />
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );

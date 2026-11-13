@@ -1,5 +1,6 @@
 import { clsx } from "clsx";
 import { ChevronRight, Copy } from "lucide-react";
+import { memo } from "react";
 import type { JSX, ReactNode, Ref } from "react";
 
 import { formatRelativeOffset } from "@/lib/format.js";
@@ -21,7 +22,9 @@ const KIND_TEXT_CLASSES: Record<LogLineKind, string> = {
     usage: "text-muted",
 };
 
-export function LogLine({
+// The list re-renders on every appended line and scroll; a visible line renders again only when its own
+// props change.
+export const LogLine = memo(function LogLine({
     line,
     index,
     measureRef,
@@ -76,7 +79,7 @@ export function LogLine({
             />
         </div>
     );
-}
+});
 
 function ExpandableLine({
     summary,
