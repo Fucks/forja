@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import { assertCommandSucceeded } from "@/integrations/agent_runtime/agent_errors.js";
-import { CliGitProvider } from "@/integrations/git/cli_git_provider.js";
+import { CliGitProvider, parseWorktreePaths } from "@/integrations/git/cli_git_provider.js";
 import { commandSucceeded } from "@/integrations/process/command_runner.js";
 import type { CommandResult, CommandRunner } from "@/integrations/process/command_runner.js";
 
@@ -24,7 +24,6 @@ export interface WorktreeManager {
 }
 
 const GIT_WORKTREE_TIMEOUT_MS = 120_000;
-const PORCELAIN_WORKTREE_PREFIX = "worktree ";
 const BRANCH_SEPARATOR = "/";
 const BRANCH_SEPARATOR_IN_DIR_NAME = "__";
 
@@ -39,7 +38,7 @@ export function createWorktreeManager(commands: CommandRunner): WorktreeManager 
         const result = await runGit(repoPath, ["worktree", "list", "--porcelain"]);
         assertCommandSucceeded(result, "Não foi possível listar os worktrees do repositório");
 
-        return parseRegisteredPaths(result.stdout).some((registeredPath) =>
+        return parseWorktreePaths(result.stdout).some((registeredPath) =>
             isSamePath(registeredPath, worktreePath),
         );
     }
@@ -126,13 +125,6 @@ export async function readGitCommonDir(commands: CommandRunner, repoPath: string
 function worktreePathFor(worktreesDir: string, branch: string): string {
     const directoryName = branch.replaceAll(BRANCH_SEPARATOR, BRANCH_SEPARATOR_IN_DIR_NAME);
     return path.join(worktreesDir, directoryName);
-}
-
-function parseRegisteredPaths(porcelain: string): string[] {
-    return porcelain
-        .split("\n")
-        .filter((line) => line.startsWith(PORCELAIN_WORKTREE_PREFIX))
-        .map((line) => line.slice(PORCELAIN_WORKTREE_PREFIX.length).trim());
 }
 
 function isSamePath(first: string, second: string): boolean {
