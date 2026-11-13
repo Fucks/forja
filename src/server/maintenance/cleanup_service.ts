@@ -5,6 +5,7 @@ import path from "node:path";
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { GitProvider } from "@/integrations/git/git_provider.js";
 import type { Clock } from "@/lib/clock.js";
+import { BYTES_PER_MB } from "@/lib/format.js";
 import { planCleanup } from "@/server/maintenance/plan_cleanup.js";
 import type {
     CleanupPlan,
@@ -34,8 +35,6 @@ export interface CleanupReport {
     freedBytes: number;
     prunedWorktrees: number;
 }
-
-const BYTES_PER_MB = 1024 * 1024;
 
 export async function runCleanup(deps: CleanupDeps): Promise<CleanupReport> {
     const logsCleanup = await expireLogsPastRetention(deps);

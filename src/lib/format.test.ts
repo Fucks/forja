@@ -3,6 +3,7 @@ import {
     formatCount,
     formatDateTime,
     formatDuration,
+    formatMegabytes,
     formatRelativeOffset,
     formatTimeAgo,
     formatTimeOfDay,
@@ -133,5 +134,19 @@ describe("formatCount", () => {
 describe("formatCalendarDay", () => {
     it("shows the day and the month of a calendar day", () => {
         expect(formatCalendarDay("2026-11-02")).toBe("02/11");
+    });
+});
+
+describe("formatMegabytes", () => {
+    it("shows bytes as megabytes with up to one decimal", () => {
+        expect(formatMegabytes(1.5 * 1024 * 1024)).toBe("1,5 MB");
+    });
+
+    it("groups the thousands", () => {
+        expect(formatMegabytes(2_048 * 1024 * 1024)).toBe("2.048 MB");
+    });
+
+    it("shows zero bytes as 0 MB", () => {
+        expect(formatMegabytes(0)).toBe("0 MB");
     });
 });
