@@ -853,6 +853,19 @@ describe("scheduler: map groups", () => {
         expect(harness.run.failedItems).toEqual(["2"]);
     });
 
+    it("fails the run when every item of a map fails", () => {
+        const harness = createCanonicalHarness({
+            graph: withoutRetries(buildReportedCanonicalFlow()),
+            scripts: { dev: developerFailingEveryItem() },
+        });
+
+        harness.start([]);
+        harness.runToCompletion();
+
+        expect([...(harness.run.failedItems ?? [])].sort()).toEqual(FIVE_ITEMS);
+        expect(harness.run.status).toBe("FAILED");
+    });
+
     it("cancels the queue and the running items of a failFast map when an item fails", () => {
         const harness = createCanonicalHarness({
             graph: withMapConfig(withoutRetries(buildReportedCanonicalFlow()), "develop", {
@@ -1661,6 +1674,13 @@ function developerFailingItem(failingItemId: string): NodeScript {
 
         return { ...behavior, outcome: { kind: "fail", error: RUNTIME_ERROR } };
     };
+}
+
+function developerFailingEveryItem(): NodeScript {
+    return (started) => ({
+        ...developerWithScriptedDurations(started),
+        outcome: { kind: "fail", error: RUNTIME_ERROR },
+    });
 }
 
 function timesOf(harness: SchedulerHarness, nodeId: string, status: "RUNNING" | "SUCCEEDED") {

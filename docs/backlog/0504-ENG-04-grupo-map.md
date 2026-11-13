@@ -80,7 +80,8 @@ export function mapProgress(state: MapGroupState): {
 - `barrier: false` (padrão): cada item concluído libera imediatamente os nós a jusante daquele item. `barrier: true`:
   nada a jusante do grupo começa antes de `isMapDone`.
 - Item falho: os outros continuam; itens falhos não seguem para o map seguinte; a run termina `SUCCEEDED` se ao menos
-  os itens restantes concluíram e nenhum nó fora de grupos falhou (registre `failedItems` no RunState). `failFast:
+  os itens restantes concluíram e nenhum nó fora de grupos falhou (registre `failedItems` no RunState). Se todos os
+  itens de um map falharem, a run termina `FAILED`. `failFast:
 true`: itens `queued` viram `canceled` e os `running` recebem `cancel_node_run`.
 - Lista vazia: grupo conclui com `[]`; nós a jusante que dependem só do map são `SKIPPED`.
 - Cada mudança emite `group_progress`.

@@ -137,6 +137,11 @@ export function isItemInProgress(state: MapGroupState, itemId: string): boolean 
     );
 }
 
+// A map that received items and finished none of them successfully: nothing came out of it.
+export function hasLostAllItems(state: MapGroupState): boolean {
+    return state.items.length > 0 && itemIdsWithStatus(state, "succeeded").length === 0;
+}
+
 export function mapProgress(state: MapGroupState): MapProgress {
     return {
         queued: itemIdsWithStatus(state, "queued").length,

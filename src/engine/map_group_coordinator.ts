@@ -3,6 +3,7 @@ import {
     addItems,
     cancelQueuedItems,
     closeInput,
+    hasLostAllItems,
     itemIdsWithStatus,
     itemsToStart,
     type MapGroupState,
@@ -52,6 +53,10 @@ export class MapGroupCoordinator {
 
     states(): MapGroupState[] {
         return this.mapGroups.all();
+    }
+
+    hasMapThatLostAllItems(): boolean {
+        return this.mapGroups.all().some(hasLostAllItems);
     }
 
     mapGroupOf(nodeId: string): MapGroupState | undefined {

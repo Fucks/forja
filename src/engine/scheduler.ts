@@ -856,8 +856,14 @@ class DagScheduler implements Scheduler {
 
     private finishRunWhenSettled(at: Date): void {
         if (this.nodeRuns.areAllTerminal()) {
-            this.changeRun(transitionRun(this.run, this.stopOutcome ?? "SUCCEEDED", at));
+            this.changeRun(transitionRun(this.run, this.stopOutcome ?? this.settledOutcome(), at));
         }
+    }
+
+    // Some failed items still let the run succeed, as long as each map got at least one item
+    // through. A map whose every item failed produced nothing, so the run failed.
+    private settledOutcome(): "SUCCEEDED" | "FAILED" {
+        return this.mapGroups.hasMapThatLostAllItems() ? "FAILED" : "SUCCEEDED";
     }
 
     private resolveInputsOf(nodeRun: NodeRunState): InputResolution {
