@@ -1,4 +1,4 @@
-# Optional: the recommended way to run Forja is natively (`npx @fucks/forja`). See the README.
+# Optional: the recommended way to run Forja is natively (`npx @wellingtonfks/forja`). See the README.
 #
 # The agent containers are started through the host's Docker socket, so every path the server
 # hands to Docker must exist on the host: the data dir and the repositories are mounted at the
