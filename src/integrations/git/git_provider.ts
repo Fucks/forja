@@ -25,7 +25,7 @@ export interface GitProvider {
      * @throws BranchInUseError when a worktree holds the branch; GitCommandError otherwise
      */
     deleteLocalBranch(root: string, branch: string): Promise<boolean>;
-    /** The main worktree included. @throws GitCommandError */
+    /** Paths of every worktree of the repo, the main one included. @throws GitCommandError */
     listWorktreePaths(root: string): Promise<string[]>;
     /** Forgets the worktrees whose directory is gone. @throws GitCommandError */
     pruneWorktrees(root: string): Promise<void>;

@@ -28,17 +28,17 @@ export function createCleanupJob(deps: CleanupJobDeps): CleanupJob {
 class DailyCleanupJob implements CleanupJob {
     private cancelTimer: CancelTimeout | undefined;
     private cleanupInProgress: Promise<CleanupReport> | undefined;
-    private isRunning = false;
+    private isStarted = false;
 
     constructor(private readonly deps: CleanupJobDeps) {}
 
     start(): void {
-        this.isRunning = true;
+        this.isStarted = true;
         this.scheduleNextCleanup();
     }
 
     stop(): void {
-        this.isRunning = false;
+        this.isStarted = false;
         this.cancelTimer?.();
         this.cancelTimer = undefined;
     }
@@ -52,7 +52,7 @@ class DailyCleanupJob implements CleanupJob {
     }
 
     private scheduleNextCleanup(): void {
-        if (!this.isRunning) {
+        if (!this.isStarted) {
             return;
         }
 

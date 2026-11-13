@@ -33,7 +33,10 @@ export interface LogStore {
     deleteRun(runId: string): Promise<void>;
     /** Deletes the logs of the run and remembers that the retention removed them. */
     expireRun(runId: string): Promise<void>;
-    /** A run reopened after its logs expired logs again; only the NodeRuns without logs expired. */
+    /**
+     * Whether the retention removed the logs of the NodeRun. A run reopened after expiring logs
+     * again, so a NodeRun that has logs since then is not expired.
+     */
     hasExpired(ref: NodeRunLogRef): Promise<boolean>;
     listRunLogSizes(): Promise<RunLogSize[]>;
 }

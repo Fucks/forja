@@ -22,14 +22,12 @@ import { LOG_FILE_EXTENSION, type LogStore } from "@/server/runtime/log_store.js
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService } from "@/server/settings/settings_service.js";
-import { logPageQuery } from "@/shared/log_types.js";
+import { LOGS_EXPIRED_CODE, LOGS_EXPIRED_MESSAGE, logPageQuery } from "@/shared/log_types.js";
 
 const NODE_RUN_LOGS_PATH = "/node-runs/:nodeRunId/logs";
 const RAW_NODE_RUN_LOGS_PATH = `${NODE_RUN_LOGS_PATH}/raw`;
 const MAINTENANCE_CLEANUP_PATH = "/maintenance/cleanup";
 const RAW_LOGS_CONTENT_TYPE = "text/plain; charset=utf-8";
-const LOGS_EXPIRED_CODE = "logs_expired";
-const LOGS_EXPIRED_MESSAGE = "Logs removidos pela política de retenção";
 
 const nodeRunParamsSchema = z.object({ nodeRunId: z.string().min(1) });
 
@@ -41,6 +39,37 @@ export const registerLogsRoutes: RouteModule = (app, deps) => {
     registerMaintenanceRoutes(app, cleanupJob);
     runCleanupJobWhileAppIsUp(app, cleanupJob);
 };
+
+function createAppCleanupJob(app: FastifyInstance, deps: AppDeps, runs: RunRepository): CleanupJob {
+    const settings = createSettingsService({
+        repo: new SettingsRepository(deps.db),
+        lookups: createSettingsLookups(deps.db),
+        clock: systemClock,
+    });
+    const projects = createProjectService({
+        repo: new ProjectRepository(deps.db),
+        git: deps.git,
+        fileExists: existsSync,
+        clock: systemClock,
+    });
+    const cleanupDeps = {
+        logs: deps.logs,
+        runs,
+        settings,
+        projects,
+        git: deps.git,
+        clock: systemClock,
+        runtime: deps.agentRuntime,
+        worktreesDir: deps.paths.worktrees,
+    };
+
+    return createCleanupJob({
+        clock: systemClock,
+        timezone: hostTimeZone(),
+        cleanup: () => runCleanup(cleanupDeps),
+        log: (message) => app.log.info(message),
+    });
+}
 
 function registerNodeRunLogsRoutes(
     app: FastifyInstance,
@@ -101,36 +130,5 @@ function runCleanupJobWhileAppIsUp(app: FastifyInstance, cleanupJob: CleanupJob)
     app.addHook("onClose", (_closingApp, done) => {
         cleanupJob.stop();
         done();
-    });
-}
-
-function createAppCleanupJob(app: FastifyInstance, deps: AppDeps, runs: RunRepository): CleanupJob {
-    const settings = createSettingsService({
-        repo: new SettingsRepository(deps.db),
-        lookups: createSettingsLookups(deps.db),
-        clock: systemClock,
-    });
-    const projects = createProjectService({
-        repo: new ProjectRepository(deps.db),
-        git: deps.git,
-        fileExists: existsSync,
-        clock: systemClock,
-    });
-    const cleanupDeps = {
-        logs: deps.logs,
-        runs,
-        settings,
-        projects,
-        git: deps.git,
-        clock: systemClock,
-        runtime: deps.agentRuntime,
-        worktreesDir: deps.paths.worktrees,
-    };
-
-    return createCleanupJob({
-        clock: systemClock,
-        timezone: hostTimeZone(),
-        cleanup: () => runCleanup(cleanupDeps),
-        log: (message) => app.log.info(message),
     });
 }

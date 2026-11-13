@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { EventEnvelope } from "@/shared/events.js";
-import { FIRST_LOG_SEQ } from "@/shared/log_types.js";
+import { FIRST_LOG_SEQ, LOGS_EXPIRED_MESSAGE } from "@/shared/log_types.js";
 import type { LogPage, StoredLogEvent } from "@/shared/log_types.js";
 import { apiClient, ApiError } from "@/web/api/api_client.js";
 import { useEventStream } from "@/web/api/use_event_stream.js";
@@ -11,7 +11,6 @@ import { toLogLines } from "@/web/logs/to_log_lines.js";
 
 const LOG_PAGE_SIZE = 2_000;
 const HTTP_GONE = 410;
-const LOGS_EXPIRED_MESSAGE = "Logs removidos pela política de retenção";
 
 export interface NodeRunLogs {
     lines: LogLine[];
