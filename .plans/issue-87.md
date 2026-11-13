@@ -36,8 +36,8 @@
 - [x] 7. Test+impl: `runCleanup` prunes git worktrees and removes orphaned worktree dirs, keeping registered ones — same files
 - [x] 8. Test+impl: `runCleanup` closes `forja.workspace` containers of runs that are not active — same files
 - [x] 9. Test+impl: `createCleanupJob` fires at 03:00 local, re-arms daily, `runNow` shares the in-flight cleanup — `cleanup_job.ts`, `cleanup_job.test.ts`
-- [ ] 10. Test+impl: `POST /api/maintenance/cleanup` and job hooks — `logs_routes.ts`, `logs_routes.test.ts`
-- [ ] 11. Test+impl: logs routes answer 410 `logs_expired` for expired runs — `logs_routes.ts`, `logs_routes.test.ts`
+- [x] 10. Test+impl: `POST /api/maintenance/cleanup` and job hooks — `logs_routes.ts`, `logs_routes.test.ts`
+- [x] 11. Test+impl: logs routes answer 410 `logs_expired` for expired runs — `logs_routes.ts`, `logs_routes.test.ts`
 - [ ] 12. Test+impl: `useNodeRunLogs` turns a 410 into "Logs removidos pela política de retenção" — `use_node_run_logs.ts`, test
 - [ ] 13. Test+impl: diagnostic item "Espaço em disco da Forja" — `diagnostic_checks.ts`, `diagnostics_routes.ts`, tests
 - [ ] 14. Self-review checklist (section 5) and feedback loops (section 6)

@@ -21,6 +21,18 @@ export class ConflictError extends Error {
     override readonly name = "ConflictError";
 }
 
+/** The resource existed but was removed on purpose; `code` tells the client why. */
+export class GoneError extends Error {
+    override readonly name = "GoneError";
+
+    constructor(
+        readonly code: string,
+        message: string,
+    ) {
+        super(message);
+    }
+}
+
 export class DomainValidationError extends Error {
     override readonly name = "DomainValidationError";
 
@@ -37,6 +49,7 @@ const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
 const HTTP_NOT_FOUND = 404;
 const HTTP_CONFLICT = 409;
+const HTTP_GONE = 410;
 const HTTP_UNPROCESSABLE_ENTITY = 422;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 
@@ -80,6 +93,9 @@ function toErrorResponse(error: FastifyError): ErrorResponse {
     }
     if (error instanceof ConflictError) {
         return buildErrorResponse(HTTP_CONFLICT, { code: "conflict", message: error.message });
+    }
+    if (error instanceof GoneError) {
+        return buildErrorResponse(HTTP_GONE, { code: error.code, message: error.message });
     }
     if (error instanceof DomainValidationError) {
         return buildErrorResponse(HTTP_UNPROCESSABLE_ENTITY, {

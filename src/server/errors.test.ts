@@ -8,6 +8,7 @@ import {
     ConflictError,
     DomainValidationError,
     ForbiddenError,
+    GoneError,
     NotFoundError,
     registerErrorHandler,
     UnauthorizedError,
@@ -76,6 +77,17 @@ describe("registerErrorHandler", () => {
         expect(response.statusCode).toBe(409);
         expect(response.json()).toEqual({
             error: { code: "conflict", message: "O fluxo já foi publicado." },
+        });
+    });
+
+    it("answers GoneError with 410, its own code and the error message", async () => {
+        const app = buildAppThrowing(new GoneError("logs_expired", "Logs removidos."));
+
+        const response = await app.inject({ method: "GET", url: "/failing" });
+
+        expect(response.statusCode).toBe(410);
+        expect(response.json()).toEqual({
+            error: { code: "logs_expired", message: "Logs removidos." },
         });
     });
 
