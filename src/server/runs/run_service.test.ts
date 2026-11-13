@@ -13,6 +13,7 @@ const DEV_PROMPT = "Implemente a issue";
 const DEV_DURATION_MS = 60_000;
 const DEV_ATTEMPTS = 2;
 const UNPUBLISHED_FLOW_MESSAGE = "Publique o fluxo antes de executar.";
+const AUDIT_ENTRIES_LISTED = 10;
 const NIGHTLY_TRIGGER: Trigger = {
     id: "trg_noturno",
     projectId: TEST_PROJECT_ID,
@@ -39,6 +40,7 @@ describe("run service", () => {
             events: bed.events,
             usage: bed.usage,
             triggers: { listByProject: () => [NIGHTLY_TRIGGER] },
+            audit: bed.audit,
         });
         flowId = await bed.publishFlow(buildCanonicalFlow());
     });
@@ -49,6 +51,12 @@ describe("run service", () => {
 
     function startRun(): Promise<RunRecord> {
         return service.startRun(TEST_PROJECT_ID, { flowId, itemIds: ITEMS.map((item) => item.id) });
+    }
+
+    async function listRunCancellations(): Promise<unknown[]> {
+        const entries = await bed.audit.list(AUDIT_ENTRIES_LISTED);
+
+        return entries.filter((entry) => isRunCancellation(entry));
     }
 
     async function startRunWithDevsRunning(): Promise<RunRecord> {
@@ -189,6 +197,16 @@ describe("run service", () => {
             expect((await bed.runUntilFinished(run.id)).status).toBe("CANCELED");
         });
 
+        it("records the cancellation in the audit log", async () => {
+            const run = await startRunWithDevsRunning();
+
+            await service.cancelRun(run.id);
+
+            await expect(listRunCancellations()).resolves.toEqual([
+                expect.objectContaining({ target: { kind: "run", id: run.id } }),
+            ]);
+        });
+
         it("refuses to pause a finished run", async () => {
             const run = await bed.runUntilFinished((await startRun()).id);
 
@@ -205,6 +223,7 @@ describe("run service", () => {
             const run = await bed.runUntilFinished((await startRun()).id);
 
             await expect(service.cancelRun(run.id)).rejects.toBeInstanceOf(ConflictError);
+            await expect(listRunCancellations()).resolves.toEqual([]);
         });
     });
 
@@ -327,3 +346,12 @@ describe("run service", () => {
         });
     });
 });
+
+function isRunCancellation(entry: unknown): boolean {
+    return (
+        typeof entry === "object" &&
+        entry !== null &&
+        "action" in entry &&
+        entry.action === "run.canceled"
+    );
+}

@@ -9,6 +9,7 @@ import { toRunListItem } from "@/server/runs/run_list_item.js";
 import { buildRunView, type RunView } from "@/server/runs/run_view.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import type { Executor } from "@/server/runtime/executor.js";
+import type { AuditLog } from "@/server/security/audit_log.js";
 import type { TriggerRepository } from "@/server/triggers/trigger_repository.js";
 import type { UsageService } from "@/server/usage/usage_service.js";
 import type {
@@ -53,6 +54,7 @@ export interface RunServiceDeps {
     events: EventBus;
     usage: Pick<UsageService, "forRun">;
     triggers: Pick<TriggerRepository, "listByProject">;
+    audit: AuditLog;
 }
 
 export function createRunService(deps: RunServiceDeps): RunService {
@@ -166,6 +168,7 @@ async function resumeRun(deps: RunServiceDeps, runId: string): Promise<void> {
 async function cancelRun(deps: RunServiceDeps, runId: string): Promise<void> {
     await findUnfinishedRunOrThrow(deps.runs, runId);
     await deps.executor.cancelRun(runId);
+    await deps.audit.record("run.canceled", { kind: "run", id: runId });
 }
 
 async function raiseRunBudget(
