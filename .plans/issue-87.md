@@ -32,9 +32,9 @@
 - [x] 3. Test+impl: `LogStore.listRunLogSizes` sums the bytes of each run — `log_store.ts`, `log_store.test.ts`
 - [x] 4. Test+impl: `LogStore.expireRun` + `hasExpired` with migration `0611_expired_run_logs.sql` — `log_store.ts`, schema `log_index.ts`
 - [x] 5. Test+impl: `GitProvider.pruneWorktrees` / `listWorktreePaths` in CliGitProvider and FakeGitProvider; worktree_manager reuses it
-- [ ] 6. Test+impl: `runCleanup` expires the planned runs' logs and reports deleted runs and freed bytes — `cleanup_service.ts`, `cleanup_service.test.ts`
-- [ ] 7. Test+impl: `runCleanup` prunes git worktrees and removes orphaned worktree dirs, keeping registered ones — same files
-- [ ] 8. Test+impl: `runCleanup` closes `forja.workspace` containers of runs that are not active — same files
+- [x] 6. Test+impl: `runCleanup` expires the planned runs' logs and reports deleted runs and freed bytes — `cleanup_service.ts`, `cleanup_service.test.ts`
+- [x] 7. Test+impl: `runCleanup` prunes git worktrees and removes orphaned worktree dirs, keeping registered ones — same files
+- [x] 8. Test+impl: `runCleanup` closes `forja.workspace` containers of runs that are not active — same files
 - [ ] 9. Test+impl: `createCleanupJob` fires at 03:00 local, re-arms daily, `runNow` shares the in-flight cleanup — `cleanup_job.ts`, `cleanup_job.test.ts`
 - [ ] 10. Test+impl: `POST /api/maintenance/cleanup` and job hooks — `logs_routes.ts`, `logs_routes.test.ts`
 - [ ] 11. Test+impl: logs routes answer 410 `logs_expired` for expired runs — `logs_routes.ts`, `logs_routes.test.ts`
