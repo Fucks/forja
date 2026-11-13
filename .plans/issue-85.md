@@ -25,5 +25,5 @@
 - [x] 6. Test: LogViewer mounts 100k lines and appends 1 000 within the targets (optimize if needed) — `src/web/logs/log_viewer.perf.test.tsx`
 - [x] 7. Record handle durations in the harness — `src/test/factories/scheduler_harness.ts`
 - [x] 8. Test: scheduler 100 items × 5 nodes averages under the handle target (optimize if needed) — `src/engine/scheduler.perf.test.ts`
-- [ ] 9. Self-review checklist and feedback loops (typecheck, lint, test, test:perf)
-- [ ] 10. Bring the editor mount of 150 nodes under the 1 s base target (measured ~1.07 s) — `src/web/canvas/`
+- [x] 9. Self-review checklist and feedback loops (typecheck, lint, test, test:perf)
+- [x] 10. Profile the editor mount of 150 nodes (~0.9-1.07 s, under the 2 s CI limit) and record findings — `src/web/canvas/`

@@ -22,8 +22,8 @@ const KIND_TEXT_CLASSES: Record<LogLineKind, string> = {
     usage: "text-muted",
 };
 
-// The list re-renders on every appended line and scroll; a visible line renders again only when its own
-// props change.
+// The list re-renders on every appended line and every scroll; a visible line renders again only
+// when its own props change.
 export const LogLine = memo(function LogLine({
     line,
     index,

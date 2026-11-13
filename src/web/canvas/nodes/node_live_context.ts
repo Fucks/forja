@@ -44,8 +44,8 @@ export class NodeLiveStore {
             ]),
         );
 
-        const ids = new Set([...previousStates.keys(), ...nextStates.keys()]);
-        [...ids]
+        const knownIds = new Set([...previousStates.keys(), ...nextStates.keys()]);
+        [...knownIds]
             .filter((id) => previousStates.get(id) !== this.states.get(id))
             .forEach((id) => this.notify(id));
     }
