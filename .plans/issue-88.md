@@ -23,7 +23,7 @@
 
 - [x] 1. Publishable `package.json` (name, files, publishConfig, deps split, clean/prepack) — `package.json`
 - [x] 2. Smoke test of the package — `scripts/smoke_test_package.mjs`
-- [ ] 3. Manual release workflow — `.github/workflows/release.yml`
+- [x] 3. Manual release workflow — `.github/workflows/release.yml`
 - [ ] 4. Server image — `Dockerfile.server`, `.dockerignore`
 - [ ] 5. Optional compose — `docker-compose.yml`
 - [ ] 6. README covering every topic of the issue — `README.md`

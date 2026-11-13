@@ -1,0 +1,38 @@
+name: Release
+
+on:
+    workflow_dispatch:
+
+concurrency:
+    group: release
+    cancel-in-progress: false
+
+jobs:
+    publish:
+        name: publish to npm
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: npm
+                  registry-url: https://registry.npmjs.org
+
+            - run: npm ci
+
+            - run: npm run typecheck
+
+            - run: npm run lint
+
+            - run: npm run test
+
+            - run: node scripts/smoke_test_package.mjs
+
+            # prepack rebuilds dist from this same commit, the one the smoke test just checked.
+            - run: npm publish --access public
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
