@@ -45,7 +45,7 @@ const RUN_ARGS = [
     "-w",
     "/home/agent/workspace",
 ];
-const RUN_IMAGE_ARGS = ["forja/agent:latest", "sleep", "infinity"];
+const RUN_IMAGE_ARGS = ["--entrypoint", "sleep", "forja/agent:latest", "infinity"];
 
 function createManager(commands: FakeCommandRunner): ContainerManager {
     return createContainerManager(commands, () => EXEC_ID);

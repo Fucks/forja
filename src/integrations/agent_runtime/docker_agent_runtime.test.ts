@@ -225,8 +225,9 @@ describe("DockerAgentRuntime.openWorkspace", () => {
             "/home/agent/workspace",
             "--user",
             "1000:1001",
-            "forja/agent:latest",
+            "--entrypoint",
             "sleep",
+            "forja/agent:latest",
             "infinity",
         ]);
     });

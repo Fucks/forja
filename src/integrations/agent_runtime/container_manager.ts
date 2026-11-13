@@ -78,6 +78,11 @@ const NO_SUCH_CONTAINER_MESSAGE = "No such container";
 const LIST_FORMAT = "{{.ID}}\t{{.Labels}}";
 const LABEL_SEPARATOR = ",";
 const KEY_VALUE_SEPARATOR = "=";
+// The container only has to stay alive for docker exec. The entrypoint is overridden so any image
+// works: appending "sleep infinity" as CMD to an image whose ENTRYPOINT is already
+// ["sleep", "infinity"] runs "sleep infinity sleep infinity", which exits at once.
+const KEEP_ALIVE_ENTRYPOINT = "sleep";
+const KEEP_ALIVE_ARGS = ["infinity"];
 
 // `docker exec` does not stop the process in the container when the host client dies, so each
 // exec is killed with `pkill -f -- <marker>`. The marker sits in the argv of this `sh` wrapper
@@ -196,9 +201,10 @@ function buildRunArgs(input: StartContainerInput): string[] {
         input.workdir,
         ...userArgs,
         ...networkArgs,
+        "--entrypoint",
+        KEEP_ALIVE_ENTRYPOINT,
         input.image,
-        "sleep",
-        "infinity",
+        ...KEEP_ALIVE_ARGS,
     ];
 }
 
