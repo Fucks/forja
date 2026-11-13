@@ -3,14 +3,14 @@ import * as fsPromises from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import type { AgentEvent } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { SecretRedactor } from "@/integrations/secrets/secret_redactor.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { Clock } from "@/lib/clock.js";
 import type { ForjaDb } from "@/server/db/client.js";
-import { logIndex, type LogIndexRow } from "@/server/db/schema/log_index.js";
+import { expiredRunLogs, logIndex, type LogIndexRow } from "@/server/db/schema/log_index.js";
 import { SerialQueueByKey } from "@/server/runtime/serial_queue_by_key.js";
 import {
     FIRST_LOG_SEQ,
@@ -31,6 +31,15 @@ export interface LogStore {
     rawStream(nodeRunId: string): NodeJS.ReadableStream;
     stats(nodeRunId: string): Promise<LogStats>;
     deleteRun(runId: string): Promise<void>;
+    /** Deletes the logs of the run and remembers that the retention removed them. */
+    expireRun(runId: string): Promise<void>;
+    hasExpired(runId: string): Promise<boolean>;
+    listRunLogSizes(): Promise<RunLogSize[]>;
+}
+
+export interface RunLogSize {
+    runId: string;
+    bytes: number;
 }
 
 export interface LogReadOptions {
@@ -122,6 +131,36 @@ class NdjsonLogStore implements LogStore {
     async deleteRun(runId: string): Promise<void> {
         await this.fs.rm(path.join(this.deps.logsDir, runId), { recursive: true, force: true });
         this.deps.db.delete(logIndex).where(eq(logIndex.runId, runId)).run();
+    }
+
+    async expireRun(runId: string): Promise<void> {
+        await this.deleteRun(runId);
+        const expiredAt = this.deps.clock.now().toISOString();
+        this.deps.db
+            .insert(expiredRunLogs)
+            .values({ runId, expiredAt })
+            .onConflictDoNothing()
+            .run();
+    }
+
+    hasExpired(runId: string): Promise<boolean> {
+        const expired = this.deps.db
+            .select()
+            .from(expiredRunLogs)
+            .where(eq(expiredRunLogs.runId, runId))
+            .get();
+
+        return Promise.resolve(expired !== undefined);
+    }
+
+    listRunLogSizes(): Promise<RunLogSize[]> {
+        const sizes = this.deps.db
+            .select({ runId: logIndex.runId, bytes: sql<number>`sum(${logIndex.bytes})` })
+            .from(logIndex)
+            .groupBy(logIndex.runId)
+            .all();
+
+        return Promise.resolve(sizes);
     }
 
     private async appendNext(ref: NodeRunLogRef, event: AgentEvent): Promise<StoredLogEvent> {
