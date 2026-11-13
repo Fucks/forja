@@ -46,3 +46,4 @@
 - [x] 12. Audit `run.canceled` — `run_service.ts` + callers
 - [x] 13. `secret_leak.test.ts`: secret absent from log file and argv
 - [ ] 14. Self-review checklist and feedback loops
+- [x] 15. Dev mode: NODE_ENV in `dev:server`; `GET /session` (development only) + Vite plugin hand the cookie out — `dev_session_route.ts`, `vite.config.ts`, `package.json`
