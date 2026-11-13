@@ -22,7 +22,7 @@
 ## Tasks
 
 - [x] 1. Publishable `package.json` (name, files, publishConfig, deps split, clean/prepack) — `package.json`
-- [ ] 2. Smoke test of the package — `scripts/smoke_test_package.mjs`
+- [x] 2. Smoke test of the package — `scripts/smoke_test_package.mjs`
 - [ ] 3. Manual release workflow — `.github/workflows/release.yml`
 - [ ] 4. Server image — `Dockerfile.server`, `.dockerignore`
 - [ ] 5. Optional compose — `docker-compose.yml`
