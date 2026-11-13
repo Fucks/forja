@@ -8,6 +8,7 @@ import {
 } from "@/server/credentials/credential_service.js";
 import type { CredentialService } from "@/server/credentials/credential_service.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
+import { type AuditLog, createAuditLog } from "@/server/security/audit_log.js";
 import { credentialInput } from "@/shared/credential_types.js";
 import type { CredentialInput } from "@/shared/credential_types.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
@@ -35,6 +36,7 @@ describe("CredentialService", () => {
     let clock: FakeClock;
     let repo: CredentialRepository;
     let redactor: SecretRedactor;
+    let audit: AuditLog;
     let service: CredentialService;
 
     beforeEach(() => {
@@ -42,11 +44,13 @@ describe("CredentialService", () => {
         clock = new FakeClock(CREATED_AT);
         repo = new CredentialRepository(database.db);
         redactor = createSecretRedactor();
+        audit = createAuditLog({ db: database.db, clock });
         service = createCredentialService({
             repo,
             secrets: createTestSecretBox(),
             redactor,
             clock,
+            audit,
         });
     });
 
@@ -180,6 +184,69 @@ describe("CredentialService", () => {
 
         it("rejects an unknown id with NotFoundError", async () => {
             await expect(service.remove(UNKNOWN_ID)).rejects.toThrow(NotFoundError);
+        });
+    });
+
+    describe("audit log", () => {
+        it("records the creation with the kind, never the value", async () => {
+            const created = await service.create(buildInput());
+
+            const entries = await audit.list(10);
+            expect(entries).toEqual([
+                expect.objectContaining({
+                    action: "credential.created",
+                    target: { kind: "credential", id: created.id },
+                    details: { kind: "anthropic_api_key" },
+                }),
+            ]);
+            expect(JSON.stringify(entries)).not.toContain(API_KEY);
+        });
+
+        it("records a rename as an update of the name", async () => {
+            const created = await service.create(buildInput());
+
+            await service.rename(created.id, "Anthropic do time");
+
+            await expect(audit.list(1)).resolves.toEqual([
+                expect.objectContaining({
+                    action: "credential.updated",
+                    target: { kind: "credential", id: created.id },
+                    details: { changedField: "name" },
+                }),
+            ]);
+        });
+
+        it("records a new value as an update of the value, never the value", async () => {
+            const created = await service.create(buildInput());
+
+            await service.replaceValue(created.id, NEW_API_KEY);
+
+            const [latest] = await audit.list(1);
+            expect(latest).toMatchObject({
+                action: "credential.updated",
+                details: { changedField: "value" },
+            });
+            expect(JSON.stringify(latest)).not.toContain(NEW_API_KEY);
+        });
+
+        it("records the removal", async () => {
+            const created = await service.create(buildInput());
+
+            await service.remove(created.id);
+
+            await expect(audit.list(1)).resolves.toEqual([
+                expect.objectContaining({
+                    action: "credential.deleted",
+                    target: { kind: "credential", id: created.id },
+                }),
+            ]);
+        });
+
+        it("records nothing when the credential does not exist", async () => {
+            const removal = service.remove(UNKNOWN_ID);
+
+            await expect(removal).rejects.toThrow(NotFoundError);
+            await expect(audit.list(10)).resolves.toEqual([]);
         });
     });
 

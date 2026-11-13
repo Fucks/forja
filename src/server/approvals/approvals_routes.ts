@@ -12,6 +12,7 @@ import {
 } from "@/server/approvals/approval_service.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import type { Executor } from "@/server/runtime/executor.js";
+import { createAuditLog } from "@/server/security/audit_log.js";
 import {
     type Approval,
     type ApprovalListFilter,
@@ -38,6 +39,7 @@ function createApprovalServiceOf(deps: AppDeps): ApprovalService {
         repo: new ApprovalRepository(deps.db),
         events: deps.events,
         clock: systemClock,
+        audit: createAuditLog({ db: deps.db, clock: systemClock }),
     });
 }
 

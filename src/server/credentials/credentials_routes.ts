@@ -16,6 +16,7 @@ import {
 } from "@/server/credentials/credential_service.js";
 import type { CredentialService } from "@/server/credentials/credential_service.js";
 import type { RouteModule } from "@/server/route_modules.js";
+import { createAuditLog } from "@/server/security/audit_log.js";
 import { credentialInput, updateCredentialInput } from "@/shared/credential_types.js";
 import type { CredentialSummary, UpdateCredentialInput } from "@/shared/credential_types.js";
 import { DEFAULT_PROJECT_SETTINGS } from "@/shared/settings_types.js";
@@ -38,6 +39,7 @@ export const registerCredentialsRoutes: RouteModule = (app, deps) => {
         secrets: deps.secrets,
         redactor: deps.redactor,
         clock: systemClock,
+        audit: createAuditLog({ db: deps.db, clock: systemClock }),
     });
 
     registerCollectionRoutes(app, credentials);

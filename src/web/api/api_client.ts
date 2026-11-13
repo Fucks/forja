@@ -4,6 +4,8 @@ import { apiErrorBodySchema } from "@/shared/api_types.js";
 
 const API_PREFIX = "/api";
 const JSON_HEADERS = { "content-type": "application/json" };
+// The API asks for the session cookie the server set when it served the app.
+export const API_CREDENTIALS: RequestCredentials = "same-origin";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -70,11 +72,17 @@ async function sendRequest<T>(request: ApiRequest<T>): Promise<T> {
 }
 
 function buildRequestInit(request: ApiRequest<unknown>): RequestInit {
+    const { method } = request;
     if (request.body === undefined) {
-        return { method: request.method };
+        return { method, credentials: API_CREDENTIALS };
     }
 
-    return { method: request.method, headers: JSON_HEADERS, body: JSON.stringify(request.body) };
+    return {
+        method,
+        credentials: API_CREDENTIALS,
+        headers: JSON_HEADERS,
+        body: JSON.stringify(request.body),
+    };
 }
 
 async function readApiError(response: Response): Promise<ApiError> {

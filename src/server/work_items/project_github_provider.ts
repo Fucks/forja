@@ -7,6 +7,7 @@ import type { Clock } from "@/lib/clock.js";
 import { CredentialRepository } from "@/server/credentials/credential_repository.js";
 import { createCredentialService } from "@/server/credentials/credential_service.js";
 import type { ForjaDb } from "@/server/db/client.js";
+import { createAuditLog } from "@/server/security/audit_log.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService } from "@/server/settings/settings_service.js";
@@ -44,6 +45,7 @@ function createGithubEnvDeps(deps: GithubOfProjectDeps): GithubEnvDeps {
             secrets: deps.secrets,
             redactor: deps.redactor,
             clock: deps.clock,
+            audit: createAuditLog({ db: deps.db, clock: deps.clock }),
         }),
     };
 }

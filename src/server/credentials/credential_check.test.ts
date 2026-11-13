@@ -10,6 +10,7 @@ import {
 } from "@/server/credentials/credential_service.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { DomainValidationError } from "@/server/errors.js";
+import { createAuditLog } from "@/server/security/audit_log.js";
 import type {
     CredentialCheckResult,
     CredentialInput,
@@ -44,6 +45,7 @@ describe("checkCredential", () => {
             secrets: createTestSecretBox(),
             redactor: createSecretRedactor(),
             clock,
+            audit: createAuditLog({ db: database.db, clock }),
         });
         runtime = new FakeAgentRuntime({ clock });
         commands = new FakeCommandRunner();

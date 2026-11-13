@@ -8,7 +8,7 @@ import {
     agentImageBuildResultSchema,
 } from "@/shared/agent_image_types.js";
 import type { AgentImageBuildResult, AgentImageStatus } from "@/shared/agent_image_types.js";
-import { apiClient, toApiUrl } from "@/web/api/api_client.js";
+import { API_CREDENTIALS, apiClient, toApiUrl } from "@/web/api/api_client.js";
 import type { ApiError } from "@/web/api/api_client.js";
 import { readServerSentEvents } from "@/web/api/server_sent_events.js";
 import type { ServerSentEvent } from "@/web/api/server_sent_events.js";
@@ -94,6 +94,7 @@ async function streamAgentImageBuild(
 ): Promise<AgentImageBuildResult> {
     const response = await fetch(toApiUrl(`${agentImagePath(projectId)}/build`), {
         method: "POST",
+        credentials: API_CREDENTIALS,
         signal,
     });
     if (!response.ok || !response.body) {

@@ -7,6 +7,7 @@ import { createAppFlowService } from "@/server/flows/app_flow_service.js";
 import type { RouteModule } from "@/server/route_modules.js";
 import { createRunService, type RunService } from "@/server/runs/run_service.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
+import { createAuditLog } from "@/server/security/audit_log.js";
 import { createSettingsLookups } from "@/server/settings/settings_lookups.js";
 import { SettingsRepository } from "@/server/settings/settings_repository.js";
 import { createSettingsService } from "@/server/settings/settings_service.js";
@@ -40,6 +41,7 @@ export const registerRunsRoutes: RouteModule = (app, deps) => {
         events: deps.events,
         usage: createAppUsageService({ db: deps.db, settings, clock: systemClock }),
         triggers: new TriggerRepository(deps.db),
+        audit: createAuditLog({ db: deps.db, clock: systemClock }),
     });
 
     registerProjectRunsRoutes(app, runs);

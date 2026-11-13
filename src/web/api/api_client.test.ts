@@ -40,6 +40,7 @@ describe("apiClient", () => {
 
         expect(fetchSpy).toHaveBeenCalledWith("/api/projects", {
             method: "POST",
+            credentials: "same-origin",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ name: "Forja" }),
         });
@@ -52,6 +53,7 @@ describe("apiClient", () => {
 
         expect(fetchSpy).toHaveBeenCalledWith("/api/projects/p1", {
             method: "PATCH",
+            credentials: "same-origin",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ name: "Forja" }),
         });
@@ -63,7 +65,21 @@ describe("apiClient", () => {
         const received = await apiClient.delete("/projects/p1");
 
         expect(received).toBeUndefined();
-        expect(fetchSpy).toHaveBeenCalledWith("/api/projects/p1", { method: "DELETE" });
+        expect(fetchSpy).toHaveBeenCalledWith("/api/projects/p1", {
+            method: "DELETE",
+            credentials: "same-origin",
+        });
+    });
+
+    it("sends the session cookie of the app with every request", async () => {
+        const fetchSpy = respondWith(Response.json(project));
+
+        await apiClient.get("/projects/p1", projectSchema);
+
+        expect(fetchSpy).toHaveBeenCalledWith(
+            "/api/projects/p1",
+            expect.objectContaining({ credentials: "same-origin" }),
+        );
     });
 
     it("returns the body unchecked when no schema is given", async () => {

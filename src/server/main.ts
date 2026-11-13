@@ -26,6 +26,7 @@ import { createEventBus } from "@/server/runtime/event_bus.js";
 import type { Executor } from "@/server/runtime/executor.js";
 import { createLogStore } from "@/server/runtime/log_store.js";
 import { recoverRuns } from "@/server/runtime/recovery.js";
+import { createSessionProtection } from "@/server/security/api_protection.js";
 
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 
@@ -40,6 +41,7 @@ export type ServerDeps = Omit<
     | "logs"
     | "agentRuntime"
     | "executor"
+    | "apiProtection"
 >;
 
 export async function startServer(deps: ServerDeps): Promise<FastifyInstance> {
@@ -93,6 +95,7 @@ async function buildAppOwningDatabase(
             logs,
             agentRuntime,
             executor,
+            apiProtection: createSessionProtection(deps.env),
         });
         app.addHook("onClose", (_closingApp, done) => {
             database.close();

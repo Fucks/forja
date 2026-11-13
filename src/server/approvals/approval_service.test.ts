@@ -9,6 +9,7 @@ import { ConflictError, NotFoundError } from "@/server/errors.js";
 import { ProjectRepository } from "@/server/projects/project_repository.js";
 import { SqliteRunRepository } from "@/server/runs/sqlite_run_repository.js";
 import { createEventBus } from "@/server/runtime/event_bus.js";
+import { type AuditLog, createAuditLog } from "@/server/security/audit_log.js";
 import type { NewApproval } from "@/shared/approval_types.js";
 import type { ForjaEvent } from "@/shared/events.js";
 import { buildProject } from "@/test/factories/project_factory.js";
@@ -27,6 +28,7 @@ describe("ApprovalService", () => {
     let database: DatabaseHandle;
     let clock: FakeClock;
     let publishedEvents: ForjaEvent[];
+    let audit: AuditLog;
     let service: ApprovalService;
 
     beforeEach(async () => {
@@ -36,10 +38,12 @@ describe("ApprovalService", () => {
         const events = createEventBus(clock);
         publishedEvents = [];
         events.subscribe((envelope) => publishedEvents.push(envelope.event));
+        audit = createAuditLog({ db: database.db, clock });
         service = createApprovalService({
             repo: new ApprovalRepository(database.db),
             events,
             clock,
+            audit,
         });
     });
 
@@ -157,6 +161,20 @@ describe("ApprovalService", () => {
             });
         });
 
+        it("records the decision in the audit log", async () => {
+            const created = await service.create(buildNewApproval());
+
+            await service.resolve(created.id, "rejected", "Faltam testes");
+
+            await expect(audit.list(10)).resolves.toEqual([
+                expect.objectContaining({
+                    action: "approval.resolved",
+                    target: { kind: "approval", id: created.id },
+                    details: { decision: "rejected", runId: RUN_ID },
+                }),
+            ]);
+        });
+
         it("refuses to resolve an approval twice", async () => {
             const created = await service.create(buildNewApproval());
             await service.resolve(created.id, "approved");
@@ -165,6 +183,7 @@ describe("ApprovalService", () => {
 
             await expect(resolvingAgain).rejects.toBeInstanceOf(ConflictError);
             expect((await service.get(created.id)).status).toBe("approved");
+            await expect(audit.list(10)).resolves.toHaveLength(1);
         });
 
         it("rejects an approval that does not exist", async () => {
@@ -187,6 +206,14 @@ describe("ApprovalService", () => {
             await expect(service.resolve(created.id, "approved")).rejects.toBeInstanceOf(
                 ConflictError,
             );
+        });
+
+        it("records nothing in the audit log, since nobody decided", async () => {
+            await service.create(buildNewApproval());
+
+            await service.expireOfNodeRun("nrn_gate");
+
+            await expect(audit.list(10)).resolves.toEqual([]);
         });
 
         it("leaves an approval that was already resolved as it was", async () => {

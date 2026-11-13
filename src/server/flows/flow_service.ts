@@ -9,6 +9,7 @@ import type { FlowRepository } from "@/server/flows/flow_repository.js";
 import { FLOW_FILE_FORMAT_VERSION, yamlToFlow } from "@/server/flows/flow_yaml.js";
 import type { FlowFile } from "@/server/flows/flow_yaml.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import type { AuditLog } from "@/server/security/audit_log.js";
 import { FlowGraphParseError, parseFlowGraph } from "@/shared/flow_graph.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { DRAFT_VERSION } from "@/shared/flow_types.js";
@@ -49,6 +50,7 @@ export interface FlowServiceDeps {
     repo: FlowRepository;
     events: EventBus;
     clock: Clock;
+    audit: AuditLog;
     validationContext(projectId: string): Promise<ValidationContext>;
 }
 
@@ -172,8 +174,14 @@ async function publishDraft(
 ): Promise<FlowVersion> {
     const { projectId } = findFlowOrThrow(deps.repo, flowId);
     const context = await deps.validationContext(projectId);
+    const published = publishDraftAsNextVersion(deps, { flowId, note, context });
+    await deps.audit.record(
+        "flow.published",
+        { kind: "flow", id: flowId },
+        { version: published.version },
+    );
 
-    return publishDraftAsNextVersion(deps, { flowId, note, context });
+    return published;
 }
 
 // Synchronous from reading the draft to inserting the version, so no other save or publish of the

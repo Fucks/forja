@@ -4,6 +4,7 @@ import { resolveWith } from "@/lib/resolve_with.js";
 import type { ApprovalRepository } from "@/server/approvals/approval_repository.js";
 import { ConflictError, NotFoundError } from "@/server/errors.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import type { AuditLog } from "@/server/security/audit_log.js";
 import type { Approval, ApprovalDecision, NewApproval } from "@/shared/approval_types.js";
 
 export interface ApprovalService {
@@ -21,6 +22,7 @@ export interface ApprovalServiceDeps {
     repo: ApprovalRepository;
     events: EventBus;
     clock: Clock;
+    audit: AuditLog;
 }
 
 export const MAX_RESOLVED_APPROVALS_LISTED = 50;
@@ -42,8 +44,7 @@ export function createApprovalService(deps: ApprovalServiceDeps): ApprovalServic
 
     return {
         create: (input) => resolveWith(() => createApproval(deps, input)),
-        resolve: (id, decision, comment) =>
-            resolveWith(() => resolveApproval(deps, { id, decision, comment })),
+        resolve: (id, decision, comment) => resolveAuditedApproval(deps, { id, decision, comment }),
         listPending: (projectId) => resolveWith(() => repo.listByProject(projectId, "pending")),
         listResolved: (projectId) =>
             resolveWith(() => repo.listResolvedByProject(projectId, MAX_RESOLVED_APPROVALS_LISTED)),
@@ -63,6 +64,20 @@ function createApproval(deps: ApprovalServiceDeps, input: NewApproval): Approval
     publishApprovalEvent(deps.events, "approval.requested", approval);
 
     return approval;
+}
+
+async function resolveAuditedApproval(
+    deps: ApprovalServiceDeps,
+    resolution: Resolution,
+): Promise<Approval> {
+    const resolved = await resolveWith(() => resolveApproval(deps, resolution));
+    await deps.audit.record(
+        "approval.resolved",
+        { kind: "approval", id: resolved.id },
+        { decision: resolution.decision, runId: resolved.runId },
+    );
+
+    return resolved;
 }
 
 function resolveApproval(deps: ApprovalServiceDeps, resolution: Resolution): Approval {

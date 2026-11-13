@@ -16,7 +16,8 @@ export type IdPrefix =
     | "tlp"
     | "apv"
     | "art"
-    | "usg";
+    | "usg"
+    | "aud";
 
 // Monotonic so ids created within the same millisecond still sort in creation order.
 const nextUlid = monotonicFactory();

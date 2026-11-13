@@ -5,6 +5,7 @@ import { FlowRepository } from "@/server/flows/flow_repository.js";
 import { createFlowService, type FlowService } from "@/server/flows/flow_service.js";
 import { buildValidationContext } from "@/server/flows/flow_validation_context.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
+import { createAuditLog } from "@/server/security/audit_log.js";
 
 export interface AppFlowServiceDeps {
     db: ForjaDb;
@@ -20,6 +21,7 @@ export function createAppFlowService({ db, events, clock }: AppFlowServiceDeps):
         repo: new FlowRepository(db),
         events,
         clock,
+        audit: createAuditLog({ db, clock }),
         validationContext: () => buildValidationContext(credentials),
     });
 }
