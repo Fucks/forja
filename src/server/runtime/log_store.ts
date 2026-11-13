@@ -33,7 +33,8 @@ export interface LogStore {
     deleteRun(runId: string): Promise<void>;
     /** Deletes the logs of the run and remembers that the retention removed them. */
     expireRun(runId: string): Promise<void>;
-    hasExpired(runId: string): Promise<boolean>;
+    /** A run reopened after its logs expired logs again; only the NodeRuns without logs expired. */
+    hasExpired(ref: NodeRunLogRef): Promise<boolean>;
     listRunLogSizes(): Promise<RunLogSize[]>;
 }
 
@@ -143,14 +144,18 @@ class NdjsonLogStore implements LogStore {
             .run();
     }
 
-    hasExpired(runId: string): Promise<boolean> {
-        const expired = this.deps.db
+    hasExpired(ref: NodeRunLogRef): Promise<boolean> {
+        if (this.findIndexEntry(ref.nodeRunId)) {
+            return Promise.resolve(false);
+        }
+
+        const expiredRun = this.deps.db
             .select()
             .from(expiredRunLogs)
-            .where(eq(expiredRunLogs.runId, runId))
+            .where(eq(expiredRunLogs.runId, ref.runId))
             .get();
 
-        return Promise.resolve(expired !== undefined);
+        return Promise.resolve(expiredRun !== undefined);
     }
 
     listRunLogSizes(): Promise<RunLogSize[]> {

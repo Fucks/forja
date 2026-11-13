@@ -264,13 +264,24 @@ describe("LogStore", () => {
             expect(existsSync(path.join(logsDir, RUN_ID))).toBe(false);
             expect(await logs.stats(NODE_RUN_ID)).toEqual({ count: 0, bytes: 0 });
             expect(await logs.listRunLogSizes()).toEqual([]);
-            expect(await logs.hasExpired(RUN_ID)).toBe(true);
+            expect(await logs.hasExpired(REF)).toBe(true);
         });
 
-        it("does not report as expired a run whose logs are kept", async () => {
+        it("does not report as expired the logs that are kept", async () => {
             await appendTexts(1);
 
-            expect(await logs.hasExpired(RUN_ID)).toBe(false);
+            expect(await logs.hasExpired(REF)).toBe(false);
+        });
+
+        it("does not report as expired a NodeRun that logged after its run was reopened", async () => {
+            await appendTexts(1);
+            await logs.expireRun(RUN_ID);
+            const reopenedRef = { runId: RUN_ID, nodeRunId: "nrn_reaberta" };
+
+            await logs.append(reopenedRef, textEvent("de novo"));
+
+            expect(await logs.hasExpired(reopenedRef)).toBe(false);
+            expect(await logs.hasExpired(REF)).toBe(true);
         });
 
         it("can expire the same run twice", async () => {
@@ -279,7 +290,7 @@ describe("LogStore", () => {
 
             await logs.expireRun(RUN_ID);
 
-            expect(await logs.hasExpired(RUN_ID)).toBe(true);
+            expect(await logs.hasExpired(REF)).toBe(true);
         });
     });
 
