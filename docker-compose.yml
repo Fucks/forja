@@ -1,0 +1,24 @@
+# Optional: the recommended way to run Forja is natively (`npx @fucks/forja`). See the README.
+#
+# The agent containers are started through the host's Docker socket, so every path the server
+# hands to Docker must exist on the host: the data dir and the repositories are mounted at the
+# same absolute paths they have there.
+services:
+    forja:
+        build:
+            context: .
+            dockerfile: Dockerfile.server
+        image: forja-server
+        init: true
+        user: "${FORJA_UID:?defina FORJA_UID (id -u)}:${FORJA_GID:?defina FORJA_GID (id -g)}"
+        group_add:
+            - "${DOCKER_GID:?defina DOCKER_GID (grupo dono de /var/run/docker.sock)}"
+        ports:
+            - "127.0.0.1:4317:4317"
+        environment:
+            FORJA_DATA_DIR: ${HOME}/.forja
+        volumes:
+            - ${HOME}/.forja:${HOME}/.forja
+            - ${FORJA_REPOS_DIR:?defina FORJA_REPOS_DIR}:${FORJA_REPOS_DIR}
+            - /var/run/docker.sock:/var/run/docker.sock
+        restart: unless-stopped
