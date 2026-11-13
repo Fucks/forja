@@ -27,4 +27,4 @@
 - [x] 4. Server image — `Dockerfile.server`, `.dockerignore`
 - [x] 5. Optional compose — `docker-compose.yml`
 - [x] 6. README covering every topic of the issue — `README.md`
-- [ ] 7. Self-review checklist and feedback loops (typecheck, lint, test, smoke test)
+- [x] 7. Self-review checklist and feedback loops (typecheck, lint, test, smoke test)
