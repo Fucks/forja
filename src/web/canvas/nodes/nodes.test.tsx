@@ -10,7 +10,7 @@ import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import { toReactFlow } from "@/web/canvas/graph_mapping.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
-import { NodeLiveContext } from "@/web/canvas/nodes/node_live_context.js";
+import { NodeLiveContext, NodeLiveStore } from "@/web/canvas/nodes/node_live_context.js";
 import type { NodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
 
 const LOOP_GROUP: FlowGroup = {
@@ -168,7 +168,7 @@ function renderOnCanvas(
     }));
 
     render(
-        <NodeLiveContext.Provider value={liveStates}>
+        <NodeLiveContext.Provider value={new NodeLiveStore(liveStates)}>
             <ReactFlowProvider>
                 <ReactFlow nodes={nodesWithSelection} edges={edges} nodeTypes={nodeTypes} />
             </ReactFlowProvider>

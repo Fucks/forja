@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { ComponentType } from "react";
 import type { NodeProps, NodeTypes } from "@xyflow/react";
 
@@ -8,18 +9,24 @@ import { AgentNode } from "@/web/canvas/nodes/agent_node.js";
 import { GroupNode } from "@/web/canvas/nodes/group_node.js";
 import { SimpleNode } from "@/web/canvas/nodes/simple_nodes.js";
 
+// React Flow re-renders every node whenever the canvas re-renders; memoized nodes render again only
+// when their own props or live state change.
+const MemoizedSimpleNode = memo(SimpleNode);
+const MemoizedAgentNode = memo(AgentNode);
+const MemoizedGroupNode = memo(GroupNode);
+
 const FLOW_NODE_COMPONENTS: Record<NodeType, ComponentType<NodeProps<FlowRFNode>>> = {
-    trigger: SimpleNode,
-    source: SimpleNode,
-    agent: AgentNode,
-    script: SimpleNode,
-    condition: SimpleNode,
-    gate: SimpleNode,
-    git: SimpleNode,
-    output: SimpleNode,
+    trigger: MemoizedSimpleNode,
+    source: MemoizedSimpleNode,
+    agent: MemoizedAgentNode,
+    script: MemoizedSimpleNode,
+    condition: MemoizedSimpleNode,
+    gate: MemoizedSimpleNode,
+    git: MemoizedSimpleNode,
+    output: MemoizedSimpleNode,
 };
 
 export const nodeTypes: NodeTypes = {
     ...FLOW_NODE_COMPONENTS,
-    [GROUP_NODE_TYPE]: GroupNode,
+    [GROUP_NODE_TYPE]: MemoizedGroupNode,
 };
