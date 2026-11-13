@@ -40,6 +40,7 @@ describe("diagnostics routes", () => {
             "gh",
             "gh-auth",
             "agent-image:forja-agent:latest",
+            "forja-disk",
         ]);
     });
 
@@ -62,6 +63,15 @@ describe("diagnostics routes", () => {
             "agent-image:forja-agent:latest",
             "agent-image:loja-agent:1.0",
         ]);
+    });
+
+    it("reports the space the logs use against the ceiling", async () => {
+        const response = await app.inject({ method: "GET", url: "/api/diagnostics" });
+
+        const diskItem = response
+            .json<DiagnosticReport>()
+            .items.find((item) => item.id === "forja-disk");
+        expect(diskItem).toMatchObject({ status: "ok", detail: "Logs ocupam 0 MB de 2.048 MB" });
     });
 
     it("runs the checks again with force=1 instead of answering from the cache", async () => {
