@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+playwright-report
+test-results
+.git
+.env
+.forja-data
+.sandcastle/logs
+.sandcastle/state
+.sandcastle/worktrees
+.codegraph
+.codegraph-wsl
+.pr-evidence
