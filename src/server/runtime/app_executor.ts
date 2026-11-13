@@ -82,7 +82,12 @@ export function createAppExecutor({
         events,
         logs,
         usage: createAppUsageService({ db, settings, clock }),
-        approvals: createApprovalService({ repo: new ApprovalRepository(db), events, clock }),
+        approvals: createApprovalService({
+            repo: new ApprovalRepository(db),
+            events,
+            clock,
+            audit: createAuditLog({ db, clock }),
+        }),
         toolProfiles: createToolProfileService({ repo: new ToolProfileRepository(db), clock }),
         credentials: createCredentialService({
             repo: new CredentialRepository(db),

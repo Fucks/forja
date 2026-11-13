@@ -42,7 +42,7 @@
 - [x] 8. `audit_log` migration, schema and `createAuditLog` with tests — `audit_log.ts`, `audit_log.test.ts`
 - [x] 9. Audit `flow.published` — `flow_service.ts` + callers
 - [x] 10. Audit credential created/updated/deleted — `credential_service.ts` + callers
-- [ ] 11. Audit `approval.resolved` — `approval_service.ts` + callers
+- [x] 11. Audit `approval.resolved` — `approval_service.ts` + callers
 - [ ] 12. Audit `run.canceled` — `run_service.ts` + callers
 - [ ] 13. `secret_leak.test.ts`: secret absent from log file and argv
 - [ ] 14. Self-review checklist and feedback loops

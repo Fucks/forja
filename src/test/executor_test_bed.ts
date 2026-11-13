@@ -158,6 +158,7 @@ export class ExecutorTestBed {
             repo: new ApprovalRepository(this.database.db),
             events: this.events,
             clock: this.clock,
+            audit: this.audit,
         });
         this.toolProfiles = createToolProfileService({
             repo: new ToolProfileRepository(this.database.db),
