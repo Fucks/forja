@@ -10,6 +10,8 @@ import type { LogLine } from "@/web/logs/log_types.js";
 import { toLogLines } from "@/web/logs/to_log_lines.js";
 
 const LOG_PAGE_SIZE = 2_000;
+const HTTP_GONE = 410;
+const LOGS_EXPIRED_MESSAGE = "Logs removidos pela política de retenção";
 
 export interface NodeRunLogs {
     lines: LogLine[];
@@ -161,8 +163,16 @@ async function reportApiError(pendingLoad: Promise<void>, reportError: ReportErr
         if (!(error instanceof ApiError)) {
             throw error;
         }
-        reportError(error);
+        reportError(explainExpiredLogs(error));
     }
+}
+
+function explainExpiredLogs(error: ApiError): ApiError {
+    if (error.status !== HTTP_GONE) {
+        return error;
+    }
+
+    return new ApiError({ status: error.status, code: error.code, message: LOGS_EXPIRED_MESSAGE });
 }
 
 // A range announced by log.appended may overlap the pages already loaded.
