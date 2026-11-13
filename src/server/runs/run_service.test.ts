@@ -56,7 +56,7 @@ describe("run service", () => {
     async function listRunCancellations(): Promise<unknown[]> {
         const entries = await bed.audit.list(AUDIT_ENTRIES_LISTED);
 
-        return entries.filter((entry) => isRunCancellation(entry));
+        return entries.filter(isRunCancellation);
     }
 
     async function startRunWithDevsRunning(): Promise<RunRecord> {
