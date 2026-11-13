@@ -1,15 +1,24 @@
 import type { FastifyInstance } from "fastify";
 
-import { buildApp } from "@/server/app.js";
+import { type AppDeps, buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
+import type { SessionProtection } from "@/server/security/api_protection.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
+
+const HTTP_FORBIDDEN = 403;
+const SESSION_PROTECTION: SessionProtection = {
+    kind: "session",
+    token: "token-da-sessao-de-teste",
+    port: 4317,
+    allowsDevServer: false,
+};
 
 describe("security headers", () => {
     let database: DatabaseHandle;
     let app: FastifyInstance;
 
-    async function startApp(overrides: Parameters<typeof createTestAppDeps>[1] = {}) {
+    async function startApp(overrides: Partial<AppDeps> = {}): Promise<void> {
         app = await buildApp(createTestAppDeps(database.db, overrides));
     }
 
@@ -43,13 +52,11 @@ describe("security headers", () => {
     });
 
     it("sends the headers on the answers the guard rejects", async () => {
-        await startApp({
-            apiProtection: { kind: "session", token: "t", port: 4317, allowsDevServer: false },
-        });
+        await startApp({ apiProtection: SESSION_PROTECTION });
 
         const response = await app.inject({ method: "GET", url: "/api/health" });
 
-        expect(response.statusCode).toBe(403);
+        expect(response.statusCode).toBe(HTTP_FORBIDDEN);
         expect(response.headers["x-content-type-options"]).toBe("nosniff");
     });
 });

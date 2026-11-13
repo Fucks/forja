@@ -34,18 +34,21 @@ export interface GuardContext {
 export type GuardResult = { ok: true } | { ok: false; status: 401 | 403; reason: string };
 
 // A webhook carries the token of its trigger; the routes of the web app hand out the cookie.
-export function checkRequest(req: GuardedRequest, ctx: GuardContext): GuardResult {
-    const requestPath = readPath(req.url);
+export function checkRequest(request: GuardedRequest, context: GuardContext): GuardResult {
+    const requestPath = readPath(request.url);
     if (requestPath.startsWith(WEBHOOK_PATH_PREFIX)) {
-        return checkWebhookSender(req.remoteAddress);
+        return checkWebhookSender(request.remoteAddress);
     }
 
-    const senderCheck = checkSenderIsTheApp(req, ctx.port);
-    if (!senderCheck.ok || !requestPath.startsWith(API_PATH_PREFIX)) {
+    const senderCheck = checkSenderIsTheApp(request, context.port);
+    if (!senderCheck.ok) {
         return senderCheck;
     }
+    if (!requestPath.startsWith(API_PATH_PREFIX)) {
+        return ACCEPTED;
+    }
 
-    return checkSessionCookie(req.cookies, ctx.token);
+    return checkSessionCookie(request.cookies, context.token);
 }
 
 // Decoded and normalized, so "/api/hooks/%2e%2e/projects" is not taken for a webhook and
@@ -74,8 +77,8 @@ function checkWebhookSender(remoteAddress: string): GuardResult {
 }
 
 // The Host stops DNS rebinding; the Origin stops other sites open in the browser.
-function checkSenderIsTheApp(req: GuardedRequest, port: number): GuardResult {
-    const { host, origin } = req.headers;
+function checkSenderIsTheApp(request: GuardedRequest, port: number): GuardResult {
+    const { host, origin } = request.headers;
     if (host === undefined || !listAppHosts(port).includes(host)) {
         return { ok: false, status: 403, reason: UNKNOWN_HOST_REASON };
     }
