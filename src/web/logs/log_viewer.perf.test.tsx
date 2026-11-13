@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 
 import { buildLogLine, buildLogLines } from "@/test/factories/log_line_factory.js";
 import { stubElementSizes } from "@/test/fakes/fake_element_size.js";
+import { measureMs } from "@/test/measure_ms.js";
 import { LogViewer } from "@/web/logs/log_viewer.js";
 import type { LogLine } from "@/web/logs/log_types.js";
 
@@ -37,13 +38,6 @@ describe("LogViewer performance", () => {
         expect(elapsedMs).toBeLessThan(APPEND_TARGET_MS * CI_SLACK_FACTOR);
     });
 });
-
-function measureMs(work: () => void): number {
-    const startedAtMs = performance.now();
-    work();
-
-    return performance.now() - startedAtMs;
-}
 
 function linesAfter(lastSeq: number): LogLine[] {
     return Array.from({ length: APPENDED_LINE_COUNT }, (_, index) =>

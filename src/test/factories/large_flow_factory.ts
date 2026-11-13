@@ -48,20 +48,32 @@ function splitEvenly(total: number, parts: number): number[] {
 function buildGroupChain(groupIndex: number, agentCount: number): GroupChain {
     const groupId = `group_${groupIndex}`;
     const groupTopPx = groupIndex * (NODE_HEIGHT_PX + 2 * GROUP_PADDING_PX + GROUP_GAP_PX);
-    const agents = Array.from({ length: agentCount }, (_, agentIndex) => {
-        const agentId = `${groupId}_agent_${agentIndex}`;
-        const position = { x: (agentIndex + 1) * GRID_STEP_PX, y: groupTopPx };
-        const agent = createNodeOfType("agent", agentId, position);
-
-        return {
-            ...agent,
-            label: agentId,
-            parentGroupId: groupId,
-            config: { ...agent.config, prompt: `Passo ${agentIndex} do item #{{item.number}}` },
-        };
-    });
+    const agents = Array.from({ length: agentCount }, (_, agentIndex) =>
+        buildChainedAgent({ groupId, groupTopPx, agentIndex }),
+    );
 
     return { group: buildMapGroup(groupId, groupTopPx, agentCount), agents };
+}
+
+function buildChainedAgent({
+    groupId,
+    groupTopPx,
+    agentIndex,
+}: {
+    groupId: string;
+    groupTopPx: number;
+    agentIndex: number;
+}): FlowNode {
+    const agentId = `${groupId}_agent_${agentIndex}`;
+    const position = { x: (agentIndex + 1) * GRID_STEP_PX, y: groupTopPx };
+    const agent = createNodeOfType("agent", agentId, position);
+
+    return {
+        ...agent,
+        label: agentId,
+        parentGroupId: groupId,
+        config: { ...agent.config, prompt: `Passo ${agentIndex} do item #{{item.number}}` },
+    };
 }
 
 function buildMapGroup(groupId: string, groupTopPx: number, agentCount: number): FlowGroup {
