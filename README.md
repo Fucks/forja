@@ -116,8 +116,8 @@ Se o fluxo já estiver rodando, o gatilho segue a política escolhida: pular, en
 
 Quando o Claude responde que o limite de uso foi atingido, a run fica **Pausado por limite** em vez de falhar e
 retoma sozinha depois do reset, mais a "Margem após o limite de uso" (padrão 5 minutos, nas
-**Configurações** do projeto, parte global). A página **Uso** mostra os tokens e o custo por run, por nó e por dia, e o orçamento diário do projeto
-(nas **Configurações**) pausa a run quando é atingido.
+**Configurações** do projeto, parte global). A página **Uso** mostra os tokens e o custo por run, por nó
+e por dia, e o orçamento diário do projeto (nas **Configurações**) pausa a run quando é atingido.
 
 ## Segurança
 

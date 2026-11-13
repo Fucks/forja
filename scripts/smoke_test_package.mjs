@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 const REPOSITORY_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PUBLISHED_ENTRIES = new Set(["dist", "assets", "README.md", "package.json"]);
@@ -161,7 +162,7 @@ async function checkHealth(forja, sessionCookie, expected) {
 
     const health = await response.json();
     const expectedHealth = { status: "ok", version: expected.version, dataDir: expected.dataDir };
-    if (JSON.stringify(health) !== JSON.stringify(expectedHealth)) {
+    if (!isDeepStrictEqual(health, expectedHealth)) {
         throw new Error(`GET /api/health devolveu ${JSON.stringify(health)}`);
     }
 }
