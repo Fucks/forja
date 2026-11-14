@@ -8,7 +8,9 @@ import type {
     AgentRunRequest,
     AgentRunResult,
 } from "@/integrations/agent_runtime/agent_runtime.js";
+import { sendsOutputSchema } from "@/integrations/agent_runtime/claude_command.js";
 import {
+    askForStructuredOutput,
     runClaudeIteration,
     type ClaudeIteration,
 } from "@/integrations/agent_runtime/claude_iteration.js";
@@ -74,10 +76,41 @@ async function runIterations(run: AgentRun): Promise<AgentRunResult> {
         }
     }
 
+    const followUp = await structuredOutputFollowUp(run, iterations.at(-1));
+
     return {
-        ...summarizeIterations(run.request, iterations),
+        ...summarizeIterations(run.request, iterations, followUp),
         commits: await commitsSince(run.container, headAtStart),
     };
+}
+
+// With a completion signal only the last possible iteration gets the schema, so an agent that
+// finishes earlier answers in free text: its session is resumed once to ask for the output.
+async function structuredOutputFollowUp(
+    run: AgentRun,
+    last: FinishedIteration | undefined,
+): Promise<ClaudeIteration | undefined> {
+    const sessionId = last?.result?.sessionId;
+    if (!last || sessionId === undefined || !needsStructuredOutputFollowUp(run.request, last)) {
+        return undefined;
+    }
+
+    const followUp = await askForStructuredOutput({ ...run, iteration: last.iteration }, sessionId);
+    if (isIterationFailure(followUp)) {
+        throw toAgentFailure(followUp, run.clock.now());
+    }
+
+    return followUp;
+}
+
+function needsStructuredOutputFollowUp(request: AgentRunRequest, last: ClaudeIteration): boolean {
+    if (!request.outputSchema || isIterationFailure(last)) {
+        return false;
+    }
+
+    return (
+        last.result?.structuredOutput === undefined && !sendsOutputSchema(request, last.iteration)
+    );
 }
 
 async function runIteration(run: AgentRun, iteration: number): Promise<FinishedIteration> {
@@ -123,20 +156,23 @@ function isWorkComplete(request: AgentRunRequest, iteration: ClaudeIteration): b
     return iteration.agentTexts.some((text) => text.includes(completionSignal));
 }
 
+// The summary stays the text of the work; the follow-up only brings the structured output.
 function summarizeIterations(
     request: AgentRunRequest,
     iterations: FinishedIteration[],
+    followUp: ClaudeIteration | undefined,
 ): Omit<AgentRunResult, "commits"> {
     const last = iterations.at(-1);
-    const usage = iterations
+    const answer = followUp ?? last;
+    const usage = [...iterations, ...(followUp ? [followUp] : [])]
         .map((iteration) => iteration.result?.usage ?? EMPTY_TOKEN_USAGE)
         .reduce(addTokenUsage, EMPTY_TOKEN_USAGE);
 
     return {
-        output: structuredOutputOf(request, last),
+        output: structuredOutputOf(request, answer),
         summary: summaryOf(last),
         usage,
-        sessionId: last?.result?.sessionId,
+        sessionId: answer?.result?.sessionId,
         iterations: iterations.length,
         completionSignal: completionSignalFound(request, last),
     };

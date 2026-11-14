@@ -1,7 +1,10 @@
 import type { AgentContainer } from "@/integrations/agent_runtime/agent_container.js";
 import { AgentTimeoutError } from "@/integrations/agent_runtime/agent_errors.js";
 import type { AgentRunHooks, AgentRunRequest } from "@/integrations/agent_runtime/agent_runtime.js";
-import { buildClaudeArgs } from "@/integrations/agent_runtime/claude_command.js";
+import {
+    buildClaudeArgs,
+    type ClaudeIterationOptions,
+} from "@/integrations/agent_runtime/claude_command.js";
 import type { ClaudeResult } from "@/integrations/agent_runtime/claude_result.js";
 import type { ContainerExecResult } from "@/integrations/agent_runtime/container_manager.js";
 import {
@@ -40,14 +43,38 @@ interface IterationOutput {
 const PROMPT_COMMAND_TIMEOUT_MS = 60_000;
 const TIMED_OUT_EXIT_CODE = 124;
 const TIMED_OUT_OUTPUT = "tempo esgotado";
+const STRUCTURED_OUTPUT_PROMPT =
+    "Você já concluiu a tarefa. Não faça nenhuma alteração nova: responda agora só com a saída " +
+    "estruturada pedida, preenchida com o resultado do trabalho que você acabou de fazer.";
 
 /** One `claude -p` in the container, the prompt on stdin and each stdout line parsed live. */
 export async function runClaudeIteration(input: ClaudeIterationInput): Promise<ClaudeIteration> {
     const prompt = await preparePrompt(input);
+
+    return runClaude(input, prompt, { iteration: input.iteration });
+}
+
+/** Resumes the session of an iteration that answered in free text, asking only for the schema. */
+export function askForStructuredOutput(
+    input: ClaudeIterationInput,
+    sessionId: string,
+): Promise<ClaudeIteration> {
+    return runClaude(input, STRUCTURED_OUTPUT_PROMPT, {
+        iteration: input.iteration,
+        resumeSessionId: sessionId,
+        withOutputSchema: true,
+    });
+}
+
+async function runClaude(
+    input: ClaudeIterationInput,
+    prompt: string,
+    options: ClaudeIterationOptions,
+): Promise<ClaudeIteration> {
     const output = collectIterationOutput(input);
 
     input.deadlines.restartIdleTimer();
-    const execution = await execClaude(input, prompt, output.consumeLine);
+    const execution = await execClaude(input, prompt, options, output.consumeLine);
 
     return output.finish(execution);
 }
@@ -85,22 +112,19 @@ function collectIterationOutput(input: ClaudeIterationInput): IterationOutput {
 function execClaude(
     input: ClaudeIterationInput,
     prompt: string,
+    options: ClaudeIterationOptions,
     onStdoutLine: LineListener,
 ): Promise<ContainerExecResult> {
-    const { container, request, deadlines, iteration } = input;
+    const { container, request, deadlines } = input;
 
-    return container.containers.exec(
-        container.containerId,
-        buildClaudeArgs(request, { iteration }),
-        {
-            env: agentEnvironment(container, request),
-            stdin: prompt,
-            timeoutMs: request.timeoutMs,
-            signal: deadlines.signal,
-            onStdoutLine,
-            onStderrLine: () => deadlines.restartIdleTimer(),
-        },
-    );
+    return container.containers.exec(container.containerId, buildClaudeArgs(request, options), {
+        env: agentEnvironment(container, request),
+        stdin: prompt,
+        timeoutMs: request.timeoutMs,
+        signal: deadlines.signal,
+        onStdoutLine,
+        onStderrLine: () => deadlines.restartIdleTimer(),
+    });
 }
 
 async function preparePrompt(input: ClaudeIterationInput): Promise<string> {

@@ -81,6 +81,18 @@ describe("buildClaudeArgs", () => {
         expect(lastIteration).toContain("--json-schema");
     });
 
+    it("sends the output schema on any iteration when asked to", () => {
+        const request = buildAgentRunRequest({
+            outputSchema: { type: "object" },
+            maxIterations: 3,
+            completionSignal: "<promise>COMPLETE</promise>",
+        });
+
+        const args = buildClaudeArgs(request, { iteration: 1, withOutputSchema: true });
+
+        expect(args).toContain("--json-schema");
+    });
+
     it("appends the tool arguments of the node", () => {
         const toolArgs = ["--allowedTools", "Read,Bash", "--strict-mcp-config"];
         const request = buildAgentRunRequest({ toolArgs });

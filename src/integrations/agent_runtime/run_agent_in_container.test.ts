@@ -260,6 +260,87 @@ describe("runAgentInContainer", () => {
         });
     });
 
+    describe("structured output after a completion signal", () => {
+        const request = buildAgentRunRequest({
+            prompt: "Faça o spike",
+            maxIterations: 30,
+            completionSignal: COMPLETION_SIGNAL,
+            outputSchema: OUTPUT_SCHEMA,
+        });
+
+        it("resumes the session with the schema when the signal comes before the last iteration", async () => {
+            const harness = createHarness();
+            harness.containers.whenExec(
+                isClaude,
+                claudeExec([
+                    assistantTextLine(`Relatório pronto ${COMPLETION_SIGNAL}`),
+                    resultLine({ result: "Recomendação: Colyseus", session_id: "sess-spike" }),
+                ]),
+                claudeExec([
+                    resultLine({
+                        result: "",
+                        session_id: "sess-spike",
+                        structured_output: { verdict: "approve" },
+                    }),
+                ]),
+            );
+
+            const result = await harness.run(request);
+
+            const [work, followUp] = harness.claudeExecs();
+            expect(work?.command).not.toContain("--json-schema");
+            expect(followUp?.command).toEqual(
+                expect.arrayContaining(["--resume", "sess-spike", "--json-schema"]),
+            );
+            expect(followUp?.options.stdin).toContain("saída estruturada");
+            expect(result.output).toEqual({ verdict: "approve" });
+            expect(result.summary).toBe("Recomendação: Colyseus");
+            expect(result.iterations).toBe(1);
+            expect(result.completionSignal).toBe(COMPLETION_SIGNAL);
+            expect(result.usage.inputTokens).toBe(20);
+        });
+
+        it("does not resume when the last iteration already got the schema", async () => {
+            const harness = createHarness();
+            harness.containers.whenExec(
+                isClaude,
+                claudeExec([resultLine({ structured_output: { verdict: "approve" } })]),
+            );
+
+            const result = await harness.run(
+                buildAgentRunRequest({ ...request, maxIterations: 1 }),
+            );
+
+            expect(harness.claudeExecs()).toHaveLength(1);
+            expect(result.output).toEqual({ verdict: "approve" });
+        });
+
+        it("rejects a follow-up that still does not match the schema", async () => {
+            const harness = createHarness();
+            harness.containers.whenExec(
+                isClaude,
+                claudeExec([assistantTextLine(COMPLETION_SIGNAL), resultLine()]),
+                claudeExec([resultLine({ structured_output: { verdict: "talvez" } })]),
+            );
+
+            await expect(harness.run(request)).rejects.toBeInstanceOf(StructuredOutputError);
+        });
+
+        it("fails with the agent's message when the follow-up fails", async () => {
+            const harness = createHarness();
+            harness.containers.whenExec(
+                isClaude,
+                claudeExec([assistantTextLine(COMPLETION_SIGNAL), resultLine()]),
+                claudeExec([resultLine({ is_error: true, result: "sessão não encontrada" })]),
+            );
+
+            const running = harness.run(request);
+
+            await expect(running).rejects.toBeInstanceOf(AgentRuntimeError);
+            await expect(running).rejects.toMatchObject({ message: "sessão não encontrada" });
+        });
+    });
+
     describe("iterations", () => {
         it("stops at the iteration where the completion signal appears, summing the usage", async () => {
             const harness = createHarness();
