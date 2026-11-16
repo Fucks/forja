@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import type { NodeType } from "@/shared/flow_graph.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
+import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
 
 export interface PaletteItem {
     type: NodeType;
@@ -13,14 +14,14 @@ export interface PaletteItem {
 }
 
 export const PALETTE_ITEMS: PaletteItem[] = [
-    paletteItem("trigger", "Início do fluxo (um por fluxo)", { singleton: true }),
-    paletteItem("source", "Busca itens (GitHub ou locais)"),
-    paletteItem("agent", "Prompt em contexto limpo no Claude Code"),
-    paletteItem("script", "Comando no workspace do item (ex.: testes)"),
-    paletteItem("condition", "Desvia por uma regra sobre os dados"),
-    paletteItem("gate", "Espera aprovação humana"),
-    paletteItem("git", "Rebase, push ou PR"),
-    paletteItem("output", "Fim: move o item no board"),
+    paletteItem("trigger", { singleton: true }),
+    paletteItem("source"),
+    paletteItem("agent"),
+    paletteItem("script"),
+    paletteItem("condition"),
+    paletteItem("gate"),
+    paletteItem("git"),
+    paletteItem("output"),
 ];
 
 export function filterPaletteItems(items: PaletteItem[], query: string): PaletteItem[] {
@@ -31,15 +32,11 @@ export function filterPaletteItems(items: PaletteItem[], query: string): Palette
     );
 }
 
-function paletteItem(
-    type: NodeType,
-    description: string,
-    options: { singleton?: boolean } = {},
-): PaletteItem {
+function paletteItem(type: NodeType, options: { singleton?: boolean } = {}): PaletteItem {
     return {
         type,
         label: NODE_TYPE_LABELS[type],
-        description,
+        description: getNodeDoc(type).tagline,
         icon: NODE_TYPE_ICONS[type],
         ...options,
     };
