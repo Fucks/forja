@@ -1,0 +1,42 @@
+<!-- Gerado por `npm run docs:nodes` a partir de src/web/docs/node_docs. Não edite à mão. -->
+
+# Nós da Forja
+
+Cada nó e cada grupo do editor de fluxos, por categoria.
+
+## Início
+
+- [Gatilho](trigger.md) — Ponto de partida: define quando o fluxo roda
+
+## Buscar trabalho
+
+- [Fonte](source.md) — Busca as issues do GitHub ou os itens locais a processar
+
+## IA
+
+- [Agente](agent.md) — Roda um prompt num Claude Code novo, sem memória dos outros nós
+
+## Executar
+
+- [Comando](script.md) — Roda um comando de terminal no workspace do item
+
+## Decidir
+
+- [Decisão](condition.md) — Se a regra for verdadeira, segue por Sim; senão, por Não
+
+## Humano
+
+- [Aprovação humana](gate.md) — Pausa o item até alguém aprovar ou rejeitar
+
+## Entrega
+
+- [Git](git.md) — Atualiza a branch do item, envia ou abre o PR
+
+## Fim
+
+- [Saída](output.md) — Encerra o caminho do item e diz onde ele fica no board
+
+## Grupos
+
+- [Map](map.md) — Processa cada item separadamente, vários ao mesmo tempo
+- [Loop](loop.md) — Repete os nós de dentro até a condição de parada valer

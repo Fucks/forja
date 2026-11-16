@@ -6,7 +6,8 @@ import tseslint from "typescript-eslint";
 
 const SOURCE_FILES = ["src/**/*.{ts,tsx}"];
 const E2E_FILES = ["e2e/**/*.ts", "playwright.config.ts"];
-const TYPED_FILES = [...SOURCE_FILES, ...E2E_FILES];
+const SCRIPT_FILES = ["scripts/**/*.ts"];
+const TYPED_FILES = [...SOURCE_FILES, ...E2E_FILES, ...SCRIPT_FILES];
 
 export default defineConfig(
     globalIgnores(["dist/", ".sandcastle/", "coverage/", "playwright-report/", "test-results/"]),

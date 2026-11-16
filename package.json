@@ -37,7 +37,8 @@
         "test:watch": "vitest",
         "test:integration": "vitest run --config vitest.integration.config.ts",
         "test:perf": "vitest run --config vitest.perf.config.ts",
-        "test:e2e": "playwright test"
+        "test:e2e": "playwright test",
+        "docs:nodes": "tsx scripts/generate_node_docs.ts"
     },
     "dependencies": {
         "@fastify/static": "^10.1.10",
