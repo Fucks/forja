@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import type { RenderResult } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import type { JSX } from "react";
@@ -11,10 +12,14 @@ import { buildMapGroup } from "@/test/factories/flow_graph_variations.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import { toReactFlow } from "@/web/canvas/graph_mapping.js";
+import { validateFlowGraph } from "@/engine/graph_validation.js";
 import { ImplicitItemOverlay } from "@/web/canvas/implicit_item_overlay.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
 import { NodeLiveContext, NodeLiveStore } from "@/web/canvas/nodes/node_live_context.js";
 import type { NodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
+import { summarizeIssues } from "@/web/canvas/use_validation.js";
+import type { IssuesByTarget } from "@/web/canvas/use_validation.js";
+import { ValidationOverlay } from "@/web/canvas/validation_overlay.js";
 
 const LOOP_GROUP: FlowGroup = {
     ...buildMapGroup("revisao"),
@@ -127,6 +132,32 @@ describe("canvas node components", () => {
         expect(screen.queryByText("automático")).not.toBeInTheDocument();
     });
 
+    it("marks an agent without prompt as missing configuration", () => {
+        const agent = buildNamedNode("agent");
+
+        renderOnCanvas({ nodes: [agent] }, { issuesByTarget: validate([agent]) });
+
+        expect(screen.getByText("falta configurar")).toBeInTheDocument();
+    });
+
+    it("removes the missing configuration badge once the prompt is filled", () => {
+        const agent = buildNamedNode("agent");
+        const { rerender } = renderOnCanvas(
+            { nodes: [agent] },
+            { issuesByTarget: validate([agent]) },
+        );
+
+        const configuredAgent = withPrompt(agent, "Implemente a issue {{item.title}}");
+        rerender(
+            <CanvasOf
+                graph={buildGraph({ nodes: [configuredAgent] })}
+                state={{ issuesByTarget: validate([configuredAgent]) }}
+            />,
+        );
+
+        expect(screen.queryByText("falta configurar")).not.toBeInTheDocument();
+    });
+
     it("shows the agent's workspace and iteration cap on the second line", () => {
         const agent = buildNamedNode("agent");
 
@@ -148,7 +179,7 @@ describe("canvas node components", () => {
             [agent.id, { status: "RUNNING", badge: "item #42" }],
         ]);
 
-        renderOnCanvas({ nodes: [agent] }, liveStates);
+        renderOnCanvas({ nodes: [agent] }, { liveStates });
 
         expect(screen.getByLabelText("Rodando")).toBeInTheDocument();
         expect(screen.getByText("item #42")).toBeInTheDocument();
@@ -163,9 +194,10 @@ describe("canvas node components", () => {
     });
 
     it("offers resize handles only on the selected group", () => {
-        renderOnCanvas({ groups: [MAP_GROUP, { ...MAP_GROUP, id: "other_map" }] }, undefined, [
-            MAP_GROUP.id,
-        ]);
+        renderOnCanvas(
+            { groups: [MAP_GROUP, { ...MAP_GROUP, id: "other_map" }] },
+            { selectedIds: [MAP_GROUP.id] },
+        );
 
         const resizableGroups = document.querySelectorAll(
             ".react-flow__node:has(.react-flow__resize-control)",
@@ -180,7 +212,7 @@ describe("canvas node components", () => {
             [MAP_GROUP.id, { progress: { queued: 1, running: 2, succeeded: 0, failed: 0 } }],
         ]);
 
-        renderOnCanvas({ groups: [MAP_GROUP] }, liveStates);
+        renderOnCanvas({ groups: [MAP_GROUP] }, { liveStates });
 
         expect(screen.getByText("2 rodando · 1 na fila")).toBeInTheDocument();
     });
@@ -196,6 +228,14 @@ function buildNamedNode(type: NodeType): FlowNode {
     }
 
     return node;
+}
+
+function withPrompt(node: FlowNode, prompt: string): FlowNode {
+    if (!isNodeOfType(node, "agent")) {
+        return node;
+    }
+
+    return { ...node, config: { ...node.config, prompt } };
 }
 
 function findPortRow(portLabel: HTMLElement): HTMLElement {
@@ -225,25 +265,43 @@ function IconOf({ type }: { type: NodeType }): JSX.Element {
     return <Icon />;
 }
 
-function renderOnCanvas(
-    elements: Partial<Pick<FlowGraph, "nodes" | "groups" | "edges">>,
-    liveStates = new Map<string, NodeLiveState>(),
-    selectedIds: string[] = [],
-): void {
-    const graph: FlowGraph = { schemaVersion: 1, nodes: [], groups: [], edges: [], ...elements };
+type GraphElements = Partial<Pick<FlowGraph, "nodes" | "groups" | "edges">>;
+
+interface CanvasState {
+    liveStates?: Map<string, NodeLiveState>;
+    selectedIds?: string[];
+    issuesByTarget?: IssuesByTarget;
+}
+
+function renderOnCanvas(elements: GraphElements, state: CanvasState = {}): RenderResult {
+    return render(<CanvasOf graph={buildGraph(elements)} state={state} />);
+}
+
+function CanvasOf({ graph, state }: { graph: FlowGraph; state: CanvasState }): JSX.Element {
+    const { liveStates = new Map(), selectedIds = [], issuesByTarget = new Map() } = state;
     const { nodes, edges } = toReactFlow(graph);
     const nodesWithSelection = nodes.map((node) => ({
         ...node,
         selected: selectedIds.includes(node.id),
     }));
 
-    render(
+    return (
         <NodeLiveContext.Provider value={new NodeLiveStore(liveStates)}>
             <ImplicitItemOverlay graph={graph}>
-                <ReactFlowProvider>
-                    <ReactFlow nodes={nodesWithSelection} edges={edges} nodeTypes={nodeTypes} />
-                </ReactFlowProvider>
+                <ValidationOverlay issuesByTarget={issuesByTarget}>
+                    <ReactFlowProvider>
+                        <ReactFlow nodes={nodesWithSelection} edges={edges} nodeTypes={nodeTypes} />
+                    </ReactFlowProvider>
+                </ValidationOverlay>
             </ImplicitItemOverlay>
-        </NodeLiveContext.Provider>,
+        </NodeLiveContext.Provider>
     );
+}
+
+function buildGraph(elements: GraphElements): FlowGraph {
+    return { schemaVersion: 1, nodes: [], groups: [], edges: [], ...elements };
+}
+
+function validate(nodes: FlowNode[]): IssuesByTarget {
+    return summarizeIssues(validateFlowGraph(buildGraph({ nodes }), {})).byTarget;
 }

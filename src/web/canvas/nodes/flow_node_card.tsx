@@ -10,7 +10,7 @@ import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import type { PortView } from "@/web/canvas/base/port_handle.js";
 import { describePort } from "@/web/canvas/base/port_label.js";
 import { ITEM_INPUT_PORT, useHasImplicitItem } from "@/web/canvas/implicit_item_overlay.js";
-import { ImplicitItemBadge } from "@/web/canvas/nodes/node_badges.js";
+import { ImplicitItemBadge, NeedsConfigBadge } from "@/web/canvas/nodes/node_badges.js";
 import { useNodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
 import { useTargetValidation } from "@/web/canvas/validation_overlay.js";
 import { nodeDocPath } from "@/web/config/navigation.js";
@@ -25,7 +25,7 @@ interface FlowNodeCardProps {
 
 export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JSX.Element {
     const { status, badge } = useNodeLiveState(node.id);
-    const { invalid, issueMessages } = useTargetValidation(node.id);
+    const { invalid, needsConfiguration, issueMessages } = useTargetValidation(node.id);
     const isCompact = useStore(isZoomedOut);
     const hasImplicitItem = useHasImplicitItem();
 
@@ -39,6 +39,7 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
             outputs={node.outputs.map((port) => describeNodePort(node, port))}
             status={status}
             badge={badge}
+            notice={needsConfiguration ? <NeedsConfigBadge /> : undefined}
             selected={selected}
             invalid={invalid}
             issueMessages={issueMessages}

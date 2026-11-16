@@ -36,7 +36,7 @@
 - [x] 7. `listNodesWithImplicitItem` + overlay context; `ImplicitItemBadge` on the item port inside a map
       and not outside — `implicit_item_overlay.tsx`, `node_badges.tsx`, `flow_node_card.tsx`,
       `flow_canvas.tsx`, `nodes.test.tsx`
-- [ ] 8. `needsConfiguration` in `useTargetValidation`; `NeedsConfigBadge` for an agent with an empty
+- [x] 8. `needsConfiguration` in `useTargetValidation`; `NeedsConfigBadge` for an agent with an empty
       prompt, gone once the prompt is filled — `validation_overlay.tsx`, `node_badges.tsx`,
       `base_node.tsx`, `flow_node_card.tsx`, `nodes.test.tsx`
 - [ ] 9. Badges hidden below zoom 0.6 — `flow_node_card.tsx`

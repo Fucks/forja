@@ -27,6 +27,8 @@ export interface BaseNodeProps {
     outputs: PortView[];
     status?: ExecutionStatus;
     badge?: ReactNode;
+    /** Shown above the summary, such as a badge about missing configuration. */
+    notice?: ReactNode;
     selected?: boolean;
     invalid?: boolean;
     /** Shown in the tooltip of the invalid marker. */
@@ -98,9 +100,10 @@ function DocumentationLink({ href, typeLabel }: { href: string; typeLabel: strin
     );
 }
 
-function NodeBody({ summary, inputs, outputs }: BaseNodeProps): JSX.Element {
+function NodeBody({ notice, summary, inputs, outputs }: BaseNodeProps): JSX.Element {
     return (
         <div className="flex flex-col gap-2 border-t border-border py-2">
+            {notice !== undefined && <div className="px-3">{notice}</div>}
             {summary !== undefined && (
                 <div className="px-3 font-mono text-xs text-muted">{summary}</div>
             )}
