@@ -133,3 +133,28 @@ Fonte de verdade de chaves, dependências e nomes de arquivos. 88 issues de agen
 - Após F-01: F-02, F-07 e FLW-01 desbloqueadas (F-03 → F-04 → F-05 seguem em cadeia por mexerem em scripts e no build). Após FLW-01: FLW-02, FLW-03, ENG-02 (e ENG-01 com F-07).
 - Ciclo central com fake: FLW-01 → ENG-01..ENG-10 → ENG-12 → OBS-01/OBS-03 → OBS-06 (demo).
 - O runtime próprio (RT-01 workspace Docker, RT-09 parser de stream-json, RT-04 limite de uso, depois RT-02 adaptador do Claude Code) anda em paralelo ao motor a partir de ENG-01.
+
+## Fase 12 — Experiência de criação de fluxos (épico #185)
+
+| Chave  | Título                                                                     | Fase | depends_on           | Arquivos principais |
+| ------ | -------------------------------------------------------------------------- | ---- | -------------------- | ------------------- |
+| UX-01  | Catálogo tipado de documentação dos nós e grupos                           | 12   | —                    | src/web/docs/node_docs/*.ts, src/web/canvas/palette/palette_items.ts, src/web/canvas/base/node_type_labels.ts |
+| UX-02  | Guia de nós e conceitos no app e markdown gerado em docs/nos               | 12   | UX-01                | src/web/app/docs/*, src/web/docs/node_doc_view.tsx, scripts/generate_node_docs.ts, src/web/app/routes.tsx |
+| UX-03  | Paleta por categorias, cartão, Map/Loop e adicionar a partir da porta      | 12   | UX-02                | src/web/canvas/palette/*, src/web/canvas/grouping.ts, src/web/canvas/flow_canvas.tsx |
+| UX-04  | Portas com nome, tipo e tooltip; selos                                     | 12   | UX-01                | src/web/canvas/base/port_handle.tsx, src/web/canvas/base/base_node.tsx, src/shared/flow_graph.ts, src/web/canvas/nodes/node_summary.ts |
+| UX-05  | Inspector padronizado com abas e ajuda por campo                           | 12   | UX-02                | src/web/canvas/inspector/node_inspector_frame.tsx, inspector_tabs.tsx, field_help.tsx, option_cards.tsx |
+| UX-06  | Espaço de nomes único de dados e migração para schemaVersion 2             | 12   | UX-04                | src/shared/data_context.ts, src/shared/migrate_flow_graph.ts, src/engine/upstream_outputs.ts, src/server/runtime/run_context.ts |
+| UX-07  | Modelo de dados disponíveis e DataPicker                                   | 12   | UX-06, UX-05         | src/engine/available_data.ts, src/shared/node_output_shapes.ts, src/web/canvas/inspector/data_picker.tsx |
+| UX-08  | Agente: Formato da resposta visual e Inserir dado                          | 12   | UX-07                | src/web/canvas/inspector/response_format.ts, response_format_editor.tsx, agent_inspector.tsx |
+| UX-09  | Decisão: operadores tipados, frase, Sim/Não e pré-visualização             | 12   | UX-07                | src/shared/conditions.ts, src/web/canvas/inspector/condition_*.ts(x) |
+| UX-10  | Comando no motor: isolado, env, falha, JSON e quoting                      | 12   | UX-07                | src/shared/node_configs/script_config.ts, src/server/runtime/executors/script_executor.ts, src/integrations/agent_runtime/agent_runtime.ts |
+| UX-11  | Comando no inspector: presets, env e controle de falha                     | 12   | UX-10, UX-09, UX-08  | src/web/canvas/inspector/script_inspector.tsx, script_presets.ts, env_list_editor.tsx |
+| UX-12  | Decisão com vários caminhos (switch)                                       | 12   | UX-11                | src/shared/node_configs/condition_config.ts, condition_executor.ts, condition_branches_editor.tsx |
+| UX-13  | Ajustes de Fonte, Gatilho, Aprovação, Git, Saída, Map e Loop               | 12   | UX-12                | src/server/flows/source_preview.ts, src/engine/validation_rules/git_rules.ts, inspectors |
+| UX-14  | Validação que ensina e primeiros passos                                    | 12   | UX-13, UX-03         | src/shared/validation_issue.ts, src/engine/validation_rules/*, src/web/canvas/empty_canvas.tsx, editor_tour.tsx |
+| UX-15  | E2E de autoria de fluxo                                                    | 12   | UX-14                | e2e/flow_authoring.spec.ts, e2e/pages/flow_editor_page.ts |
+| UX-16  | (humano) Teste de usabilidade com 3 pessoas leigas                         | 12   | —                    | (humano) |
+
+Pontos quentes: `src/shared/flow_graph.ts` (UX-04 → UX-06); `node_summary.ts` (UX-04 → UX-09 → UX-11 → UX-12);
+`prompt_editor.tsx` (UX-08 → UX-11); `validation_issues.ts` (UX-09 → UX-12 → UX-13 → UX-14); `node_defaults.ts`
+(UX-10 → UX-12). Paralelismo: UX-03/UX-04/UX-05 após UX-01/UX-02; UX-08/UX-09/UX-10 após UX-07.
