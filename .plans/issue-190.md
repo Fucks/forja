@@ -39,7 +39,7 @@
 - [x] 4. Optional `doc` on TextField/TextAreaField, SelectField/OptionalSelectField, IntegerField, InheritableSelect (+ `labelAddon` on `ui/field.tsx`)
 - [x] 5. `FieldHeading` and `SwitchField` — `field_heading.tsx`, `switch_field.tsx`
 - [x] 6. Test + implement `InspectorTabs` (switch tab, remembered per type, localStorage throwing) — `inspector_tabs.tsx`, `inspector_tabs.test.tsx`, `ui/tabs.tsx`
-- [ ] 7. `InspectorHeader` (icon, title, tagline, Documentação drawer, inline label) — `inspector_header.tsx`, `text_field.tsx`
+- [x] 7. `InspectorHeader` (icon, title, tagline, Documentação drawer, inline label) — `inspector_header.tsx`, `text_field.tsx`
 - [ ] 8. `AdvancedSection`, `InspectorFields`, and `NodeInspectorFrame`/`InspectorFrame` with header and tabs (Ajuda = NodeDocView; Dados placeholder) — `advanced_section.tsx`, `inspector_section.tsx`, `node_inspector_frame.tsx`
 - [ ] 9. Migrate trigger, source (provider OptionCards), script (timeout in Avançado), condition, gate inspectors — and their tests
 - [ ] 10. Migrate git (action OptionCards, bodyFrom in Avançado) and output (destination OptionCards) inspectors — and their tests

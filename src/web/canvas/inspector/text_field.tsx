@@ -60,6 +60,25 @@ export function TextAreaField({
     );
 }
 
+// A text input without a visible label, for where the surroundings already say what it is.
+export function InlineTextInput({
+    label,
+    text,
+    onChange,
+}: {
+    label: string;
+    text: string;
+    onChange: (text: string) => void;
+}): JSX.Element {
+    return (
+        <Input
+            aria-label={label}
+            defaultValue={text}
+            onBlur={(event) => applyChangedText(event.target.value, text, onChange)}
+        />
+    );
+}
+
 export function toOptionalText(text: string): string | undefined {
     return text.trim() || undefined;
 }
