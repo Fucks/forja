@@ -1,5 +1,6 @@
 import { useStore } from "@xyflow/react";
 import type { ReactFlowState } from "@xyflow/react";
+import { useState } from "react";
 import type { JSX, ReactNode } from "react";
 
 import type { FlowNode, Port } from "@/shared/flow_graph.js";
@@ -13,7 +14,7 @@ import { ITEM_INPUT_PORT, useHasImplicitItem } from "@/web/canvas/implicit_item_
 import { ImplicitItemBadge, NeedsConfigBadge } from "@/web/canvas/nodes/node_badges.js";
 import { useNodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
 import { useTargetValidation } from "@/web/canvas/validation_overlay.js";
-import { nodeDocPath } from "@/web/config/navigation.js";
+import { NodeDocDrawer } from "@/web/docs/node_doc_drawer.js";
 
 const COMPACT_ZOOM_THRESHOLD = 0.5;
 const BADGE_ZOOM_THRESHOLD = 0.6;
@@ -31,24 +32,32 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
     const areBadgesVisible = useStore(isZoomedInEnoughForBadges);
     const showsImplicitItemBadge = useHasImplicitItem() && areBadgesVisible;
     const showsNeedsConfigBadge = needsConfiguration && areBadgesVisible;
+    const [isDocumentationOpen, setIsDocumentationOpen] = useState(false);
 
     return (
-        <BaseNode
-            typeIcon={NODE_TYPE_ICONS[node.type]}
-            typeLabel={NODE_TYPE_LABELS[node.type]}
-            label={node.label}
-            summary={summary}
-            inputs={describeInputs(node, { showsImplicitItemBadge })}
-            outputs={node.outputs.map((port) => describeNodePort(node, port))}
-            status={status}
-            badge={badge}
-            notice={showsNeedsConfigBadge ? <NeedsConfigBadge /> : undefined}
-            selected={selected}
-            invalid={invalid}
-            issueMessages={issueMessages}
-            documentationHref={nodeDocPath(node.type)}
-            compact={isCompact}
-        />
+        <>
+            <BaseNode
+                typeIcon={NODE_TYPE_ICONS[node.type]}
+                typeLabel={NODE_TYPE_LABELS[node.type]}
+                label={node.label}
+                summary={summary}
+                inputs={describeInputs(node, { showsImplicitItemBadge })}
+                outputs={node.outputs.map((port) => describeNodePort(node, port))}
+                status={status}
+                badge={badge}
+                notice={showsNeedsConfigBadge ? <NeedsConfigBadge /> : undefined}
+                selected={selected}
+                invalid={invalid}
+                issueMessages={issueMessages}
+                onShowDocumentation={() => setIsDocumentationOpen(true)}
+                compact={isCompact}
+            />
+            <NodeDocDrawer
+                type={node.type}
+                open={isDocumentationOpen}
+                onOpenChange={setIsDocumentationOpen}
+            />
+        </>
     );
 }
 

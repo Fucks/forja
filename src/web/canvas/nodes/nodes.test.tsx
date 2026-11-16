@@ -3,6 +3,7 @@ import type { RenderResult } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import type { JSX } from "react";
+import { MemoryRouter } from "react-router";
 
 import { isNodeOfType, NODE_TYPES } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, FlowNode, NodeType } from "@/shared/flow_graph.js";
@@ -95,11 +96,14 @@ describe("canvas node components", () => {
         expect(tooltip).toHaveTextContent("result · JSON · obrigatória");
     });
 
-    it.each(NODE_TYPES)("opens the documentation of the %s node from its header", (type) => {
-        renderOnCanvas({ nodes: [buildNamedNode(type)] });
+    it("opens the documentation of the node type from its header", async () => {
+        const user = userEvent.setup();
+        renderOnCanvas({ nodes: [buildNamedNode("condition")] });
 
-        const link = screen.getByLabelText(`Documentação de ${NODE_TYPE_LABELS[type]}`);
-        expect(link).toHaveAttribute("href", `/docs/nodes/${type}`);
+        await user.click(screen.getByLabelText("Documentação de Decisão"));
+
+        const drawer = await screen.findByRole("dialog", { name: "Documentação do nó" });
+        expect(within(drawer).getByRole("heading", { name: "Decisão" })).toBeInTheDocument();
     });
 
     it("marks the unwired item of a node inside a map as automatic", () => {
@@ -304,20 +308,22 @@ function CanvasOf({ graph, state }: { graph: FlowGraph; state: CanvasState }): J
     }));
 
     return (
-        <NodeLiveContext.Provider value={new NodeLiveStore(liveStates)}>
-            <ImplicitItemOverlay graph={graph}>
-                <ValidationOverlay issuesByTarget={issuesByTarget}>
-                    <ReactFlowProvider>
-                        <ReactFlow
-                            nodes={nodesWithSelection}
-                            edges={edges}
-                            nodeTypes={nodeTypes}
-                            defaultViewport={{ x: 0, y: 0, zoom }}
-                        />
-                    </ReactFlowProvider>
-                </ValidationOverlay>
-            </ImplicitItemOverlay>
-        </NodeLiveContext.Provider>
+        <MemoryRouter>
+            <NodeLiveContext.Provider value={new NodeLiveStore(liveStates)}>
+                <ImplicitItemOverlay graph={graph}>
+                    <ValidationOverlay issuesByTarget={issuesByTarget}>
+                        <ReactFlowProvider>
+                            <ReactFlow
+                                nodes={nodesWithSelection}
+                                edges={edges}
+                                nodeTypes={nodeTypes}
+                                defaultViewport={{ x: 0, y: 0, zoom }}
+                            />
+                        </ReactFlowProvider>
+                    </ValidationOverlay>
+                </ImplicitItemOverlay>
+            </NodeLiveContext.Provider>
+        </MemoryRouter>
     );
 }
 

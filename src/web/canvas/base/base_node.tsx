@@ -6,12 +6,12 @@ import { InvalidMarker, outlineClasses } from "@/web/canvas/base/canvas_outline.
 import { PortHandle } from "@/web/canvas/base/port_handle.js";
 import type { PortView } from "@/web/canvas/base/port_handle.js";
 import { cn } from "@/web/components/ui/cn.js";
+import { IconButton } from "@/web/components/ui/icon_button.js";
 import { EXECUTION_STATUS_STYLES } from "@/web/components/ui/execution_status.js";
 import type { ExecutionStatus } from "@/web/components/ui/execution_status.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 
 const TYPE_ICON_SIZE_PX = 16;
-const DOCUMENTATION_ICON_SIZE_PX = 14;
 
 interface InputPort extends PortView {
     required: boolean;
@@ -33,8 +33,7 @@ export interface BaseNodeProps {
     invalid?: boolean;
     /** Shown in the tooltip of the invalid marker. */
     issueMessages?: string[];
-    /** Until the documentation drawer exists, the ? button opens the docs page in a new tab. */
-    documentationHref?: string;
+    onShowDocumentation?: () => void;
     /** Zoom below 50%: only the header is drawn. */
     compact?: boolean;
 }
@@ -67,7 +66,7 @@ function NodeHeader({
     badge,
     invalid,
     issueMessages,
-    documentationHref,
+    onShowDocumentation,
 }: BaseNodeProps): JSX.Element {
     return (
         <header className="flex items-center gap-2 px-3 py-2">
@@ -79,24 +78,15 @@ function NodeHeader({
             {invalid && <InvalidMarker messages={issueMessages} />}
             {badge !== undefined && <span className="font-mono text-xs text-muted">{badge}</span>}
             {status && <StatusBadge status={status} size="sm" showLabel={false} />}
-            {documentationHref !== undefined && (
-                <DocumentationLink href={documentationHref} typeLabel={typeLabel} />
+            {onShowDocumentation && (
+                <IconButton
+                    label={`Documentação de ${typeLabel}`}
+                    icon={CircleHelp}
+                    onClick={onShowDocumentation}
+                    className="nodrag h-6 shrink-0 text-muted"
+                />
             )}
         </header>
-    );
-}
-
-function DocumentationLink({ href, typeLabel }: { href: string; typeLabel: string }): JSX.Element {
-    return (
-        <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`Documentação de ${typeLabel}`}
-            className="shrink-0 rounded-sm text-muted hover:text-text"
-        >
-            <CircleHelp size={DOCUMENTATION_ICON_SIZE_PX} aria-hidden="true" />
-        </a>
     );
 }
 

@@ -15,8 +15,10 @@
   `target.kind === "node"`). The badge is a plain element inside the node, so clicking it selects the
   node through React Flow, and the inspector shows the selected node.
 - Badges hide below zoom 0.6 (`BADGE_ZOOM_THRESHOLD` in `flow_node_card.tsx`).
-- `?` is a link to `nodeDocPath(type)` (`/docs/nodes/:type`, new helper in `src/web/config/navigation.ts`)
-  opened in a new tab, until `NodeDocDrawer` (#187) exists. `aria-label="Documentação de <typeLabel>"`.
+- Branch rebased on `origin/development`, which has #187: reuse its `PORT_TYPE_ICONS`
+  (`port_type_icons.ts`), `PORT_TYPE_LABELS` (`port_type_labels.ts`) and `NodeDocDrawer`.
+- `?` is an `IconButton` (`nodrag`) with `aria-label="Documentação de <typeLabel>"`; `BaseNode` takes
+  `onShowDocumentation`, and `FlowNodeCard` opens `NodeDocDrawer` for its type.
 - `PORT_DESCRIPTION_MAX_LENGTH = 200` exported from `flow_graph.ts`; port key order
   `name, type, required, description, schema`.
 
@@ -43,4 +45,7 @@
 - [x] 10. Natural-language summaries for source, output and trigger — `node_summary.ts`,
       `node_summary.test.ts`, `nodes.test.tsx`
 - [x] 11. "Descrição" field for user ports in the inspector — `port_list_editor.tsx` (+ its test if any)
+- [x] 12a. Adapt to #187 on development: drop the duplicate `nodeDocPath`, read `PORT_TYPE_LABELS`
+      from `port_type_labels.ts`, `?` opens `NodeDocDrawer` — `base_node.tsx`, `flow_node_card.tsx`,
+      `port_handle.tsx`, `navigation.ts`, tests
 - [ ] 12. Self-review checklist and feedback loops (typecheck, lint, test)

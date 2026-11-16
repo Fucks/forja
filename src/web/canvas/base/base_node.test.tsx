@@ -106,12 +106,14 @@ describe("BaseNode", () => {
         expect(screen.getByRole("img", { name: "Configuração inválida" })).toBeInTheDocument();
     });
 
-    it("links the header to the documentation of the node type", () => {
-        renderInFlow(<BaseNode {...AGENT_NODE} documentationHref="/docs/nodes/agent" />);
+    it("asks for the documentation of the node type from the header", async () => {
+        const user = userEvent.setup();
+        const showDocumentation = vi.fn();
+        renderInFlow(<BaseNode {...AGENT_NODE} onShowDocumentation={showDocumentation} />);
 
-        const link = screen.getByRole("link", { name: "Documentação de Agente" });
-        expect(link).toHaveAttribute("href", "/docs/nodes/agent");
-        expect(link).toHaveAttribute("target", "_blank");
+        await user.click(screen.getByRole("button", { name: "Documentação de Agente" }));
+
+        expect(showDocumentation).toHaveBeenCalledOnce();
     });
 
     it("hides the summary and the ports in compact mode", () => {

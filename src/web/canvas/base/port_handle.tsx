@@ -3,7 +3,8 @@ import type { HandleType } from "@xyflow/react";
 import type { JSX, ReactNode } from "react";
 
 import type { PortType } from "@/shared/flow_graph.js";
-import { PORT_TYPE_ICONS, PORT_TYPE_LABELS } from "@/web/canvas/base/port_type_icons.js";
+import { PORT_TYPE_ICONS } from "@/web/canvas/base/port_type_icons.js";
+import { PORT_TYPE_LABELS } from "@/web/canvas/base/port_type_labels.js";
 import { type PortHint, usePortHint } from "@/web/canvas/connection_hints.js";
 import { cn } from "@/web/components/ui/cn.js";
 import { Tooltip } from "@/web/components/ui/tooltip.js";
