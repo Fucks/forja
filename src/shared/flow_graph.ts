@@ -23,11 +23,13 @@ export const PORT_TYPES = [
 export type PortType = (typeof PORT_TYPES)[number];
 
 const PORT_NAME_PATTERN = /^[a-z][a-zA-Z0-9_]*$/;
+export const PORT_DESCRIPTION_MAX_LENGTH = 200;
 
 export const portSchema = z.object({
     name: z.string().regex(PORT_NAME_PATTERN),
     type: z.enum(PORT_TYPES),
     required: z.boolean().default(true),
+    description: z.string().max(PORT_DESCRIPTION_MAX_LENGTH).optional(),
     schema: jsonSchemaSchema.optional(),
 });
 export type Port = z.infer<typeof portSchema>;

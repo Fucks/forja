@@ -1,4 +1,11 @@
-import type { FlowEdge, FlowGraph, FlowGroup, FlowNode, Position } from "@/shared/flow_graph.js";
+import type {
+    FlowEdge,
+    FlowGraph,
+    FlowGroup,
+    FlowNode,
+    Port,
+    Position,
+} from "@/shared/flow_graph.js";
 import { withKeysInOrder } from "@/shared/with_keys_in_order.js";
 
 const GRAPH_KEY_ORDER = ["schemaVersion", "nodes", "groups", "edges"] as const;
@@ -12,6 +19,7 @@ const NODE_KEY_ORDER = [
     "outputs",
     "config",
 ] as const;
+const PORT_KEY_ORDER = ["name", "type", "required", "description", "schema"] as const;
 const GROUP_KEY_ORDER = [
     "id",
     "kind",
@@ -62,7 +70,18 @@ function compareEdgeEnds(a: FlowEdge, b: FlowEdge): number {
 }
 
 function normalizeNode(node: FlowNode): FlowNode {
-    return withKeysInOrder({ ...node, position: roundPosition(node.position) }, NODE_KEY_ORDER);
+    const normalizedNode = {
+        ...node,
+        position: roundPosition(node.position),
+        inputs: node.inputs.map(normalizePort),
+        outputs: node.outputs.map(normalizePort),
+    };
+
+    return withKeysInOrder(normalizedNode, NODE_KEY_ORDER);
+}
+
+function normalizePort(port: Port): Port {
+    return withKeysInOrder(port, PORT_KEY_ORDER);
 }
 
 function normalizeGroup(group: FlowGroup): FlowGroup {

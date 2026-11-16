@@ -22,7 +22,7 @@
 
 ## Tasks
 
-- [ ] 1. `portSchema.description` + port key order in `normalizeFlowGraph`; YAML round trip test —
+- [x] 1. `portSchema.description` + port key order in `normalizeFlowGraph`; YAML round trip test —
       `src/shared/flow_graph.ts`, `src/shared/normalize_flow_graph.ts`, `src/server/flows/flow_yaml.test.ts`
 - [ ] 2. `PORT_TYPE_ICONS` / `PORT_TYPE_LABELS` — `src/web/canvas/base/port_type_icons.ts`
 - [ ] 3. Test + implement `describePort` — `src/web/canvas/base/port_label.ts`, `port_label.test.ts`
