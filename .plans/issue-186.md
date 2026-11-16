@@ -14,11 +14,11 @@
 
 ## Tasks
 
-- [ ] 1. Types `NodeDoc`/`PortDoc`/`FieldDoc`/`NodeExample`/`NODE_CATEGORIES` — `node_doc.ts`
-- [ ] 2. Docs for trigger, source, agent, script — `*_doc.ts`
-- [ ] 3. Docs for condition, gate, git, output — `*_doc.ts`
-- [ ] 4. Docs for map and loop groups — `map_doc.ts`, `loop_doc.ts`
-- [ ] 5. Index `NODE_DOCS`, `getNodeDoc`, `CATEGORY_LABELS` — `node_docs.ts`
+- [x] 1. Types `NodeDoc`/`PortDoc`/`FieldDoc`/`NodeExample`/`NODE_CATEGORIES` — `node_doc.ts`
+- [x] 2. Docs for trigger, source, agent, script — `*_doc.ts`
+- [x] 3. Docs for condition, gate, git, output — `*_doc.ts`
+- [x] 4. Docs for map and loop groups — `map_doc.ts`, `loop_doc.ts`
+- [x] 5. Index `NODE_DOCS`, `getNodeDoc`, `CATEGORY_LABELS` — `node_docs.ts`
 - [ ] 6. Completeness test (fields, ports, enum options, tagline/examples/pitfalls) plus the
       deliberately incomplete doc case — `node_docs.test.ts`
 - [ ] 7. `NODE_TYPE_LABELS` derives from the catalog — `node_type_labels.ts`
