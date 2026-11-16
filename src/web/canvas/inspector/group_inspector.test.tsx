@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 import type { Mock } from "vitest";
 
 import type { FlowGraph, FlowGroup } from "@/shared/flow_graph.js";
@@ -10,6 +11,32 @@ type GroupUpdate = (group: FlowGroup) => FlowGroup;
 type GroupChangeSpy = Mock<(update: GroupUpdate) => void>;
 
 const LOOP_FLOW = buildLoopFlow();
+
+beforeEach(() => {
+    localStorage.clear();
+});
+
+describe.each([
+    { kind: "map", groupId: "items", title: "Map" },
+    { kind: "loop", groupId: "review_loop", title: "Loop" },
+])("GroupInspector header and tabs of a $kind", ({ groupId, title }) => {
+    it("has the editable label, the documentation button and the ⓘ help", () => {
+        renderGroupInspector(groupId);
+
+        expect(screen.getByRole("textbox", { name: "Rótulo" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Documentação" })).toBeInTheDocument();
+        expect(screen.getAllByRole("button", { name: /^Ajuda sobre / }).length).toBeGreaterThan(0);
+    });
+
+    it("shows the group documentation in the Ajuda tab", async () => {
+        renderGroupInspector(groupId);
+
+        await userEvent.click(screen.getByRole("tab", { name: "Ajuda" }));
+
+        const helpPanel = screen.getByRole("tabpanel", { name: "Ajuda" });
+        expect(within(helpPanel).getByRole("heading", { name: title })).toBeInTheDocument();
+    });
+});
 
 describe("GroupInspector of a map", () => {
     it("tells how many items run at the same time", () => {
@@ -116,7 +143,9 @@ describe("GroupInspector of a loop", () => {
 function renderGroupInspector(groupId: string, graph: FlowGraph = LOOP_FLOW): GroupChangeSpy {
     const onChange: GroupChangeSpy = vi.fn();
     render(
-        <GroupInspector group={findGroupIn(graph, groupId)} graph={graph} onChange={onChange} />,
+        <MemoryRouter>
+            <GroupInspector group={findGroupIn(graph, groupId)} graph={graph} onChange={onChange} />
+        </MemoryRouter>,
     );
 
     return onChange;

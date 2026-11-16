@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import type { Mock } from "vitest";
@@ -10,6 +10,7 @@ import {
     connect,
     createNodeOfType,
 } from "@/test/factories/flow_graph_factory.js";
+import { renderWithQueryClient } from "@/test/render_with_query_client.js";
 import { inspectorRegistry } from "@/web/canvas/inspector/inspector_registry.js";
 import type { InspectorComponent } from "@/web/canvas/inspector/inspector_registry.js";
 import { ConditionInspector } from "@/web/canvas/inspector/condition_inspector.js";
@@ -19,6 +20,7 @@ import { OutputInspector } from "@/web/canvas/inspector/output_inspector.js";
 import { ScriptInspector } from "@/web/canvas/inspector/script_inspector.js";
 import { SourceInspector } from "@/web/canvas/inspector/source_inspector.js";
 import { TriggerInspector } from "@/web/canvas/inspector/trigger_inspector.js";
+import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
 
 type NodeUpdate = (node: FlowNode) => FlowNode;
 type NodeChangeSpy = Mock<(update: NodeUpdate) => void>;
@@ -26,6 +28,10 @@ type NodeChangeSpy = Mock<(update: NodeUpdate) => void>;
 const GRAPH = buildCanonicalFlow();
 const ORIGIN = { x: 0, y: 0 };
 const PROJECT_ID = "forja";
+
+beforeEach(() => {
+    localStorage.clear();
+});
 
 describe("SourceInspector", () => {
     it("applies a limit within 1 and 100", async () => {
@@ -259,7 +265,46 @@ describe("inspectorRegistry", () => {
     });
 });
 
+describe.each(NODE_TYPES)("the %s inspector", (type) => {
+    const doc = getNodeDoc(type);
+
+    it("has a header with the editable label, the title, the tagline and the documentation", () => {
+        const node = createNodeOfType(type, "node", ORIGIN);
+
+        renderInspector(inspectorRegistry[type], node);
+
+        expect(screen.getByRole("textbox", { name: "Rótulo" })).toHaveValue(node.label);
+        expect(screen.getByText(doc.tagline).closest("p")).toHaveTextContent(doc.title);
+        expect(screen.getByRole("button", { name: "Documentação" })).toBeInTheDocument();
+    });
+
+    it("has the ⓘ help on its fields", () => {
+        renderInspector(inspectorRegistry[type], createNodeOfType(type, "node", ORIGIN));
+
+        expect(screen.getAllByRole("button", { name: /^Ajuda sobre / }).length).toBeGreaterThan(0);
+    });
+
+    it("shows the node documentation in the Ajuda tab", async () => {
+        renderInspector(inspectorRegistry[type], createNodeOfType(type, "node", ORIGIN));
+
+        await userEvent.click(screen.getByRole("tab", { name: "Ajuda" }));
+
+        const helpPanel = screen.getByRole("tabpanel", { name: "Ajuda" });
+        expect(within(helpPanel).getByRole("heading", { name: doc.title })).toBeInTheDocument();
+        expect(within(helpPanel).getByRole("heading", { name: "O que faz" })).toBeInTheDocument();
+    });
+});
+
 describe("every inspector", () => {
+    it("opens the node documentation in a drawer", async () => {
+        renderInspector(ScriptInspector, createNodeOfType("script", "tests", ORIGIN));
+
+        await userEvent.click(screen.getByRole("button", { name: "Documentação" }));
+
+        const drawer = screen.getByRole("dialog", { name: "Documentação do nó" });
+        expect(within(drawer).getByRole("heading", { name: "Comando" })).toBeInTheDocument();
+    });
+
     it("renames the node when the label loses focus", async () => {
         const script = createNodeOfType("script", "tests", ORIGIN);
         const inspector = renderInspector(ScriptInspector, script);
@@ -281,7 +326,7 @@ function renderInspector(
     graph: FlowGraph = GRAPH,
 ): RenderedInspector {
     const onChange: NodeChangeSpy = vi.fn();
-    render(
+    renderWithQueryClient(
         <MemoryRouter initialEntries={[`/projects/${PROJECT_ID}/flows/flow`]}>
             <Routes>
                 <Route

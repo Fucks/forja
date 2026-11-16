@@ -38,7 +38,8 @@ export function InspectorHeader({
                 <DocumentationButton type={type} />
             </div>
             <p className="truncate text-xs text-muted" title={doc.tagline}>
-                <span className="font-medium text-text">{doc.title}</span> · {doc.tagline}
+                <span className="font-medium text-text">{doc.title}</span> ·{" "}
+                <span>{doc.tagline}</span>
             </p>
         </header>
     );
