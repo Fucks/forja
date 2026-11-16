@@ -42,5 +42,5 @@
 - [x] 9. Badges hidden below zoom 0.6 — `flow_node_card.tsx`
 - [x] 10. Natural-language summaries for source, output and trigger — `node_summary.ts`,
       `node_summary.test.ts`, `nodes.test.tsx`
-- [ ] 11. "Descrição" field for user ports in the inspector — `port_list_editor.tsx` (+ its test if any)
+- [x] 11. "Descrição" field for user ports in the inspector — `port_list_editor.tsx` (+ its test if any)
 - [ ] 12. Self-review checklist and feedback loops (typecheck, lint, test)

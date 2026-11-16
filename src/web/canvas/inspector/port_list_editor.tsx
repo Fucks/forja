@@ -2,7 +2,7 @@ import { Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 import type { FormEvent, JSX } from "react";
 
-import { PORT_TYPES, portSchema } from "@/shared/flow_graph.js";
+import { PORT_DESCRIPTION_MAX_LENGTH, PORT_TYPES, portSchema } from "@/shared/flow_graph.js";
 import type { Port, PortType } from "@/shared/flow_graph.js";
 import { Button } from "@/web/components/ui/button.js";
 import { Field } from "@/web/components/ui/field.js";
@@ -58,7 +58,9 @@ function NewPortForm({
 }): JSX.Element {
     const nameId = useId();
     const typeId = useId();
+    const descriptionId = useId();
     const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
     const [type, setType] = useState<PortType>(DEFAULT_PORT_TYPE);
     const [isRequired, setIsRequired] = useState(true);
     const [nameError, setNameError] = useState<string>();
@@ -71,8 +73,9 @@ function NewPortForm({
             return;
         }
 
-        onAdd({ name, type, required: isRequired });
+        onAdd(buildPort({ name, type, required: isRequired }, description));
         setName("");
+        setDescription("");
         setNameError(undefined);
     }
 
@@ -84,6 +87,13 @@ function NewPortForm({
             <Field label="Tipo" htmlFor={typeId}>
                 <Select value={type} options={PORT_TYPE_OPTIONS} onChange={setType} />
             </Field>
+            <Field label="Descrição" htmlFor={descriptionId}>
+                <Input
+                    value={description}
+                    maxLength={PORT_DESCRIPTION_MAX_LENGTH}
+                    onChange={(event) => setDescription(event.target.value)}
+                />
+            </Field>
             <Switch label="Obrigatória" checked={isRequired} onChange={setIsRequired} />
             <div>
                 <Button type="submit" size="sm">
@@ -92,6 +102,16 @@ function NewPortForm({
             </div>
         </form>
     );
+}
+
+// A port without description leaves the key out, so the exported YAML does not show it empty.
+function buildPort(port: Omit<Port, "description">, description: string): Port {
+    const trimmedDescription = description.trim();
+    if (trimmedDescription === "") {
+        return port;
+    }
+
+    return { ...port, description: trimmedDescription };
 }
 
 function findPortNameError(name: string, usedNames: string[]): string | undefined {
