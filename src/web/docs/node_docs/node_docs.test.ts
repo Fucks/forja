@@ -16,7 +16,7 @@ import { scriptConfigSchema } from "@/shared/node_configs/script_config.js";
 import { sourceConfigSchema } from "@/shared/node_configs/source_config.js";
 import { triggerConfigSchema } from "@/shared/node_configs/trigger_config.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
-import type { DocumentedType, NodeDoc, PortDoc } from "@/web/docs/node_docs/node_doc.js";
+import type { DocumentedType, GroupKind, NodeDoc, PortDoc } from "@/web/docs/node_docs/node_doc.js";
 import { getNodeDoc, NODE_DOCS } from "@/web/docs/node_docs/node_docs.js";
 
 type PortSignature = Pick<PortDoc, "name" | "type" | "required">;
@@ -44,7 +44,7 @@ const CONFIG_SCHEMAS: Record<DocumentedType, z.ZodObject> = {
     loop: loopConfigSchema,
 };
 
-const GROUP_PORTS: Record<(typeof GROUP_KINDS)[number], ExpectedPorts> = {
+const GROUP_PORTS: Record<GroupKind, ExpectedPorts> = {
     map: { inputs: [], outputs: [] },
     loop: {
         inputs: [],
