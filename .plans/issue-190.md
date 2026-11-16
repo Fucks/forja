@@ -33,7 +33,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `FieldHelp` (description, default, options; Esc closes) — `field_help.tsx`, `field_help.test.tsx`
+- [x] 1. Test + implement `FieldHelp` (description, default, options; Esc closes) — `field_help.tsx`, `field_help.test.tsx`
 - [ ] 2. Test + implement `OptionCards` (radiogroup, arrows, onChange) — `option_cards.tsx`, `option_cards.test.tsx`
 - [ ] 3. `fieldDoc` and `fieldOptionCards` helpers with tests — `field_doc.ts`, `field_doc.test.ts`
 - [ ] 4. Optional `doc` on TextField/TextAreaField, SelectField/OptionalSelectField, IntegerField, InheritableSelect (+ `labelAddon` on `ui/field.tsx`)
