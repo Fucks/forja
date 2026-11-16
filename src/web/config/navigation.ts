@@ -1,4 +1,5 @@
 import {
+    BookOpen,
     ClipboardCheck,
     FolderKanban,
     Gauge,
@@ -57,6 +58,7 @@ export const GLOBAL_NAV: GlobalNavItem[] = [
     { id: "credentials", label: "Credenciais", icon: KeyRound, path: "/settings/credentials" },
     { id: "tool-profiles", label: "Ferramentas", icon: Wrench, path: "/settings/tool-profiles" },
     { id: "diagnostics", label: "Diagnóstico", icon: Stethoscope, path: "/settings/diagnostics" },
+    { id: "docs", label: "Documentação", icon: BookOpen, path: NODE_DOCS_PATH },
 ];
 
 export function nodeDocPath(type: string): string {
