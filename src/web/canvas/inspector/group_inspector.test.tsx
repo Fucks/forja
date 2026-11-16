@@ -21,7 +21,7 @@ describe("GroupInspector of a map", () => {
     it("raises the concurrency with the slider", async () => {
         const onChange = renderGroupInspector("items");
 
-        screen.getByRole("slider", { name: "Concorrência" }).focus();
+        screen.getByRole("slider", { name: "Itens em paralelo" }).focus();
         await userEvent.keyboard("{ArrowRight}");
 
         expect(applyLastUpdate(onChange, "items").config).toMatchObject({ concurrency: 3 });
@@ -30,7 +30,7 @@ describe("GroupInspector of a map", () => {
     it("makes the map wait for every item", async () => {
         const onChange = renderGroupInspector("items");
 
-        await userEvent.click(screen.getByRole("switch", { name: "Esperar todos (barreira)" }));
+        await userEvent.click(screen.getByRole("switch", { name: "Esperar todos" }));
 
         expect(applyLastUpdate(onChange, "items").config).toMatchObject({ barrier: true });
     });
@@ -38,9 +38,7 @@ describe("GroupInspector of a map", () => {
     it("makes the map stop every item on the first failure", async () => {
         const onChange = renderGroupInspector("items");
 
-        await userEvent.click(
-            screen.getByRole("switch", { name: "Parar todos na primeira falha" }),
-        );
+        await userEvent.click(screen.getByRole("switch", { name: "Parar na primeira falha" }));
 
         expect(applyLastUpdate(onChange, "items").config).toMatchObject({ failFast: true });
     });
@@ -60,7 +58,7 @@ describe("GroupInspector of a loop", () => {
     it("applies an iteration cap within 1 and 50", async () => {
         const onChange = renderGroupInspector("review_loop");
 
-        await replaceFieldText(screen.getByRole("spinbutton", { name: "Teto de iterações" }), "8");
+        await replaceFieldText(screen.getByRole("spinbutton", { name: "Máximo de voltas" }), "8");
 
         expect(applyLastUpdate(onChange, "review_loop").config).toMatchObject({
             maxIterations: 8,
@@ -70,7 +68,7 @@ describe("GroupInspector of a loop", () => {
     it("refuses an iteration cap above 50", async () => {
         const onChange = renderGroupInspector("review_loop");
 
-        await replaceFieldText(screen.getByRole("spinbutton", { name: "Teto de iterações" }), "51");
+        await replaceFieldText(screen.getByRole("spinbutton", { name: "Máximo de voltas" }), "51");
 
         expect(screen.getByText("Use um número inteiro entre 1 e 50.")).toBeInTheDocument();
         expect(onChange).not.toHaveBeenCalled();

@@ -7,6 +7,8 @@ import { loopConfigSchema, MAX_LOOP_ITERATIONS, MIN_LOOP_ITERATIONS } from "@/sh
 import type { FlowGraph, LoopConfig } from "@/shared/flow_graph.js";
 import { ConditionEditor } from "@/web/canvas/inspector/condition_editor.js";
 import { listGroupOutputPaths } from "@/web/canvas/inspector/condition_suggestions.js";
+import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
+import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
 import { Switch } from "@/web/components/ui/switch.js";
 
@@ -31,14 +33,14 @@ export function LoopFields({
     return (
         <>
             <IntegerField
-                label="Teto de iterações"
+                doc={fieldDoc("loop", "maxIterations")}
                 value={config.maxIterations}
                 schema={LOOP_FIELDS.maxIterations}
                 limits={ITERATION_LIMITS}
                 onChange={(maxIterations) => onChange({ maxIterations })}
             />
             <div className="flex flex-col gap-2">
-                <p className="text-sm text-text">Repetir até…</p>
+                <FieldHeading doc={fieldDoc("loop", "until")} />
                 <ConditionEditor
                     value={config.until}
                     suggestions={suggestions}
@@ -70,7 +72,7 @@ function CarryPortSwitches({
 
     return (
         <div className="flex flex-col gap-2">
-            <p className="text-sm text-text">Levar para a próxima iteração</p>
+            <FieldHeading doc={fieldDoc("loop", "carry")} />
             {options.length === 0 && (
                 <p className="text-xs text-muted">Nenhuma porta de saída dentro do loop.</p>
             )}
