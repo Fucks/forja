@@ -7,6 +7,7 @@ import type { IssuesByTarget } from "@/web/canvas/use_validation.js";
 
 export interface TargetValidation {
     invalid: boolean;
+    needsConfiguration: boolean;
     issueMessages: string[];
 }
 
@@ -30,6 +31,7 @@ export function useTargetValidation(targetId: string): TargetValidation {
 
     return {
         invalid: hasErrors(issues),
+        needsConfiguration: issues.some(isNodeConfigurationError),
         issueMessages: issues.map((issue) => issue.message),
     };
 }
@@ -47,4 +49,8 @@ export function markInvalidEdges(edges: RFEdge[], issuesByTarget: IssuesByTarget
 
 function hasErrors(issues: ValidationIssue[]): boolean {
     return issues.some((issue) => issue.level === "error");
+}
+
+function isNodeConfigurationError(issue: ValidationIssue): boolean {
+    return issue.level === "error" && issue.target.kind === "node";
 }

@@ -37,6 +37,14 @@ export const TRIGGER_KIND_LABELS: Record<TriggerConfig["kind"], string> = {
     board_column: "coluna do board",
 };
 
+const TRIGGER_SUMMARIES: Record<TriggerConfig["kind"], string> = {
+    manual: "Dispara manualmente",
+    schedule: "Dispara no horário agendado",
+    event: "Dispara quando acontece um evento",
+    webhook: "Dispara por webhook",
+    board_column: "Dispara quando um item entra na coluna do board",
+};
+
 export const SOURCE_PROVIDER_LABELS: Record<SourceConfig["provider"], string> = {
     github: "GitHub",
     local: "Local",
@@ -68,7 +76,7 @@ export function summarizeNode(node: FlowNode, defaults?: AgentDefaults): NodeSum
         case "source":
             return { line1: describeSource(node.config) };
         case "trigger":
-            return { line1: TRIGGER_KIND_LABELS[node.config.kind] };
+            return { line1: TRIGGER_SUMMARIES[node.config.kind] };
         case "output":
             return summarizeOutput(node.config);
         default:
@@ -134,20 +142,26 @@ function describeSource({ provider, label, limit }: SourceConfig): string {
     return joinParts([
         SOURCE_PROVIDER_LABELS[provider],
         label === undefined ? undefined : `label ${label}`,
-        `até ${limit}`,
+        describeItemLimit(limit),
     ]);
+}
+
+function describeItemLimit(limit: number): string {
+    const unit = limit === 1 ? "item" : "itens";
+
+    return `até ${limit} ${unit}`;
 }
 
 function summarizeOutput({ moveItemTo, commentOnIssue }: OutputConfig): NodeSummary {
     const line1 =
         moveItemTo === undefined
-            ? "item fica onde está"
-            : `mover para ${ITEM_DESTINATION_LABELS[moveItemTo]}`;
+            ? "Deixa o item onde está"
+            : `Move para ${ITEM_DESTINATION_LABELS[moveItemTo]}`;
     if (!commentOnIssue) {
         return { line1 };
     }
 
-    return { line1, line2: "comenta na issue" };
+    return { line1, line2: "Comenta na issue" };
 }
 
 function truncate(text: string): string {

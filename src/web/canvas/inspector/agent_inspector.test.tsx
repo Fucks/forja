@@ -189,6 +189,24 @@ describe("AgentInspector", () => {
             });
         });
 
+        it("adds a port with the description the user wrote", async () => {
+            const inspector = renderAgentInspector(requireAgent("tl"));
+
+            await userEvent.type(screen.getByRole("textbox", { name: "Nome da porta" }), "spec");
+            await userEvent.type(
+                screen.getByRole("textbox", { name: "Descrição" }),
+                "A especificação do TL.",
+            );
+            await userEvent.click(screen.getByRole("button", { name: "Adicionar porta" }));
+
+            expect(inspector.lastChangedNode().inputs).toContainEqual({
+                name: "spec",
+                type: "text",
+                required: true,
+                description: "A especificação do TL.",
+            });
+        });
+
         it("refuses a name already used by another input", async () => {
             const onChange = renderAgentInspector(requireAgent("dev")).onChange;
 

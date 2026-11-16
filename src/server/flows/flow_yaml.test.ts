@@ -44,6 +44,17 @@ describe("flowToYaml and yamlToFlow", () => {
         expect(roundTrip.graph.groups).toHaveLength(graph.groups.length);
         expect(roundTrip.graph.edges).toHaveLength(graph.edges.length);
     });
+
+    it("keeps the description of a port the user created", () => {
+        const graph = describeDeveloperSpecInput(buildCanonicalFlow(), "A especificação do TL.");
+
+        const roundTrip = yamlToFlow(flowToYaml(buildFlowFile(graph)));
+
+        const developer = roundTrip.graph.nodes.find((node) => node.id === "dev");
+        expect(developer?.inputs).toContainEqual(
+            expect.objectContaining({ name: "spec", description: "A especificação do TL." }),
+        );
+    });
 });
 
 describe("flowToYaml", () => {
@@ -186,6 +197,21 @@ describe("flowFileName", () => {
 
 function moveNode(graph: FlowGraph, nodeId: string, position: Position): FlowGraph {
     const nodes = graph.nodes.map((node) => (node.id === nodeId ? { ...node, position } : node));
+
+    return { ...graph, nodes };
+}
+
+function describeDeveloperSpecInput(graph: FlowGraph, description: string): FlowGraph {
+    const nodes = graph.nodes.map((node) => {
+        if (node.id !== "dev") {
+            return node;
+        }
+
+        const inputs = node.inputs.map((port) =>
+            port.name === "spec" ? { ...port, description } : port,
+        );
+        return { ...node, inputs };
+    });
 
     return { ...graph, nodes };
 }
