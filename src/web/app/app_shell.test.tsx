@@ -28,6 +28,9 @@ const ROUTE_TITLES = [
     { path: "/settings/credentials", title: "Credenciais" },
     { path: "/settings/tool-profiles", title: "Perfis de ferramentas" },
     { path: "/settings/diagnostics", title: "Diagnóstico" },
+    { path: "/docs/nodes", title: "Documentação dos nós" },
+    { path: "/docs/nodes/condition", title: "Decisão" },
+    { path: "/docs/concepts", title: "Conceitos" },
     { path: "/styleguide", title: "Styleguide" },
     { path: "/styleguide/canvas", title: "Styleguide do canvas" },
 ];
@@ -54,6 +57,15 @@ describe("AppShell", () => {
         expect(screen.getByRole("link", { name: "Credenciais" })).not.toHaveAttribute(
             "aria-current",
         );
+    });
+
+    it("links the documentation from the sidebar and keeps it current inside a node page", () => {
+        renderAppAt("/docs/nodes/condition");
+
+        const navigation = screen.getByRole("navigation", { name: "Navegação principal" });
+        const documentationLink = within(navigation).getByRole("link", { name: "Documentação" });
+        expect(documentationLink).toHaveAttribute("href", "/docs/nodes");
+        expect(documentationLink).toHaveAttribute("aria-current", "page");
     });
 
     it("keeps the flows area current inside a flow editor", () => {

@@ -25,6 +25,8 @@ export const NODE_DOCS: Record<DocumentedType, NodeDoc> = {
     loop: loopDoc,
 };
 
+export const ALL_NODE_DOCS: NodeDoc[] = Object.values(NODE_DOCS);
+
 export const CATEGORY_LABELS: Record<NodeCategory, string> = {
     inicio: "Início",
     trabalho: "Buscar trabalho",
@@ -39,4 +41,8 @@ export const CATEGORY_LABELS: Record<NodeCategory, string> = {
 
 export function getNodeDoc(type: DocumentedType): NodeDoc {
     return NODE_DOCS[type];
+}
+
+export function findNodeDoc(type: string): NodeDoc | undefined {
+    return ALL_NODE_DOCS.find((doc) => doc.type === type);
 }

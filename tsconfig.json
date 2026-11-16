@@ -19,6 +19,6 @@
         "isolatedModules": true,
         "resolveJsonModule": true
     },
-    "include": ["src", "e2e", "*.config.ts"],
+    "include": ["src", "e2e", "scripts", "*.config.ts"],
     "exclude": [".sandcastle", "dist"]
 }

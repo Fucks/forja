@@ -1,4 +1,5 @@
 import {
+    BookOpen,
     ClipboardCheck,
     FolderKanban,
     Gauge,
@@ -30,6 +31,10 @@ export interface GlobalNavItem {
 
 export const PROJECTS_PATH = "/";
 
+export const NODE_DOCS_PATH = "/docs/nodes";
+
+export const CONCEPTS_PATH = "/docs/concepts";
+
 export const OPEN_NODE_RUN_PARAM = "nodeRun";
 
 const PROJECT_AREA_PATTERN = "/projects/:projectId/:areaId/*";
@@ -53,7 +58,12 @@ export const GLOBAL_NAV: GlobalNavItem[] = [
     { id: "credentials", label: "Credenciais", icon: KeyRound, path: "/settings/credentials" },
     { id: "tool-profiles", label: "Ferramentas", icon: Wrench, path: "/settings/tool-profiles" },
     { id: "diagnostics", label: "Diagnóstico", icon: Stethoscope, path: "/settings/diagnostics" },
+    { id: "docs", label: "Documentação", icon: BookOpen, path: NODE_DOCS_PATH },
 ];
+
+export function nodeDocPath(type: string): string {
+    return `${NODE_DOCS_PATH}/${encodeURIComponent(type)}`;
+}
 
 export function projectPath(projectId: string): string {
     return `/projects/${encodeURIComponent(projectId)}`;
