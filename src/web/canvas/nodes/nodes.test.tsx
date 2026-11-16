@@ -43,14 +43,14 @@ const LUCIDE_ICON_PREFIX = "lucide-";
 const DEFAULT_ZOOM = 1;
 
 const EXPECTED_SUMMARIES: Record<NodeType, string> = {
-    trigger: "manual",
-    source: "GitHub · até 20",
+    trigger: "Dispara manualmente",
+    source: "GitHub · até 20 itens",
     agent: "padrão · effort padrão",
     script: "npm test",
     condition: "approved = true",
     gate: "Revise o pull request",
     git: "abrir PR",
-    output: "mover para Concluído",
+    output: "Move para Concluído",
 };
 
 // ResizeObserver is mocked in src/test/setup.ts, so React Flow keeps the nodes hidden: they are

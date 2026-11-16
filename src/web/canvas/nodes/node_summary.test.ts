@@ -136,7 +136,7 @@ describe("summarizeNode", () => {
 
         const summary = summarizeNode(source);
 
-        expect(summary).toEqual({ line1: "GitHub · label Sandcastle · até 20" });
+        expect(summary).toEqual({ line1: "GitHub · label Sandcastle · até 20 itens" });
     });
 
     it("leaves the label out of a source without one", () => {
@@ -144,15 +144,31 @@ describe("summarizeNode", () => {
 
         const summary = summarizeNode(source);
 
-        expect(summary).toEqual({ line1: "Local · até 5" });
+        expect(summary).toEqual({ line1: "Local · até 5 itens" });
     });
 
-    it("shows how the trigger starts the run", () => {
+    it("counts a single item in the singular", () => {
+        const source = buildNode("source", { provider: "local", label: undefined, limit: 1 });
+
+        const summary = summarizeNode(source);
+
+        expect(summary).toEqual({ line1: "Local · até 1 item" });
+    });
+
+    it("says a manual trigger fires by hand", () => {
         const trigger = buildNode("trigger", { kind: "manual" });
 
         const summary = summarizeNode(trigger);
 
-        expect(summary).toEqual({ line1: "manual" });
+        expect(summary).toEqual({ line1: "Dispara manualmente" });
+    });
+
+    it("says a scheduled trigger fires on its schedule", () => {
+        const trigger = buildNode("trigger", { kind: "schedule" });
+
+        const summary = summarizeNode(trigger);
+
+        expect(summary).toEqual({ line1: "Dispara no horário agendado" });
     });
 
     it("shows where the output moves the item and whether it comments on the issue", () => {
@@ -160,7 +176,7 @@ describe("summarizeNode", () => {
 
         const summary = summarizeNode(output);
 
-        expect(summary).toEqual({ line1: "mover para Concluído", line2: "comenta na issue" });
+        expect(summary).toEqual({ line1: "Move para Concluído", line2: "Comenta na issue" });
     });
 
     it("says the output keeps the item in place when it moves nothing", () => {
@@ -168,7 +184,7 @@ describe("summarizeNode", () => {
 
         const summary = summarizeNode(output);
 
-        expect(summary).toEqual({ line1: "item fica onde está" });
+        expect(summary).toEqual({ line1: "Deixa o item onde está" });
     });
 });
 
