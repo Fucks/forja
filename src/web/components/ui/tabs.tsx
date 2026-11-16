@@ -1,6 +1,8 @@
 import * as RadixTabs from "@radix-ui/react-tabs";
 import type { JSX, ReactNode } from "react";
 
+import { cn } from "@/web/components/ui/cn.js";
+
 interface Tab<Value extends string> {
     value: Value;
     label: string;
@@ -12,11 +14,13 @@ export function Tabs<Value extends string>({
     value,
     onValueChange,
     tabs,
+    listClassName,
 }: {
     label: string;
     value: Value;
     onValueChange: (value: Value) => void;
     tabs: Tab<Value>[];
+    listClassName?: string;
 }): JSX.Element {
     function selectTab(selectedValue: string): void {
         const selectedTab = tabs.find((tab) => tab.value === selectedValue);
@@ -27,7 +31,10 @@ export function Tabs<Value extends string>({
 
     return (
         <RadixTabs.Root value={value} onValueChange={selectTab} className="flex flex-col gap-3">
-            <RadixTabs.List aria-label={label} className="flex gap-1 border-b border-border">
+            <RadixTabs.List
+                aria-label={label}
+                className={cn("flex gap-1 border-b border-border", listClassName)}
+            >
                 {tabs.map((tab) => (
                     <RadixTabs.Trigger
                         key={tab.value}
