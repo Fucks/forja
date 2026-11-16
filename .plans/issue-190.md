@@ -47,7 +47,7 @@
 - [x] 12. Migrate the group inspector and loop fields — `group_inspector.tsx`, `loop_fields.tsx`, `group_inspector.test.tsx`
 - [x] 13. Test: every node inspector and the group inspector has header and ⓘ; Ajuda tab shows NodeDocView — `other_inspectors.test.tsx`, `group_inspector.test.tsx`
 - [x] 14. `listInputSources` (connected, automático, não ligada) — `node_input_sources.ts`, `node_input_sources.test.ts`
-- [ ] 15. `useLastNodeRunSample` — `use_last_node_run_sample.ts`
+- [x] 15. `useLastNodeRunSample` — `use_last_node_run_sample.ts`
 - [ ] 16. `NodeDataTab` (inputs, outputs, last sample or empty message) wired in the frames; tests with and without run (fake API), Reviewer shows `context ← Dev › Resumo em texto` and `item automático` — `node_data_tab.tsx`, `other_inspectors.test.tsx`
 - [ ] 17. Delete `LabelField`; update labels in `flow_editor_page.test.tsx` and `e2e/project_and_flow.spec.ts`
 - [ ] 18. Self-review checklist and feedback loops (typecheck, lint, test)
