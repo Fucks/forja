@@ -2,6 +2,8 @@ import { useId } from "react";
 import type { JSX } from "react";
 
 import { describeDefault } from "@/web/app/projects/settings_section.js";
+import { describeFieldLabel } from "@/web/canvas/inspector/field_label.js";
+import type { FieldLabeling } from "@/web/canvas/inspector/field_label.js";
 import { Field } from "@/web/components/ui/field.js";
 import { Select } from "@/web/components/ui/select.js";
 
@@ -17,13 +19,12 @@ const PROJECT_DEFAULT_OPTION: InheritableSelectOption = {
 
 // Choosing "padrão do projeto" reports undefined, so the node stops overriding the project.
 export function InheritableSelect({
-    label,
     selected,
     options,
     inheritedLabel,
     onChange,
-}: {
-    label: string;
+    ...labeling
+}: FieldLabeling & {
     selected: string | undefined;
     options: InheritableSelectOption[];
     inheritedLabel: string | undefined;
@@ -32,7 +33,11 @@ export function InheritableSelect({
     const selectId = useId();
 
     return (
-        <Field label={label} htmlFor={selectId} hint={describeInherited(inheritedLabel)}>
+        <Field
+            {...describeFieldLabel(labeling)}
+            htmlFor={selectId}
+            hint={describeInherited(inheritedLabel)}
+        >
             <Select
                 value={selected ?? PROJECT_DEFAULT_OPTION.value}
                 options={[PROJECT_DEFAULT_OPTION, ...options]}

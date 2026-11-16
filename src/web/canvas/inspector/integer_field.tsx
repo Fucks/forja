@@ -3,6 +3,8 @@ import type { JSX } from "react";
 import type { z } from "zod";
 
 import { describeDefault } from "@/web/app/projects/settings_section.js";
+import { describeFieldLabel } from "@/web/canvas/inspector/field_label.js";
+import type { FieldLabeling } from "@/web/canvas/inspector/field_label.js";
 import { Field } from "@/web/components/ui/field.js";
 import { Input } from "@/web/components/ui/input.js";
 
@@ -15,13 +17,12 @@ const WITHOUT_LIMIT_LABEL = "sem limite";
 
 // The schema decides what an empty field means: its default value, or no value when optional.
 export function IntegerField({
-    label,
     value,
     schema,
     limits,
     onChange,
-}: {
-    label: string;
+    ...labeling
+}: FieldLabeling & {
     value: number | undefined;
     schema: z.ZodType<number | undefined>;
     limits: IntegerLimits;
@@ -46,7 +47,7 @@ export function IntegerField({
     }
 
     return (
-        <Field label={label} htmlFor={inputId} error={limitError}>
+        <Field {...describeFieldLabel(labeling)} htmlFor={inputId} error={limitError}>
             <Input
                 type="number"
                 min={limits.min}
