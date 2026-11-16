@@ -1,6 +1,6 @@
 import * as RadixSlider from "@radix-ui/react-slider";
 import { useId } from "react";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 
 import { cn } from "@/web/components/ui/cn.js";
 import { FOCUS_RING_CLASSES } from "@/web/components/ui/control_styles.js";
@@ -14,6 +14,7 @@ export function Slider({
     step = DEFAULT_STEP,
     onChange,
     label,
+    labelAddon,
 }: {
     value: number;
     min: number;
@@ -21,6 +22,7 @@ export function Slider({
     step?: number;
     onChange: (value: number) => void;
     label: string;
+    labelAddon?: ReactNode;
 }): JSX.Element {
     const labelId = useId();
 
@@ -34,8 +36,11 @@ export function Slider({
     return (
         <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-sm">
-                <span id={labelId} className="text-text">
-                    {label}
+                <span className="flex items-center gap-1">
+                    <span id={labelId} className="text-text">
+                        {label}
+                    </span>
+                    {labelAddon}
                 </span>
                 <span className="font-mono text-muted">{value}</span>
             </div>
