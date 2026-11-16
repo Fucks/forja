@@ -48,4 +48,4 @@
 - [x] 12a. Adapt to #187 on development: drop the duplicate `nodeDocPath`, read `PORT_TYPE_LABELS`
       from `port_type_labels.ts`, `?` opens `NodeDocDrawer` — `base_node.tsx`, `flow_node_card.tsx`,
       `port_handle.tsx`, `navigation.ts`, tests
-- [ ] 12. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 12. Self-review checklist and feedback loops (typecheck, lint, test)
