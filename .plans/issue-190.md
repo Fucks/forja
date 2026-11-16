@@ -40,9 +40,9 @@
 - [x] 5. `FieldHeading` and `SwitchField` — `field_heading.tsx`, `switch_field.tsx`
 - [x] 6. Test + implement `InspectorTabs` (switch tab, remembered per type, localStorage throwing) — `inspector_tabs.tsx`, `inspector_tabs.test.tsx`, `ui/tabs.tsx`
 - [x] 7. `InspectorHeader` (icon, title, tagline, Documentação drawer, inline label) — `inspector_header.tsx`, `text_field.tsx`
-- [ ] 8. `AdvancedSection`, `InspectorFields`, and `NodeInspectorFrame`/`InspectorFrame` with header and tabs (Ajuda = NodeDocView; Dados placeholder) — `advanced_section.tsx`, `inspector_section.tsx`, `node_inspector_frame.tsx`
-- [ ] 9. Migrate trigger, source (provider OptionCards), script (timeout in Avançado), condition, gate inspectors — and their tests
-- [ ] 10. Migrate git (action OptionCards, bodyFrom in Avançado) and output (destination OptionCards) inspectors — and their tests
+- [x] 8. `AdvancedSection`, `InspectorFields`, and `NodeInspectorFrame`/`InspectorFrame` with header and tabs (Ajuda = NodeDocView; Dados placeholder) — `advanced_section.tsx`, `inspector_section.tsx`, `node_inspector_frame.tsx`
+- [x] 9. Migrate trigger, source (provider OptionCards), script (timeout in Avançado), condition, gate inspectors — and their tests
+- [x] 10. Migrate git (action OptionCards, bodyFrom in Avançado) and output (destination OptionCards) inspectors — and their tests
 - [ ] 11. Migrate the agent inspector (workspace OptionCards, Avançado with idle timeout and expandPromptCommands, docs on every field) — `agent_inspector.tsx`, `execution_fields.tsx`, `tools_credential_fields.tsx`, `model_effort_fields.tsx`, `agent_inspector.test.tsx`
 - [ ] 12. Migrate the group inspector and loop fields — `group_inspector.tsx`, `loop_fields.tsx`, `group_inspector.test.tsx`
 - [ ] 13. Test: every node inspector and the group inspector has header and ⓘ; Ajuda tab shows NodeDocView — `other_inspectors.test.tsx`, `group_inspector.test.tsx`

@@ -1,28 +1,58 @@
 import type { JSX, ReactNode } from "react";
 
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
-import { InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
-import { LabelField } from "@/web/canvas/inspector/label_field.js";
+import { InspectorHeader } from "@/web/canvas/inspector/inspector_header.js";
+import { InspectorTabs } from "@/web/canvas/inspector/inspector_tabs.js";
+import { NodeDocView } from "@/web/docs/node_doc_view.js";
+import type { DocumentedType } from "@/web/docs/node_docs/node_doc.js";
+import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
 
-// The layout of the inspectors whose settings fit in one section: the label, then the settings.
-export function NodeInspectorFrame({
-    node,
-    onChange,
-    title,
+// Every inspector, of a node or of a group: the header, then the Configurar, Dados and Ajuda tabs.
+export function InspectorFrame({
+    type,
+    label,
+    onLabelChange,
+    data,
     children,
-}: Pick<InspectorProps, "node" | "onChange"> & {
-    title: string;
+}: {
+    type: DocumentedType;
+    label: string;
+    onLabelChange: (label: string) => void;
+    data: ReactNode;
     children: ReactNode;
 }): JSX.Element {
     return (
         <div className="flex flex-col">
-            <LabelField
-                label={node.label}
-                onChange={(label) => onChange((current) => ({ ...current, label }))}
+            <InspectorHeader type={type} label={label} onLabelChange={onLabelChange} />
+            <InspectorTabs
+                type={type}
+                configure={<div className="flex flex-col">{children}</div>}
+                data={data}
+                help={
+                    <div className="px-3 pb-3">
+                        <NodeDocView doc={getNodeDoc(type)} placement="drawer" />
+                    </div>
+                }
             />
-            <InspectorSection title={title} isInitiallyOpen>
-                {children}
-            </InspectorSection>
         </div>
+    );
+}
+
+export function NodeInspectorFrame({
+    node,
+    onChange,
+    children,
+}: Pick<InspectorProps, "node" | "graph" | "onChange"> & {
+    children: ReactNode;
+}): JSX.Element {
+    return (
+        <InspectorFrame
+            type={node.type}
+            label={node.label}
+            onLabelChange={(label) => onChange((current) => ({ ...current, label }))}
+            data={<p className="px-3 text-sm text-muted">Em breve.</p>}
+        >
+            {children}
+        </InspectorFrame>
     );
 }

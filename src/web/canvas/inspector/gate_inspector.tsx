@@ -4,7 +4,10 @@ import { z } from "zod";
 import { isNodeOfType } from "@/shared/flow_graph.js";
 import { GATE_REVIEW_SECTIONS } from "@/shared/node_configs/gate_config.js";
 import type { GateConfig } from "@/shared/node_configs/gate_config.js";
+import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
+import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
+import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
 import { NodeInspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
 import { withNodeConfig } from "@/web/canvas/inspector/node_updates.js";
@@ -23,7 +26,7 @@ const MIN_GATE_TIMEOUT_HOURS = 1;
 // The form asks for whole hours, a stricter subset of the positive hours the gate accepts.
 const GATE_TIMEOUT_HOURS_SCHEMA = z.int().min(MIN_GATE_TIMEOUT_HOURS).optional();
 
-export function GateInspector({ node, onChange }: InspectorProps): JSX.Element {
+export function GateInspector({ node, graph, onChange }: InspectorProps): JSX.Element {
     // The registry routes only gates here; the check narrows the node to its gate config.
     if (!isNodeOfType(node, "gate")) {
         return <></>;
@@ -34,30 +37,33 @@ export function GateInspector({ node, onChange }: InspectorProps): JSX.Element {
         onChange((current) => withNodeConfig(current, "gate", changes));
 
     return (
-        <NodeInspectorFrame node={node} onChange={onChange} title="Aprovação">
-            <TextAreaField
-                label="Mensagem"
-                text={config.message}
-                placeholder="O que a pessoa deve conferir antes de aprovar"
-                onChange={(message) => changeConfig({ message })}
-            />
-            {GATE_REVIEW_SECTIONS.map((section) => (
-                <Switch
-                    key={section}
-                    label={REVIEW_SECTION_LABELS[section]}
-                    checked={config.show.includes(section)}
-                    onChange={(isShown) =>
-                        changeConfig({ show: toggleSection(config.show, section, isShown) })
-                    }
+        <NodeInspectorFrame node={node} graph={graph} onChange={onChange}>
+            <InspectorFields>
+                <TextAreaField
+                    doc={fieldDoc("gate", "message")}
+                    text={config.message}
+                    placeholder="O que a pessoa deve conferir antes de aprovar"
+                    onChange={(message) => changeConfig({ message })}
                 />
-            ))}
-            <IntegerField
-                label="Timeout (horas)"
-                value={config.timeoutHours}
-                schema={GATE_TIMEOUT_HOURS_SCHEMA}
-                limits={{ min: MIN_GATE_TIMEOUT_HOURS }}
-                onChange={(timeoutHours) => changeConfig({ timeoutHours })}
-            />
+                <FieldHeading doc={fieldDoc("gate", "show")} />
+                {GATE_REVIEW_SECTIONS.map((section) => (
+                    <Switch
+                        key={section}
+                        label={REVIEW_SECTION_LABELS[section]}
+                        checked={config.show.includes(section)}
+                        onChange={(isShown) =>
+                            changeConfig({ show: toggleSection(config.show, section, isShown) })
+                        }
+                    />
+                ))}
+                <IntegerField
+                    doc={fieldDoc("gate", "timeoutHours")}
+                    value={config.timeoutHours}
+                    schema={GATE_TIMEOUT_HOURS_SCHEMA}
+                    limits={{ min: MIN_GATE_TIMEOUT_HOURS }}
+                    onChange={(timeoutHours) => changeConfig({ timeoutHours })}
+                />
+            </InspectorFields>
         </NodeInspectorFrame>
     );
 }

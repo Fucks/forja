@@ -32,7 +32,7 @@ describe("SourceInspector", () => {
         const source = createNodeOfType("source", "source", ORIGIN);
         const inspector = renderInspector(SourceInspector, source);
 
-        await replaceFieldText(screen.getByRole("spinbutton", { name: "Limite de itens" }), "10");
+        await replaceFieldText(screen.getByRole("spinbutton", { name: "Máximo de itens" }), "10");
 
         expect(inspector.lastChangedNode("source").config.limit).toBe(10);
     });
@@ -41,7 +41,7 @@ describe("SourceInspector", () => {
         const source = createNodeOfType("source", "source", ORIGIN);
         const inspector = renderInspector(SourceInspector, source);
 
-        await replaceFieldText(screen.getByRole("spinbutton", { name: "Limite de itens" }), limit);
+        await replaceFieldText(screen.getByRole("spinbutton", { name: "Máximo de itens" }), limit);
 
         expect(screen.getByText("Use um número inteiro entre 1 e 100.")).toBeInTheDocument();
         expect(inspector.onChange).not.toHaveBeenCalled();
@@ -51,7 +51,7 @@ describe("SourceInspector", () => {
         const source = createNodeOfType("source", "source", ORIGIN);
         const inspector = renderInspector(SourceInspector, source);
 
-        await userEvent.click(screen.getByRole("switch", { name: "Pular issues bloqueadas" }));
+        await userEvent.click(screen.getByRole("switch", { name: "Pular bloqueadas" }));
 
         expect(inspector.lastChangedNode("source").config.skipBlocked).toBe(false);
     });
@@ -79,7 +79,10 @@ describe("ScriptInspector", () => {
         const script = createNodeOfType("script", "tests", ORIGIN);
         const inspector = renderInspector(ScriptInspector, script);
 
-        await replaceFieldText(screen.getByRole("spinbutton", { name: "Timeout (minutos)" }), "5");
+        await replaceFieldText(
+            screen.getByRole("spinbutton", { name: "Tempo máximo (minutos)" }),
+            "5",
+        );
 
         expect(inspector.lastChangedNode("script").config.timeoutMinutes).toBe(5);
     });
@@ -99,7 +102,7 @@ describe("GateInspector", () => {
         const gate = createNodeOfType("gate", "gate", ORIGIN);
         const inspector = renderInspector(GateInspector, gate);
 
-        await replaceFieldText(screen.getByRole("spinbutton", { name: "Timeout (horas)" }), "24");
+        await replaceFieldText(screen.getByRole("spinbutton", { name: "Prazo (horas)" }), "24");
 
         expect(inspector.lastChangedNode("gate").config.timeoutHours).toBe(24);
     });
@@ -119,8 +122,7 @@ describe("GitInspector", () => {
         const git = createNodeOfType("git", "git", ORIGIN);
         const inspector = renderInspector(GitInspector, git);
 
-        await userEvent.click(screen.getByRole("combobox", { name: "Ação" }));
-        await userEvent.click(screen.getByRole("option", { name: "push" }));
+        await userEvent.click(screen.getByRole("radio", { name: /^Push/ }));
 
         expect(inspector.lastChangedNode("git").config.action).toBe("push");
     });
@@ -129,9 +131,7 @@ describe("GitInspector", () => {
         const git = createNodeOfType("git", "git", ORIGIN);
         const inspector = renderInspector(GitInspector, git);
 
-        await userEvent.click(
-            screen.getByRole("combobox", { name: "Corpo do PR a partir da porta" }),
-        );
+        await userEvent.click(screen.getByRole("combobox", { name: "Texto do PR vem de" }));
         await userEvent.click(screen.getByRole("option", { name: "body" }));
 
         expect(inspector.lastChangedNode("git").config.bodyFrom).toBe("body");
@@ -152,7 +152,7 @@ describe("GitInspector", () => {
         const git = createNodeOfType("git", "git", ORIGIN);
         const inspector = renderInspector(GitInspector, git);
 
-        await userEvent.click(screen.getByRole("switch", { name: "Abrir como rascunho" }));
+        await userEvent.click(screen.getByRole("switch", { name: "Rascunho" }));
 
         expect(inspector.lastChangedNode("git").config.draft).toBe(true);
     });
@@ -163,18 +163,20 @@ describe("OutputInspector", () => {
         const output = createNodeOfType("output", "done", ORIGIN);
         const inspector = renderInspector(OutputInspector, output);
 
-        await userEvent.click(screen.getByRole("combobox", { name: "Mover item para" }));
-        await userEvent.click(screen.getByRole("option", { name: "Precisa de humano" }));
+        await userEvent.click(screen.getByRole("radio", { name: /^Precisa de humano/ }));
 
         expect(inspector.lastChangedNode("output").config.moveItemTo).toBe("needs_human");
     });
 
-    it("leaves the item where it is when 'não mover' is chosen", async () => {
+    it("leaves the item where it is when 'Não mover' is chosen", async () => {
         const output = createNodeOfType("output", "done", ORIGIN);
-        const inspector = renderInspector(OutputInspector, output);
+        const outputMovingItem: NodeOfType<"output"> = {
+            ...output,
+            config: { ...output.config, moveItemTo: "done" },
+        };
+        const inspector = renderInspector(OutputInspector, outputMovingItem);
 
-        await userEvent.click(screen.getByRole("combobox", { name: "Mover item para" }));
-        await userEvent.click(screen.getByRole("option", { name: "não mover" }));
+        await userEvent.click(screen.getByRole("radio", { name: /^Não mover/ }));
 
         expect(inspector.lastChangedNode("output").config.moveItemTo).toBeUndefined();
     });
