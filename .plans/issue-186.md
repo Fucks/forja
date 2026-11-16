@@ -19,7 +19,7 @@
 - [x] 3. Docs for condition, gate, git, output — `*_doc.ts`
 - [x] 4. Docs for map and loop groups — `map_doc.ts`, `loop_doc.ts`
 - [x] 5. Index `NODE_DOCS`, `getNodeDoc`, `CATEGORY_LABELS` — `node_docs.ts`
-- [ ] 6. Completeness test (fields, ports, enum options, tagline/examples/pitfalls) plus the
+- [x] 6. Completeness test (fields, ports, enum options, tagline/examples/pitfalls) plus the
       deliberately incomplete doc case — `node_docs.test.ts`
 - [ ] 7. `NODE_TYPE_LABELS` derives from the catalog — `node_type_labels.ts`
 - [ ] 8. `PALETTE_ITEMS` description from the catalog tagline; palette test reads the catalog —
