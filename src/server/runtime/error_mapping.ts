@@ -10,7 +10,10 @@ import {
     UsageLimitError,
     WorkspaceError,
 } from "@/integrations/agent_runtime/agent_errors.js";
+import { GitHubError } from "@/integrations/github/github_provider.js";
 import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
+
+const GITHUB_STDERR_MAX_CHARS = 500;
 
 const UNEXPECTED_FAILURE: NodeRunError = {
     kind: "runtime",
@@ -22,6 +25,7 @@ const RUNTIME_ERRORS_SHOWN_TO_USERS = [
     AgentRuntimeError,
     PromptRenderError,
     UnsupportedNodeTypeError,
+    GitHubError,
 ] as const;
 
 export function mapAgentError(error: unknown): NodeRunError {
@@ -39,7 +43,16 @@ export function mapAgentError(error: unknown): NodeRunError {
         return { kind, message: error.message, isRetryable: false };
     }
 
-    return { kind, message: error.message };
+    return { kind, message: messageOf(error) };
+}
+
+// What `gh` wrote on stderr is the reason the user needs ("Resource not accessible…").
+function messageOf(error: Error): string {
+    if (!(error instanceof GitHubError) || error.stderr === "") {
+        return error.message;
+    }
+
+    return `${error.message}: ${error.stderr.slice(-GITHUB_STDERR_MAX_CHARS)}`;
 }
 
 export function usageLimitResetAtOf(error: unknown): Date | undefined {

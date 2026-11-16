@@ -8,6 +8,7 @@ import {
     UsageLimitError,
     WorkspaceError,
 } from "@/integrations/agent_runtime/agent_errors.js";
+import { GitHubError } from "@/integrations/github/github_provider.js";
 import { mapAgentError, usageLimitResetAtOf } from "@/server/runtime/error_mapping.js";
 
 const RESET_AT = new Date("2026-01-01T15:00:00Z");
@@ -36,6 +37,26 @@ describe("mapAgentError", () => {
             message: "Configure uma credencial do Claude no projeto",
             isRetryable: false,
         });
+    });
+
+    it("shows a failed gh command with what gh wrote on stderr", () => {
+        const error = new GitHubError(
+            "Falha ao executar gh pr create",
+            "GraphQL: Resource not accessible by personal access token (createPullRequest)",
+        );
+
+        expect(mapAgentError(error)).toEqual({
+            kind: "runtime",
+            message:
+                "Falha ao executar gh pr create: GraphQL: Resource not accessible by personal " +
+                "access token (createPullRequest)",
+        });
+    });
+
+    it("shows a gh failure without stderr with its message alone", () => {
+        const mapped = mapAgentError(new GitHubError("Resposta inesperada de gh pr view", ""));
+
+        expect(mapped).toEqual({ kind: "runtime", message: "Resposta inesperada de gh pr view" });
     });
 
     it("hides the message of an unexpected error behind a generic one", () => {
