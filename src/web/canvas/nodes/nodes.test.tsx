@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import type { JSX } from "react";
@@ -6,10 +6,12 @@ import type { JSX } from "react";
 import { isNodeOfType, NODE_TYPES } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, FlowNode, NodeType } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
+import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { buildMapGroup } from "@/test/factories/flow_graph_variations.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import { toReactFlow } from "@/web/canvas/graph_mapping.js";
+import { ImplicitItemOverlay } from "@/web/canvas/implicit_item_overlay.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
 import { NodeLiveContext, NodeLiveStore } from "@/web/canvas/nodes/node_live_context.js";
 import type { NodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
@@ -92,6 +94,37 @@ describe("canvas node components", () => {
 
         const link = screen.getByLabelText(`Documentação de ${NODE_TYPE_LABELS[type]}`);
         expect(link).toHaveAttribute("href", `/docs/nodes/${type}`);
+    });
+
+    it("marks the unwired item of a node inside a map as automatic", () => {
+        renderOnCanvas(buildCanonicalFlow());
+
+        const developer = screen.getByLabelText("Dev");
+        expect(within(developer).getByText("automático")).toBeInTheDocument();
+    });
+
+    it("explains why the item inside a map needs no edge", async () => {
+        const user = userEvent.setup();
+        renderOnCanvas(buildCanonicalFlow());
+
+        await user.hover(within(screen.getByLabelText("Dev")).getByText("automático"));
+
+        expect(await screen.findByRole("tooltip")).toHaveTextContent(
+            "Dentro de um Map, cada nó recebe o item que está sendo processado. Não precisa ligar.",
+        );
+    });
+
+    it("does not mark the item wired from the source as automatic", () => {
+        renderOnCanvas(buildCanonicalFlow());
+
+        const techLead = screen.getByLabelText("TL");
+        expect(within(techLead).queryByText("automático")).not.toBeInTheDocument();
+    });
+
+    it("does not mark the item of an agent outside a map as automatic", () => {
+        renderOnCanvas({ nodes: [buildNamedNode("agent")] });
+
+        expect(screen.queryByText("automático")).not.toBeInTheDocument();
     });
 
     it("shows the agent's workspace and iteration cap on the second line", () => {
@@ -193,7 +226,7 @@ function IconOf({ type }: { type: NodeType }): JSX.Element {
 }
 
 function renderOnCanvas(
-    elements: Partial<Pick<FlowGraph, "nodes" | "groups">>,
+    elements: Partial<Pick<FlowGraph, "nodes" | "groups" | "edges">>,
     liveStates = new Map<string, NodeLiveState>(),
     selectedIds: string[] = [],
 ): void {
@@ -206,9 +239,11 @@ function renderOnCanvas(
 
     render(
         <NodeLiveContext.Provider value={new NodeLiveStore(liveStates)}>
-            <ReactFlowProvider>
-                <ReactFlow nodes={nodesWithSelection} edges={edges} nodeTypes={nodeTypes} />
-            </ReactFlowProvider>
+            <ImplicitItemOverlay graph={graph}>
+                <ReactFlowProvider>
+                    <ReactFlow nodes={nodesWithSelection} edges={edges} nodeTypes={nodeTypes} />
+                </ReactFlowProvider>
+            </ImplicitItemOverlay>
         </NodeLiveContext.Provider>,
     );
 }

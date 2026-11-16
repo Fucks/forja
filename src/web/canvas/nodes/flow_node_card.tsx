@@ -4,10 +4,13 @@ import type { JSX, ReactNode } from "react";
 
 import type { FlowNode, Port } from "@/shared/flow_graph.js";
 import { BaseNode } from "@/web/canvas/base/base_node.js";
+import type { BaseNodeProps } from "@/web/canvas/base/base_node.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import type { PortView } from "@/web/canvas/base/port_handle.js";
 import { describePort } from "@/web/canvas/base/port_label.js";
+import { ITEM_INPUT_PORT, useHasImplicitItem } from "@/web/canvas/implicit_item_overlay.js";
+import { ImplicitItemBadge } from "@/web/canvas/nodes/node_badges.js";
 import { useNodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
 import { useTargetValidation } from "@/web/canvas/validation_overlay.js";
 import { nodeDocPath } from "@/web/config/navigation.js";
@@ -24,6 +27,7 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
     const { status, badge } = useNodeLiveState(node.id);
     const { invalid, issueMessages } = useTargetValidation(node.id);
     const isCompact = useStore(isZoomedOut);
+    const hasImplicitItem = useHasImplicitItem();
 
     return (
         <BaseNode
@@ -31,7 +35,7 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
             typeLabel={NODE_TYPE_LABELS[node.type]}
             label={node.label}
             summary={summary}
-            inputs={node.inputs.map((port) => describeNodePort(node, port))}
+            inputs={describeInputs(node, { hasImplicitItem })}
             outputs={node.outputs.map((port) => describeNodePort(node, port))}
             status={status}
             badge={badge}
@@ -42,6 +46,20 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
             compact={isCompact}
         />
     );
+}
+
+function describeInputs(
+    node: FlowNode,
+    { hasImplicitItem }: { hasImplicitItem: boolean },
+): BaseNodeProps["inputs"] {
+    return node.inputs.map((port) => {
+        const describedPort = describeNodePort(node, port);
+        if (!hasImplicitItem || port.name !== ITEM_INPUT_PORT) {
+            return describedPort;
+        }
+
+        return { ...describedPort, badge: <ImplicitItemBadge /> };
+    });
 }
 
 function describeNodePort(node: FlowNode, port: Port): PortView & Port {

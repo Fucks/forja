@@ -15,6 +15,7 @@ import { EditorToolbar } from "@/web/canvas/editor_toolbar.js";
 import { FLOW_EDGE_TYPE } from "@/web/canvas/graph_mapping.js";
 import type { RFEdge } from "@/web/canvas/graph_mapping.js";
 import { GroupContextMenu } from "@/web/canvas/group_context_menu.js";
+import { ImplicitItemOverlay } from "@/web/canvas/implicit_item_overlay.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
 import { DropTargetGroupContext } from "@/web/canvas/palette/drop_target_context.js";
 import { useNodeDrop } from "@/web/canvas/palette/use_node_drop.js";
@@ -134,62 +135,64 @@ function EditableFlowCanvas({
 
     return (
         <ConnectionGraphContext value={graph}>
-            <ValidationOverlay issuesByTarget={issuesByTarget}>
-                <DropTargetGroupContext value={dropTargetGroupId}>
-                    <ReactFlow
-                        nodes={nodes}
-                        edges={edgesWithIssues}
-                        nodeTypes={nodeTypes}
-                        edgeTypes={EDGE_TYPES}
-                        onNodesChange={onNodesChange}
-                        onEdgesChange={onEdgesChange}
-                        isValidConnection={isValidConnection}
-                        onConnect={onConnect}
-                        onConnectEnd={onConnectEnd}
-                        onNodesDelete={onNodesDelete}
-                        onEdgesDelete={onEdgesDelete}
-                        onDragOver={onDragOver}
-                        onDragLeave={onDragLeave}
-                        onDrop={onDrop}
-                        onNodeContextMenu={groupMenu.onNodeContextMenu}
-                        onNodeDragStop={onNodeDragStop}
-                        minZoom={MIN_ZOOM}
-                        maxZoom={MAX_ZOOM}
-                        deleteKeyCode={DELETE_KEYS}
-                        fitView
-                    >
-                        <CanvasBackground />
-                        <MiniMap />
-                        <Controls showInteractive={false} />
-                        <Panel position="top-right">
-                            <EditorToolbar
-                                store={store}
-                                isArranging={isArranging}
-                                onArrange={() => void arrangeGraph()}
-                                onShowShortcuts={openShortcutsDialog}
-                            />
-                        </Panel>
-                        {hasSelectedNodes && (
-                            <Panel position="top-center">
-                                <SelectionToolbar verdict={verdict} onGroup={groupSelection} />
+            <ImplicitItemOverlay graph={graph}>
+                <ValidationOverlay issuesByTarget={issuesByTarget}>
+                    <DropTargetGroupContext value={dropTargetGroupId}>
+                        <ReactFlow
+                            nodes={nodes}
+                            edges={edgesWithIssues}
+                            nodeTypes={nodeTypes}
+                            edgeTypes={EDGE_TYPES}
+                            onNodesChange={onNodesChange}
+                            onEdgesChange={onEdgesChange}
+                            isValidConnection={isValidConnection}
+                            onConnect={onConnect}
+                            onConnectEnd={onConnectEnd}
+                            onNodesDelete={onNodesDelete}
+                            onEdgesDelete={onEdgesDelete}
+                            onDragOver={onDragOver}
+                            onDragLeave={onDragLeave}
+                            onDrop={onDrop}
+                            onNodeContextMenu={groupMenu.onNodeContextMenu}
+                            onNodeDragStop={onNodeDragStop}
+                            minZoom={MIN_ZOOM}
+                            maxZoom={MAX_ZOOM}
+                            deleteKeyCode={DELETE_KEYS}
+                            fitView
+                        >
+                            <CanvasBackground />
+                            <MiniMap />
+                            <Controls showInteractive={false} />
+                            <Panel position="top-right">
+                                <EditorToolbar
+                                    store={store}
+                                    isArranging={isArranging}
+                                    onArrange={() => void arrangeGraph()}
+                                    onShowShortcuts={openShortcutsDialog}
+                                />
                             </Panel>
+                            {hasSelectedNodes && (
+                                <Panel position="top-center">
+                                    <SelectionToolbar verdict={verdict} onGroup={groupSelection} />
+                                </Panel>
+                            )}
+                        </ReactFlow>
+                        <ConnectionRejectionTooltip rejection={rejection} />
+                        {groupMenu.openMenu && (
+                            <GroupContextMenu
+                                screenPosition={groupMenu.openMenu.screenPosition}
+                                onUngroup={groupMenu.ungroupMenuGroup}
+                                onFitToContent={groupMenu.fitMenuGroup}
+                                onClose={groupMenu.closeMenu}
+                            />
                         )}
-                    </ReactFlow>
-                    <ConnectionRejectionTooltip rejection={rejection} />
-                    {groupMenu.openMenu && (
-                        <GroupContextMenu
-                            screenPosition={groupMenu.openMenu.screenPosition}
-                            onUngroup={groupMenu.ungroupMenuGroup}
-                            onFitToContent={groupMenu.fitMenuGroup}
-                            onClose={groupMenu.closeMenu}
+                        <ShortcutsDialog
+                            open={isShortcutsDialogOpen}
+                            onOpenChange={setIsShortcutsDialogOpen}
                         />
-                    )}
-                    <ShortcutsDialog
-                        open={isShortcutsDialogOpen}
-                        onOpenChange={setIsShortcutsDialogOpen}
-                    />
-                </DropTargetGroupContext>
-            </ValidationOverlay>
+                    </DropTargetGroupContext>
+                </ValidationOverlay>
+            </ImplicitItemOverlay>
         </ConnectionGraphContext>
     );
 }
