@@ -25,7 +25,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `renderNodeDocMarkdown` and `renderNodeDocsIndexMarkdown` — `src/web/docs/render_node_doc_markdown.ts`, `src/web/docs/node_docs_index.ts`
+- [x] 1. Test + implement `renderNodeDocMarkdown` and `renderNodeDocsIndexMarkdown` — `src/web/docs/render_node_doc_markdown.ts`, `src/web/docs/node_docs_index.ts`
 - [ ] 2. Generator script with `--check`, `docs:nodes` script, tsconfig/eslint/prettierignore, generated `docs/nos/*.md`
 - [ ] 3. Sync test: every `docs/nos/<type>.md` and README equals the render, plus the index snapshot — `src/web/docs/node_docs_markdown.test.ts`
 - [ ] 4. `NodeDocView` and the `/docs/nodes/:type` page with "Nó não encontrado", plus routes and nav paths — tests in `src/web/app/docs/node_doc_page.test.tsx`
