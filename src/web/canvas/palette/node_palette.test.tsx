@@ -2,24 +2,38 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
+import { NODE_TYPES } from "@/shared/flow_graph.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import { createEditorStore } from "@/web/canvas/editor_store.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { NodePalette } from "@/web/canvas/palette/node_palette.js";
 import { PALETTE_ITEMS } from "@/web/canvas/palette/palette_items.js";
+import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
 
 describe("NodePalette", () => {
-    it("lists every node type with its description", () => {
+    it.each(NODE_TYPES)("lists the %s node with its title and tagline from the catalog", (type) => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        const { title, tagline } = getNodeDoc(type);
+
+        expect(
+            screen.getByRole("button", { name: title, description: tagline }),
+        ).toBeInTheDocument();
+    });
+
+    it("names the decision, command and human approval nodes in plain words", () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        expect(screen.getByRole("button", { name: "Decisão" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Comando" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Aprovação humana" })).toBeInTheDocument();
+    });
+
+    it("lists one item per node type", () => {
         renderPalette(createStoreWith(EMPTY_GRAPH));
 
         expect(screen.getAllByRole("button")).toHaveLength(PALETTE_ITEMS.length);
-        expect(
-            screen.getByRole("button", {
-                name: "Agente",
-                description: "Prompt em contexto limpo no Claude Code",
-            }),
-        ).toBeInTheDocument();
     });
 
     it("creates the clicked node type in the draft and selects it", async () => {
@@ -47,10 +61,10 @@ describe("NodePalette", () => {
     it("filters the items by description", async () => {
         renderPalette(createStoreWith(EMPTY_GRAPH));
 
-        await userEvent.type(screen.getByRole("searchbox", { name: "Buscar nós" }), "humana");
+        await userEvent.type(screen.getByRole("searchbox", { name: "Buscar nós" }), "branch");
 
         expect(screen.getAllByRole("button")).toEqual([
-            screen.getByRole("button", { name: "Aprovação" }),
+            screen.getByRole("button", { name: "Git" }),
         ]);
     });
 

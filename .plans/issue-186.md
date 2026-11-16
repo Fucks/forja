@@ -21,7 +21,7 @@
 - [x] 5. Index `NODE_DOCS`, `getNodeDoc`, `CATEGORY_LABELS` — `node_docs.ts`
 - [x] 6. Completeness test (fields, ports, enum options, tagline/examples/pitfalls) plus the
       deliberately incomplete doc case — `node_docs.test.ts`
-- [ ] 7. `NODE_TYPE_LABELS` derives from the catalog — `node_type_labels.ts`
-- [ ] 8. `PALETTE_ITEMS` description from the catalog tagline; palette test reads the catalog —
+- [x] 7. `NODE_TYPE_LABELS` derives from the catalog — `node_type_labels.ts`
+- [x] 8. `PALETTE_ITEMS` description from the catalog tagline; palette test reads the catalog —
       `palette_items.ts`, `node_palette.test.tsx`
 - [ ] 9. Self-review checklist and feedback loops (typecheck, lint, test)
