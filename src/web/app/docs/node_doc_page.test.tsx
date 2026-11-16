@@ -108,3 +108,27 @@ describe("NodeDocsIndexPage", () => {
         expect(screen.getByText("Nenhum nó com esse termo")).toBeInTheDocument();
     });
 });
+
+describe("ConceptsPage", () => {
+    it("shows every concept as a section", () => {
+        renderAppAt("/docs/concepts");
+
+        expect(screen.getByRole("heading", { level: 1, name: "Conceitos" })).toBeInTheDocument();
+        for (const title of [
+            "Item de trabalho",
+            "Run",
+            "Como os dados andam",
+            "Workspace do item",
+        ]) {
+            expect(screen.getByRole("heading", { level: 2, name: title })).toBeInTheDocument();
+        }
+    });
+
+    it("lists the port types under the ports concept", () => {
+        renderAppAt("/docs/concepts");
+
+        const portsConcept = screen.getByRole("region", { name: "Porta e tipos" });
+        expect(within(portsConcept).getByText("lista de itens")).toBeInTheDocument();
+        expect(within(portsConcept).getByText("workItemList")).toBeInTheDocument();
+    });
+});
