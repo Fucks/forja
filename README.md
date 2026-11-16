@@ -17,7 +17,7 @@ A página **Diagnóstico** confere tudo isso e diz o que corrigir.
 ## Início rápido
 
 ```
-npx @fucks/forja
+npx @wellingtonfks/forja
 ```
 
 A Forja sobe em `http://127.0.0.1:4317` e abre o navegador. Opções:
@@ -161,7 +161,7 @@ Para começar do zero, pare a Forja e apague a pasta. Os repositórios dos proje
 
 ## Servidor em container (opcional)
 
-**O modo recomendado é o nativo (`npx @fucks/forja`).** O `docker-compose.yml` serve quem prefere não instalar
+**O modo recomendado é o nativo (`npx @wellingtonfks/forja`).** O `docker-compose.yml` serve quem prefere não instalar
 o Node no host; funciona em Linux e macOS. Ele monta o socket do Docker do host, então o servidor no container
 controla o Docker do host: os containers dos agentes continuam sendo irmãos dele, não filhos.
 
