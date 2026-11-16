@@ -6,9 +6,9 @@ import { InvalidMarker, outlineClasses } from "@/web/canvas/base/canvas_outline.
 import { PortHandle } from "@/web/canvas/base/port_handle.js";
 import type { PortView } from "@/web/canvas/base/port_handle.js";
 import { cn } from "@/web/components/ui/cn.js";
-import { IconButton } from "@/web/components/ui/icon_button.js";
 import { EXECUTION_STATUS_STYLES } from "@/web/components/ui/execution_status.js";
 import type { ExecutionStatus } from "@/web/components/ui/execution_status.js";
+import { IconButton } from "@/web/components/ui/icon_button.js";
 import { StatusBadge } from "@/web/components/ui/status_badge.js";
 
 const TYPE_ICON_SIZE_PX = 16;

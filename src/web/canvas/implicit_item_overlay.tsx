@@ -1,4 +1,3 @@
-import { useNodeId } from "@xyflow/react";
 import { createContext, useContext, useMemo } from "react";
 import type { JSX, ReactNode } from "react";
 
@@ -25,11 +24,8 @@ export function ImplicitItemOverlay({
     return <ImplicitItemContext value={nodeIds}>{children}</ImplicitItemContext>;
 }
 
-export function useHasImplicitItem(): boolean {
-    const nodeId = useNodeId();
-    const nodeIds = useContext(ImplicitItemContext);
-
-    return nodeId !== null && nodeIds.has(nodeId);
+export function useHasImplicitItem(nodeId: string): boolean {
+    return useContext(ImplicitItemContext).has(nodeId);
 }
 
 // A node that runs once per item receives the current item even with its item port unwired.

@@ -5,6 +5,7 @@ import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import type { JSX } from "react";
 import { MemoryRouter } from "react-router";
 
+import { validateFlowGraph } from "@/engine/graph_validation.js";
 import { isNodeOfType, NODE_TYPES } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, FlowNode, NodeType } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
@@ -13,7 +14,6 @@ import { buildMapGroup } from "@/test/factories/flow_graph_variations.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import { toReactFlow } from "@/web/canvas/graph_mapping.js";
-import { validateFlowGraph } from "@/engine/graph_validation.js";
 import { ImplicitItemOverlay } from "@/web/canvas/implicit_item_overlay.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
 import { NodeLiveContext, NodeLiveStore } from "@/web/canvas/nodes/node_live_context.js";

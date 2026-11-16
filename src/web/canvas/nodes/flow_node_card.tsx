@@ -30,7 +30,7 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
     const { invalid, needsConfiguration, issueMessages } = useTargetValidation(node.id);
     const isCompact = useStore(isZoomedOut);
     const areBadgesVisible = useStore(isZoomedInEnoughForBadges);
-    const showsImplicitItemBadge = useHasImplicitItem() && areBadgesVisible;
+    const showsImplicitItemBadge = useHasImplicitItem(node.id) && areBadgesVisible;
     const showsNeedsConfigBadge = needsConfiguration && areBadgesVisible;
     const [isDocumentationOpen, setIsDocumentationOpen] = useState(false);
 
