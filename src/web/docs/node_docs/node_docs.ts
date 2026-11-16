@@ -40,3 +40,7 @@ export const CATEGORY_LABELS: Record<NodeCategory, string> = {
 export function getNodeDoc(type: DocumentedType): NodeDoc {
     return NODE_DOCS[type];
 }
+
+export function findNodeDoc(type: string): NodeDoc | undefined {
+    return Object.values(NODE_DOCS).find((doc) => doc.type === type);
+}
