@@ -7,7 +7,7 @@ import { NodeDocPortsTable } from "@/web/docs/node_doc_ports_table.js";
 import type { DocumentedType, NodeDoc, NodeExample } from "@/web/docs/node_docs/node_doc.js";
 import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
 
-export type NodeDocPlacement = "page" | "drawer";
+type NodeDocPlacement = "page" | "drawer";
 
 type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5";
 

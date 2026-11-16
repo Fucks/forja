@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { NODE_DOCS } from "@/web/docs/node_docs/node_docs.js";
+import { ALL_NODE_DOCS } from "@/web/docs/node_docs/node_docs.js";
 import {
     NODE_DOCS_MARKDOWN_DIRECTORY,
     renderNodeDocsMarkdownFiles,
@@ -12,7 +12,7 @@ const CHECK_FLAG = "--check";
 const OUTDATED_EXIT_CODE = 1;
 
 const markdownDirectory = path.resolve(NODE_DOCS_MARKDOWN_DIRECTORY);
-const markdownFiles = renderNodeDocsMarkdownFiles(Object.values(NODE_DOCS));
+const markdownFiles = renderNodeDocsMarkdownFiles(ALL_NODE_DOCS);
 
 if (process.argv.includes(CHECK_FLAG)) {
     await checkMarkdownFiles(markdownFiles);

@@ -7,11 +7,9 @@ import { PageTitle } from "@/web/app/page_title.js";
 import { EmptyState } from "@/web/components/ui/empty_state.js";
 import { Input } from "@/web/components/ui/input.js";
 import { CONCEPTS_PATH, nodeDocPath } from "@/web/config/navigation.js";
-import { NODE_DOCS } from "@/web/docs/node_docs/node_docs.js";
+import { ALL_NODE_DOCS } from "@/web/docs/node_docs/node_docs.js";
 import { groupNodeDocsByCategory, searchNodeDocs } from "@/web/docs/node_docs_index.js";
 import type { NodeDocsCategoryGroup } from "@/web/docs/node_docs_index.js";
-
-const ALL_NODE_DOCS = Object.values(NODE_DOCS);
 
 export function NodeDocsIndexPage(): JSX.Element {
     const [query, setQuery] = useState("");

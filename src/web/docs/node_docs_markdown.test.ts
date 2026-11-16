@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import type { NodeDoc } from "@/web/docs/node_docs/node_doc.js";
-import { NODE_DOCS } from "@/web/docs/node_docs/node_docs.js";
+import { ALL_NODE_DOCS, NODE_DOCS } from "@/web/docs/node_docs/node_docs.js";
 import {
     NODE_DOCS_INDEX_FILE_NAME,
     NODE_DOCS_MARKDOWN_DIRECTORY,
@@ -13,7 +13,6 @@ import {
 
 const conditionDoc = NODE_DOCS.condition;
 
-const ALL_DOCS = Object.values(NODE_DOCS);
 const OUTDATED_MESSAGE = "docs/nos está desatualizado: rode npm run docs:nodes";
 
 function readGeneratedMarkdown(fileName: string): string {
@@ -111,7 +110,7 @@ describe("renderNodeDocMarkdown", () => {
 
 describe("renderNodeDocsIndexMarkdown", () => {
     it("groups the nodes by category in catalog order", () => {
-        const markdown = renderNodeDocsIndexMarkdown(ALL_DOCS);
+        const markdown = renderNodeDocsIndexMarkdown(ALL_NODE_DOCS);
 
         expect(markdown.indexOf("## Início")).toBeLessThan(markdown.indexOf("## Grupos"));
         expect(markdown).toContain(
@@ -121,7 +120,7 @@ describe("renderNodeDocsIndexMarkdown", () => {
 });
 
 describe("docs/nos", () => {
-    it.each(ALL_DOCS)("has the current markdown of $type", (doc) => {
+    it.each(ALL_NODE_DOCS)("has the current markdown of $type", (doc) => {
         const generatedMarkdown = readGeneratedMarkdown(nodeDocFileName(doc.type));
 
         expect(generatedMarkdown, OUTDATED_MESSAGE).toBe(renderNodeDocMarkdown(doc));
@@ -130,10 +129,10 @@ describe("docs/nos", () => {
     it("has the current index", () => {
         const generatedIndex = readGeneratedMarkdown(NODE_DOCS_INDEX_FILE_NAME);
 
-        expect(generatedIndex, OUTDATED_MESSAGE).toBe(renderNodeDocsIndexMarkdown(ALL_DOCS));
+        expect(generatedIndex, OUTDATED_MESSAGE).toBe(renderNodeDocsIndexMarkdown(ALL_NODE_DOCS));
     });
 
     it("keeps the index stable", () => {
-        expect(renderNodeDocsIndexMarkdown(ALL_DOCS)).toMatchSnapshot();
+        expect(renderNodeDocsIndexMarkdown(ALL_NODE_DOCS)).toMatchSnapshot();
     });
 });

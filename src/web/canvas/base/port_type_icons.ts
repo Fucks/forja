@@ -12,13 +12,3 @@ export const PORT_TYPE_ICONS: Record<PortType, LucideIcon> = {
     prUrl: GitPullRequest,
     any: Asterisk,
 };
-
-export const PORT_TYPE_LABELS: Record<PortType, string> = {
-    workItemList: "lista de itens",
-    workItem: "item",
-    text: "texto",
-    json: "JSON",
-    branch: "branch",
-    prUrl: "URL de PR",
-    any: "qualquer",
-};
