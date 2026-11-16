@@ -1,13 +1,22 @@
 import { screen, within } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 
 import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
 
-describe("NodeDocPage", () => {
-    beforeEach(() => {
-        stubFetchRoutes({ "GET /api/projects": () => Response.json([]) });
-    });
+const NODE_DOCS_COUNT = 10;
 
+beforeEach(() => {
+    stubFetchRoutes({ "GET /api/projects": () => Response.json([]) });
+});
+
+function listNodeDocLinks(): HTMLElement[] {
+    return within(screen.getByRole("main"))
+        .getAllByRole("region")
+        .flatMap((categoryGroup) => within(categoryGroup).getAllByRole("link"));
+}
+
+describe("NodeDocPage", () => {
     it("shows the documentation of the Decision node", () => {
         renderAppAt("/docs/nodes/condition");
 
@@ -61,5 +70,41 @@ describe("NodeDocPage", () => {
             "href",
             "/docs/nodes",
         );
+    });
+});
+
+describe("NodeDocsIndexPage", () => {
+    it("lists every node grouped by category", () => {
+        renderAppAt("/docs/nodes");
+
+        expect(listNodeDocLinks()).toHaveLength(NODE_DOCS_COUNT);
+        const decideGroup = screen.getByRole("region", { name: "Decidir" });
+        expect(within(decideGroup).getByRole("link", { name: /Decisão/ })).toHaveAttribute(
+            "href",
+            "/docs/nodes/condition",
+        );
+    });
+
+    it("finds a node by a sentence of when to use it", async () => {
+        const user = userEvent.setup();
+        renderAppAt("/docs/nodes");
+
+        await user.type(
+            screen.getByRole("searchbox", { name: "Buscar nós" }),
+            "instalar dependências",
+        );
+
+        expect(listNodeDocLinks()).toHaveLength(1);
+        expect(screen.getByRole("link", { name: /Comando/ })).toBeInTheDocument();
+        expect(screen.queryByRole("region", { name: "Grupos" })).not.toBeInTheDocument();
+    });
+
+    it("says no node matches when the search finds nothing", async () => {
+        const user = userEvent.setup();
+        renderAppAt("/docs/nodes");
+
+        await user.type(screen.getByRole("searchbox", { name: "Buscar nós" }), "xyzzy");
+
+        expect(screen.getByText("Nenhum nó com esse termo")).toBeInTheDocument();
     });
 });

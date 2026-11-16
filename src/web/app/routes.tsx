@@ -5,6 +5,7 @@ import { AppShell } from "@/web/app/app_shell.js";
 import { ApprovalsPage } from "@/web/app/approvals/approvals_page.js";
 import { BoardPage } from "@/web/app/board/board_page.js";
 import { NodeDocPage } from "@/web/app/docs/node_doc_page.js";
+import { NodeDocsIndexPage } from "@/web/app/docs/node_docs_index_page.js";
 import { FlowEditorPage } from "@/web/app/flows/flow_editor_page.js";
 import { FlowsPage } from "@/web/app/flows/flows_page.js";
 import { VersionsPage } from "@/web/app/flows/versions_page.js";
@@ -42,7 +43,10 @@ const GLOBAL_SETTINGS_ROUTES: RouteObject[] = [
     { path: "diagnostics", element: <DiagnosticsPage /> },
 ];
 
-const DOCS_ROUTES: RouteObject[] = [{ path: "nodes/:type", element: <NodeDocPage /> }];
+const DOCS_ROUTES: RouteObject[] = [
+    { path: "nodes", element: <NodeDocsIndexPage /> },
+    { path: "nodes/:type", element: <NodeDocPage /> },
+];
 
 export const APP_ROUTES: RouteObject[] = [
     {
