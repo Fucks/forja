@@ -26,10 +26,10 @@
       `src/shared/flow_graph.ts`, `src/shared/normalize_flow_graph.ts`, `src/server/flows/flow_yaml.test.ts`
 - [x] 2. `PORT_TYPE_ICONS` / `PORT_TYPE_LABELS` — `src/web/canvas/base/port_type_icons.ts`
 - [x] 3. Test + implement `describePort` — `src/web/canvas/base/port_label.ts`, `port_label.test.ts`
-- [ ] 4. `PortHandle` shows the friendly label, the type icon and the full tooltip; `BaseNode` port shape;
+- [x] 4. `PortHandle` shows the friendly label, the type icon and the full tooltip; `BaseNode` port shape;
       update `base_node.test.tsx` and styleguide samples — `port_handle.tsx`, `base_node.tsx`,
       `canvas_samples.tsx`
-- [ ] 5. `FlowNodeCard` describes its ports with `describePort`; nodes test for "Resultado" + JSON icon +
+- [x] 5. `FlowNodeCard` describes its ports with `describePort`; nodes test for "Resultado" + JSON icon +
       tooltip — `flow_node_card.tsx`, `nodes.test.tsx`
 - [ ] 6. `?` documentation link in the header — `base_node.tsx`, `flow_node_card.tsx`, `navigation.ts`,
       tests in `base_node.test.tsx` and `nodes.test.tsx`

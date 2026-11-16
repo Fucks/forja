@@ -41,10 +41,10 @@ const AGENT_NODE: BaseNodeProps = {
     label: "Implementar issue",
     summary: "opus · effort high",
     inputs: [
-        { name: "issue", type: "Issue", required: true },
-        { name: "notes", type: "string", required: false },
+        { name: "item", label: "Item atual", type: "workItem", required: true },
+        { name: "context", label: "Contexto extra", type: "text", required: false },
     ],
-    outputs: [{ name: "branch", type: "string" }],
+    outputs: [{ name: "result", label: "Resultado", type: "json" }],
 };
 
 const NODE_STATE_SAMPLES: BaseNodeProps[] = [
@@ -134,13 +134,13 @@ function createEdgeEndpoints(label: string, row: number): BaseNodeSample[] {
         typeLabel: "Script",
         label,
         inputs: [],
-        outputs: [{ name: EDGE_SOURCE_PORT, type: "string" }],
+        outputs: [{ name: EDGE_SOURCE_PORT, label: EDGE_SOURCE_PORT, type: "text" }],
     };
     const target: BaseNodeProps = {
         typeIcon: NODE_TYPE_ICONS.output,
         typeLabel: "Saída",
         label,
-        inputs: [{ name: EDGE_TARGET_PORT, type: "string", required: true }],
+        inputs: [{ name: EDGE_TARGET_PORT, label: EDGE_TARGET_PORT, type: "text", required: true }],
         outputs: [],
     };
 

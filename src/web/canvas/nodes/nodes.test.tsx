@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import type { JSX } from "react";
 
@@ -64,6 +65,26 @@ describe("canvas node components", () => {
 
         const nodeElement = screen.getByLabelText(node.label);
         expect(nodeElement.querySelector(`svg.${iconClassOf(type)}`)).not.toBeNull();
+    });
+
+    it("names the agent's result port and draws the JSON icon next to it", () => {
+        const agent = buildNamedNode("agent");
+
+        renderOnCanvas({ nodes: [agent] });
+
+        const resultPort = findPortRow(screen.getByText("Resultado"));
+        expect(resultPort.querySelector("svg.lucide-braces")).not.toBeNull();
+    });
+
+    it("explains the agent's result port in its tooltip", async () => {
+        const user = userEvent.setup();
+        renderOnCanvas({ nodes: [buildNamedNode("agent")] });
+
+        await user.hover(screen.getByText("Resultado"));
+
+        const tooltip = await screen.findByRole("tooltip");
+        expect(tooltip).toHaveTextContent("Os dados que seguem o Formato da resposta.");
+        expect(tooltip).toHaveTextContent("result · JSON · obrigatória");
     });
 
     it("shows the agent's workspace and iteration cap on the second line", () => {
@@ -135,6 +156,15 @@ function buildNamedNode(type: NodeType): FlowNode {
     }
 
     return node;
+}
+
+function findPortRow(portLabel: HTMLElement): HTMLElement {
+    const portRow = portLabel.parentElement;
+    if (!portRow) {
+        throw new Error("The port label is not inside a port row");
+    }
+
+    return portRow;
 }
 
 function iconClassOf(type: NodeType): string {

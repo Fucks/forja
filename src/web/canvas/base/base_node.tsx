@@ -3,6 +3,7 @@ import type { JSX, ReactNode } from "react";
 
 import { InvalidMarker, outlineClasses } from "@/web/canvas/base/canvas_outline.js";
 import { PortHandle } from "@/web/canvas/base/port_handle.js";
+import type { PortView } from "@/web/canvas/base/port_handle.js";
 import { cn } from "@/web/components/ui/cn.js";
 import { EXECUTION_STATUS_STYLES } from "@/web/components/ui/execution_status.js";
 import type { ExecutionStatus } from "@/web/components/ui/execution_status.js";
@@ -10,15 +11,9 @@ import { StatusBadge } from "@/web/components/ui/status_badge.js";
 
 const TYPE_ICON_SIZE_PX = 16;
 
-interface InputPort {
-    name: string;
-    type: string;
+interface InputPort extends PortView {
     required: boolean;
-}
-
-interface OutputPort {
-    name: string;
-    type: string;
+    badge?: ReactNode;
 }
 
 export interface BaseNodeProps {
@@ -27,7 +22,7 @@ export interface BaseNodeProps {
     label: string;
     summary?: ReactNode;
     inputs: InputPort[];
-    outputs: OutputPort[];
+    outputs: PortView[];
     status?: ExecutionStatus;
     badge?: ReactNode;
     selected?: boolean;
