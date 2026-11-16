@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { Mock } from "vitest";
 
@@ -106,7 +106,7 @@ describe("AgentInspector", () => {
         it("sets the chosen tool profile on the node", async () => {
             const inspector = renderAgentInspector(requireAgent("tl"));
 
-            await userEvent.click(screen.getByRole("combobox", { name: "Perfil de ferramentas" }));
+            await userEvent.click(screen.getByRole("combobox", { name: "Ferramentas" }));
             await userEvent.click(await screen.findByRole("option", { name: "Revisor" }));
 
             expect(inspector.lastChangedConfig().toolProfileId).toBe(REVIEWER_PROFILE.id);
@@ -115,7 +115,7 @@ describe("AgentInspector", () => {
         it("returns to the project's tool profile when 'padrão do projeto' is chosen", async () => {
             const inspector = renderAgentInspector(requireAgent("tl"));
 
-            await userEvent.click(screen.getByRole("combobox", { name: "Perfil de ferramentas" }));
+            await userEvent.click(screen.getByRole("combobox", { name: "Ferramentas" }));
             await userEvent.click(screen.getByRole("option", { name: "padrão do projeto" }));
 
             expect(inspector.lastChangedConfig().toolProfileId).toBeUndefined();
@@ -135,7 +135,9 @@ describe("AgentInspector", () => {
     describe("execution", () => {
         it("applies the iterations typed within the limits", async () => {
             const inspector = renderAgentInspector(requireAgent("dev"));
-            const iterationsField = screen.getByRole("spinbutton", { name: "Iterações máximas" });
+            const iterationsField = screen.getByRole("spinbutton", {
+                name: "Repetições do prompt",
+            });
 
             await userEvent.clear(iterationsField);
             await userEvent.type(iterationsField, "5");
@@ -146,7 +148,7 @@ describe("AgentInspector", () => {
 
         it("shows the limits and keeps the node unchanged when the value is out of range", async () => {
             const onChange = renderAgentInspector(requireAgent("dev")).onChange;
-            const retriesField = screen.getByRole("spinbutton", { name: "Retentativas" });
+            const retriesField = screen.getByRole("spinbutton", { name: "Novas tentativas" });
 
             await userEvent.clear(retriesField);
             await userEvent.type(retriesField, "9");
@@ -159,7 +161,7 @@ describe("AgentInspector", () => {
         it("removes the turn limit when its field is cleared", async () => {
             const inspector = renderAgentInspector(withConfig("dev", { maxTurns: 30 }));
 
-            await userEvent.clear(screen.getByRole("spinbutton", { name: "Turnos máximos" }));
+            await userEvent.clear(screen.getByRole("spinbutton", { name: "Máximo de ações" }));
             await userEvent.tab();
 
             expect(inspector.lastChangedConfig().maxTurns).toBeUndefined();
@@ -168,10 +170,45 @@ describe("AgentInspector", () => {
         it("chooses to run without a workspace", async () => {
             const inspector = renderAgentInspector(requireAgent("dev"));
 
-            await userEvent.click(screen.getByRole("combobox", { name: "Workspace" }));
-            await userEvent.click(screen.getByRole("option", { name: "Sem workspace" }));
+            await userEvent.click(screen.getByRole("radio", { name: /^Sem workspace/ }));
 
             expect(inspector.lastChangedConfig().workspace).toBe("none");
+        });
+    });
+
+    describe("advanced", () => {
+        it.each(["Tempo máximo parado (minutos)", "Expandir comandos do prompt"])(
+            "keeps %s folded in Avançado",
+            (fieldLabel) => {
+                renderAgentInspector(requireAgent("dev"));
+
+                const advancedSection = requireAdvancedSection();
+                expect(advancedSection).not.toHaveAttribute("open");
+                expect(within(advancedSection).getByText(fieldLabel)).toBeInTheDocument();
+            },
+        );
+
+        it("stops expanding the commands of the prompt", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+
+            await userEvent.click(
+                screen.getByRole("switch", { name: "Expandir comandos do prompt" }),
+            );
+
+            expect(inspector.lastChangedConfig().expandPromptCommands).toBe(false);
+        });
+
+        it("applies an idle timeout", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+            const idleTimeoutField = screen.getByRole("spinbutton", {
+                name: "Tempo máximo parado (minutos)",
+            });
+
+            await userEvent.clear(idleTimeoutField);
+            await userEvent.type(idleTimeoutField, "5");
+            await userEvent.tab();
+
+            expect(inspector.lastChangedConfig().idleTimeoutMinutes).toBe(5);
         });
     });
 
@@ -314,6 +351,15 @@ function applyLastUpdate(onChange: NodeChangeSpy, node: FlowNode): FlowNode {
     }
 
     return lastCall[0](node);
+}
+
+function requireAdvancedSection(): HTMLElement {
+    const advancedSection = screen.getByText("Avançado").closest("details");
+    if (!advancedSection) {
+        throw new Error("The inspector has no Avançado section");
+    }
+
+    return advancedSection;
 }
 
 function buildCredential(
