@@ -32,5 +32,5 @@
 - [x] 5. `/docs/nodes` index page grouped by category, with search and empty state — test in `node_doc_page.test.tsx`
 - [x] 6. Port type icons, concepts data and `/docs/concepts` page — test in `node_doc_page.test.tsx`
 - [x] 7. Sidebar item "Documentação" + app shell route titles — `src/web/config/navigation.ts`, `src/web/app/app_shell.test.tsx`
-- [ ] 8. `NodeDocDrawer` that opens and closes with the keyboard (Esc) — `src/web/docs/node_doc_drawer.tsx` + test
+- [x] 8. `NodeDocDrawer` that opens and closes with the keyboard (Esc) — `src/web/docs/node_doc_drawer.tsx` + test
 - [ ] 9. Self-review checklist and feedback loops (typecheck, lint, test)
