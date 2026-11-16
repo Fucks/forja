@@ -117,12 +117,20 @@ function renderFieldsSection(fields: FieldDoc[]): string[] {
 function renderField(field: FieldDoc): string[] {
     const advancedMark = field.advanced ? " · avançado" : "";
     const heading = `### ${escapeText(field.label)} (\`${field.key}\`)${advancedMark}`;
-    const details = [
-        ...(field.defaultValue ? [`- Padrão: ${escapeText(field.defaultValue)}`] : []),
-        ...(field.options ? [renderFieldOptions(field.options)] : []),
-    ];
 
-    return [heading, escapeText(field.description), ...nonEmptyBlock(details)];
+    return [heading, escapeText(field.description), ...renderFieldDetails(field)];
+}
+
+function renderFieldDetails(field: FieldDoc): string[] {
+    const detailLines: string[] = [];
+    if (field.defaultValue) {
+        detailLines.push(`- Padrão: ${escapeText(field.defaultValue)}`);
+    }
+    if (field.options) {
+        detailLines.push(renderFieldOptions(field.options));
+    }
+
+    return detailLines.length === 0 ? [] : [detailLines.join("\n")];
 }
 
 function renderFieldOptions(options: FieldOptionDoc[]): string {
@@ -166,10 +174,6 @@ function renderNodeDocLink(type: DocumentedType): string {
 
 function renderBulletList(lines: string[]): string {
     return lines.map((line) => `- ${line}`).join("\n");
-}
-
-function nonEmptyBlock(lines: string[]): string[] {
-    return lines.length === 0 ? [] : [lines.join("\n")];
 }
 
 function joinBlocks(blocks: string[]): string {
