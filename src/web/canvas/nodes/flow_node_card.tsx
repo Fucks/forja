@@ -16,6 +16,7 @@ import { useTargetValidation } from "@/web/canvas/validation_overlay.js";
 import { nodeDocPath } from "@/web/config/navigation.js";
 
 const COMPACT_ZOOM_THRESHOLD = 0.5;
+const BADGE_ZOOM_THRESHOLD = 0.6;
 
 interface FlowNodeCardProps {
     node: FlowNode;
@@ -27,7 +28,9 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
     const { status, badge } = useNodeLiveState(node.id);
     const { invalid, needsConfiguration, issueMessages } = useTargetValidation(node.id);
     const isCompact = useStore(isZoomedOut);
-    const hasImplicitItem = useHasImplicitItem();
+    const areBadgesVisible = useStore(isZoomedInEnoughForBadges);
+    const showsImplicitItemBadge = useHasImplicitItem() && areBadgesVisible;
+    const showsNeedsConfigBadge = needsConfiguration && areBadgesVisible;
 
     return (
         <BaseNode
@@ -35,11 +38,11 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
             typeLabel={NODE_TYPE_LABELS[node.type]}
             label={node.label}
             summary={summary}
-            inputs={describeInputs(node, { hasImplicitItem })}
+            inputs={describeInputs(node, { showsImplicitItemBadge })}
             outputs={node.outputs.map((port) => describeNodePort(node, port))}
             status={status}
             badge={badge}
-            notice={needsConfiguration ? <NeedsConfigBadge /> : undefined}
+            notice={showsNeedsConfigBadge ? <NeedsConfigBadge /> : undefined}
             selected={selected}
             invalid={invalid}
             issueMessages={issueMessages}
@@ -51,11 +54,11 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
 
 function describeInputs(
     node: FlowNode,
-    { hasImplicitItem }: { hasImplicitItem: boolean },
+    { showsImplicitItemBadge }: { showsImplicitItemBadge: boolean },
 ): BaseNodeProps["inputs"] {
     return node.inputs.map((port) => {
         const describedPort = describeNodePort(node, port);
-        if (!hasImplicitItem || port.name !== ITEM_INPUT_PORT) {
+        if (!showsImplicitItemBadge || port.name !== ITEM_INPUT_PORT) {
             return describedPort;
         }
 
@@ -68,6 +71,14 @@ function describeNodePort(node: FlowNode, port: Port): PortView & Port {
 }
 
 function isZoomedOut(canvas: ReactFlowState): boolean {
+    return zoomOf(canvas) < COMPACT_ZOOM_THRESHOLD;
+}
+
+function isZoomedInEnoughForBadges(canvas: ReactFlowState): boolean {
+    return zoomOf(canvas) >= BADGE_ZOOM_THRESHOLD;
+}
+
+function zoomOf(canvas: ReactFlowState): number {
     const [, , zoom] = canvas.transform;
-    return zoom < COMPACT_ZOOM_THRESHOLD;
+    return zoom;
 }

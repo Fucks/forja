@@ -39,7 +39,7 @@
 - [x] 8. `needsConfiguration` in `useTargetValidation`; `NeedsConfigBadge` for an agent with an empty
       prompt, gone once the prompt is filled — `validation_overlay.tsx`, `node_badges.tsx`,
       `base_node.tsx`, `flow_node_card.tsx`, `nodes.test.tsx`
-- [ ] 9. Badges hidden below zoom 0.6 — `flow_node_card.tsx`
+- [x] 9. Badges hidden below zoom 0.6 — `flow_node_card.tsx`
 - [ ] 10. Natural-language summaries for source, output and trigger — `node_summary.ts`,
       `node_summary.test.ts`, `nodes.test.tsx`
 - [ ] 11. "Descrição" field for user ports in the inspector — `port_list_editor.tsx` (+ its test if any)

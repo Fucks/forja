@@ -40,6 +40,7 @@ const MAP_GROUP: FlowGroup = {
 };
 
 const LUCIDE_ICON_PREFIX = "lucide-";
+const DEFAULT_ZOOM = 1;
 
 const EXPECTED_SUMMARIES: Record<NodeType, string> = {
     trigger: "manual",
@@ -158,6 +159,17 @@ describe("canvas node components", () => {
         expect(screen.queryByText("falta configurar")).not.toBeInTheDocument();
     });
 
+    it("hides the badges when the canvas is zoomed out below 60%", () => {
+        const flow = buildCanonicalFlow();
+        const agent = buildNamedNode("agent");
+        const elements = { ...flow, nodes: [...flow.nodes, agent] };
+
+        renderOnCanvas(elements, { issuesByTarget: validate([agent]), zoom: 0.55 });
+
+        expect(screen.queryByText("automático")).not.toBeInTheDocument();
+        expect(screen.queryByText("falta configurar")).not.toBeInTheDocument();
+    });
+
     it("shows the agent's workspace and iteration cap on the second line", () => {
         const agent = buildNamedNode("agent");
 
@@ -271,6 +283,7 @@ interface CanvasState {
     liveStates?: Map<string, NodeLiveState>;
     selectedIds?: string[];
     issuesByTarget?: IssuesByTarget;
+    zoom?: number;
 }
 
 function renderOnCanvas(elements: GraphElements, state: CanvasState = {}): RenderResult {
@@ -278,7 +291,12 @@ function renderOnCanvas(elements: GraphElements, state: CanvasState = {}): Rende
 }
 
 function CanvasOf({ graph, state }: { graph: FlowGraph; state: CanvasState }): JSX.Element {
-    const { liveStates = new Map(), selectedIds = [], issuesByTarget = new Map() } = state;
+    const {
+        liveStates = new Map(),
+        selectedIds = [],
+        issuesByTarget = new Map(),
+        zoom = DEFAULT_ZOOM,
+    } = state;
     const { nodes, edges } = toReactFlow(graph);
     const nodesWithSelection = nodes.map((node) => ({
         ...node,
@@ -290,7 +308,12 @@ function CanvasOf({ graph, state }: { graph: FlowGraph; state: CanvasState }): J
             <ImplicitItemOverlay graph={graph}>
                 <ValidationOverlay issuesByTarget={issuesByTarget}>
                     <ReactFlowProvider>
-                        <ReactFlow nodes={nodesWithSelection} edges={edges} nodeTypes={nodeTypes} />
+                        <ReactFlow
+                            nodes={nodesWithSelection}
+                            edges={edges}
+                            nodeTypes={nodeTypes}
+                            defaultViewport={{ x: 0, y: 0, zoom }}
+                        />
                     </ReactFlowProvider>
                 </ValidationOverlay>
             </ImplicitItemOverlay>
