@@ -19,7 +19,19 @@ export function gateOutputsOf(
     comment: string | undefined,
 ): Record<string, unknown> {
     return {
-        [decision]: gate.inputs?.[GATE_ITEM_PORT],
+        [decision]: decisionValueOf(gate),
         [GATE_COMMENT_PORT]: comment ?? "",
     };
+}
+
+// Inside a map the item port may stay unwired, since the item is implicit. The decision port then
+// carries the gate's own item: an `undefined` value would vanish once the outputs are saved, and
+// a retry downstream would take the decision for the branch that was not chosen.
+function decisionValueOf(gate: NodeRunState): unknown {
+    const item = gate.inputs?.[GATE_ITEM_PORT];
+    if (item !== undefined) {
+        return item;
+    }
+
+    return gate.workItemId === undefined ? true : { id: gate.workItemId };
 }
