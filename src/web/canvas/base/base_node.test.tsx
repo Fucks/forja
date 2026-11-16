@@ -106,6 +106,14 @@ describe("BaseNode", () => {
         expect(screen.getByRole("img", { name: "Configuração inválida" })).toBeInTheDocument();
     });
 
+    it("links the header to the documentation of the node type", () => {
+        renderInFlow(<BaseNode {...AGENT_NODE} documentationHref="/docs/nodes/agent" />);
+
+        const link = screen.getByRole("link", { name: "Documentação de Agente" });
+        expect(link).toHaveAttribute("href", "/docs/nodes/agent");
+        expect(link).toHaveAttribute("target", "_blank");
+    });
+
     it("hides the summary and the ports in compact mode", () => {
         renderInFlow(<BaseNode {...AGENT_NODE} compact />);
 

@@ -10,6 +10,7 @@ import type { PortView } from "@/web/canvas/base/port_handle.js";
 import { describePort } from "@/web/canvas/base/port_label.js";
 import { useNodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
 import { useTargetValidation } from "@/web/canvas/validation_overlay.js";
+import { nodeDocPath } from "@/web/config/navigation.js";
 
 const COMPACT_ZOOM_THRESHOLD = 0.5;
 
@@ -37,6 +38,7 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
             selected={selected}
             invalid={invalid}
             issueMessages={issueMessages}
+            documentationHref={nodeDocPath(node.type)}
             compact={isCompact}
         />
     );

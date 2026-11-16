@@ -87,6 +87,13 @@ describe("canvas node components", () => {
         expect(tooltip).toHaveTextContent("result · JSON · obrigatória");
     });
 
+    it.each(NODE_TYPES)("opens the documentation of the %s node from its header", (type) => {
+        renderOnCanvas({ nodes: [buildNamedNode(type)] });
+
+        const link = screen.getByLabelText(`Documentação de ${NODE_TYPE_LABELS[type]}`);
+        expect(link).toHaveAttribute("href", `/docs/nodes/${type}`);
+    });
+
     it("shows the agent's workspace and iteration cap on the second line", () => {
         const agent = buildNamedNode("agent");
 

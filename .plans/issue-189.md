@@ -31,7 +31,7 @@
       `canvas_samples.tsx`
 - [x] 5. `FlowNodeCard` describes its ports with `describePort`; nodes test for "Resultado" + JSON icon +
       tooltip — `flow_node_card.tsx`, `nodes.test.tsx`
-- [ ] 6. `?` documentation link in the header — `base_node.tsx`, `flow_node_card.tsx`, `navigation.ts`,
+- [x] 6. `?` documentation link in the header — `base_node.tsx`, `flow_node_card.tsx`, `navigation.ts`,
       tests in `base_node.test.tsx` and `nodes.test.tsx`
 - [ ] 7. `listNodesWithImplicitItem` + overlay context; `ImplicitItemBadge` on the item port inside a map
       and not outside — `implicit_item_overlay.tsx`, `node_badges.tsx`, `flow_node_card.tsx`,

@@ -15,6 +15,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { matchPath } from "react-router";
 
+import type { DocumentedType } from "@/web/docs/node_docs/node_doc.js";
+
 export interface NavItem {
     id: string;
     label: string;
@@ -102,6 +104,10 @@ export function approvalsPath(projectId: string): string {
 export function approvalPath(projectId: string, gateNodeRunId: string): string {
     const query = new URLSearchParams({ [OPEN_NODE_RUN_PARAM]: gateNodeRunId });
     return `${approvalsPath(projectId)}?${query.toString()}`;
+}
+
+export function nodeDocPath(type: DocumentedType): string {
+    return `/docs/nodes/${type}`;
 }
 
 export function switchProjectPath(currentPathname: string, projectId: string): string {
