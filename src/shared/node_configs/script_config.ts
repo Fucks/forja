@@ -7,7 +7,7 @@ export const SCRIPT_OUTPUT_MODES = ["none", "json", "lastLineJson"] as const;
 
 export const MIN_SCRIPT_TIMEOUT_MINUTES = 1;
 const DEFAULT_SCRIPT_TIMEOUT_MINUTES = 15;
-const ENV_VAR_NAME_PATTERN = /^[A-Z_][A-Z0-9_]*$/;
+export const ENV_VAR_NAME_PATTERN = /^[A-Z_][A-Z0-9_]*$/;
 const ENV_VAR_SOURCE_MESSAGE = "Informe um valor ou uma credencial para a variável, não os dois.";
 
 export const scriptEnvVarSchema = z

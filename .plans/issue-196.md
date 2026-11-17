@@ -33,7 +33,7 @@
 - [x] 8. Test + implement: "Se o comando falhar" cards with the Decisão hint
 - [x] 9. Test + implement: "Formato da saída" cards with examples
 - [x] 10. Test + implement: Avançado with shell, workingDir, image (isolated only) and timeout
-- [ ] 11. Test + implement the env rows logic (name validation, duplicates, to/from config) — `env_var_rows.ts`
+- [x] 11. Test + implement the env rows logic (name validation, duplicates, to/from config) — `env_var_rows.ts`
 - [ ] 12. Test + implement `EnvListEditor` with text vars: add, edit, remove, reorder, inline name error — `env_list_editor.tsx`
 - [ ] 13. Test + implement credential vars: list the project credentials, save `credentialId`
 - [ ] 14. Self-review checklist and feedback loops (typecheck, lint, test)
