@@ -28,6 +28,9 @@ export type RulesConversion = { ok: true; condition: Condition } | { ok: false; 
 
 type NotExists = { op: "not"; condition: { op: "exists"; path: string } };
 
+/** A condition that fits one rule row. */
+export type RuleCondition = Comparison | NotExists;
+
 const LIST_VALUE_JOINER = ", ";
 
 export const MISSING_PATH_ERROR = "Informe o caminho de cada regra.";
@@ -36,13 +39,13 @@ const VALUE_TYPE_ERROR = "O valor desta regra não serve para o operador escolhi
 // Only a flat list of comparisons fits the rows; other `not`s and nested groups stay as they are.
 export function toConditionRules(condition: Condition): ConditionRules | undefined {
     if (isRuleCondition(condition)) {
-        return { connective: "and", rules: [toRule(condition)] };
+        return { connective: "and", rules: [toConditionRule(condition)] };
     }
     if (condition.op === "not" || !condition.conditions.every(isRuleCondition)) {
         return undefined;
     }
 
-    return { connective: condition.op, rules: condition.conditions.map(toRule) };
+    return { connective: condition.op, rules: condition.conditions.map(toConditionRule) };
 }
 
 export function toCondition(
@@ -84,7 +87,7 @@ export function findRuleField(rule: ConditionRule, fields: DataField[]): DataFie
     return fields.find((field) => field.path === rule.path.trim());
 }
 
-function isRuleCondition(condition: Condition): condition is Comparison | NotExists {
+export function isRuleCondition(condition: Condition): condition is RuleCondition {
     return "path" in condition || isNotExists(condition);
 }
 
@@ -92,7 +95,7 @@ function isNotExists(condition: Condition): condition is NotExists {
     return condition.op === "not" && condition.condition.op === "exists";
 }
 
-function toRule(condition: Comparison | NotExists): ConditionRule {
+export function toConditionRule(condition: RuleCondition): ConditionRule {
     if (condition.op === "not") {
         return { path: condition.condition.path, operator: "notExists", valueText: "", values: [] };
     }

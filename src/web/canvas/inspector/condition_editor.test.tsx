@@ -112,6 +112,29 @@ describe("ConditionEditor", () => {
         expect(getPathPicker(1)).toHaveTextContent("Reviewer › Resultado › notes");
     });
 
+    it("reads the rule as a sentence above the rules, with the data in bold", () => {
+        renderConditionEditor(
+            { op: "eq", path: REVIEWER_APPROVED.path, value: true },
+            REVIEWER_FIELDS,
+        );
+
+        const sentence = screen.getByLabelText("Regra em palavras");
+        expect(sentence).toHaveTextContent(
+            "Se Reviewer › Resultado › approved é verdadeiro → Sim · senão → Não",
+        );
+        expect(within(sentence).getByText("Reviewer › Resultado › approved").tagName).toBe(
+            "STRONG",
+        );
+    });
+
+    it("shows the technical text of the rule in the sentence's tooltip", async () => {
+        renderConditionEditor(APPROVED);
+
+        await userEvent.hover(screen.getByLabelText("Regra em palavras"));
+
+        expect(await screen.findByRole("tooltip")).toHaveTextContent("review.approved = true");
+    });
+
     it("offers only 'é verdadeiro' and 'é falso', without a value, for a yes/no field", async () => {
         const onChange = renderConditionEditor({ op: "exists", path: "" }, REVIEWER_FIELDS);
 

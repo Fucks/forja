@@ -32,7 +32,7 @@
 - [x] 6. Rules ↔ condition typed by the field (`notExists`, `in`, text stays text) — `condition_rules.ts`, `condition_rules.test.ts`
 - [x] 7. Changing the field resets an incompatible operator and value — `condition_rules.ts`, `use_condition_rules.ts`
 - [x] 8. Rule row with typed operator select and `condition_value_input.tsx` (boolean: no value; enum: multi-select; error under the rule) — `condition_rule_row.tsx`, `condition_editor.tsx`, `condition_editor.test.tsx`
-- [ ] 9. `conditionToSentence` + sentence above the rules — `condition_text.ts`, `condition_editor.tsx`, tests
+- [x] 9. `conditionToSentence` + sentence above the rules — `condition_text.ts`, `condition_editor.tsx`, tests
 - [ ] 10. Node summary uses the sentence; ports show Sim/Não — `node_summary.ts`, `simple_nodes.tsx`, `use_available_data.ts`, `node_summary.test.ts`, `nodes.test.tsx`
 - [ ] 11. `evaluate_condition_preview.ts` (sample from run views, branch, explanation) + tests
 - [ ] 12. Preview against a run recorded in in-memory SQLite through the run routes — `src/server/runs/condition_preview_route.test.ts`

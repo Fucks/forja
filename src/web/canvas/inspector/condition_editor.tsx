@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import type { JSX } from "react";
 
 import type { Condition } from "@/shared/conditions.js";
+import { ConditionSentence } from "@/web/canvas/inspector/condition_sentence.js";
 import { ConditionRuleRow } from "@/web/canvas/inspector/condition_rule_row.js";
 import type { RuleEditing } from "@/web/canvas/inspector/condition_rule_row.js";
 import type { RuleConnective } from "@/web/canvas/inspector/condition_rules.js";
@@ -37,6 +38,7 @@ export function ConditionEditor({
 
     return (
         <div className="flex flex-col gap-3">
+            <ConditionSentence condition={value} fields={fields} />
             <SegmentedControl
                 label="Combinar regras com"
                 value={conditionRules.connective}
