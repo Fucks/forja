@@ -22,8 +22,10 @@
 - An empty group frame shows "Arraste nós para dentro" (`GroupFrame` gets `isEmpty`).
 - Add-from-port: new hook `src/web/canvas/palette/use_add_from_port.ts` (extra file) holds the open menu state
   and creates node + edge in one `applyGraph` (one history entry).
-- Detail card: Radix popover (`@radix-ui/react-popover` if installed, else tooltip) max 320 px, opened on hover
-  after 300 ms, on keyboard focus, and on Shift+F10 / ContextMenu.
+- Detail card: no popover package is installed, so `node_palette_detail.tsx` is the card view (`w-80`,
+  popover elevation) and `palette_detail_anchor.tsx` (extra file) opens it on hover after
+  `TOOLTIP_OPEN_DELAY_MS`, on focus, and moves focus into it on Shift+F10 / ContextMenu; Esc closes.
+  `palette_entry.tsx` (extra file) holds `PaletteEntry`, so `node_palette.tsx` stays under 200 lines.
 
 ## Tasks
 
@@ -36,7 +38,7 @@
 - [x] 6. Add group from the palette (click: empty at center or wrap selection) — `use_add_node.ts`, palette test
 - [x] 7. Drag a group from the palette onto the canvas — `node_type_drag.ts`, `use_node_drop.ts`, canvas test
 - [x] 8. Empty group shows "Arraste nós para dentro" — `group_frame.tsx`, `group_node.tsx`
-- [ ] 9. Detail card (tagline, what it does, ports with label and type icon, first example, Documentação
+- [x] 9. Detail card (tagline, what it does, ports with label and type icon, first example, Documentação
       completa opens `NodeDocDrawer`) — `node_palette_detail.tsx`, palette test
 - [ ] 10. `AddFromPortMenu` with search, positioned at the drop point, Esc closes — `add_from_port_menu.tsx`
 - [ ] 11. `onConnectEnd` on empty space opens the menu; choosing creates node + edge in one history entry —

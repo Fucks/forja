@@ -1,6 +1,7 @@
 import { ReactFlowProvider } from "@xyflow/react";
 import { act, render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
@@ -209,6 +210,94 @@ describe("NodePalette keyboard", () => {
     });
 });
 
+describe("NodePalette detail card", () => {
+    it("opens when an entry gets the keyboard focus, with the friendly port names", () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        act(() => screen.getByRole("button", { name: "Fonte" }).focus());
+
+        const card = screen.getByRole("dialog", { name: "Detalhes de Fonte" });
+        const { tagline, whatItDoes, ports } = getNodeDoc("source");
+        expect(card).toHaveTextContent(tagline);
+        expect(card).toHaveTextContent(whatItDoes);
+        expect(within(card).getByRole("list", { name: "Entradas" })).toHaveTextContent(
+            ports.inputs[0]?.label ?? "",
+        );
+        expect(within(card).getByRole("list", { name: "Saídas" })).toHaveTextContent(
+            ports.outputs[0]?.label ?? "",
+        );
+    });
+
+    it("shows the first example of the node", () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        act(() => screen.getByRole("button", { name: "Decisão" }).focus());
+
+        const [firstExample] = getNodeDoc("condition").examples;
+        expect(screen.getByRole("dialog")).toHaveTextContent(firstExample?.description ?? "");
+    });
+
+    it("opens a moment after the pointer rests on an entry", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        await userEvent.hover(screen.getByRole("button", { name: "Map" }));
+
+        expect(await screen.findByRole("dialog", { name: "Detalhes de Map" })).toBeInTheDocument();
+    });
+
+    it("closes when the focus leaves the entry", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+        act(() => screen.getByRole("button", { name: "Fonte" }).focus());
+
+        await userEvent.click(screen.getByRole("searchbox", { name: "Buscar nós" }));
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it.each(["{Shift>}{F10}{/Shift}", "{ContextMenu}"])(
+        "moves the focus into the card with %s",
+        async (keys) => {
+            renderPalette(createStoreWith(EMPTY_GRAPH));
+            act(() => screen.getByRole("button", { name: "Agente" }).focus());
+
+            await userEvent.keyboard(keys);
+
+            expect(screen.getByRole("button", { name: "Documentação completa" })).toHaveFocus();
+        },
+    );
+
+    it("closes with Escape and gives the focus back to the entry", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+        const agentEntry = screen.getByRole("button", { name: "Agente" });
+        act(() => agentEntry.focus());
+        await userEvent.keyboard("{Shift>}{F10}{/Shift}");
+
+        await userEvent.keyboard("{Escape}");
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(agentEntry).toHaveFocus();
+    });
+
+    it("opens the full documentation of the type in the drawer", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+        act(() => screen.getByRole("button", { name: "Loop" }).focus());
+
+        await userEvent.click(screen.getByRole("button", { name: "Documentação completa" }));
+
+        const drawer = screen.getByRole("dialog", { name: "Documentação do nó" });
+        expect(drawer).toHaveTextContent(getNodeDoc("loop").whatItDoes);
+        expect(screen.queryByRole("dialog", { name: "Detalhes de Loop" })).not.toBeInTheDocument();
+    });
+
+    it("keeps only the unavailable tooltip on a trigger the flow already has", () => {
+        renderPalette(createStoreWith(GRAPH_WITH_TRIGGER));
+
+        act(() => screen.getByRole("button", { name: "Gatilho" }).focus());
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+});
+
 describe("NodePalette groups", () => {
     it("adds an empty map at the center of the canvas and selects it", async () => {
         const store = createStoreWith(EMPTY_GRAPH);
@@ -277,9 +366,11 @@ function createStoreWith(graph: FlowGraph): EditorStore {
 
 function renderPalette(store: EditorStore): void {
     render(
-        <ReactFlowProvider>
-            <NodePalette store={store} />
-        </ReactFlowProvider>,
+        <MemoryRouter>
+            <ReactFlowProvider>
+                <NodePalette store={store} />
+            </ReactFlowProvider>
+        </MemoryRouter>,
     );
 }
 
