@@ -6,6 +6,7 @@ import type { FlowGraph, FlowGroup, LoopConfig, MapConfig } from "@/shared/flow_
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHelp } from "@/web/canvas/inspector/field_help.js";
 import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
+import { GroupDataTab } from "@/web/canvas/inspector/node_data_tab.js";
 import { LoopFields } from "@/web/canvas/inspector/loop_fields.js";
 import { InspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
 import { SwitchField } from "@/web/canvas/inspector/switch_field.js";
@@ -23,7 +24,7 @@ export function GroupInspector({ group, graph, onChange }: GroupInspectorProps):
             type={group.kind}
             label={group.label}
             onLabelChange={(label) => onChange((current) => ({ ...current, label }))}
-            data={<p className="px-3 text-sm text-muted">Em breve.</p>}
+            data={<GroupDataTab kind={group.kind} />}
         >
             <InspectorFields>
                 <GroupConfigFields group={group} graph={graph} onChange={onChange} />

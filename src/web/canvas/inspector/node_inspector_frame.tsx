@@ -3,6 +3,7 @@ import type { JSX, ReactNode } from "react";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorHeader } from "@/web/canvas/inspector/inspector_header.js";
 import { InspectorTabs } from "@/web/canvas/inspector/inspector_tabs.js";
+import { NodeDataTab } from "@/web/canvas/inspector/node_data_tab.js";
 import { NodeDocView } from "@/web/docs/node_doc_view.js";
 import type { DocumentedType } from "@/web/docs/node_docs/node_doc.js";
 import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
@@ -40,6 +41,7 @@ export function InspectorFrame({
 
 export function NodeInspectorFrame({
     node,
+    graph,
     onChange,
     children,
 }: Pick<InspectorProps, "node" | "graph" | "onChange"> & {
@@ -50,7 +52,7 @@ export function NodeInspectorFrame({
             type={node.type}
             label={node.label}
             onLabelChange={(label) => onChange((current) => ({ ...current, label }))}
-            data={<p className="px-3 text-sm text-muted">Em breve.</p>}
+            data={<NodeDataTab node={node} graph={graph} />}
         >
             {children}
         </InspectorFrame>

@@ -38,6 +38,16 @@ describe.each([
     });
 });
 
+describe("GroupInspector Dados tab", () => {
+    it("lists the port a loop's items leave through when it runs out of iterations", async () => {
+        renderGroupInspector("review_loop");
+
+        await userEvent.click(screen.getByRole("tab", { name: "Dados" }));
+
+        expect(screen.getByRole("list", { name: "Saídas" })).toHaveTextContent("Esgotou as voltas");
+    });
+});
+
 describe("GroupInspector of a map", () => {
     it("tells how many items run at the same time", () => {
         renderGroupInspector("items");

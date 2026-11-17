@@ -3,6 +3,7 @@ import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import type { Mock } from "vitest";
 
+import { findNode } from "@/engine/graph_queries.js";
 import { isNodeOfType, NODE_TYPES } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowNode, NodeOfType, NodeType } from "@/shared/flow_graph.js";
 import {
@@ -10,6 +11,12 @@ import {
     connect,
     createNodeOfType,
 } from "@/test/factories/flow_graph_factory.js";
+import { buildRunListItem } from "@/test/factories/run_list_item_factory.js";
+import {
+    buildSerializedNodeRun,
+    buildSerializedRunView,
+} from "@/test/factories/run_view_factory.js";
+import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderWithQueryClient } from "@/test/render_with_query_client.js";
 import { inspectorRegistry } from "@/web/canvas/inspector/inspector_registry.js";
 import type { InspectorComponent } from "@/web/canvas/inspector/inspector_registry.js";
@@ -28,6 +35,8 @@ type NodeChangeSpy = Mock<(update: NodeUpdate) => void>;
 const GRAPH = buildCanonicalFlow();
 const ORIGIN = { x: 0, y: 0 };
 const PROJECT_ID = "forja";
+const FLOW_ID = "flow";
+const RECENT_RUNS_ROUTE = `GET /api/projects/${PROJECT_ID}/runs?limit=5&flowId=${FLOW_ID}`;
 
 beforeEach(() => {
     localStorage.clear();
@@ -295,6 +304,68 @@ describe.each(NODE_TYPES)("the %s inspector", (type) => {
     });
 });
 
+describe("the Dados tab of the Reviewer", () => {
+    it("shows where each input comes from", async () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+        renderInspector(inspectorRegistry.agent, requireNode("reviewer"));
+
+        await userEvent.click(screen.getByRole("tab", { name: "Dados" }));
+
+        const inputs = within(screen.getByRole("list", { name: "Entradas" })).getAllByRole(
+            "listitem",
+        );
+        expect(inputs.map((input) => input.textContent)).toEqual(
+            expect.arrayContaining(["context ← Dev › Resumo em texto", "item automático"]),
+        );
+    });
+
+    it("lists the outputs with their label, type and description", async () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+        renderInspector(inspectorRegistry.agent, requireNode("reviewer"));
+
+        await userEvent.click(screen.getByRole("tab", { name: "Dados" }));
+
+        const outputs = screen.getByRole("list", { name: "Saídas" });
+        expect(outputs).toHaveTextContent("Resumo em texto");
+        expect(outputs).toHaveTextContent("text");
+        expect(outputs).toHaveTextContent("A última mensagem do agente.");
+    });
+
+    it("asks to run the flow when the node never ran", async () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+        renderInspector(inspectorRegistry.agent, requireNode("reviewer"));
+
+        await userEvent.click(screen.getByRole("tab", { name: "Dados" }));
+
+        expect(
+            await screen.findByText(
+                "Ainda não há execução deste nó. Rode o fluxo para ver dados reais aqui.",
+            ),
+        ).toBeInTheDocument();
+    });
+
+    it("shows the inputs and outputs of the last run of the node", async () => {
+        const lastRun = buildRunListItem({ id: "run-7", flowId: FLOW_ID });
+        const reviewerRun = buildSerializedNodeRun({
+            runId: lastRun.id,
+            nodeId: "reviewer",
+            inputs: { context: "Resumo do Dev" },
+            outputs: { summary: "Aprovado" },
+        });
+        stubFetchRoutes({
+            [RECENT_RUNS_ROUTE]: () => Response.json([lastRun]),
+            [`GET /api/runs/${lastRun.id}`]: () =>
+                Response.json(buildSerializedRunView({ nodeRuns: [reviewerRun] })),
+        });
+        renderInspector(inspectorRegistry.agent, requireNode("reviewer"));
+
+        await userEvent.click(screen.getByRole("tab", { name: "Dados" }));
+
+        expect(await screen.findByText(/"context": "Resumo do Dev"/)).toBeInTheDocument();
+        expect(screen.getByText(/"summary": "Aprovado"/)).toBeInTheDocument();
+    });
+});
+
 describe("every inspector", () => {
     it("opens the node documentation in a drawer", async () => {
         renderInspector(ScriptInspector, createNodeOfType("script", "tests", ORIGIN));
@@ -327,7 +398,7 @@ function renderInspector(
 ): RenderedInspector {
     const onChange: NodeChangeSpy = vi.fn();
     renderWithQueryClient(
-        <MemoryRouter initialEntries={[`/projects/${PROJECT_ID}/flows/flow`]}>
+        <MemoryRouter initialEntries={[`/projects/${PROJECT_ID}/flows/${FLOW_ID}`]}>
             <Routes>
                 <Route
                     path="/projects/:projectId/flows/:flowId"
@@ -356,6 +427,15 @@ function applyLastUpdate(onChange: NodeChangeSpy, node: FlowNode): FlowNode {
     }
 
     return lastCall[0](node);
+}
+
+function requireNode(nodeId: string): FlowNode {
+    const node = findNode(GRAPH, nodeId);
+    if (!node) {
+        throw new Error(`Node ${nodeId} not found`);
+    }
+
+    return node;
 }
 
 function requireNodeOfType<Type extends NodeType>(node: FlowNode, type: Type): NodeOfType<Type> {
