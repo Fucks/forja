@@ -232,6 +232,49 @@ describe("ConditionEditor", () => {
         );
     });
 
+    it("opens a v1 decision on its input with the operators of the field's type", async () => {
+        const v1Approved: PickableDataField = {
+            path: "inputs.value.approved",
+            label: "Entradas deste nó › O que passa adiante › approved",
+            type: "boolean",
+            sourceNodeId: "reviewer",
+            depth: 1,
+        };
+        const onChange = renderConditionEditor(
+            { op: "eq", path: "inputs.value.approved", value: true },
+            [v1Approved],
+        );
+
+        expect(getPathPicker(1)).toHaveTextContent(v1Approved.label);
+        expect(getOperatorSelect(1)).toHaveTextContent("é verdadeiro");
+        await chooseOperator(1, "é falso");
+
+        expect(onChange).toHaveBeenLastCalledWith({
+            op: "eq",
+            path: "inputs.value.approved",
+            value: false,
+        });
+    });
+
+    it("edits a v1 decision whose input has no known shape", async () => {
+        const onChange = renderConditionEditor({
+            op: "eq",
+            path: "inputs.value.exitCode",
+            value: 0,
+        });
+
+        expect(getOperatorSelect(1)).toHaveTextContent("=");
+        const valueField = screen.getByRole("textbox", { name: "Valor da regra 1" });
+        await userEvent.clear(valueField);
+        await typeIntoField(valueField, "1");
+
+        expect(onChange).toHaveBeenLastCalledWith({
+            op: "eq",
+            path: "inputs.value.exitCode",
+            value: 1,
+        });
+    });
+
     it("shows a condition the rules cannot express as text, until it is restarted", async () => {
         renderConditionEditor({ op: "not", condition: APPROVED });
 

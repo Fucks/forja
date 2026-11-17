@@ -37,6 +37,6 @@
 - [x] 11. `evaluate_condition_preview.ts` (sample from run views, branch, explanation) + tests
 - [x] 12. Preview against a run recorded in in-memory SQLite through the run routes — `src/server/runs/condition_preview_route.test.ts`
 - [x] 13. `condition_preview.tsx` in the condition inspector (disabled with tooltip without a run) — `use_last_node_run_sample.ts`, `condition_inspector.tsx`
-- [ ] 14. v1 decisions (`inputs.value.*`) open and edit — `condition_editor.test.tsx`
+- [x] 14. v1 decisions (`inputs.value.*`) open and edit — `condition_editor.test.tsx`
 - [ ] 15. Docs: operators and examples in `condition_doc.ts`, regenerate `docs/nos/condition.md`
 - [ ] 16. Self-review checklist and feedback loops (typecheck, lint, test)
