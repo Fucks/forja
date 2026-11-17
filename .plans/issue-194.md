@@ -34,7 +34,7 @@
 - [x] 8. Rule row with typed operator select and `condition_value_input.tsx` (boolean: no value; enum: multi-select; error under the rule) — `condition_rule_row.tsx`, `condition_editor.tsx`, `condition_editor.test.tsx`
 - [x] 9. `conditionToSentence` + sentence above the rules — `condition_text.ts`, `condition_editor.tsx`, tests
 - [x] 10. Node summary uses the sentence; ports show Sim/Não — `node_summary.ts`, `simple_nodes.tsx`, `use_available_data.ts`, `node_summary.test.ts`, `nodes.test.tsx`
-- [ ] 11. `evaluate_condition_preview.ts` (sample from run views, branch, explanation) + tests
+- [x] 11. `evaluate_condition_preview.ts` (sample from run views, branch, explanation) + tests
 - [ ] 12. Preview against a run recorded in in-memory SQLite through the run routes — `src/server/runs/condition_preview_route.test.ts`
 - [ ] 13. `condition_preview.tsx` in the condition inspector (disabled with tooltip without a run) — `use_last_node_run_sample.ts`, `condition_inspector.tsx`
 - [ ] 14. v1 decisions (`inputs.value.*`) open and edit — `condition_editor.test.tsx`
