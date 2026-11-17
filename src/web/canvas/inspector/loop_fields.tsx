@@ -6,10 +6,10 @@ import type { LoopGroup } from "@/engine/graph_queries.js";
 import { loopConfigSchema, MAX_LOOP_ITERATIONS, MIN_LOOP_ITERATIONS } from "@/shared/flow_graph.js";
 import type { FlowGraph, LoopConfig } from "@/shared/flow_graph.js";
 import { ConditionEditor } from "@/web/canvas/inspector/condition_editor.js";
-import { listGroupOutputPaths } from "@/web/canvas/inspector/condition_suggestions.js";
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
+import { useAvailableData } from "@/web/canvas/inspector/use_available_data.js";
 import { Switch } from "@/web/components/ui/switch.js";
 
 type LoopChange = (changes: Partial<LoopConfig>) => void;
@@ -27,7 +27,7 @@ export function LoopFields({
     onChange: LoopChange;
 }): JSX.Element {
     const { config } = loop;
-    const suggestions = useMemo(() => listGroupOutputPaths(graph, loop.id), [graph, loop.id]);
+    const untilFields = useAvailableData(graph, loop.id, { scope: "loopUntil", groupId: loop.id });
     const carryOptions = useMemo(() => listCarryOptions(graph, loop), [graph, loop]);
 
     return (
@@ -43,7 +43,7 @@ export function LoopFields({
                 <FieldHeading doc={fieldDoc("loop", "until")} />
                 <ConditionEditor
                     value={config.until}
-                    suggestions={suggestions}
+                    fields={untilFields}
                     onChange={(until) => onChange({ until })}
                 />
             </div>

@@ -34,5 +34,5 @@
 - [x] 9. Test+impl: DataPicker keyboard (arrows, Enter, Esc), empty state
 - [x] 10. Test+impl: DataPicker "Digitar caminho" and unknown-path warning
 - [x] 11. Condition editor/rule row use DataPicker with `fields`; picking writes the exact path — `condition_editor.tsx`, `condition_rule_row.tsx`, `condition_editor.test.tsx`
-- [ ] 12. Condition inspector and loop fields pass `fields`; remove `condition_suggestions.ts`; update inspector tests
+- [x] 12. Condition inspector and loop fields pass `fields`; remove `condition_suggestions.ts`; update inspector tests
 - [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)

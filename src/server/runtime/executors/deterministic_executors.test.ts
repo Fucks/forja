@@ -1,10 +1,11 @@
+import { describeAvailableData } from "@/engine/available_data.js";
 import type { AgentEvent } from "@/integrations/agent_runtime/agent_runtime.js";
 import { executeConditionNode } from "@/server/runtime/executors/condition_executor.js";
 import { createOutputExecutor } from "@/server/runtime/executors/output_executor.js";
 import type { NodeExecutionContext, NodeExecutionResult } from "@/server/runtime/node_executors.js";
 import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
 import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.js";
-import { type Condition, CONDITION_PATH_SEPARATOR } from "@/shared/conditions.js";
+import type { Condition } from "@/shared/conditions.js";
 import {
     type FlowEdge,
     type FlowGraph,
@@ -30,7 +31,6 @@ import { FakeAgentRuntime, type ScriptedExec } from "@/test/fakes/fake_agent_run
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { FakeGitHubProvider } from "@/test/fakes/fake_github_provider.js";
 import { InMemoryRunRepository } from "@/test/fakes/in_memory_run_repository.js";
-import { listUpstreamOutputPaths } from "@/web/canvas/inspector/condition_suggestions.js";
 
 const POSITION = { x: 0, y: 0 };
 const ISSUE_1 = buildIssueSnapshot(1);
@@ -414,18 +414,17 @@ describe("deterministic executors", () => {
             expect((await bed.findNodeRun(runId, "needs_human")).status).toBe("SKIPPED");
         });
 
-        it("runs the true branch with a condition built on a path the editor suggests", async () => {
+        it("runs the true branch with a condition built on a field the editor offers", async () => {
             const graph = buildReviewDecisionFlowReadingNodes();
-            const [nearestSuggestion = ""] = listUpstreamOutputPaths(graph, "check");
-            const condition: Condition = {
-                op: "eq",
-                path: `${nearestSuggestion}${CONDITION_PATH_SEPARATOR}approved`,
-                value: true,
-            };
+            const approvedField = describeAvailableData(graph, "check", {
+                scope: "node",
+                portLabels: (_nodeType, port) => port.name,
+            }).find((field) => field.sourceNodeId === "review" && field.type === "boolean");
+            const condition: Condition = { op: "eq", path: approvedField?.path ?? "", value: true };
 
             const runId = await runToTheEnd(withCheckCondition(graph, condition));
 
-            expect(nearestSuggestion).toBe("nodes.review.result");
+            expect(approvedField?.path).toBe("nodes.review.result.approved");
             expect((await bed.findNodeRun(runId, "done")).status).toBe("SUCCEEDED");
         });
 
