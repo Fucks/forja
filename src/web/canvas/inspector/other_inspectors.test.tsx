@@ -248,11 +248,8 @@ describe("ConditionInspector", () => {
             screen.getByRole("textbox", { name: "Caminho da regra 2" }),
             "review.notes",
         );
-        await userEvent.click(
-            within(screen.getByRole("group", { name: "Regra 2" })).getByRole("radio", {
-                name: "existe",
-            }),
-        );
+        await userEvent.click(screen.getByRole("combobox", { name: "Operador da regra 2" }));
+        await userEvent.click(screen.getByRole("option", { name: "existe" }));
 
         expect(inspector.lastChangedNode("condition").config.condition).toEqual({
             op: "and",

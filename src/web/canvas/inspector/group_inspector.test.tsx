@@ -115,7 +115,8 @@ describe("GroupInspector of a loop", () => {
     it("edits the condition that ends the loop", async () => {
         const onChange = renderGroupInspector("review_loop");
 
-        await userEvent.click(screen.getByRole("radio", { name: "existe" }));
+        await userEvent.click(screen.getByRole("combobox", { name: "Operador da regra 1" }));
+        await userEvent.click(screen.getByRole("option", { name: "existe" }));
 
         expect(applyLastUpdate(onChange, "review_loop").config).toMatchObject({
             until: { op: "exists", path: "nodes.revisar.approved" },

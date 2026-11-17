@@ -24,12 +24,14 @@ export function Select<T extends string>({
     options,
     placeholder,
     invalid = false,
+    label,
 }: {
     value: T;
     onChange: (value: T) => void;
     options: SelectOption<T>[];
     placeholder?: string;
     invalid?: boolean;
+    label?: string;
 }): JSX.Element {
     const field = useFieldControlAttributes({ invalid });
 
@@ -39,6 +41,7 @@ export function Select<T extends string>({
         <RadixSelect.Root value={value} onValueChange={changeToSelectedOption}>
             <RadixSelect.Trigger
                 {...field.attributes}
+                aria-label={label}
                 className={cn(
                     buildControlClassName({ isInvalid: field.isInvalid }),
                     CONTROL_HEIGHT_CLASSES.md,
