@@ -126,7 +126,6 @@ async function revealAndMaskInLogs(
     return credential;
 }
 
-// A credential of another kind (a GitHub token, say) cannot run Claude, so it counts as missing.
 function findCredentialValue(values: Map<string, string>, credentialId: string): string {
     const value = values.get(credentialId);
     if (value === undefined) {
@@ -136,6 +135,7 @@ function findCredentialValue(values: Map<string, string>, credentialId: string):
     return value;
 }
 
+// A credential of another kind (a GitHub token, say) cannot run Claude, so it counts as missing.
 function findClaudeCredential(
     claudeCredentials: Map<string, ClaudeCredential>,
     credentialId: string | null,

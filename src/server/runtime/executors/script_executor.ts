@@ -69,7 +69,7 @@ export async function executeScriptNode(
     return { outputs: { result, output: result.stdout } };
 }
 
-// The values never leave the executor unmasked, even when shorter than what the log store masks.
+// The log store masks the lines it stores, but stdout and stderr also leave as the node's outputs.
 function createCredentialMask(context: NodeExecutionContext, config: ScriptConfig): SecretRedactor {
     const mask = createSecretRedactor();
     for (const envVar of config.env) {

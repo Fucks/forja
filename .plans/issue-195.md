@@ -47,4 +47,4 @@
 - [x] 11. Validation: item required only with `runIn: "item"`; empty command, `image` without isolated,
       duplicated env name — `port_rules.ts`, `graph_validation.ts`, `graph_validation.test.ts`
 - [x] 12. Docs: `script_doc.ts` and regenerated `docs/nos/script.md`
-- [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 13. Self-review checklist (section 5) and feedback loops (section 6)
