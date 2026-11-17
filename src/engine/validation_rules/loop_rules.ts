@@ -13,8 +13,7 @@ import {
     nodeTarget,
     warningIssue,
 } from "@/engine/validation_rules/validation_issues.js";
-import { listComparisons } from "@/shared/conditions.js";
-import type { Condition } from "@/shared/conditions.js";
+import { listConditionPaths } from "@/shared/conditions.js";
 import { findNodeSlugInPath } from "@/shared/data_context.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
@@ -145,10 +144,6 @@ function findUnknownConditionPathsOfLoop(graph: FlowGraph, loop: LoopGroup): Val
             groupTarget(loop.id),
         ),
     );
-}
-
-function listConditionPaths(condition: Condition): string[] {
-    return listComparisons(condition).map((comparison) => comparison.path);
 }
 
 function isBlankPath(path: string): boolean {

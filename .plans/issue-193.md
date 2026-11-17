@@ -20,7 +20,7 @@
 ## Tasks
 
 - [x] 1. `toJsonSchema` for each type + `fromJsonSchema` round trip and unsupported → undefined — `response_format.ts`/`.test.ts`
-- [ ] 2. Rule `agent_without_response_format` (move `listConditionPaths`) — `agent_rules.ts`, `graph_validation.ts`, test
+- [x] 2. Rule `agent_without_response_format` (move `listConditionPaths`) — `agent_rules.ts`, `graph_validation.ts`, test
 - [ ] 3. `OutputSchemaEditor` becomes the JSON tab; `ResponseFormatEditor` with field rows, presets and advanced-schema notice; wire in `agent_inspector.tsx`; tests
 - [ ] 4. `PromptEditor` `insertAtCursor` + `InsertDataButton` in the prompt bar; test
 - [ ] 5. Docs: outputSchema text and "Reviewer que devolve aprovado + notas" example — `agent_doc.ts`

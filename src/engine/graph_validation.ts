@@ -1,5 +1,6 @@
 import {
     checkAgentPrompts,
+    findAgentsWithoutResponseFormat,
     findEmptyPrompts,
     findUnknownCredentials,
     findUnknownToolProfiles,
@@ -57,6 +58,7 @@ const VALIDATION_RULES: ValidationRule[] = [
     findEmptyPrompts,
     findUnknownToolProfiles,
     findUnknownCredentials,
+    findAgentsWithoutResponseFormat,
     checkAgentPrompts,
 ];
 
