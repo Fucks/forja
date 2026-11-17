@@ -10,6 +10,18 @@ import type { VariableInfo } from "@/engine/prompt_template.js";
 import { promptCompletions } from "@/web/canvas/inspector/prompt_completion.js";
 import { findPromptVariables } from "@/web/canvas/inspector/prompt_highlighting.js";
 
+export type PromptLanguage = "markdown" | "shell";
+
+interface PromptEditorSettings {
+    label: string;
+    language: PromptLanguage;
+}
+
+const LANGUAGE_EXTENSIONS: Record<PromptLanguage, () => Extension[]> = {
+    markdown: () => [markdown()],
+    shell: () => [],
+};
+
 const KNOWN_VARIABLE_MARK = Decoration.mark({ class: "text-status-succeeded" });
 const UNKNOWN_VARIABLE_MARK = Decoration.mark({
     class: "text-status-failed underline decoration-wavy",
@@ -22,11 +34,14 @@ const PROMPT_EDITOR_THEME = EditorView.theme({
     ".cm-cursor": { borderLeftColor: "var(--color-text)" },
 });
 
-export function buildPromptEditorExtensions(variables: VariableInfo[]): Extension[] {
+export function buildPromptEditorExtensions(
+    variables: VariableInfo[],
+    { label, language }: PromptEditorSettings,
+): Extension[] {
     return [
-        markdown(),
+        ...LANGUAGE_EXTENSIONS[language](),
         EditorView.lineWrapping,
-        EditorView.contentAttributes.of({ "aria-label": "Prompt" }),
+        EditorView.contentAttributes.of({ "aria-label": label }),
         PROMPT_EDITOR_THEME,
         autocompletion({ override: [completeVariables(variables)] }),
         highlightVariables(new Set(variables.map((variable) => variable.path))),
