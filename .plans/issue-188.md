@@ -27,7 +27,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement `listCompatibleNodeTypes` and `findFirstCompatiblePort` — `compatible_node_types(.test).ts`
+- [x] 1. Test + implement `listCompatibleNodeTypes` and `findFirstCompatiblePort` — `compatible_node_types(.test).ts`
 - [ ] 2. `PaletteItem` with `kind`, `category`; map and loop entries; search in `whenToUse` (+ condition doc
       wording, regenerate docs) — `palette_items.ts`, `node_palette.test.tsx`
 - [ ] 3. Palette sections per category, collapsible, in `NODE_CATEGORIES` order with count — `node_palette.tsx`
