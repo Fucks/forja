@@ -44,7 +44,7 @@
 - [x] 9. Defaults + templates keep loop green — `node_defaults.ts`, `review_loop.ts`, `flow_graph_factory.ts`
 - [x] 10. Output shapes for `script.result` (with `data: object`) and `script.output` — `node_output_shapes.ts`,
       `available_data.test.ts`
-- [ ] 11. Validation: item required only with `runIn: "item"`; empty command, `image` without isolated,
+- [x] 11. Validation: item required only with `runIn: "item"`; empty command, `image` without isolated,
       duplicated env name — `port_rules.ts`, `graph_validation.ts`, `graph_validation.test.ts`
 - [x] 12. Docs: `script_doc.ts` and regenerated `docs/nos/script.md`
 - [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)

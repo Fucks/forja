@@ -1,6 +1,7 @@
 import { type AgentNode, validateFlowGraph } from "@/engine/graph_validation.js";
 import type { Condition } from "@/shared/conditions.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+import type { ScriptConfig } from "@/shared/node_configs/script_config.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import {
@@ -8,6 +9,7 @@ import {
     buildLoopFlow,
     buildLoopFlowWithExits,
     connect,
+    createNodeOfType,
 } from "@/test/factories/flow_graph_factory.js";
 import {
     addEdges,
@@ -152,6 +154,65 @@ describe("required_input_unconnected", () => {
         expect(targetsOf(graph, "required_input_unconnected")).toEqual([
             { kind: "node", id: "open_pr" },
         ]);
+    });
+});
+
+describe("required_input_unconnected of a script", () => {
+    it("requires the item input of a script that runs in the item workspace", () => {
+        const graph = addScriptOutsideMaps(buildCanonicalFlow(), { runIn: "item" });
+
+        expect(targetsOf(graph, "required_input_unconnected")).toEqual([
+            { kind: "node", id: "lint" },
+        ]);
+    });
+
+    it("does not require the item input of an isolated script", () => {
+        const graph = addScriptOutsideMaps(buildCanonicalFlow(), { runIn: "isolated" });
+
+        expect(targetsOf(graph, "required_input_unconnected")).toEqual([]);
+    });
+});
+
+describe("script config rules", () => {
+    it("points to a script whose command is blank", () => {
+        const graph = addScriptOutsideMaps(buildCanonicalFlow(), {
+            runIn: "isolated",
+            command: "  ",
+        });
+
+        expect(targetsOf(graph, "empty_command")).toEqual([{ kind: "node", id: "lint" }]);
+    });
+
+    it("points to a script that names an image but runs in the item workspace", () => {
+        const graph = addScriptOutsideMaps(buildCanonicalFlow(), {
+            runIn: "item",
+            image: "node:22",
+        });
+
+        expect(targetsOf(graph, "script_image_without_isolated")).toEqual([
+            { kind: "node", id: "lint" },
+        ]);
+    });
+
+    it("accepts an image on an isolated script", () => {
+        const graph = addScriptOutsideMaps(buildCanonicalFlow(), {
+            runIn: "isolated",
+            image: "node:22",
+        });
+
+        expect(targetsOf(graph, "script_image_without_isolated")).toEqual([]);
+    });
+
+    it("points to a script with two env variables of the same name", () => {
+        const graph = addScriptOutsideMaps(buildCanonicalFlow(), {
+            runIn: "isolated",
+            env: [
+                { name: "NODE_ENV", value: "test" },
+                { name: "NODE_ENV", value: "production" },
+            ],
+        });
+
+        expect(targetsOf(graph, "duplicate_env_var")).toEqual([{ kind: "node", id: "lint" }]);
     });
 });
 
@@ -408,6 +469,14 @@ function targetsOf(graph: FlowGraph, code: string): ValidationIssue["target"][] 
 
 function targetsWithCode(issues: ValidationIssue[], code: string): ValidationIssue["target"][] {
     return issues.filter((issue) => issue.code === code).map((issue) => issue.target);
+}
+
+function addScriptOutsideMaps(graph: FlowGraph, config: Partial<ScriptConfig>): FlowGraph {
+    const script = createNodeOfType("script", "lint", { x: 0, y: 0 });
+
+    return addNodes(graph, [
+        { ...script, config: { ...script.config, command: "npm run lint", ...config } },
+    ]);
 }
 
 function updateLoopCondition(graph: FlowGraph, groupId: string, until: Condition): FlowGraph {
