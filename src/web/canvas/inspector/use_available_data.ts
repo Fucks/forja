@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { useParams } from "react-router";
 
 import { describeAvailableData } from "@/engine/available_data.js";
 import type { AvailableDataOptions, DataField } from "@/engine/available_data.js";
@@ -8,11 +7,11 @@ import type { NodeOutputsBySlug } from "@/shared/data_context.js";
 import type { FlowGraph, NodeType, Port } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { PickableDataField } from "@/web/canvas/inspector/data_picker.js";
-import { useLastNodeRunSamples } from "@/web/canvas/inspector/use_last_node_run_sample.js";
-import type {
-    FlowInEditor,
-    NodeRunSamples,
+import {
+    useFlowInEditor,
+    useLastNodeRunSamples,
 } from "@/web/canvas/inspector/use_last_node_run_sample.js";
+import type { NodeRunSamples } from "@/web/canvas/inspector/use_last_node_run_sample.js";
 import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
 
 type DataScope = Omit<AvailableDataOptions, "portLabels">;
@@ -57,15 +56,6 @@ function labelPort(nodeType: NodeType, port: Port): string {
     const portDoc = [...outputs, ...inputs].find((candidate) => candidate.name === port.name);
 
     return portDoc?.label ?? port.name;
-}
-
-function useFlowInEditor(): FlowInEditor | undefined {
-    const { projectId, flowId } = useParams();
-    if (projectId === undefined || flowId === undefined) {
-        return undefined;
-    }
-
-    return { projectId, flowId };
 }
 
 // The node's own sample holds its inputs; the nodes the fields come from hold their outputs.

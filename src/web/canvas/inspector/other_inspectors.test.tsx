@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import type { Mock } from "vitest";
@@ -294,6 +294,52 @@ describe("ConditionInspector", () => {
             name: "Reviewer › Resultado › notes (texto)",
         });
         expect(await within(notesRow).findByText("Tudo certo")).toBeInTheDocument();
+    });
+
+    it("keeps the test with the last run off until the flow runs once", async () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+        renderInspector(ConditionInspector, DECISION_AFTER_REVIEWER, GRAPH_WITH_DECISION);
+
+        const testButton = screen.getByRole("button", { name: "Testar com o último run" });
+        await userEvent.hover(testButton.parentElement ?? testButton);
+
+        expect(testButton).toBeDisabled();
+        expect(await screen.findByRole("tooltip")).toHaveTextContent(
+            "Rode o fluxo uma vez para testar com dados reais",
+        );
+    });
+
+    it("tests the rule with the data of the last run and shows the branch it takes", async () => {
+        const lastRun = buildRunListItem({ id: "run_01JREVIEW8", flowId: FLOW_ID });
+        const reviewerRun = buildSerializedNodeRun({
+            id: "reviewer-run",
+            runId: lastRun.id,
+            nodeId: "reviewer",
+            workItemId: "itm_42",
+            outputs: { result: { approved: false, notes: "Faltam testes" } },
+        });
+        const decisionRun = buildSerializedNodeRun({
+            id: "decision-run",
+            runId: lastRun.id,
+            nodeId: DECISION_AFTER_REVIEWER.id,
+            workItemId: "itm_42",
+            inputs: { value: { approved: false, notes: "Faltam testes" } },
+        });
+        const runView = buildSerializedRunView({ nodeRuns: [reviewerRun, decisionRun] });
+        stubFetchRoutes({
+            [RECENT_RUNS_ROUTE]: () => Response.json([lastRun]),
+            [`GET /api/runs/${lastRun.id}`]: () =>
+                Response.json({ ...runView, run: { ...runView.run, id: lastRun.id } }),
+        });
+        renderInspector(ConditionInspector, DECISION_AFTER_REVIEWER, GRAPH_WITH_DECISION);
+
+        const getTestButton = () => screen.getByRole("button", { name: "Testar com o último run" });
+        await waitFor(() => expect(getTestButton()).toBeEnabled());
+        await userEvent.click(getTestButton());
+
+        expect(screen.getByRole("status")).toHaveTextContent(
+            "Run #JREVIEW8 · item #itm_42: approved = false → Não",
+        );
     });
 });
 
