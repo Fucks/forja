@@ -1,33 +1,36 @@
 import { useId } from "react";
 import type { JSX } from "react";
 
+import { describeFieldLabel } from "@/web/canvas/inspector/field_label.js";
+import type { FieldLabeling } from "@/web/canvas/inspector/field_label.js";
 import { Field } from "@/web/components/ui/field.js";
 import { Input } from "@/web/components/ui/input.js";
 import { Textarea } from "@/web/components/ui/textarea.js";
 
-interface TextFieldProps {
-    label: string;
+type TextFieldProps = FieldLabeling & {
     text: string;
     onChange: (text: string) => void;
     hint?: string;
     placeholder?: string;
     mono?: boolean;
-}
+};
 
 // Text is applied when the field loses focus, so typing does not change the draft on every key.
 export function TextField({
-    label,
     text,
     onChange,
     hint,
-    ...inputProps
+    placeholder,
+    mono,
+    ...labeling
 }: TextFieldProps): JSX.Element {
     const inputId = useId();
 
     return (
-        <Field label={label} htmlFor={inputId} hint={hint}>
+        <Field {...describeFieldLabel(labeling)} htmlFor={inputId} hint={hint}>
             <Input
-                {...inputProps}
+                placeholder={placeholder}
+                mono={mono}
                 defaultValue={text}
                 onBlur={(event) => applyChangedText(event.target.value, text, onChange)}
             />
@@ -36,22 +39,43 @@ export function TextField({
 }
 
 export function TextAreaField({
-    label,
     text,
     onChange,
     hint,
-    ...textareaProps
+    placeholder,
+    mono,
+    ...labeling
 }: TextFieldProps): JSX.Element {
     const textareaId = useId();
 
     return (
-        <Field label={label} htmlFor={textareaId} hint={hint}>
+        <Field {...describeFieldLabel(labeling)} htmlFor={textareaId} hint={hint}>
             <Textarea
-                {...textareaProps}
+                placeholder={placeholder}
+                mono={mono}
                 defaultValue={text}
                 onBlur={(event) => applyChangedText(event.target.value, text, onChange)}
             />
         </Field>
+    );
+}
+
+// A text input without a visible label, for where the surroundings already say what it is.
+export function InlineTextInput({
+    label,
+    text,
+    onChange,
+}: {
+    label: string;
+    text: string;
+    onChange: (text: string) => void;
+}): JSX.Element {
+    return (
+        <Input
+            aria-label={label}
+            defaultValue={text}
+            onBlur={(event) => applyChangedText(event.target.value, text, onChange)}
+        />
     );
 }
 

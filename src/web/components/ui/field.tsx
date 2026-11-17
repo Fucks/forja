@@ -22,12 +22,14 @@ const FieldControlContext = createContext<FieldControlContextValue | undefined>(
 
 export function Field({
     label,
+    labelAddon,
     hint,
     error,
     htmlFor,
     children,
 }: {
     label: string;
+    labelAddon?: ReactNode;
     hint?: string;
     error?: string;
     htmlFor: string;
@@ -39,9 +41,12 @@ export function Field({
 
     return (
         <div className="flex flex-col gap-1">
-            <label htmlFor={htmlFor} className="text-sm font-medium text-text">
-                {label}
-            </label>
+            <div className="flex items-center gap-1">
+                <label htmlFor={htmlFor} className="text-sm font-medium text-text">
+                    {label}
+                </label>
+                {labelAddon}
+            </div>
             <FieldControlContext
                 value={{ controlId: htmlFor, descriptionIds, isInvalid: Boolean(error) }}
             >

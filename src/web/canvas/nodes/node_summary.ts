@@ -45,18 +45,18 @@ const TRIGGER_SUMMARIES: Record<TriggerConfig["kind"], string> = {
     board_column: "Dispara quando um item entra na coluna do board",
 };
 
-export const SOURCE_PROVIDER_LABELS: Record<SourceConfig["provider"], string> = {
+const SOURCE_PROVIDER_LABELS: Record<SourceConfig["provider"], string> = {
     github: "GitHub",
     local: "Local",
 };
 
-export const GIT_ACTION_LABELS: Record<GitConfig["action"], string> = {
+const GIT_ACTION_LABELS: Record<GitConfig["action"], string> = {
     rebase: "rebase",
     push: "push",
     open_pr: "abrir PR",
 };
 
-export const ITEM_DESTINATION_LABELS: Record<NonNullable<OutputConfig["moveItemTo"]>, string> = {
+const ITEM_DESTINATION_LABELS: Record<NonNullable<OutputConfig["moveItemTo"]>, string> = {
     done: "Concluído",
     needs_human: "Precisa de humano",
 };

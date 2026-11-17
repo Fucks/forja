@@ -60,7 +60,7 @@ async function openModelSectionOfDeveloper(page: Page): Promise<Locator> {
 
 async function lowerDevelopGroupConcurrencyToTwo(page: Page): Promise<void> {
     const inspector = await openInspectorOf(page, DEVELOP_GROUP_LABEL);
-    await inspector.getByRole("slider", { name: "Concorrência" }).focus();
+    await inspector.getByRole("slider", { name: "Itens em paralelo" }).focus();
     await page.keyboard.press("ArrowLeft");
 
     await expect(inspector.getByText(CONCURRENCY_OF_TWO_SUMMARY)).toBeVisible();

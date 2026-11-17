@@ -73,7 +73,7 @@ function useReloadRunsOnRunEvents(projectId: string): void {
     useEventStream({ projectId }, reloadOnRunEvent);
 }
 
-function projectRunsQueryKey(projectId: string): string[] {
+export function projectRunsQueryKey(projectId: string): string[] {
     return [RUNS_QUERY_KEY, projectId];
 }
 
@@ -90,7 +90,7 @@ function runsPagePath(projectId: string, filters: RunFilters, before?: string): 
     return `${projectRunsPath(projectId)}?${query.toString()}`;
 }
 
-function projectRunsPath(projectId: string): string {
+export function projectRunsPath(projectId: string): string {
     return `/projects/${encodeURIComponent(projectId)}/runs`;
 }
 

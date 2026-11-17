@@ -3,12 +3,14 @@ import type { JSX } from "react";
 import { assertNever } from "@/lib/assert_never.js";
 import { MAX_MAP_CONCURRENCY, MIN_MAP_CONCURRENCY } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, LoopConfig, MapConfig } from "@/shared/flow_graph.js";
-import { GROUP_KIND_LABELS } from "@/web/canvas/grouping.js";
-import { InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
-import { LabelField } from "@/web/canvas/inspector/label_field.js";
+import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
+import { FieldHelp } from "@/web/canvas/inspector/field_help.js";
+import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
+import { GroupDataTab } from "@/web/canvas/inspector/node_data_tab.js";
 import { LoopFields } from "@/web/canvas/inspector/loop_fields.js";
+import { InspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
+import { SwitchField } from "@/web/canvas/inspector/switch_field.js";
 import { Slider } from "@/web/components/ui/slider.js";
-import { Switch } from "@/web/components/ui/switch.js";
 
 export interface GroupInspectorProps {
     group: FlowGroup;
@@ -18,15 +20,16 @@ export interface GroupInspectorProps {
 
 export function GroupInspector({ group, graph, onChange }: GroupInspectorProps): JSX.Element {
     return (
-        <div className="flex flex-col">
-            <LabelField
-                label={group.label}
-                onChange={(label) => onChange((current) => ({ ...current, label }))}
-            />
-            <InspectorSection title={GROUP_KIND_LABELS[group.kind]} isInitiallyOpen>
+        <InspectorFrame
+            type={group.kind}
+            label={group.label}
+            onLabelChange={(label) => onChange((current) => ({ ...current, label }))}
+            data={<GroupDataTab kind={group.kind} />}
+        >
+            <InspectorFields>
                 <GroupConfigFields group={group} graph={graph} onChange={onChange} />
-            </InspectorSection>
-        </div>
+            </InspectorFields>
+        </InspectorFrame>
     );
 }
 
@@ -59,11 +62,14 @@ function MapFields({
     config: MapConfig;
     onChange: (changes: Partial<MapConfig>) => void;
 }): JSX.Element {
+    const concurrencyDoc = fieldDoc("map", "concurrency");
+
     return (
         <>
             <div className="flex flex-col gap-1">
                 <Slider
-                    label="Concorrência"
+                    label={concurrencyDoc.label}
+                    labelAddon={<FieldHelp doc={concurrencyDoc} />}
                     value={config.concurrency}
                     min={MIN_MAP_CONCURRENCY}
                     max={MAX_MAP_CONCURRENCY}
@@ -71,13 +77,13 @@ function MapFields({
                 />
                 <p className="text-xs text-muted">{describeConcurrency(config.concurrency)}</p>
             </div>
-            <Switch
-                label="Esperar todos (barreira)"
+            <SwitchField
+                doc={fieldDoc("map", "barrier")}
                 checked={config.barrier}
                 onChange={(barrier) => onChange({ barrier })}
             />
-            <Switch
-                label="Parar todos na primeira falha"
+            <SwitchField
+                doc={fieldDoc("map", "failFast")}
                 checked={config.failFast}
                 onChange={(failFast) => onChange({ failFast })}
             />

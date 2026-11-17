@@ -3,6 +3,7 @@ import type { JSX } from "react";
 import { AGENT_CREDENTIAL_KINDS } from "@/shared/credential_types.js";
 import { useCredentials } from "@/web/app/settings/use_credentials.js";
 import { useToolProfiles } from "@/web/app/settings/use_tool_profiles.js";
+import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { InheritableSelect } from "@/web/canvas/inspector/inheritable_select.js";
 import type { InheritableSelectOption } from "@/web/canvas/inspector/inheritable_select.js";
 
@@ -26,7 +27,7 @@ export function ToolProfileField({
 
     return (
         <InheritableSelect
-            label="Perfil de ferramentas"
+            doc={fieldDoc("agent", "toolProfileId")}
             selected={toolProfileId}
             options={toolProfiles.map(toOption)}
             inheritedLabel={describeEntry(toolProfiles, inheritedToolProfileId)}
@@ -54,7 +55,7 @@ export function CredentialField({
 
     return (
         <InheritableSelect
-            label="Credencial"
+            doc={fieldDoc("agent", "credentialId")}
             selected={credentialId}
             options={agentCredentials.map(toOption)}
             inheritedLabel={inheritedLabel}

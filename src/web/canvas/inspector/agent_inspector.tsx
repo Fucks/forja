@@ -5,12 +5,15 @@ import { availableVariables } from "@/engine/prompt_template.js";
 import { isNodeOfType } from "@/shared/flow_graph.js";
 import type { FlowGraph, NodeOfType } from "@/shared/flow_graph.js";
 import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
+import { AdvancedSection } from "@/web/canvas/inspector/advanced_section.js";
+import { ExecutionFields, ExecutionLimitFields } from "@/web/canvas/inspector/execution_fields.js";
+import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
+import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
 import { useInheritedSettings } from "@/web/canvas/inspector/inherited_settings.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
-import { LabelField } from "@/web/canvas/inspector/label_field.js";
-import { ExecutionFields } from "@/web/canvas/inspector/execution_fields.js";
 import { EffortField, ModelField } from "@/web/canvas/inspector/model_effort_fields.js";
+import { NodeInspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
 import {
     withInputPort,
     withNodeConfig,
@@ -23,6 +26,7 @@ import {
     CredentialField,
     ToolProfileField,
 } from "@/web/canvas/inspector/tools_credential_fields.js";
+import { SwitchField } from "@/web/canvas/inspector/switch_field.js";
 
 type AgentNode = NodeOfType<"agent">;
 type ChangeAgentConfig = (changes: Partial<AgentConfig>) => void;
@@ -42,19 +46,15 @@ export function AgentInspector({ node, graph, onChange }: InspectorProps): JSX.E
         onChange((current) => withNodeConfig(current, "agent", changes));
 
     return (
-        <div className="flex flex-col">
-            <LabelField
-                label={node.label}
-                onChange={(label) => onChange((current) => ({ ...current, label }))}
-            />
+        <NodeInspectorFrame node={node} graph={graph} onChange={onChange}>
             <PromptSection agent={node} graph={graph} onConfigChange={changeConfig} />
             <ModelAndEffortSection agent={node} onConfigChange={changeConfig} />
-            <ToolsAndCredentialSection agent={node} onConfigChange={changeConfig} />
             <InspectorSection title="Execução">
                 <ExecutionFields config={node.config} onChange={changeConfig} />
             </InspectorSection>
             <InspectorSection title="Saída">
                 <OutputSchemaEditor
+                    doc={fieldDoc("agent", "outputSchema")}
                     outputSchema={node.config.outputSchema}
                     onChange={(outputSchema) => changeConfig({ outputSchema })}
                 />
@@ -66,7 +66,8 @@ export function AgentInspector({ node, graph, onChange }: InspectorProps): JSX.E
                     onRemove={(name) => onChange((current) => withoutInputPort(current, name))}
                 />
             </InspectorSection>
-        </div>
+            <AgentAdvancedSection agent={node} onConfigChange={changeConfig} />
+        </NodeInspectorFrame>
     );
 }
 
@@ -79,6 +80,7 @@ function PromptSection({
 
     return (
         <InspectorSection title="Prompt" isInitiallyOpen>
+            <FieldHeading doc={fieldDoc("agent", "prompt")} />
             <PromptEditor
                 prompt={agent.config.prompt}
                 variables={variables}
@@ -107,11 +109,12 @@ function ModelAndEffortSection({ agent, onConfigChange }: AgentSectionProps): JS
     );
 }
 
-function ToolsAndCredentialSection({ agent, onConfigChange }: AgentSectionProps): JSX.Element {
+function AgentAdvancedSection({ agent, onConfigChange }: AgentSectionProps): JSX.Element {
     const inheritedSettings = useInheritedSettings();
 
     return (
-        <InspectorSection title="Ferramentas e credencial">
+        <AdvancedSection>
+            <ExecutionLimitFields config={agent.config} onChange={onConfigChange} />
             <ToolProfileField
                 toolProfileId={agent.config.toolProfileId}
                 inheritedToolProfileId={inheritedSettings?.defaultToolProfileId}
@@ -122,6 +125,11 @@ function ToolsAndCredentialSection({ agent, onConfigChange }: AgentSectionProps)
                 inheritedCredentialId={inheritedSettings?.defaultCredentialId}
                 onChange={(credentialId) => onConfigChange({ credentialId })}
             />
-        </InspectorSection>
+            <SwitchField
+                doc={fieldDoc("agent", "expandPromptCommands")}
+                checked={agent.config.expandPromptCommands}
+                onChange={(expandPromptCommands) => onConfigChange({ expandPromptCommands })}
+            />
+        </AdvancedSection>
     );
 }

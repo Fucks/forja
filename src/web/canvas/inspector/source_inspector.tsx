@@ -8,18 +8,20 @@ import {
     sourceConfigSchema,
 } from "@/shared/node_configs/source_config.js";
 import type { SourceConfig } from "@/shared/node_configs/source_config.js";
+import { fieldDoc, fieldOptionCards } from "@/web/canvas/inspector/field_doc.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
+import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
 import { NodeInspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
 import { withNodeConfig } from "@/web/canvas/inspector/node_updates.js";
-import { SelectField, toSelectOptions } from "@/web/canvas/inspector/select_field.js";
+import { OptionCardsField } from "@/web/canvas/inspector/option_cards_field.js";
+import { SwitchField } from "@/web/canvas/inspector/switch_field.js";
 import { TextField, toOptionalText } from "@/web/canvas/inspector/text_field.js";
-import { SOURCE_PROVIDER_LABELS } from "@/web/canvas/nodes/node_summary.js";
-import { Switch } from "@/web/components/ui/switch.js";
 
-const PROVIDER_OPTIONS = toSelectOptions(SOURCE_PROVIDERS, SOURCE_PROVIDER_LABELS);
+const PROVIDER_DOC = fieldDoc("source", "provider");
+const PROVIDER_CARDS = fieldOptionCards(PROVIDER_DOC, SOURCE_PROVIDERS);
 
-export function SourceInspector({ node, onChange }: InspectorProps): JSX.Element {
+export function SourceInspector({ node, graph, onChange }: InspectorProps): JSX.Element {
     // The registry routes only sources here; the check narrows the node to its source config.
     if (!isNodeOfType(node, "source")) {
         return <></>;
@@ -30,31 +32,33 @@ export function SourceInspector({ node, onChange }: InspectorProps): JSX.Element
         onChange((current) => withNodeConfig(current, "source", changes));
 
     return (
-        <NodeInspectorFrame node={node} onChange={onChange} title="Fonte de itens">
-            <SelectField
-                label="Provedor"
-                value={config.provider}
-                options={PROVIDER_OPTIONS}
-                onChange={(provider) => changeConfig({ provider })}
-            />
-            <TextField
-                label="Label"
-                text={config.label ?? ""}
-                placeholder="todas as issues"
-                onChange={(label) => changeConfig({ label: toOptionalText(label) })}
-            />
-            <IntegerField
-                label="Limite de itens"
-                value={config.limit}
-                schema={sourceConfigSchema.shape.limit}
-                limits={{ min: MIN_SOURCE_LIMIT, max: MAX_SOURCE_LIMIT }}
-                onChange={(limit) => changeConfig({ limit })}
-            />
-            <Switch
-                label="Pular issues bloqueadas"
-                checked={config.skipBlocked}
-                onChange={(skipBlocked) => changeConfig({ skipBlocked })}
-            />
+        <NodeInspectorFrame node={node} graph={graph} onChange={onChange}>
+            <InspectorFields>
+                <OptionCardsField
+                    doc={PROVIDER_DOC}
+                    value={config.provider}
+                    options={PROVIDER_CARDS}
+                    onChange={(provider) => changeConfig({ provider })}
+                />
+                <TextField
+                    doc={fieldDoc("source", "label")}
+                    text={config.label ?? ""}
+                    placeholder="todas as issues"
+                    onChange={(label) => changeConfig({ label: toOptionalText(label) })}
+                />
+                <IntegerField
+                    doc={fieldDoc("source", "limit")}
+                    value={config.limit}
+                    schema={sourceConfigSchema.shape.limit}
+                    limits={{ min: MIN_SOURCE_LIMIT, max: MAX_SOURCE_LIMIT }}
+                    onChange={(limit) => changeConfig({ limit })}
+                />
+                <SwitchField
+                    doc={fieldDoc("source", "skipBlocked")}
+                    checked={config.skipBlocked}
+                    onChange={(skipBlocked) => changeConfig({ skipBlocked })}
+                />
+            </InspectorFields>
         </NodeInspectorFrame>
     );
 }
