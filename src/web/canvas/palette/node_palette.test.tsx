@@ -1,5 +1,5 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
 import type { FlowGraph } from "@/shared/flow_graph.js";
@@ -174,6 +174,38 @@ describe("NodePalette", () => {
             "aria-disabled",
             "false",
         );
+    });
+});
+
+describe("NodePalette keyboard", () => {
+    it("moves between the entries with the arrow keys, across sections", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+        act(() => screen.getByRole("button", { name: "Gatilho" }).focus());
+
+        await userEvent.keyboard("{ArrowDown}");
+        expect(screen.getByRole("button", { name: "Fonte" })).toHaveFocus();
+
+        await userEvent.keyboard("{ArrowUp}");
+        expect(screen.getByRole("button", { name: "Gatilho" })).toHaveFocus();
+    });
+
+    it("stays on the last entry when ArrowDown has nowhere to go", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+        act(() => screen.getByRole("button", { name: "Loop" }).focus());
+
+        await userEvent.keyboard("{ArrowDown}");
+
+        expect(screen.getByRole("button", { name: "Loop" })).toHaveFocus();
+    });
+
+    it("adds the focused entry at the center with Enter", async () => {
+        const store = createStoreWith(EMPTY_GRAPH);
+        renderPalette(store);
+        act(() => screen.getByRole("button", { name: "Comando" }).focus());
+
+        await userEvent.keyboard("{Enter}");
+
+        expect(store.getState().graph.nodes.map((node) => node.type)).toEqual(["script"]);
     });
 });
 

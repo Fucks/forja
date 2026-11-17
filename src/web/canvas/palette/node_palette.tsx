@@ -1,6 +1,6 @@
 import { ChevronDown, Search } from "lucide-react";
 import { useId, useState } from "react";
-import type { JSX } from "react";
+import type { JSX, KeyboardEvent } from "react";
 
 import type { FlowNode } from "@/shared/flow_graph.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
@@ -24,6 +24,9 @@ import { Tooltip } from "@/web/components/ui/tooltip.js";
 const ITEM_ICON_SIZE_PX = 16;
 const SECTION_CHEVRON_SIZE_PX = 14;
 
+const ENTRY_SELECTOR = "[data-palette-entry]";
+const FOCUS_STEPS: Partial<Record<string, number>> = { ArrowDown: 1, ArrowUp: -1 };
+
 export function NodePalette({ store }: { store: EditorStore }): JSX.Element {
     const [query, setQuery] = useState("");
     const nodes = store((state) => state.graph.nodes);
@@ -44,7 +47,10 @@ export function NodePalette({ store }: { store: EditorStore }): JSX.Element {
             {sections.length === 0 && (
                 <p className="px-1 text-sm text-muted">Nenhum nó encontrado</p>
             )}
-            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto">
+            <div
+                className="flex min-h-0 flex-col gap-2 overflow-y-auto"
+                onKeyDown={moveFocusBetweenEntries}
+            >
                 {sections.map((section) => (
                     <PaletteCategorySection
                         key={section.category}
@@ -56,6 +62,23 @@ export function NodePalette({ store }: { store: EditorStore }): JSX.Element {
             </div>
         </div>
     );
+}
+
+function moveFocusBetweenEntries(event: KeyboardEvent<HTMLElement>): void {
+    const step = FOCUS_STEPS[event.key];
+    if (step === undefined) {
+        return;
+    }
+
+    const entries = [...event.currentTarget.querySelectorAll<HTMLElement>(ENTRY_SELECTOR)];
+    const focusedIndex = entries.findIndex((entry) => entry === document.activeElement);
+    const nextEntry = entries[focusedIndex + step];
+    if (focusedIndex === -1 || !nextEntry) {
+        return;
+    }
+
+    event.preventDefault();
+    nextEntry.focus();
 }
 
 function PaletteSearchField({
@@ -164,6 +187,7 @@ function PaletteEntry({
     const entry = (
         <button
             type="button"
+            data-palette-entry
             draggable={!isUnavailable}
             aria-disabled={isUnavailable}
             aria-labelledby={labelId}

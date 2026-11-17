@@ -31,7 +31,7 @@
 - [x] 2. `PaletteItem` with `kind`, `category`; map and loop entries; search in `whenToUse` (+ condition doc
       wording, regenerate docs) — `palette_items.ts`, `node_palette.test.tsx`
 - [x] 3. Palette sections per category, collapsible, in `NODE_CATEGORIES` order with count — `node_palette.tsx`
-- [ ] 4. Arrow keys move between entries — `node_palette.tsx`
+- [x] 4. Arrow keys move between entries — `node_palette.tsx`
 - [x] 5. `createEmptyGroup` in grouping — `grouping.ts`, `grouping.test.ts`
 - [x] 6. Add group from the palette (click: empty at center or wrap selection) — `use_add_node.ts`, palette test
 - [x] 7. Drag a group from the palette onto the canvas — `node_type_drag.ts`, `use_node_drop.ts`, canvas test
