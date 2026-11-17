@@ -29,10 +29,10 @@
 - [x] 4. Move the ScriptInspector tests to `script_inspector.test.tsx`; command in the shell editor with Inserir dado, the {{…}} notice and the docs link — `script_command_field.tsx`, `script_inspector.tsx`
 - [x] 5. Test + implement: a preset chip fills an empty command with its config
 - [x] 6. Test + implement: a preset over an existing command asks for inline confirmation (Substituir / Cancelar)
-- [ ] 7. Test + implement: "Onde roda" cards with the item notice; doc texts — `script_doc.ts`
-- [ ] 8. Test + implement: "Se o comando falhar" cards with the Decisão hint
-- [ ] 9. Test + implement: "Formato da saída" cards with examples
-- [ ] 10. Test + implement: Avançado with shell, workingDir, image (isolated only) and timeout
+- [x] 7. Test + implement: "Onde roda" cards with the item notice; doc texts — `script_doc.ts`
+- [x] 8. Test + implement: "Se o comando falhar" cards with the Decisão hint
+- [x] 9. Test + implement: "Formato da saída" cards with examples
+- [x] 10. Test + implement: Avançado with shell, workingDir, image (isolated only) and timeout
 - [ ] 11. Test + implement the env rows logic (name validation, duplicates, to/from config) — `env_var_rows.ts`
 - [ ] 12. Test + implement `EnvListEditor` with text vars: add, edit, remove, reorder, inline name error — `env_list_editor.tsx`
 - [ ] 13. Test + implement credential vars: list the project credentials, save `credentialId`

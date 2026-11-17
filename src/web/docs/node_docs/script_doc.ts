@@ -7,7 +7,7 @@ export const scriptDoc: NodeDoc = {
     category: "executar",
     tagline: "Roda um comando de terminal num container",
     whatItDoes:
-        "Roda um comando de terminal num container, no workspace do item ou num container " +
+        "Roda um comando de terminal num container, no container do item ou num container " +
         "isolado, e diz se deu certo. Nunca roda na sua máquina. O comando recebe as variáveis " +
         "FORJA_RUN_ID, FORJA_PROJECT_BASE_BRANCH e FORJA_ITERATION; com item, também " +
         "FORJA_ITEM_ID, FORJA_ITEM_NUMBER, FORJA_ITEM_TITLE, FORJA_ITEM_BRANCH e FORJA_ITEM_URL; " +
@@ -27,8 +27,8 @@ export const scriptDoc: NodeDoc = {
                 type: "workItem",
                 required: true,
                 description:
-                    'O item em cujo workspace o comando roda. Só é obrigatória com "Onde roda" ' +
-                    "no workspace do item.",
+                    'O item em cujo container o comando roda. Só é obrigatória com "Onde roda" ' +
+                    "no container do item.",
             },
         ],
         outputs: [
@@ -65,19 +65,21 @@ export const scriptDoc: NodeDoc = {
             key: "runIn",
             label: "Onde roda",
             description: "Em qual container o comando roda.",
-            defaultValue: "Workspace do item",
+            defaultValue: "Container do item",
             options: [
                 {
                     value: "item",
-                    label: "Workspace do item",
-                    description: "No container do item, com o código e o branch dele.",
+                    label: "Container do item",
+                    description:
+                        "Na cópia do código deste item, onde os agentes trabalham. Use para " +
+                        "testes, lint e build.",
                 },
                 {
                     value: "isolated",
                     label: "Container isolado",
                     description:
-                        "Num container novo, só com o repositório para leitura. Não precisa de " +
-                        "item e, fora de um Map, roda uma vez por execução.",
+                        "Num container novo, sem o código do item. Use para tarefas que não " +
+                        "dependem da branch.",
                 },
             ],
         },
@@ -85,17 +87,17 @@ export const scriptDoc: NodeDoc = {
             key: "onFailure",
             label: "Se o comando falhar",
             description: "O que acontece quando o código de saída não é 0.",
-            defaultValue: "Falhar o nó",
+            defaultValue: "Marcar o nó como falho",
             options: [
                 {
                     value: "fail",
-                    label: "Falhar o nó",
+                    label: "Marcar o nó como falho (recomendado)",
                     description:
                         "O nó fica vermelho e tenta de novo, conforme as retentativas do projeto.",
                 },
                 {
                     value: "continue",
-                    label: "Continuar",
+                    label: "Continuar e deixar uma Decisão julgar",
                     description:
                         "O nó termina bem com passed falso, para uma Decisão ou um Loop julgar.",
                 },
@@ -103,22 +105,28 @@ export const scriptDoc: NodeDoc = {
         },
         {
             key: "parseOutput",
-            label: "Ler a saída como JSON",
+            label: "Formato da saída",
             description:
-                "Transforma o stdout em dados em result.data. Se não for JSON válido, data fica " +
-                "vazio e o nó não falha.",
-            defaultValue: "Não",
+                "Como ler o stdout. Com JSON, os dados vão para result.data; se não for JSON " +
+                "válido, data fica vazio e o nó não falha.",
+            defaultValue: "Texto",
             options: [
-                { value: "none", label: "Não", description: "A saída fica só como texto." },
+                {
+                    value: "none",
+                    label: "Texto",
+                    description: "A saída fica só como texto. Ex.: 12 testes passaram",
+                },
                 {
                     value: "json",
-                    label: "Saída inteira",
-                    description: "O stdout inteiro é um JSON.",
+                    label: "JSON (saída inteira)",
+                    description: 'O stdout inteiro é um JSON. Ex.: {"coverage": 81}',
                 },
                 {
                     value: "lastLineJson",
-                    label: "Última linha",
-                    description: "A última linha não vazia do stdout é um JSON.",
+                    label: "JSON (última linha)",
+                    description:
+                        "A última linha não vazia do stdout é um JSON; as anteriores podem ser " +
+                        'logs. Ex.: logs e, por fim, {"coverage": 81}',
                 },
             ],
         },
@@ -130,7 +138,6 @@ export const scriptDoc: NodeDoc = {
                 "do cofre, que nunca aparece nos logs. Sobrescrevem as FORJA_*, menos " +
                 "FORJA_RUN_ID.",
             defaultValue: "Nenhuma",
-            advanced: true,
         },
         {
             key: "workingDir",
@@ -203,8 +210,8 @@ export const scriptDoc: NodeDoc = {
         },
     ],
     pitfalls: [
-        'Usar "Falhar o nó" num teste que um Loop deve julgar: o nó para o fluxo em vez de ' +
-            'seguir com passed falso. Use "Continuar".',
+        'Usar "Marcar o nó como falho" num teste que um Loop deve julgar: o nó para o fluxo ' +
+            'em vez de seguir com passed falso. Use "Continuar e deixar uma Decisão julgar".',
         "Pôr aspas em volta de {{...}}: o valor já entra entre aspas.",
     ],
     related: ["agent", "condition"],

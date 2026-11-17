@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import type { Mock } from "vitest";
@@ -20,6 +20,8 @@ const GRAPH = buildLoopFlow();
 const PROJECT_ID = "forja";
 const FLOW_ID = "flow";
 const TESTS_SCRIPT_ID = "tests";
+const ITEM_REQUIRED_NOTICE = "Precisa da entrada Item atual ligada.";
+const DECISION_HINT = "Ligue Resultado › passed a uma Decisão.";
 
 describe("ScriptInspector", () => {
     describe("command", () => {
@@ -95,7 +97,131 @@ describe("ScriptInspector", () => {
         });
     });
 
+    describe("where it runs", () => {
+        it("runs in an isolated container when 'Container isolado' is chosen", async () => {
+            const inspector = renderScriptInspector(requireTestsScript());
+
+            await userEvent.click(screen.getByRole("radio", { name: /^Container isolado/ }));
+
+            expect(inspector.lastChangedConfig().runIn).toBe("isolated");
+        });
+
+        it("forgets the image when going back to the item container", async () => {
+            const isolatedScript = withConfig({ runIn: "isolated", image: "node:22" });
+            const inspector = renderScriptInspector(isolatedScript);
+
+            await userEvent.click(screen.getByRole("radio", { name: /^Container do item/ }));
+
+            expect(inspector.lastChangedConfig()).toMatchObject({
+                runIn: "item",
+                image: undefined,
+            });
+        });
+
+        it("tells that the item container needs the item input", () => {
+            renderScriptInspector(withConfig({ runIn: "item" }));
+
+            expect(screen.getByText(ITEM_REQUIRED_NOTICE)).toBeInTheDocument();
+        });
+
+        it("shows the image field and drops the item notice in an isolated container", () => {
+            renderScriptInspector(withConfig({ runIn: "isolated" }));
+
+            expect(screen.queryByText(ITEM_REQUIRED_NOTICE)).not.toBeInTheDocument();
+            expect(
+                within(requireAdvancedSection()).getByRole("textbox", { name: "Imagem" }),
+            ).toHaveAttribute("placeholder", "imagem do agente do projeto");
+        });
+    });
+
+    describe("on failure", () => {
+        it("continues and lets a Decisão judge when that card is chosen", async () => {
+            const inspector = renderScriptInspector(withConfig({ onFailure: "fail" }));
+
+            await userEvent.click(
+                screen.getByRole("radio", { name: /^Continuar e deixar uma Decisão julgar/ }),
+            );
+
+            expect(inspector.lastChangedConfig().onFailure).toBe("continue");
+        });
+
+        it("suggests linking Resultado › passed to a Decisão when the node continues", () => {
+            renderScriptInspector(withConfig({ onFailure: "continue" }));
+
+            expect(screen.getByText(DECISION_HINT)).toBeInTheDocument();
+        });
+
+        it("hides the Decisão hint when the node fails", () => {
+            renderScriptInspector(withConfig({ onFailure: "fail" }));
+
+            expect(screen.queryByText(DECISION_HINT)).not.toBeInTheDocument();
+        });
+    });
+
+    describe("output format", () => {
+        it("reads the last line as JSON when that card is chosen", async () => {
+            const inspector = renderScriptInspector(requireTestsScript());
+
+            await userEvent.click(screen.getByRole("radio", { name: /^JSON \(última linha\)/ }));
+
+            expect(inspector.lastChangedConfig().parseOutput).toBe("lastLineJson");
+        });
+
+        it("shows an example of each format", () => {
+            renderScriptInspector(requireTestsScript());
+
+            expect(
+                screen.getByRole("radio", { name: /^JSON \(saída inteira\)/ }),
+            ).toHaveTextContent('{"coverage": 81}');
+        });
+    });
+
     describe("advanced", () => {
+        it("keeps the shell, the directory and the timeout folded in Avançado", () => {
+            renderScriptInspector(withConfig({ runIn: "item" }));
+
+            const advancedSection = requireAdvancedSection();
+            expect(advancedSection).not.toHaveAttribute("open");
+            expect(
+                within(advancedSection).getByRole("radiogroup", { name: "Shell" }),
+            ).toBeInTheDocument();
+            expect(
+                within(advancedSection).getByRole("textbox", { name: "Diretório" }),
+            ).toHaveAttribute("placeholder", "raiz do repositório");
+            expect(
+                within(advancedSection).queryByRole("textbox", { name: "Imagem" }),
+            ).not.toBeInTheDocument();
+        });
+
+        it("runs the command with sh when it is chosen", async () => {
+            const inspector = renderScriptInspector(requireTestsScript());
+
+            await userEvent.click(screen.getByRole("radio", { name: /^sh/ }));
+
+            expect(inspector.lastChangedConfig().shell).toBe("sh");
+        });
+
+        it("applies the typed working directory", async () => {
+            const inspector = renderScriptInspector(requireTestsScript());
+
+            await userEvent.type(
+                screen.getByRole("textbox", { name: "Diretório" }),
+                "packages/api",
+            );
+            await userEvent.tab();
+
+            expect(inspector.lastChangedConfig().workingDir).toBe("packages/api");
+        });
+
+        it("applies the typed image of the isolated container", async () => {
+            const inspector = renderScriptInspector(withConfig({ runIn: "isolated" }));
+
+            await userEvent.type(screen.getByRole("textbox", { name: "Imagem" }), "node:22");
+            await userEvent.tab();
+
+            expect(inspector.lastChangedConfig().image).toBe("node:22");
+        });
+
         it("applies a new timeout", async () => {
             const inspector = renderScriptInspector(requireTestsScript());
             const timeoutField = screen.getByRole("spinbutton", {
@@ -136,6 +262,15 @@ function renderScriptInspector(script: ScriptNode): RenderedInspector {
         onChange,
         lastChangedConfig: () => readScriptConfig(applyLastUpdate(onChange, script)),
     };
+}
+
+function requireAdvancedSection(): HTMLElement {
+    const advancedSection = screen.getByText("Avançado").closest("details");
+    if (!advancedSection) {
+        throw new Error("The inspector has no Avançado section");
+    }
+
+    return advancedSection;
 }
 
 function applyLastUpdate(onChange: NodeChangeSpy, node: FlowNode): FlowNode {
