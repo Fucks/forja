@@ -238,7 +238,7 @@ describe("FlowEditorPage", () => {
         const inspector = await selectCanvasNode("Dev");
 
         await userEvent.click(screen.getByRole("button", { name: "Agrupar em map" }));
-        within(inspector).getByRole("slider", { name: "Concorrência" }).focus();
+        within(inspector).getByRole("slider", { name: "Itens em paralelo" }).focus();
         await userEvent.keyboard("{ArrowRight}{ArrowRight}");
 
         expect(within(inspector).getByRole("textbox", { name: "Rótulo" })).toHaveValue("Map");
