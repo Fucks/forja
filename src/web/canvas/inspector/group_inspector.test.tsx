@@ -117,7 +117,7 @@ describe("GroupInspector of a loop", () => {
         await userEvent.click(screen.getByRole("radio", { name: "existe" }));
 
         expect(applyLastUpdate(onChange, "review_loop").config).toMatchObject({
-            until: { op: "exists", path: "revisar.approved" },
+            until: { op: "exists", path: "nodes.revisar.approved" },
         });
     });
 

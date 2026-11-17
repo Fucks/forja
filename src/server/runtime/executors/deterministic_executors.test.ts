@@ -5,7 +5,13 @@ import type { NodeExecutionContext, NodeExecutionResult } from "@/server/runtime
 import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
 import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.js";
 import type { Condition } from "@/shared/conditions.js";
-import type { FlowEdge, FlowGraph, FlowNode, Port } from "@/shared/flow_graph.js";
+import {
+    type FlowEdge,
+    type FlowGraph,
+    type FlowNode,
+    parseFlowGraph,
+    type Port,
+} from "@/shared/flow_graph.js";
 import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 import { buildIssueSnapshot, ExecutorTestBed } from "@/test/executor_test_bed.js";
 import { buildLoopFlow, connect, createNodeOfType } from "@/test/factories/flow_graph_factory.js";
@@ -41,7 +47,10 @@ const LOG_PAGE_SIZE = 100;
 const ONE_MINUTE = 1;
 const TWO_MINUTES_MS = 120_000;
 const ITEMS_GROUP_ID = "items";
-const APPROVED: Condition = { op: "eq", path: "approved", value: true };
+const APPROVED: Condition = { op: "eq", path: "inputs.value.approved", value: true };
+// v1 read the condition straight from the value it received.
+const APPROVED_V1 = { op: "eq", path: "approved", value: true };
+const REVIEW_APPROVED: Condition = { op: "eq", path: "nodes.review.result.approved", value: true };
 const REVIEW_OUTPUT_SCHEMA = {
     type: "object",
     properties: { approved: { type: "boolean" } },
@@ -51,8 +60,8 @@ const DEV_PROMPT_WITHOUT_NOTES = "Implemente a issue #{{item.number}}";
 const TESTS_PASSED_AND_REVIEW_APPROVED: Condition = {
     op: "and",
     conditions: [
-        { op: "eq", path: "revisar.result.approved", value: true },
-        { op: "eq", path: "testes.result.exitCode", value: 0 },
+        { op: "eq", path: "nodes.revisar.result.approved", value: true },
+        { op: "eq", path: "nodes.testes.result.exitCode", value: 0 },
     ],
 };
 
@@ -124,11 +133,39 @@ describe("deterministic executors", () => {
             expect(result.outputs).toEqual({ false: value });
         });
 
-        function buildConditionContext(value: unknown): NodeExecutionContext {
-            const condition = createNodeOfType("condition", "approved", POSITION);
-            const node = { ...condition, config: { condition: APPROVED } };
+        it("decides on the output of an upstream node read under nodes", async () => {
+            const context = buildConditionContext("resumo da revisão", {
+                condition: REVIEW_APPROVED,
+                upstreamOutputs: { review: { result: APPROVED_REVIEW } },
+            });
 
-            return buildNodeExecutionContext(node, { inputs: { value } });
+            const result = await executeConditionNode(context);
+
+            expect(result.outputs).toEqual({ true: "resumo da revisão" });
+        });
+
+        it("goes to the false port when the upstream node it reads did not run", async () => {
+            const context = buildConditionContext("resumo", { condition: REVIEW_APPROVED });
+
+            const result = await executeConditionNode(context);
+
+            expect(result.outputs).toEqual({ false: "resumo" });
+        });
+
+        function buildConditionContext(
+            value: unknown,
+            options: {
+                condition?: Condition;
+                upstreamOutputs?: NodeExecutionContext["upstreamOutputs"];
+            } = {},
+        ): NodeExecutionContext {
+            const condition = createNodeOfType("condition", "approved", POSITION);
+            const node = { ...condition, config: { condition: options.condition ?? APPROVED } };
+
+            return buildNodeExecutionContext(node, {
+                inputs: { value },
+                upstreamOutputs: options.upstreamOutputs ?? {},
+            });
         }
     });
 
@@ -369,6 +406,29 @@ describe("deterministic executors", () => {
             expect((await bed.findNodeRun(runId, "needs_human")).status).toBe("SKIPPED");
         });
 
+        it("chooses the true branch from nodes.review without a value edge from the review result", async () => {
+            const runId = await runToTheEnd(buildReviewDecisionFlowReadingNodes());
+
+            expect((await bed.findNodeRun(runId, "done")).status).toBe("SUCCEEDED");
+            expect((await bed.findNodeRun(runId, "needs_human")).status).toBe("SKIPPED");
+        });
+
+        it("chooses the same branch with a v1 condition migrated to inputs.value", async () => {
+            const decisionFlow = buildReviewDecisionFlow();
+            const decisionFlowV1 = {
+                ...decisionFlow,
+                schemaVersion: 1,
+                nodes: decisionFlow.nodes.map((node) =>
+                    node.id === "check" ? { ...node, config: { condition: APPROVED_V1 } } : node,
+                ),
+            };
+
+            const runId = await runToTheEnd(parseFlowGraph(decisionFlowV1));
+
+            expect((await bed.findNodeRun(runId, "done")).status).toBe("SUCCEEDED");
+            expect((await bed.findNodeRun(runId, "needs_human")).status).toBe("SKIPPED");
+        });
+
         it("saves the item_outcome artifact of the output node", async () => {
             const runId = await runToTheEnd(buildReviewDecisionFlow());
 
@@ -426,6 +486,7 @@ function buildReviewDecisionFlow(): FlowGraph {
         [
             {
                 ...review,
+                label: "Review",
                 config: {
                     ...review.config,
                     prompt: `${REVIEW_PROMPT} #{{item.number}}`,
@@ -447,6 +508,22 @@ function buildReviewDecisionFlow(): FlowGraph {
             connect(["check", "false"], ["needs_human", "rejected"]),
         ],
     );
+}
+
+// The same decision, but the check receives the review summary and reads the result by path.
+const ANY_VALUE_PORT: Port = { name: "value", type: "any", required: true };
+
+function buildReviewDecisionFlowReadingNodes(): FlowGraph {
+    const graph = updateNode(buildReviewDecisionFlow(), "check", (node) =>
+        node.type === "condition"
+            ? { ...node, inputs: [ANY_VALUE_PORT], config: { condition: REVIEW_APPROVED } }
+            : node,
+    );
+    const edges = graph.edges.map((edge) =>
+        edge.to.nodeId === "check" ? connect(["review", "summary"], ["check", "value"]) : edge,
+    );
+
+    return { ...graph, edges };
 }
 
 function buildPerItemFlow(itemNodes: FlowNode[], itemEdges: FlowEdge[]): FlowGraph {

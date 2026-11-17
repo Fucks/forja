@@ -45,12 +45,12 @@
       `run_context.ts`, `prompt_template.ts` (+ test)
 - [x] 10. Prompt variable validation for `nodes.*` (valid upstream, error for downstream/unknown) —
       `prompt_template.ts` (+ test)
-- [ ] 11. Decisão reads `DataContext` (`nodes.*` and `inputs.value.*`) — `condition_executor.ts`,
+- [x] 11. Decisão reads `DataContext` (`nodes.*` and `inputs.value.*`) — `condition_executor.ts`,
       `deterministic_executors.test.ts`
-- [ ] 12. Git `bodyFrom` reads `DataContext` (`inputs.*`, `nodes.*`) — `git_executor.ts` (+ test)
-- [ ] 13. Loop `iterationData` under `nodes.*`, carry, loop_rules path check — `loop_group.ts`,
+- [x] 12. Git `bodyFrom` reads `DataContext` (`inputs.*`, `nodes.*`) — `git_executor.ts` (+ test)
+- [x] 13. Loop `iterationData` under `nodes.*`, carry, loop_rules path check — `loop_group.ts`,
       `loop_rules.ts` (+ tests)
-- [ ] 4. Templates in v2 with new paths (`inputs.value.*`, `nodes.*`, `inputs.*`) — templates/*.ts + tests
+- [x] 4. Templates in v2 with new paths (`inputs.value.*`, `nodes.*`, `inputs.*`) — templates/*.ts + tests
 - [ ] 5. YAML: importing a v1 template YAML works, exporting writes v2 — `flow_yaml.test.ts`
 - [ ] 14. Duplicate node slug validation error — `identity_rules.ts` (+ test)
 - [ ] 15. Suggestions `nodes.<slug>.<port>` for Decisão and Loop using `listUpstreamNodes` —

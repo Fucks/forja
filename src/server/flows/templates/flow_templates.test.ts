@@ -106,7 +106,7 @@ describe("Dev ↔ Review em loop com testes template", () => {
             parentGroupId: "items",
             config: {
                 maxIterations: 3,
-                until: { op: "eq", path: "revisar.result.approved", value: true },
+                until: { op: "eq", path: "nodes.revisar.result.approved", value: true },
                 carry: ["notes"],
             },
         });

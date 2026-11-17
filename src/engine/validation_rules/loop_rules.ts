@@ -15,9 +15,12 @@ import {
 } from "@/engine/validation_rules/validation_issues.js";
 import { assertNever } from "@/lib/assert_never.js";
 import { type Condition, CONDITION_PATH_SEPARATOR } from "@/shared/conditions.js";
+import type { DataRoot } from "@/shared/data_context.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
+
+const NODES_ROOT: DataRoot = "nodes";
 
 type CycleNodeIds = [firstNodeId: string, ...otherNodeIds: string[]];
 
@@ -130,15 +133,11 @@ function describeNodes(graph: FlowGraph, nodeIds: string[]): string {
 }
 
 function findUnknownConditionPathsOfLoop(graph: FlowGraph, loop: LoopGroup): ValidationIssue[] {
-    const loopNodes = nodesInsideGroup(graph, loop.id);
-    const knownNames = new Set(
-        loopNodes.flatMap((node) => [
-            nodeSlug(node.label),
-            ...node.outputs.map((port) => port.name),
-        ]),
+    const loopNodeSlugs = new Set(
+        nodesInsideGroup(graph, loop.id).map((node) => nodeSlug(node.label)),
     );
     const unknownPaths = listConditionPaths(loop.config.until).filter(
-        (path) => !isBlankPath(path) && !knownNames.has(firstPathSegment(path)),
+        (path) => !isBlankPath(path) && !readsLoopNode(path, loopNodeSlugs),
     );
 
     return unknownPaths.map((path) =>
@@ -172,6 +171,8 @@ function isBlankPath(path: string): boolean {
     return path.trim() === "";
 }
 
-function firstPathSegment(path: string): string {
-    return path.split(CONDITION_PATH_SEPARATOR)[0] ?? path;
+function readsLoopNode(path: string, loopNodeSlugs: Set<string>): boolean {
+    const [root, slug = ""] = path.split(CONDITION_PATH_SEPARATOR);
+
+    return root === NODES_ROOT && loopNodeSlugs.has(slug);
 }

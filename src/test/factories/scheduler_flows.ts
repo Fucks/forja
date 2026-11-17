@@ -31,7 +31,7 @@ const SIDE_LOOP: FlowGroup = {
     size: { width: 480, height: 480 },
     config: {
         maxIterations: 3,
-        until: { op: "eq", path: "b.approved", value: true },
+        until: { op: "eq", path: "nodes.b.approved", value: true },
         carry: [],
     },
 };

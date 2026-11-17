@@ -143,7 +143,7 @@ describe("buildLoopFlow", () => {
         );
         expect(groups[1]?.config).toEqual({
             maxIterations: 3,
-            until: { op: "eq", path: "revisar.approved", value: true },
+            until: { op: "eq", path: "nodes.revisar.approved", value: true },
             carry: ["notes"],
         });
     });

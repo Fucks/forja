@@ -27,7 +27,7 @@ const SOURCE_LIMIT = 10;
 const ITEMS_IN_PARALLEL = 1;
 const IMPLEMENTER_MAX_ITERATIONS = 100;
 const IMPLEMENTER_IDLE_TIMEOUT_MINUTES = 15;
-const EVIDENCE_BODY_PATH = "evidence.body";
+const EVIDENCE_BODY_PATH = "inputs.evidence.body";
 
 // Edges are the only ordering between nodes: each of these inputs makes a step wait for the one
 // before it and, after a condition, for the branch the condition chose.
@@ -139,7 +139,7 @@ function buildHasCommitsCondition(): FlowNode {
     return {
         ...condition,
         label: "Fez commits?",
-        config: { condition: { op: "gt", path: "commits", value: 0 } },
+        config: { condition: { op: "gt", path: "inputs.value.commits", value: 0 } },
     };
 }
 
@@ -190,7 +190,7 @@ function buildChecksPassedCondition(): FlowNode {
     return {
         ...condition,
         label: "Checks passaram?",
-        config: { condition: { op: "eq", path: "checksPassed", value: true } },
+        config: { condition: { op: "eq", path: "inputs.value.checksPassed", value: true } },
     };
 }
 
