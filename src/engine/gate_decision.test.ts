@@ -27,7 +27,9 @@ describe("gateOutputsOf", () => {
     it("sends the implicit item when the item port is not wired, so a saved run keeps the decision", () => {
         const gate = waitingGate({ workItemId: "1", inputs: { spike: { summary: "feito" } } });
 
-        const saved: unknown = JSON.parse(JSON.stringify(gateOutputsOf(gate, "approved", undefined)));
+        const saved: unknown = JSON.parse(
+            JSON.stringify(gateOutputsOf(gate, "approved", undefined)),
+        );
 
         expect(saved).toEqual({ approved: { id: "1" }, comment: "" });
     });

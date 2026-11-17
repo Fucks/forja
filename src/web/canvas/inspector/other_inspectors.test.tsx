@@ -246,7 +246,7 @@ describe("ConditionInspector", () => {
         expect(inspector.lastChangedNode("condition").config.condition).toEqual({
             op: "and",
             conditions: [
-                { op: "eq", path: "approved", value: true },
+                { op: "eq", path: "inputs.value.approved", value: true },
                 { op: "exists", path: "review.notes" },
             ],
         });
@@ -264,7 +264,9 @@ describe("ConditionInspector", () => {
 
         const suggestions = screen.getAllByRole("option", { hidden: true });
 
-        expect(suggestions.map((option) => option.getAttribute("value"))).toContain("tl.result");
+        expect(suggestions.map((option) => option.getAttribute("value"))).toContain(
+            "nodes.tl.result",
+        );
     });
 });
 

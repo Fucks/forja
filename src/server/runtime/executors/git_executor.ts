@@ -16,6 +16,7 @@ import type {
     NodeExecutionResult,
     NodeExecutor,
 } from "@/server/runtime/node_executors.js";
+import { buildDataContext } from "@/server/runtime/run_context.js";
 import type { GithubOfProject } from "@/server/work_items/project_github_provider.js";
 import { lookUpPath } from "@/shared/conditions.js";
 import type { GitConfig } from "@/shared/node_configs/git_config.js";
@@ -133,7 +134,7 @@ async function openPullRequest({
         head: target.branch,
         base: target.baseBranch,
         title: prTitle(target.item),
-        body: buildPullRequestBody(target.item, summaryFromInputs(context.inputs, config)),
+        body: buildPullRequestBody(target.item, summaryFromData(context, config)),
         draft: config.draft,
     });
 
@@ -171,12 +172,12 @@ function githubRepoOf(project: Project): string {
     return project.githubRepo;
 }
 
-function summaryFromInputs(inputs: Record<string, unknown>, config: GitConfig): string | undefined {
+function summaryFromData(context: NodeExecutionContext, config: GitConfig): string | undefined {
     if (config.bodyFrom === undefined) {
         return undefined;
     }
 
-    const body = lookUpPath(inputs, config.bodyFrom);
+    const body = lookUpPath(buildDataContext(context), config.bodyFrom);
     if (!body.isFound || typeof body.value !== "string" || body.value.trim() === "") {
         return undefined;
     }

@@ -148,6 +148,31 @@ describe("executor", () => {
         });
     });
 
+    describe("data context", () => {
+        it("renders {{nodes.tl.summary}} in the prompt of the Dev with the summary of the TL", async () => {
+            const graph = updateAgentConfig(buildCanonicalFlow(), "dev", {
+                prompt: `${DEV_PROMPT} seguindo: {{nodes.tl.summary}}`,
+            });
+            const dataFlowId = await bed.publishFlow(graph);
+            bed.runtime.script({
+                match: { promptIncludes: "Escreva a especificação" },
+                durationMs: DEV_DURATION_MS,
+                result: { summary: "Especificação escrita pelo TL" },
+            });
+            const started = await bed.startRun(dataFlowId);
+
+            await bed.runUntilFinished(started.id);
+
+            const devPrompts = bed.runtime.requests
+                .map((request) => request.prompt)
+                .filter((prompt) => prompt.includes(DEV_PROMPT));
+            expect(devPrompts).not.toEqual([]);
+            expect(
+                devPrompts.every((prompt) => prompt.includes("Especificação escrita pelo TL")),
+            ).toBe(true);
+        });
+    });
+
     describe("credentials", () => {
         function devRequests(): AgentRunRequest[] {
             return bed.runtime.requests.filter((request) => request.prompt.includes(DEV_PROMPT));

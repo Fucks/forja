@@ -337,7 +337,7 @@ describe("NodePalette groups", () => {
     });
 });
 
-const EMPTY_GRAPH: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+const EMPTY_GRAPH: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 
 const GRAPH_WITH_TRIGGER: FlowGraph = {
     ...EMPTY_GRAPH,

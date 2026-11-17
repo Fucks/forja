@@ -5,6 +5,7 @@ import {
 } from "@/server/runtime/executors/git_executor.js";
 import { REBASER_MAX_ITERATIONS } from "@/server/runtime/executors/rebaser_node.js";
 import type { NodeExecutionContext, NodeExecutionResult } from "@/server/runtime/node_executors.js";
+import type { NodeOutputsBySlug } from "@/shared/data_context.js";
 import { gitConfigSchema, type GitConfig } from "@/shared/node_configs/git_config.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
 import { createNodeOfType } from "@/test/factories/flow_graph_factory.js";
@@ -176,7 +177,7 @@ describe("git executor", () => {
         it("writes the body from the input port, closing the issue and signed by Forja", async () => {
             const summary = "Resumo do revisor";
             const bed = createGitBed(
-                { action: "open_pr", bodyFrom: "body" },
+                { action: "open_pr", bodyFrom: "inputs.body" },
                 { inputs: { body: summary } },
             );
             bed.git.setCommitsAhead(BRANCH, 2);
@@ -191,7 +192,7 @@ describe("git executor", () => {
         it("writes the body from a field of an input port", async () => {
             const evidence = { checksPassed: true, body: "Evidências da entrega" };
             const bed = createGitBed(
-                { action: "open_pr", bodyFrom: "evidence.body" },
+                { action: "open_pr", bodyFrom: "inputs.evidence.body" },
                 { inputs: { evidence } },
             );
             bed.git.setCommitsAhead(BRANCH, 2);
@@ -201,8 +202,20 @@ describe("git executor", () => {
             expect(createdBody(bed)).toMatch(/^Evidências da entrega\n\nCloses #7/);
         });
 
+        it("writes the body from the output of an upstream node read under nodes", async () => {
+            const bed = createGitBed(
+                { action: "open_pr", bodyFrom: "nodes.reviewer.summary" },
+                { upstreamOutputs: { reviewer: { summary: "Resumo do Reviewer" } } },
+            );
+            bed.git.setCommitsAhead(BRANCH, 2);
+
+            await bed.execute();
+
+            expect(createdBody(bed)).toMatch(/^Resumo do Reviewer\n\nCloses #7/);
+        });
+
         it("writes a default summary when the input port has no body", async () => {
-            const bed = createGitBed({ action: "open_pr", bodyFrom: "body" });
+            const bed = createGitBed({ action: "open_pr", bodyFrom: "inputs.body" });
             bed.git.setCommitsAhead(BRANCH, 2);
 
             await bed.execute();
@@ -312,6 +325,7 @@ interface GitBedOptions {
     // null runs the node without a work item.
     item?: WorkItemSnapshot | null;
     inputs?: Record<string, unknown>;
+    upstreamOutputs?: NodeOutputsBySlug;
     githubRepo?: string | undefined;
 }
 
@@ -325,6 +339,7 @@ function createGitBed(config: Partial<GitConfig>, options: GitBedOptions = {}): 
     const context = buildNodeExecutionContext(node, {
         item: options.item === null ? undefined : (options.item ?? ISSUE),
         inputs: options.inputs ?? {},
+        upstreamOutputs: options.upstreamOutputs ?? {},
         project: buildProject({ repoPath: REPO_PATH, baseBranch: "main", githubRepo }),
         runtime,
         clock,

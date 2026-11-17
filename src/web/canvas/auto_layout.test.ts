@@ -100,7 +100,7 @@ describe("autoLayout", () => {
     });
 
     it("leaves an empty flow empty", async () => {
-        const emptyFlow: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+        const emptyFlow: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 
         expect(await autoLayout(emptyFlow)).toEqual(emptyFlow);
     });

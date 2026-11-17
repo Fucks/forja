@@ -85,7 +85,7 @@ describe("removeNodes", () => {
 
 function buildAgents(ids: string[]): FlowGraph {
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: ids.map((id) => createDefaultNode("agent", id, ORIGIN)),
         edges: [],
         groups: [],

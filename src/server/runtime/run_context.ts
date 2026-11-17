@@ -1,5 +1,3 @@
-import type { NodeRunState } from "@/engine/node_run_state.js";
-import type { PromptContext } from "@/engine/prompt_template.js";
 import type { RunState } from "@/engine/run_state.js";
 import type {
     HeadlessSpec,
@@ -7,26 +5,19 @@ import type {
     WorkspaceSpec,
 } from "@/integrations/agent_runtime/agent_runtime.js";
 import { buildAgentEnv } from "@/integrations/agent_runtime/agent_env.js";
+import type { NodeExecutionContext } from "@/server/runtime/node_executors.js";
 import type { RunCredentials } from "@/server/runtime/run_credentials.js";
+import type { DataContext } from "@/shared/data_context.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
 
-export interface PromptSources {
-    nodeRun: NodeRunState;
-    inputs: Record<string, unknown>;
-    item?: WorkItemSnapshot;
-    project: Project;
-}
+export function buildDataContext(context: NodeExecutionContext): DataContext {
+    const { nodeRun, inputs, upstreamOutputs, item, project } = context;
 
-export function buildPromptContext({
-    nodeRun,
-    inputs,
-    item,
-    project,
-}: PromptSources): PromptContext {
     return {
         inputs,
+        nodes: upstreamOutputs,
         item,
         project: {
             name: project.name,

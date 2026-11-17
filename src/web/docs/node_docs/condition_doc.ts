@@ -58,12 +58,12 @@ export const conditionDoc: NodeDoc = {
             title: "Reviewer aprovou?",
             description:
                 "Liga o Resultado do Reviewer na entrada e testa se approved é verdadeiro.",
-            config: { condition: { op: "eq", path: "approved", value: true } },
+            config: { condition: { op: "eq", path: "inputs.value.approved", value: true } },
         },
         {
             title: "Testes passaram?",
             description: "Liga o Resultado de um Comando e testa se exitCode é igual a 0.",
-            config: { condition: { op: "eq", path: "exitCode", value: 0 } },
+            config: { condition: { op: "eq", path: "inputs.value.exitCode", value: 0 } },
         },
     ],
     pitfalls: [

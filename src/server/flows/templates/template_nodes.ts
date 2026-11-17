@@ -20,7 +20,7 @@ export interface AgentNodeSpec {
 const SANDCASTLE_LABEL = "Sandcastle";
 export const COMPLETION_SIGNAL = "<promise>COMPLETE</promise>";
 const DEVELOPER_MAX_ITERATIONS = 50;
-const SUMMARY_PORT = "summary";
+const SUMMARY_BODY_PATH = "inputs.summary";
 const OPEN_PULL_REQUEST_NODE_ID = "open_pr";
 const DONE_OUTPUT_NODE_ID = "output";
 
@@ -122,7 +122,7 @@ export function buildOpenPullRequest(cell: CanvasCell): NodeOfType<"git"> {
     return {
         ...openPullRequest,
         label: "Abrir PR",
-        config: { ...openPullRequest.config, action: "open_pr", bodyFrom: SUMMARY_PORT },
+        config: { ...openPullRequest.config, action: "open_pr", bodyFrom: SUMMARY_BODY_PATH },
     };
 }
 

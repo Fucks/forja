@@ -62,7 +62,7 @@ function buildReviewLoop(): FlowGraph {
     const reviewLoop = buildReviewRoundsGroup(itemsGroup);
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildManualTrigger(),
             buildSandcastleIssuesSource(),
@@ -96,7 +96,11 @@ function buildReviewRoundsGroup(itemsGroup: FlowGroup): FlowGroup {
         columns: { first: 2, count: 3 },
         config: {
             maxIterations: MAX_REVIEW_ROUNDS,
-            until: { op: "eq", path: `${nodeSlug(REVIEWER_LABEL)}.result.approved`, value: true },
+            until: {
+                op: "eq",
+                path: `nodes.${nodeSlug(REVIEWER_LABEL)}.result.approved`,
+                value: true,
+            },
             carry: [REVIEW_NOTES_INPUT.name],
         },
     });

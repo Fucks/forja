@@ -31,7 +31,7 @@ const SIDE_LOOP: FlowGroup = {
     size: { width: 480, height: 480 },
     config: {
         maxIterations: 3,
-        until: { op: "eq", path: "b.approved", value: true },
+        until: { op: "eq", path: "nodes.b.approved", value: true },
         carry: [],
     },
 };
@@ -184,7 +184,7 @@ function configureAgent(node: FlowNode, config: Partial<AgentConfig>): FlowNode 
 }
 
 function buildFlow(nodes: FlowNode[], edges: FlowGraph["edges"]): FlowGraph {
-    return { schemaVersion: 1, nodes, edges, groups: [] };
+    return { schemaVersion: 2, nodes, edges, groups: [] };
 }
 
 function buildNode(type: NodeType, id: string): FlowNode {

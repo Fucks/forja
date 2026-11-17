@@ -102,7 +102,7 @@ describe("deriveColumns", () => {
     });
 
     it("has only the fixed columns when the flow has no stage", () => {
-        const graph: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+        const graph: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 
         expect(columnLabels(deriveColumns(graph))).toEqual([
             "Backlog",

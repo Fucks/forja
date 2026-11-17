@@ -58,7 +58,7 @@ vi.mock("@xyflow/react", async (importOriginal) => {
 });
 
 const CANONICAL_FLOW = buildCanonicalFlow();
-const EMPTY_FLOW: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+const EMPTY_FLOW: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 const INVALID_MARKER_LABEL = "Configuração inválida";
 
 const EMPTY_PROMPT_ERROR: ValidationIssue = {

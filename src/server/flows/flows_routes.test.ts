@@ -15,7 +15,7 @@ import { createTestDb } from "@/test/test_db.js";
 
 const PROJECT_ID = "prj_forja";
 const EXPORTED_AT = "2026-11-08T12:00:00.000Z";
-const GRAPH_WITHOUT_TRIGGER: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+const GRAPH_WITHOUT_TRIGGER: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 
 describe("flows routes", () => {
     let database: DatabaseHandle;

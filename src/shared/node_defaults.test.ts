@@ -121,7 +121,7 @@ describe("createDefaultNode", () => {
         expect(configs).toEqual([
             { kind: "manual" },
             { command: "", timeoutMinutes: 15, workspace: "item" },
-            { condition: { op: "eq", path: "approved", value: true } },
+            { condition: { op: "eq", path: "inputs.value.approved", value: true } },
             { message: "", show: ["diff", "artifacts", "logs"] },
             { action: "open_pr", draft: false },
             { moveItemTo: "done", commentOnIssue: false },

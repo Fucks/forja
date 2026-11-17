@@ -26,7 +26,7 @@ export function buildLargeFlow({ nodes, groups }: LargeFlowShape): FlowGraph {
     );
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             createNodeOfType("trigger", TRIGGER_ID, { x: 0, y: 0 }),
             ...chains.flatMap((chain) => chain.agents),

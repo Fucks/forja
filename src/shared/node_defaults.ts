@@ -58,7 +58,7 @@ const NODE_TEMPLATES: { [Type in NodeType]: NodeTemplate<Type> } = {
         label: "Condição",
         inputs: [requiredPort("value", "json")],
         outputs: [requiredPort("true", "any"), requiredPort("false", "any")],
-        config: { condition: { op: "eq", path: "approved", value: true } },
+        config: { condition: { op: "eq", path: "inputs.value.approved", value: true } },
     },
     gate: {
         type: "gate",

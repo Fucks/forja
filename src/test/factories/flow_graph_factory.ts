@@ -52,7 +52,7 @@ export function buildCanonicalFlow(): FlowGraph {
     });
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildTriggerNode(),
             buildSourceNode(),
@@ -83,7 +83,7 @@ export function buildLoopFlow(): FlowGraph {
     const reviewLoop = buildReviewLoopGroup(itemsGroup.id);
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildTriggerNode(),
             buildSourceNode(),
@@ -133,7 +133,7 @@ export function buildApprovalFlow(gateConfig: Partial<GateConfig> = {}): FlowGra
     const rework = createNodeOfType("agent", "rework", gridPosition(2, 1));
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildTriggerNode(),
             {
@@ -236,7 +236,7 @@ function buildOpenPullRequestNode(): FlowNode {
     return {
         ...openPullRequest,
         label: "Abrir PR",
-        config: { ...openPullRequest.config, action: "open_pr", bodyFrom: "summary" },
+        config: { ...openPullRequest.config, action: "open_pr", bodyFrom: "inputs.summary" },
     };
 }
 
@@ -300,7 +300,7 @@ function buildReviewLoopGroup(parentGroupId: string): FlowGroup {
         ...frameColumns(LOOP_COLUMNS, LOOP_GROUP_PADDING_PX),
         config: {
             maxIterations: 3,
-            until: { op: "eq", path: "revisar.approved", value: true },
+            until: { op: "eq", path: "nodes.revisar.approved", value: true },
             carry: ["notes"],
         },
     };
