@@ -5,6 +5,7 @@ import {
 } from "@/server/runtime/executors/git_executor.js";
 import { REBASER_MAX_ITERATIONS } from "@/server/runtime/executors/rebaser_node.js";
 import type { NodeExecutionContext, NodeExecutionResult } from "@/server/runtime/node_executors.js";
+import type { NodeOutputsBySlug } from "@/shared/data_context.js";
 import { gitConfigSchema, type GitConfig } from "@/shared/node_configs/git_config.js";
 import type { WorkItemSnapshot } from "@/shared/work_item_types.js";
 import { createNodeOfType } from "@/test/factories/flow_graph_factory.js";
@@ -324,7 +325,7 @@ interface GitBedOptions {
     // null runs the node without a work item.
     item?: WorkItemSnapshot | null;
     inputs?: Record<string, unknown>;
-    upstreamOutputs?: Record<string, Record<string, unknown>>;
+    upstreamOutputs?: NodeOutputsBySlug;
     githubRepo?: string | undefined;
 }
 

@@ -21,6 +21,7 @@ import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.
 import type { RunCredentials } from "@/server/runtime/run_credentials.js";
 import type { RunToolProfiles } from "@/server/runtime/run_tool_profiles.js";
 import type { WorkspacePool } from "@/server/runtime/workspace_pool.js";
+import type { NodeOutputsBySlug } from "@/shared/data_context.js";
 import type { FlowGraph, FlowNode, NodeType } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
@@ -34,7 +35,7 @@ export interface NodeExecutionContext {
     graph: FlowGraph;
     inputs: Record<string, unknown>;
     // The outputs of the nodes before this one, by node slug: what `nodes.*` paths read.
-    upstreamOutputs: Record<string, Record<string, unknown>>;
+    upstreamOutputs: NodeOutputsBySlug;
     item?: WorkItemSnapshot;
     runItems: WorkItemSnapshot[];
     project: Project;

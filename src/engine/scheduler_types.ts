@@ -4,6 +4,7 @@ import type { MapGroupState } from "@/engine/map_group.js";
 import type { NodeRunState } from "@/engine/node_run_state.js";
 import type { RunState } from "@/engine/run_state.js";
 import type { ApprovalDecision } from "@/shared/approval_types.js";
+import type { NodeOutputsBySlug } from "@/shared/data_context.js";
 
 export interface SchedulerOptions {
     maxConcurrentAgents: number;
@@ -63,7 +64,7 @@ export type SchedulerCommand =
           type: "start_node_run";
           nodeRun: NodeRunState;
           inputs: Record<string, unknown>;
-          upstreamOutputs: Record<string, Record<string, unknown>>;
+          upstreamOutputs: NodeOutputsBySlug;
       }
     | { type: "cancel_node_run"; nodeRunId: string }
     | { type: "node_run_changed"; nodeRun: NodeRunState }

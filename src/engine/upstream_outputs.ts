@@ -12,7 +12,7 @@ export function collectUpstreamOutputs(
     nodeId: string,
     workItemId: string | undefined,
     findNodeRun: FindNodeRun,
-): Record<string, Record<string, unknown>> {
+): NodeOutputsBySlug {
     const outputsBySlug: NodeOutputsBySlug = {};
     for (const upstreamNode of listUpstreamNodes(graph, nodeId)) {
         const nodeRun = findNodeRunOfItemOrRun(findNodeRun, upstreamNode.id, workItemId);

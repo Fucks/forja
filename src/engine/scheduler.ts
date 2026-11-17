@@ -50,6 +50,7 @@ import { computeResumeAt } from "@/engine/usage_pause.js";
 import { collectUpstreamOutputs } from "@/engine/upstream_outputs.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { ApprovalDecision } from "@/shared/approval_types.js";
+import type { NodeOutputsBySlug } from "@/shared/data_context.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 
@@ -887,9 +888,7 @@ class DagScheduler implements Scheduler {
         );
     }
 
-    private collectUpstreamOutputsOf(
-        nodeRun: NodeRunState,
-    ): Record<string, Record<string, unknown>> {
+    private collectUpstreamOutputsOf(nodeRun: NodeRunState): NodeOutputsBySlug {
         return collectUpstreamOutputs(
             this.plan.graph,
             nodeRun.nodeId,

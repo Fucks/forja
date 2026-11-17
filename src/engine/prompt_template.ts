@@ -1,6 +1,6 @@
 import { listUpstreamNodes } from "@/engine/graph_queries.js";
-import { CONDITION_PATH_SEPARATOR, lookUpPath } from "@/shared/conditions.js";
-import { type DataContext, NODES_ROOT } from "@/shared/data_context.js";
+import { lookUpPath } from "@/shared/conditions.js";
+import { type DataContext, findNodeSlugInPath } from "@/shared/data_context.js";
 import type { FlowGraph, FlowGroup, FlowNode, NodeOfType, Port } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
@@ -210,14 +210,15 @@ function findVariableIssues(
     variable: string,
     known: KnownVariables,
 ): ValidationIssue[] {
-    const [root, nodeSlugInPath = ""] = variable.split(CONDITION_PATH_SEPARATOR);
-    if (root === NODES_ROOT) {
-        return known.upstreamNodeSlugs.has(nodeSlugInPath)
-            ? []
-            : [buildNodeNotUpstreamIssue(node, variable)];
+    const readNodeSlug = findNodeSlugInPath(variable);
+    if (readNodeSlug === undefined) {
+        return known.paths.has(variable) ? [] : [buildUnknownVariableIssue(node, variable)];
+    }
+    if (!known.upstreamNodeSlugs.has(readNodeSlug)) {
+        return [buildNodeNotUpstreamIssue(node, variable)];
     }
 
-    return known.paths.has(variable) ? [] : [buildUnknownVariableIssue(node, variable)];
+    return [];
 }
 
 function buildUnknownVariableIssue(node: AgentNode, variable: string): ValidationIssue {

@@ -14,8 +14,8 @@ import {
     warningIssue,
 } from "@/engine/validation_rules/validation_issues.js";
 import { assertNever } from "@/lib/assert_never.js";
-import { type Condition, CONDITION_PATH_SEPARATOR } from "@/shared/conditions.js";
-import { NODES_ROOT } from "@/shared/data_context.js";
+import type { Condition } from "@/shared/conditions.js";
+import { findNodeSlugInPath } from "@/shared/data_context.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
@@ -170,7 +170,7 @@ function isBlankPath(path: string): boolean {
 }
 
 function readsLoopNode(path: string, loopNodeSlugs: Set<string>): boolean {
-    const [root, slug = ""] = path.split(CONDITION_PATH_SEPARATOR);
+    const readNodeSlug = findNodeSlugInPath(path);
 
-    return root === NODES_ROOT && loopNodeSlugs.has(slug);
+    return readNodeSlug !== undefined && loopNodeSlugs.has(readNodeSlug);
 }
