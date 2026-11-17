@@ -25,12 +25,12 @@
 
 ## Tasks
 
-- [ ] 1. Runtime contract: `ExecOptions` env/cwd/shell, `ExecResult.stderrTail`, `AgentRuntime.execHeadless`
+- [x] 1. Runtime contract: `ExecOptions` env/cwd/shell, `ExecResult.stderrTail`, `AgentRuntime.execHeadless`
       — `agent_runtime.ts`, fake (`fake_agent_runtime.ts`, `scripted_exec.ts`) recording env/cwd/shell, scripted
       runtime, existing test literals
-- [ ] 2. Docker workspace exec: env merge, cwd (`-w`), shell, separate stderr — `docker_workspace.ts`,
+- [x] 2. Docker workspace exec: env merge, cwd (`-w`), shell, separate stderr — `docker_workspace.ts`,
       `container_manager.ts`, `workspace_layout.ts`, tests
-- [ ] 3. Docker `execHeadless` in an ephemeral container with the repo read-only — `docker_agent_runtime.ts`, test
+- [x] 3. Docker `execHeadless` in an ephemeral container with the repo read-only — `docker_agent_runtime.ts`, test
 - [ ] 4. New script config contract (constants, env var schema, defaults, old `workspace` dropped)
       — `script_config.ts`, test
 - [ ] 5. Test + implement `renderCommand` with shell-quoting and missing variable error

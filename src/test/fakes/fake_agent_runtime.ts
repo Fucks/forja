@@ -42,10 +42,20 @@ export interface FakeAgentRuntimeOptions {
 }
 
 export interface RuntimeCall {
-    kind: "open" | "run" | "headless" | "exec" | "close";
+    kind: "open" | "run" | "headless" | "exec" | "execHeadless" | "close";
     nodeRunId?: string;
     workItemId?: string;
     at: Date;
+}
+
+// What a command received, in the workspace of an item or in an ephemeral container.
+export interface ReceivedExec {
+    kind: "exec" | "execHeadless";
+    command: string;
+    workItemId?: string;
+    env?: Record<string, string>;
+    cwd?: string;
+    shell?: string;
 }
 
 interface ScriptedStepUsage {
@@ -67,6 +77,7 @@ export class FakeAgentRuntime implements AgentRuntime {
     readonly runtimeFiles = new Map<string, string>();
     // The base branches the workspaces were diffed against, in call order.
     readonly diffBaseBranches: string[] = [];
+    readonly receivedExecs: ReceivedExec[] = [];
     private readonly clock: FakeClock;
     private readonly defaultDurationMs: number;
     private readonly steps: ScriptedStepUsage[] = [];
@@ -146,6 +157,10 @@ export class FakeAgentRuntime implements AgentRuntime {
         return this.runAgent("headless", { request, hooks, workItemId: spec.workItemId });
     }
 
+    execHeadless(spec: HeadlessSpec, command: string, options: ExecOptions): Promise<ExecResult> {
+        return this.exec({ kind: "execHeadless", command, workItemId: spec.workItemId }, options);
+    }
+
     listOpenWorkspaces(): Promise<OpenWorkspaceSummary[]> {
         return Promise.resolve([...this.openWorkspaces.values()]);
     }
@@ -177,7 +192,7 @@ export class FakeAgentRuntime implements AgentRuntime {
             root: `${FAKE_WORKTREES_DIR}/${id}`,
             runtimeDir: fakeRuntimeDir(id),
             runAgent: (request, hooks) => this.runAgent("run", { request, hooks, workItemId }),
-            exec: (command, options) => this.exec(command, options, workItemId),
+            exec: (command, options) => this.exec({ kind: "exec", command, workItemId }, options),
             diff: (baseBranch) => {
                 this.diffBaseBranches.push(baseBranch);
                 return Promise.resolve(this.branchDiff);
@@ -234,8 +249,13 @@ export class FakeAgentRuntime implements AgentRuntime {
         return usage.step;
     }
 
-    private exec(command: string, options: ExecOptions, workItemId: string): Promise<ExecResult> {
-        this.record({ kind: "exec", workItemId });
+    private exec(
+        { kind, command, workItemId }: Omit<ReceivedExec, "env" | "cwd" | "shell">,
+        options: ExecOptions,
+    ): Promise<ExecResult> {
+        this.record({ kind, workItemId });
+        const { env, cwd, shell } = options;
+        this.receivedExecs.push({ kind, command, workItemId, env, cwd, shell });
 
         return playScriptedExec(this.clock, this.takeScriptedExec(command), options);
     }

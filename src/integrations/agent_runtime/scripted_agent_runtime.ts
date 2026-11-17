@@ -27,7 +27,7 @@ export interface ScriptedAgentRuntimeOptions {
 
 const DEFAULT_SPEED = 1;
 const WORKSPACE_READY_MESSAGE = "workspace pronto";
-const SUCCESSFUL_EXEC: ExecResult = { exitCode: 0, stdoutTail: "" };
+const SUCCESSFUL_EXEC: ExecResult = { exitCode: 0, stdoutTail: "", stderrTail: "" };
 const EMPTY_DIFF = "";
 // Nothing is written under these: the workspaces of the demo live in memory.
 const SCRIPTED_WORKTREES_ROOT = "/forja-demo/worktrees";
@@ -85,6 +85,7 @@ export function createScriptedAgentRuntime({
         openWorkspace,
         headlessRuntimeDir: (runId, nodeRunId) => scriptedRuntimeDir(`${runId}-${nodeRunId}`),
         runHeadless: (_spec, request, hooks) => runAgent(request, hooks),
+        execHeadless: () => Promise.resolve(SUCCESSFUL_EXEC),
         listOpenWorkspaces: () => Promise.resolve([...openWorkspaces.values()]),
         closeWorkspace,
     };

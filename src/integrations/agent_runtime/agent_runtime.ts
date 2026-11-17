@@ -87,12 +87,20 @@ export interface AgentRunHooks {
 export interface ExecOptions {
     timeoutMs: number;
     signal: AbortSignal;
+    /** Every stdout and stderr line, as it is printed. */
     onOutput?: (line: string) => void;
+    /** Added to the env of the workspace; wins over it. */
+    env?: Record<string, string>;
+    /** Relative to the workspace dir in the container; defaults to it. */
+    cwd?: string;
+    /** Defaults to `sh`. */
+    shell?: string;
 }
 
 export interface ExecResult {
     exitCode: number;
     stdoutTail: string;
+    stderrTail: string;
 }
 
 export interface Workspace {
@@ -130,6 +138,8 @@ export interface AgentRuntime {
         request: AgentRunRequest,
         hooks: AgentRunHooks,
     ): Promise<AgentRunResult>;
+    /** Runs a command in an ephemeral container with the repository mounted read-only. */
+    execHeadless(spec: HeadlessSpec, command: string, options: ExecOptions): Promise<ExecResult>;
     listOpenWorkspaces(): Promise<OpenWorkspaceSummary[]>;
     closeWorkspace(id: string): Promise<void>;
 }

@@ -227,7 +227,7 @@ describe("ScriptedAgentRuntime", () => {
                 signal: neverAborted(),
             });
 
-            expect(result).toEqual({ exitCode: 0, stdoutTail: "" });
+            expect(result).toEqual({ exitCode: 0, stdoutTail: "", stderrTail: "" });
         });
 
         it("has an empty diff and accepts files without writing them", async () => {

@@ -2,6 +2,7 @@ import type { HandleType } from "@xyflow/react";
 
 import { NODE_TYPES } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowNode, NodeType, Port, PortType } from "@/shared/flow_graph.js";
+import { FLOW_SCHEMA_VERSION } from "@/shared/migrate_flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import { checkHandles, OPPOSITE_HANDLE_TYPES } from "@/web/canvas/connection_hints.js";
 
@@ -40,7 +41,7 @@ function createProbeNode(portType: PortType, from: HandleType): FlowNode {
 }
 
 function buildProbeGraph(probe: FlowNode, candidate: FlowNode): FlowGraph {
-    return { schemaVersion: 1, nodes: [probe, candidate], edges: [], groups: [] };
+    return { schemaVersion: FLOW_SCHEMA_VERSION, nodes: [probe, candidate], edges: [], groups: [] };
 }
 
 function connectsToProbe(graph: FlowGraph, candidatePort: Port, from: HandleType): boolean {

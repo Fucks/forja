@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 import type {
@@ -10,6 +11,8 @@ import type {
     AgentRunRequest,
     AgentRunResult,
     AgentRuntime,
+    ExecOptions,
+    ExecResult,
     HeadlessSpec,
     OpenWorkspaceSummary,
     RuntimeDir,
@@ -21,6 +24,7 @@ import {
     type ContainerMount,
     type StartContainerInput,
 } from "@/integrations/agent_runtime/container_manager.js";
+import { execInContainer } from "@/integrations/agent_runtime/container_command.js";
 import {
     createDockerWorkspace,
     type OpenedWorkspace,
@@ -174,6 +178,35 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         }
     }
 
+    async function execHeadless(
+        spec: HeadlessSpec,
+        command: string,
+        options: ExecOptions,
+    ): Promise<ExecResult> {
+        throwIfAborted(options.signal);
+        const containerId = await startPreparedContainer(
+            {
+                name: headlessContainerNameFor(spec.runId, randomUUID()),
+                image: spec.image,
+                mounts: [readOnlyRepositoryMount(spec.repoPath)],
+                labels: headlessLabels(spec),
+                workdir: WORKSPACE_DIR_IN_CONTAINER,
+                user: containerUser,
+            },
+            (startedId) => runSetup(startedId, spec, hooksPrintingTo(options), options.signal),
+        );
+
+        try {
+            return await execInContainer(
+                headlessContainer(containerId, spec.env),
+                command,
+                options,
+            );
+        } finally {
+            await containers.stop(containerId);
+        }
+    }
+
     async function closeWorkspace(id: string): Promise<void> {
         const opened = openWorkspaces.get(id);
         if (!opened) {
@@ -287,8 +320,20 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         openWorkspace,
         headlessRuntimeDir,
         runHeadless,
+        execHeadless,
         closeWorkspace,
         listOpenWorkspaces,
+    };
+}
+
+// The setup of an ephemeral command prints its lines as the command's own output.
+function hooksPrintingTo(options: ExecOptions): AgentRunHooks {
+    return {
+        onEvent: (event) => {
+            if (event.kind === "system") {
+                options.onOutput?.(event.message);
+            }
+        },
     };
 }
 

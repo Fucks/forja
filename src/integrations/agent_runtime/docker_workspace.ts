@@ -6,6 +6,7 @@ import type {
     RuntimeDir,
     Workspace,
 } from "@/integrations/agent_runtime/agent_runtime.js";
+import { execInContainer } from "@/integrations/agent_runtime/container_command.js";
 import type { ContainerManager } from "@/integrations/agent_runtime/container_manager.js";
 import { writeWorkspaceFiles } from "@/integrations/agent_runtime/workspace_files.js";
 import type { CommandRunner } from "@/integrations/process/command_runner.js";
@@ -55,17 +56,12 @@ export function createDockerWorkspace(
 
         runAgent: deps.runAgent,
 
-        async exec(command, options) {
-            const result = await containers.exec(opened.containerId, ["sh", "-c", command], {
-                env: opened.env,
-                timeoutMs: options.timeoutMs,
-                signal: options.signal,
-                onStdoutLine: options.onOutput,
-                onStderrLine: options.onOutput,
-            });
-
-            return { exitCode: result.exitCode, stdoutTail: result.stdoutTail };
-        },
+        exec: (command, options) =>
+            execInContainer(
+                { containerId: opened.containerId, containers, env: opened.env },
+                command,
+                options,
+            ),
 
         async diff(baseBranch) {
             const range = `${baseBranch}...HEAD`;

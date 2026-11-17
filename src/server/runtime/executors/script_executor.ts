@@ -33,7 +33,7 @@ function rawLineEvent(context: NodeExecutionContext, line: string): AgentEvent {
     return { kind: "raw", line, at: context.clock.now(), iteration: context.nodeRun.iteration };
 }
 
-function scriptResultOf(execution: ExecResult): ExecResult {
+function scriptResultOf(execution: ExecResult): Omit<ExecResult, "stderrTail"> {
     return {
         exitCode: execution.exitCode,
         stdoutTail: keepLastLines(execution.stdoutTail, STDOUT_TAIL_MAX_LINES),

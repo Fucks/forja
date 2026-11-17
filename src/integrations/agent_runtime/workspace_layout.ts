@@ -89,6 +89,11 @@ export function readOnlyRepositoryMount(repoPath: string): ContainerMount {
     return { host: repoPath, container: WORKSPACE_DIR_IN_CONTAINER, readOnly: true };
 }
 
+/** A relative working directory is relative to the workspace dir. */
+export function workdirInContainer(workingDir = ""): string {
+    return path.posix.resolve(WORKSPACE_DIR_IN_CONTAINER, workingDir);
+}
+
 /** Docker Desktop on Windows exposes `C:\x\y` to Linux containers as `/c/x/y`. */
 export function toContainerPath(hostPath: string): string {
     const windowsPath = WINDOWS_DRIVE_PATH.exec(hostPath);

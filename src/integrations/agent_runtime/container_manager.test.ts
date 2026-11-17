@@ -143,6 +143,25 @@ describe("ContainerManager.exec", () => {
         expect(wrappedCommand?.slice(3)).toEqual([EXEC_ID, "git", "status"]);
     });
 
+    it("runs the command in the given working directory", async () => {
+        const commands = new FakeCommandRunner();
+
+        await createManager(commands).exec(
+            CONTAINER_ID,
+            ["ls"],
+            execOptions({ workdir: "/home/agent/workspace/web" }),
+        );
+
+        const [call] = commands.calls;
+        expect(call?.args.slice(0, 5)).toEqual([
+            "exec",
+            "-w",
+            "/home/agent/workspace/web",
+            "-e",
+            "FORJA_EXEC_ID",
+        ]);
+    });
+
     it("keeps stdin open and forwards it when given", async () => {
         const commands = new FakeCommandRunner();
 
