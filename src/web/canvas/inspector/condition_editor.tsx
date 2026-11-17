@@ -1,11 +1,11 @@
 import { Plus } from "lucide-react";
-import { useId } from "react";
 import type { JSX } from "react";
 
 import type { Condition } from "@/shared/conditions.js";
 import { ConditionRuleRow } from "@/web/canvas/inspector/condition_rule_row.js";
 import type { RuleConnective } from "@/web/canvas/inspector/condition_rules.js";
 import { conditionToText } from "@/web/canvas/inspector/condition_text.js";
+import type { PickableDataField } from "@/web/canvas/inspector/data_picker.js";
 import { useConditionRules } from "@/web/canvas/inspector/use_condition_rules.js";
 import { Button } from "@/web/components/ui/button.js";
 import { SegmentedControl } from "@/web/components/ui/segmented_control.js";
@@ -18,14 +18,13 @@ const CONNECTIVE_OPTIONS: { value: RuleConnective; label: string }[] = [
 export function ConditionEditor({
     value,
     onChange,
-    suggestions,
+    fields,
 }: {
     value: Condition;
     onChange: (condition: Condition) => void;
-    suggestions: string[];
+    fields: PickableDataField[];
 }): JSX.Element {
     const editing = useConditionRules(value, onChange);
-    const suggestionListId = useId();
     const { conditionRules } = editing;
 
     if (!conditionRules) {
@@ -47,18 +46,13 @@ export function ConditionEditor({
                     key={index}
                     rule={rule}
                     ruleNumber={index + 1}
-                    suggestionListId={suggestionListId}
+                    fields={fields}
                     onEdit={(changes) => editing.editRule(index, changes)}
                     onApply={(changes) => editing.applyRuleChanges(index, changes)}
                     onBlur={editing.applyEditedRules}
                     onRemove={canRemoveRules ? () => editing.removeRule(index) : undefined}
                 />
             ))}
-            <datalist id={suggestionListId}>
-                {suggestions.map((path) => (
-                    <option key={path} value={path} />
-                ))}
-            </datalist>
             {editing.error && (
                 <p role="alert" className="text-xs text-status-failed">
                     {editing.error}
