@@ -11,7 +11,7 @@ import {
     type Condition,
     listConditionPaths,
 } from "@/shared/conditions.js";
-import { findNodeSlugInPath } from "@/shared/data_context.js";
+import { NODES_ROOT } from "@/shared/data_context.js";
 import type { FlowGraph, FlowNode, NodeOfType } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
@@ -110,10 +110,12 @@ function listGraphConditions(graph: FlowGraph): Condition[] {
     return [...decisionConditions, ...loopConditions];
 }
 
+// A path such as `nodes.dev.result.approved` reads the field `approved` of the agent `dev`.
 function listSlugsWithResultFieldRead(path: string): string[] {
-    const [, , port, field] = path.split(CONDITION_PATH_SEPARATOR);
-    const slug = findNodeSlugInPath(path);
-    if (slug === undefined || port !== AGENT_RESULT_PORT || field === undefined) {
+    const [root, slug, port, field] = path.split(CONDITION_PATH_SEPARATOR);
+    const readsResultField =
+        root === NODES_ROOT && port === AGENT_RESULT_PORT && field !== undefined;
+    if (!readsResultField || slug === undefined) {
         return [];
     }
 

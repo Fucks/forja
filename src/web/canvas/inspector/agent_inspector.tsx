@@ -10,6 +10,7 @@ import { ExecutionFields, ExecutionLimitFields } from "@/web/canvas/inspector/ex
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
 import { useInheritedSettings } from "@/web/canvas/inspector/inherited_settings.js";
+import { InsertDataButton } from "@/web/canvas/inspector/insert_data_button.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
 import { EffortField, ModelField } from "@/web/canvas/inspector/model_effort_fields.js";
@@ -20,7 +21,6 @@ import {
     withoutInputPort,
 } from "@/web/canvas/inspector/node_updates.js";
 import { PortListEditor } from "@/web/canvas/inspector/port_list_editor.js";
-import { InsertDataButton } from "@/web/canvas/inspector/insert_data_button.js";
 import { PromptEditor } from "@/web/canvas/inspector/prompt_editor.js";
 import type { PromptEditorHandle } from "@/web/canvas/inspector/prompt_editor.js";
 import { ResponseFormatEditor } from "@/web/canvas/inspector/response_format_editor.js";
