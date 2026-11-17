@@ -40,7 +40,7 @@
 - [x] 8. Empty group shows "Arraste nós para dentro" — `group_frame.tsx`, `group_node.tsx`
 - [x] 9. Detail card (tagline, what it does, ports with label and type icon, first example, Documentação
       completa opens `NodeDocDrawer`) — `node_palette_detail.tsx`, palette test
-- [ ] 10. `AddFromPortMenu` with search, positioned at the drop point, Esc closes — `add_from_port_menu.tsx`
-- [ ] 11. `onConnectEnd` on empty space opens the menu; choosing creates node + edge in one history entry —
+- [x] 10. `AddFromPortMenu` with search, positioned at the drop point, Esc closes — `add_from_port_menu.tsx`
+- [x] 11. `onConnectEnd` on empty space opens the menu; choosing creates node + edge in one history entry —
       `use_add_from_port.ts`, `flow_canvas.tsx`, `flow_canvas.test.tsx`
 - [ ] 12. Self-review checklist and feedback loops

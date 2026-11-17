@@ -33,12 +33,18 @@ const SINGLETON_NODE_TYPES: ReadonlySet<NodeType> = new Set(["trigger"]);
 
 export const PALETTE_ITEMS: PaletteItem[] = ALL_NODE_DOCS.map(toPaletteItem);
 
-export function filterPaletteItems(items: PaletteItem[], query: string): PaletteItem[] {
+export type NodePaletteItem = Extract<PaletteItem, { kind: "node" }>;
+
+export function filterPaletteItems<Item extends PaletteItem>(items: Item[], query: string): Item[] {
     const normalizedQuery = query.trim().toLowerCase();
 
     return items.filter((item) =>
         listSearchableTexts(item).some((text) => text.toLowerCase().includes(normalizedQuery)),
     );
+}
+
+export function listNodePaletteItems(types: NodeType[]): NodePaletteItem[] {
+    return PALETTE_ITEMS.filter(isNodePaletteItem).filter((item) => types.includes(item.type));
 }
 
 export function groupPaletteItemsByCategory(items: PaletteItem[]): PaletteSection[] {
@@ -63,6 +69,10 @@ function toPaletteItem(doc: NodeDoc): PaletteItem {
         singleton: SINGLETON_NODE_TYPES.has(type),
         ...shownFields,
     };
+}
+
+function isNodePaletteItem(item: PaletteItem): item is NodePaletteItem {
+    return item.kind === "node";
 }
 
 function isGroupKind(type: DocumentedType): type is GroupKind {

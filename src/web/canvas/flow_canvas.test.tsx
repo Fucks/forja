@@ -1,5 +1,22 @@
-import { ReactFlowProvider } from "@xyflow/react";
-import { createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { Position as HandlePosition, ReactFlowProvider } from "@xyflow/react";
+import type {
+    FinalConnectionState,
+    Handle,
+    HandleType,
+    InternalNode,
+    OnConnectEnd,
+} from "@xyflow/react";
+import type * as ReactFlowModule from "@xyflow/react";
+import type { ComponentProps, JSX } from "react";
+import {
+    act,
+    createEvent,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
 import type { FlowEdge, FlowGraph, FlowGroup, NodeType, Position } from "@/shared/flow_graph.js";
@@ -23,6 +40,22 @@ import {
 } from "@/web/canvas/use_canvas_clipboard.js";
 import type { IssuesByTarget } from "@/web/canvas/use_validation.js";
 import { ToastProvider } from "@/web/components/ui/toast.js";
+
+// jsdom never measures the handles, so React Flow cannot start a connection drag; the canvas's
+// onConnectEnd is recorded to be called the way React Flow calls it when a connection is let go.
+const recordedReactFlow = vi.hoisted(() => ({
+    onConnectEnd: undefined as OnConnectEnd | undefined,
+}));
+
+vi.mock("@xyflow/react", async (importOriginal) => {
+    const reactFlow = await importOriginal<typeof ReactFlowModule>();
+    function RecordingReactFlow(props: ComponentProps<typeof reactFlow.ReactFlow>): JSX.Element {
+        recordedReactFlow.onConnectEnd = props.onConnectEnd;
+        return <reactFlow.ReactFlow {...props} />;
+    }
+
+    return { ...reactFlow, ReactFlow: RecordingReactFlow };
+});
 
 const CANONICAL_FLOW = buildCanonicalFlow();
 const EMPTY_FLOW: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
@@ -349,6 +382,101 @@ describe("FlowCanvas group menu", () => {
     });
 });
 
+describe("FlowCanvas add from port", () => {
+    it("offers only the nodes that accept a list when an items edge is let go on empty space", () => {
+        renderCanvas(createStoreWith(FLOW_WITH_SOURCE_AND_WRITER));
+
+        letGoOnEmptySpace(["source", "items"], "source", EMPTY_SPOT);
+
+        const menu = screen.getByRole("dialog", { name: "Adicionar nó ligado" });
+        expect(
+            within(menu)
+                .getAllByRole("button")
+                .map((option) => option.textContent),
+        ).toEqual(["Fonte"]);
+    });
+
+    it("creates the chosen node at the drop point, linked from the dragged output", async () => {
+        const store = createStoreWith(FLOW_WITH_SOURCE_AND_WRITER);
+        renderCanvas(store);
+        letGoOnEmptySpace(["writer", "summary"], "source", EMPTY_SPOT);
+
+        await userEvent.click(screen.getByRole("button", { name: "Git" }));
+
+        const { graph, selection } = store.getState();
+        const createdNode = graph.nodes.at(-1);
+        expect(createdNode).toMatchObject({ type: "git", position: EMPTY_SPOT });
+        expect(graph.edges.map(({ from, to }) => ({ from, to }))).toEqual([
+            {
+                from: { nodeId: "writer", port: "summary" },
+                to: { nodeId: createdNode?.id, port: "body" },
+            },
+        ]);
+        expect(selection).toEqual([createdNode?.id]);
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("links the new node's output to an input dragged to empty space", async () => {
+        const store = createStoreWith(FLOW_WITH_SOURCE_AND_WRITER);
+        renderCanvas(store);
+        letGoOnEmptySpace(["writer", "item"], "target", EMPTY_SPOT);
+
+        await userEvent.click(screen.getByRole("button", { name: "Aprovação humana" }));
+
+        const createdNode = store.getState().graph.nodes.at(-1);
+        expect(store.getState().graph.edges.map(({ from, to }) => ({ from, to }))).toEqual([
+            {
+                from: { nodeId: createdNode?.id, port: "approved" },
+                to: { nodeId: "writer", port: "item" },
+            },
+        ]);
+    });
+
+    it("filters the offered nodes with the search", async () => {
+        renderCanvas(createStoreWith(FLOW_WITH_SOURCE_AND_WRITER));
+        letGoOnEmptySpace(["writer", "summary"], "source", EMPTY_SPOT);
+
+        await userEvent.keyboard("branch");
+
+        const menu = screen.getByRole("dialog", { name: "Adicionar nó ligado" });
+        expect(
+            within(menu)
+                .getAllByRole("button")
+                .map((option) => option.textContent),
+        ).toEqual(["Git"]);
+    });
+
+    it("closes the menu with Escape without creating anything", async () => {
+        const store = createStoreWith(FLOW_WITH_SOURCE_AND_WRITER);
+        renderCanvas(store);
+        letGoOnEmptySpace(["source", "items"], "source", EMPTY_SPOT);
+
+        await userEvent.keyboard("{Escape}");
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(store.getState().graph).toEqual(FLOW_WITH_SOURCE_AND_WRITER);
+    });
+
+    it("undoes the created node and its edge in a single step", async () => {
+        const store = createStoreWith(FLOW_WITH_SOURCE_AND_WRITER);
+        renderCanvas(store);
+        letGoOnEmptySpace(["writer", "summary"], "source", EMPTY_SPOT);
+        await userEvent.click(screen.getByRole("button", { name: "Git" }));
+
+        fireEvent.keyDown(document, { key: "z", ctrlKey: true });
+
+        expect(store.getState().graph).toEqual(FLOW_WITH_SOURCE_AND_WRITER);
+    });
+
+    it("keeps the menu closed when the connection is let go over a port", () => {
+        renderCanvas(createStoreWith(FLOW_WITH_SOURCE_AND_WRITER));
+
+        letGoOverPort(["source", "items"], ["writer", "item"]);
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+});
+
 describe("FlowCanvas history", () => {
     it("undoes and redoes creating and deleting a node in order", async () => {
         const clock = new FakeClock();
@@ -555,6 +683,84 @@ describe("FlowCanvas read-only", () => {
         expect(flowingEdgeIds).toEqual([DEVELOPER_TO_REVIEWER_EDGE_ID]);
     });
 });
+
+const EMPTY_SPOT: Position = { x: 400, y: 260 };
+const HANDLE_BOX = { x: 0, y: 0, width: 10, height: 10 };
+
+const FLOW_WITH_SOURCE_AND_WRITER: FlowGraph = {
+    ...EMPTY_FLOW,
+    nodes: [
+        createDefaultNode("source", "source", { x: 0, y: 0 }),
+        createDefaultNode("agent", "writer", { x: 300, y: 0 }),
+    ],
+};
+
+function letGoOnEmptySpace(
+    draggedPort: [string, string],
+    handleType: HandleType,
+    point: Position,
+): void {
+    const fromHandle = buildHandle(draggedPort, handleType);
+    const connectionState: FinalConnectionState = {
+        isValid: null,
+        from: { x: 0, y: 0 },
+        fromHandle,
+        fromPosition: fromHandle.position,
+        fromNode: buildInternalNode(fromHandle.nodeId),
+        to: point,
+        toHandle: null,
+        toPosition: HandlePosition.Left,
+        toNode: null,
+        pointer: point,
+    };
+
+    callOnConnectEnd(point, connectionState);
+}
+
+function letGoOverPort(draggedPort: [string, string], droppedPort: [string, string]): void {
+    const fromHandle = buildHandle(draggedPort, "source");
+    const toHandle = buildHandle(droppedPort, "target");
+    const connectionState: FinalConnectionState = {
+        isValid: true,
+        from: { x: 0, y: 0 },
+        fromHandle,
+        fromPosition: fromHandle.position,
+        fromNode: buildInternalNode(fromHandle.nodeId),
+        to: EMPTY_SPOT,
+        toHandle,
+        toPosition: toHandle.position,
+        toNode: buildInternalNode(toHandle.nodeId),
+        pointer: EMPTY_SPOT,
+    };
+
+    callOnConnectEnd(EMPTY_SPOT, connectionState);
+}
+
+function callOnConnectEnd(point: Position, connectionState: FinalConnectionState): void {
+    const pointerUp = new MouseEvent("mouseup", { clientX: point.x, clientY: point.y });
+
+    act(() => recordedReactFlow.onConnectEnd?.(pointerUp, connectionState));
+}
+
+function buildHandle([nodeId, port]: [string, string], type: HandleType): Handle {
+    return {
+        id: port,
+        nodeId,
+        type,
+        position: type === "source" ? HandlePosition.Right : HandlePosition.Left,
+        ...HANDLE_BOX,
+    };
+}
+
+function buildInternalNode(id: string): InternalNode {
+    const userNode = { id, position: { x: 0, y: 0 }, data: {} };
+
+    return {
+        ...userNode,
+        measured: {},
+        internals: { positionAbsolute: userNode.position, z: 0, userNode },
+    };
+}
 
 function renderReadOnlyCanvas(store: EditorStore): void {
     render(

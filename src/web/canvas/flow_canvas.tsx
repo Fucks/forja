@@ -2,7 +2,7 @@ import "@xyflow/react/dist/style.css";
 import "@/web/canvas/base/canvas_theme.css";
 
 import { Controls, MiniMap, Panel, ReactFlow } from "@xyflow/react";
-import type { EdgeTypes } from "@xyflow/react";
+import type { EdgeTypes, FinalConnectionState } from "@xyflow/react";
 import { useMemo, useState } from "react";
 import type { JSX } from "react";
 
@@ -17,7 +17,9 @@ import type { RFEdge } from "@/web/canvas/graph_mapping.js";
 import { GroupContextMenu } from "@/web/canvas/group_context_menu.js";
 import { ImplicitItemOverlay } from "@/web/canvas/implicit_item_overlay.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
+import { AddFromPortMenu } from "@/web/canvas/palette/add_from_port_menu.js";
 import { DropTargetGroupContext } from "@/web/canvas/palette/drop_target_context.js";
+import { useAddFromPort } from "@/web/canvas/palette/use_add_from_port.js";
 import { useNodeDrop } from "@/web/canvas/palette/use_node_drop.js";
 import { SelectionToolbar } from "@/web/canvas/selection_toolbar.js";
 import { ShortcutsDialog } from "@/web/canvas/shortcuts_dialog.js";
@@ -116,7 +118,8 @@ function EditableFlowCanvas({
 }): JSX.Element {
     const graph = store((state) => state.graph);
     const { nodes, edges, onNodesChange, onEdgesChange } = useCanvasElements(store);
-    const { isValidConnection, onConnect, onConnectEnd, rejection } = useCanvasConnections(store);
+    const connections = useCanvasConnections(store);
+    const addFromPort = useAddFromPort(store);
     const { onNodesDelete, onEdgesDelete } = useCanvasDeletion(store);
     const { dropTargetGroupId, onDragOver, onDragLeave, onDrop } = useNodeDrop(store);
     const { hasSelectedNodes, verdict, groupSelection } = useSelectionGrouping(store);
@@ -133,6 +136,16 @@ function EditableFlowCanvas({
         [edges, issuesByTarget],
     );
 
+    // A connection let go over a port may be explained as refused; one let go on empty space
+    // offers the nodes that fit the dragged port.
+    function onConnectEnd(
+        event: MouseEvent | TouchEvent,
+        connectionState: FinalConnectionState,
+    ): void {
+        connections.onConnectEnd(event, connectionState);
+        addFromPort.onConnectEnd(event, connectionState);
+    }
+
     return (
         <ConnectionGraphContext value={graph}>
             <ImplicitItemOverlay graph={graph}>
@@ -145,8 +158,8 @@ function EditableFlowCanvas({
                             edgeTypes={EDGE_TYPES}
                             onNodesChange={onNodesChange}
                             onEdgesChange={onEdgesChange}
-                            isValidConnection={isValidConnection}
-                            onConnect={onConnect}
+                            isValidConnection={connections.isValidConnection}
+                            onConnect={connections.onConnect}
                             onConnectEnd={onConnectEnd}
                             onNodesDelete={onNodesDelete}
                             onEdgesDelete={onEdgesDelete}
@@ -177,7 +190,15 @@ function EditableFlowCanvas({
                                 </Panel>
                             )}
                         </ReactFlow>
-                        <ConnectionRejectionTooltip rejection={rejection} />
+                        <ConnectionRejectionTooltip rejection={connections.rejection} />
+                        {addFromPort.openMenu && (
+                            <AddFromPortMenu
+                                screenPosition={addFromPort.openMenu.screenPosition}
+                                nodeTypes={addFromPort.openMenu.compatibleNodeTypes}
+                                onChoose={addFromPort.addLinkedNode}
+                                onClose={addFromPort.closeMenu}
+                            />
+                        )}
                         {groupMenu.openMenu && (
                             <GroupContextMenu
                                 screenPosition={groupMenu.openMenu.screenPosition}
