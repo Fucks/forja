@@ -62,7 +62,7 @@ function buildReviewLoop(): FlowGraph {
     const reviewLoop = buildReviewRoundsGroup(itemsGroup);
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildManualTrigger(),
             buildSandcastleIssuesSource(),

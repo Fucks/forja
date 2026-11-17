@@ -52,7 +52,7 @@ export function buildCanonicalFlow(): FlowGraph {
     });
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildTriggerNode(),
             buildSourceNode(),
@@ -83,7 +83,7 @@ export function buildLoopFlow(): FlowGraph {
     const reviewLoop = buildReviewLoopGroup(itemsGroup.id);
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildTriggerNode(),
             buildSourceNode(),
@@ -133,7 +133,7 @@ export function buildApprovalFlow(gateConfig: Partial<GateConfig> = {}): FlowGra
     const rework = createNodeOfType("agent", "rework", gridPosition(2, 1));
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildTriggerNode(),
             {

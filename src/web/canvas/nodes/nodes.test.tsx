@@ -328,7 +328,7 @@ function CanvasOf({ graph, state }: { graph: FlowGraph; state: CanvasState }): J
 }
 
 function buildGraph(elements: GraphElements): FlowGraph {
-    return { schemaVersion: 1, nodes: [], groups: [], edges: [], ...elements };
+    return { schemaVersion: 2, nodes: [], groups: [], edges: [], ...elements };
 }
 
 function validate(nodes: FlowNode[]): IssuesByTarget {

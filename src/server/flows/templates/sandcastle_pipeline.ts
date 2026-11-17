@@ -86,7 +86,7 @@ function buildSandcastlePipeline(): FlowGraph {
     ];
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildManualTrigger(),
             buildLimitedSandcastleIssuesSource(),

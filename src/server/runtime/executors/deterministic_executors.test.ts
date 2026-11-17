@@ -451,7 +451,7 @@ function buildReviewDecisionFlow(): FlowGraph {
 
 function buildPerItemFlow(itemNodes: FlowNode[], itemEdges: FlowEdge[]): FlowGraph {
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             createNodeOfType("trigger", "trigger", POSITION),
             createNodeOfType("source", "source", POSITION),

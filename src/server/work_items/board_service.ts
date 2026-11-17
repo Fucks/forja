@@ -21,7 +21,7 @@ const CLOSED_ITEMS_VISIBLE_DAYS = 7;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const START_OF_USAGE_HISTORY = new Date(0);
 
-const EMPTY_FLOW_GRAPH: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+const EMPTY_FLOW_GRAPH: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 
 const itemOutcomeSchema = z.object({ moveItemTo: z.enum(ITEM_DESTINATIONS).optional() });
 

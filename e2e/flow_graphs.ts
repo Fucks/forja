@@ -12,7 +12,7 @@ import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 
 export const GATE_MESSAGE = "Confira o item antes de concluir.";
 
-const FLOW_SCHEMA_VERSION = 1;
+const FLOW_SCHEMA_VERSION = 2;
 
 export function localBasicFactoryFlow(): PublishedFlowInput {
     return {

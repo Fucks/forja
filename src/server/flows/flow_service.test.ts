@@ -19,7 +19,7 @@ const ONE_MINUTE_MS = 60_000;
 const PROJECT_ID = "prj_forja";
 const OTHER_PROJECT_ID = "prj_loja";
 
-const GRAPH_WITHOUT_TRIGGER: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+const GRAPH_WITHOUT_TRIGGER: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 
 describe("FlowService", () => {
     let database: DatabaseHandle;
@@ -224,7 +224,7 @@ describe("FlowService", () => {
 
         it("rejects a graph with an invalid shape with DomainValidationError", async () => {
             const flow = await service.create(PROJECT_ID, { name: "Entrega" });
-            const malformedGraph = { ...GRAPH_WITHOUT_TRIGGER, schemaVersion: 2 };
+            const malformedGraph = { ...GRAPH_WITHOUT_TRIGGER, schemaVersion: 3 };
 
             const saving = service.saveDraft(flow.id, malformedGraph as unknown as FlowGraph, 1);
 

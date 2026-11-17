@@ -181,7 +181,7 @@ function buildLeakerFlow(): FlowGraph {
     };
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [trigger, { ...leaker, config: leakerConfig }],
         edges: [],
         groups: [],

@@ -32,7 +32,7 @@
 - [x] 2. Test + implement `migrateFlowGraph` rules (version, condition incl. and/or/not, loop until, git
       bodyFrom, v2 untouched, non-graph untouched, idempotence, standard flow fixture) —
       `src/shared/migrate_flow_graph.ts`, `.test.ts`, `src/test/fixtures/standard_flow_v1.json`
-- [ ] 3. `flowGraphSchema` = preprocess + v2; update `schemaVersion: 1` literals in src/e2e (except migration
+- [x] 3. `flowGraphSchema` = preprocess + v2; update `schemaVersion: 1` literals in src/e2e (except migration
       fixtures), flow_graph/flow_service tests that used 2 as "invalid" — `src/shared/flow_graph.ts` & tests
 - [ ] 4. Templates in v2 with new paths (`inputs.value.*`, `nodes.*`, `inputs.*`) — templates/*.ts + tests
 - [ ] 5. YAML: importing a v1 template YAML works, exporting writes v2 — `flow_yaml.test.ts`

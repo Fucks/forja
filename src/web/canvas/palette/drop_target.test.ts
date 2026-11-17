@@ -91,7 +91,7 @@ describe("addNodeAt", () => {
 });
 
 function buildGraph(groups: FlowGroup[]): FlowGraph {
-    return { schemaVersion: 1, nodes: [], edges: [], groups };
+    return { schemaVersion: 2, nodes: [], edges: [], groups };
 }
 
 function buildMap({

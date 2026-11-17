@@ -237,7 +237,7 @@ function buildFlow(): FlowGraph {
     };
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildNode("trigger", "trigger", { x: 0, y: 100 }),
             buildNode("source", "source", { x: 300, y: 100 }),

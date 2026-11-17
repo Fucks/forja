@@ -288,7 +288,7 @@ function withPrompt(agent: AgentNode, prompt: string): AgentNode {
 }
 
 function graphWith(node: FlowNode): FlowGraph {
-    return { schemaVersion: 1, nodes: [node], edges: [], groups: [] };
+    return { schemaVersion: 2, nodes: [node], edges: [], groups: [] };
 }
 
 function buildTopLevelAgentWithoutItemPort(): FlowNode {

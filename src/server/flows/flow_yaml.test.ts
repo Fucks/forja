@@ -163,7 +163,7 @@ describe("yamlToFlow", () => {
 
     it("reports the path of every invalid field of the graph", () => {
         const yaml = flowToYaml(buildFlowFile(buildCanonicalFlow())).replace(
-            "schemaVersion: 1",
+            "schemaVersion: 2",
             "schemaVersion: 7",
         );
 

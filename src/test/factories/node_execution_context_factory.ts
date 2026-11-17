@@ -27,7 +27,7 @@ export function buildNodeExecutionContext(
         run,
         nodeRun: buildNodeRunState({ runId: run.id, nodeId: node.id, status: "RUNNING" }),
         node,
-        graph: { schemaVersion: 1, nodes: [node], edges: [], groups: [] },
+        graph: { schemaVersion: 2, nodes: [node], edges: [], groups: [] },
         inputs: {},
         runItems: [],
         project,

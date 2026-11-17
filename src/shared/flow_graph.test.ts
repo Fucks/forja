@@ -6,6 +6,7 @@ import {
     parseFlowGraph,
 } from "@/shared/flow_graph.js";
 import { buildCanonicalFlow, buildLoopFlow } from "@/test/factories/flow_graph_factory.js";
+import standardFlowV1 from "@/test/fixtures/standard_flow_v1.json" with { type: "json" };
 
 describe("parseFlowGraph", () => {
     it("accepts the canonical flow unchanged", () => {
@@ -18,6 +19,13 @@ describe("parseFlowGraph", () => {
         const loopFlow = buildLoopFlow();
 
         expect(parseFlowGraph(loopFlow)).toEqual(loopFlow);
+    });
+
+    it("migrates a schemaVersion 1 graph to schemaVersion 2 as it reads it", () => {
+        const graph = parseFlowGraph(standardFlowV1);
+
+        expect(graph.schemaVersion).toBe(2);
+        expect(graph.nodes).toHaveLength(standardFlowV1.nodes.length);
     });
 
     it("accepts a graph with a single trigger and fills port defaults", () => {
@@ -43,7 +51,7 @@ describe("parseFlowGraph", () => {
 
     it("lists every invalid field in the error", () => {
         const graph = buildSingleTriggerGraph();
-        const graphWithTwoErrors = { ...graph, schemaVersion: 2, edges: [{ id: "e1" }] };
+        const graphWithTwoErrors = { ...graph, schemaVersion: 3, edges: [{ id: "e1" }] };
 
         const error = captureParseError(() => parseFlowGraph(graphWithTwoErrors));
 
@@ -184,7 +192,7 @@ describe("flowGroupSchema", () => {
 
 function buildSingleTriggerGraph() {
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             {
                 id: "n1",

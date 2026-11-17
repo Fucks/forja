@@ -99,7 +99,7 @@ function createFlow(
 
 function createDefaultFlowGraph(): FlowGraph {
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [createDefaultNode("trigger", DEFAULT_TRIGGER_NODE_ID, CANVAS_ORIGIN)],
         edges: [],
         groups: [],

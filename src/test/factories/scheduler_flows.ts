@@ -184,7 +184,7 @@ function configureAgent(node: FlowNode, config: Partial<AgentConfig>): FlowNode 
 }
 
 function buildFlow(nodes: FlowNode[], edges: FlowGraph["edges"]): FlowGraph {
-    return { schemaVersion: 1, nodes, edges, groups: [] };
+    return { schemaVersion: 2, nodes, edges, groups: [] };
 }
 
 function buildNode(type: NodeType, id: string): FlowNode {

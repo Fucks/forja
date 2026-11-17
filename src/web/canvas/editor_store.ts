@@ -33,7 +33,7 @@ export interface EditorState {
 
 export type EditorStore = UseBoundStore<StoreApi<EditorState>>;
 
-const EMPTY_GRAPH: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+const EMPTY_GRAPH: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 const NO_REVISION = 0;
 
 const HISTORY_LIMIT = 100;
