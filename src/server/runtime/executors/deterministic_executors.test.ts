@@ -4,7 +4,7 @@ import { createOutputExecutor } from "@/server/runtime/executors/output_executor
 import type { NodeExecutionContext, NodeExecutionResult } from "@/server/runtime/node_executors.js";
 import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
 import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.js";
-import type { Condition } from "@/shared/conditions.js";
+import { type Condition, CONDITION_PATH_SEPARATOR } from "@/shared/conditions.js";
 import {
     type FlowEdge,
     type FlowGraph,
@@ -30,6 +30,7 @@ import { FakeAgentRuntime, type ScriptedExec } from "@/test/fakes/fake_agent_run
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { FakeGitHubProvider } from "@/test/fakes/fake_github_provider.js";
 import { InMemoryRunRepository } from "@/test/fakes/in_memory_run_repository.js";
+import { listUpstreamOutputPaths } from "@/web/canvas/inspector/condition_suggestions.js";
 
 const POSITION = { x: 0, y: 0 };
 const ISSUE_1 = buildIssueSnapshot(1);
@@ -413,6 +414,21 @@ describe("deterministic executors", () => {
             expect((await bed.findNodeRun(runId, "needs_human")).status).toBe("SKIPPED");
         });
 
+        it("runs the true branch with a condition built on a path the editor suggests", async () => {
+            const graph = buildReviewDecisionFlowReadingNodes();
+            const [nearestSuggestion = ""] = listUpstreamOutputPaths(graph, "check");
+            const condition: Condition = {
+                op: "eq",
+                path: `${nearestSuggestion}${CONDITION_PATH_SEPARATOR}approved`,
+                value: true,
+            };
+
+            const runId = await runToTheEnd(withCheckCondition(graph, condition));
+
+            expect(nearestSuggestion).toBe("nodes.review.result");
+            expect((await bed.findNodeRun(runId, "done")).status).toBe("SUCCEEDED");
+        });
+
         it("chooses the same branch with a v1 condition migrated to inputs.value", async () => {
             const decisionFlow = buildReviewDecisionFlow();
             const decisionFlowV1 = {
@@ -508,6 +524,12 @@ function buildReviewDecisionFlow(): FlowGraph {
             connect(["check", "true"], ["done", "approved"]),
             connect(["check", "false"], ["needs_human", "rejected"]),
         ],
+    );
+}
+
+function withCheckCondition(graph: FlowGraph, condition: Condition): FlowGraph {
+    return updateNode(graph, "check", (node) =>
+        node.type === "condition" ? { ...node, config: { condition } } : node,
     );
 }
 

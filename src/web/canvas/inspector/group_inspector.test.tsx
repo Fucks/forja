@@ -127,7 +127,7 @@ describe("GroupInspector of a loop", () => {
         const suggestions = screen.getAllByRole("option", { hidden: true });
 
         expect(suggestions.map((option) => option.getAttribute("value"))).toContain(
-            "revisar.summary",
+            "nodes.revisar.summary",
         );
     });
 

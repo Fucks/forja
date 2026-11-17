@@ -264,7 +264,9 @@ describe("ConditionInspector", () => {
 
         const suggestions = screen.getAllByRole("option", { hidden: true });
 
-        expect(suggestions.map((option) => option.getAttribute("value"))).toContain("tl.result");
+        expect(suggestions.map((option) => option.getAttribute("value"))).toContain(
+            "nodes.tl.result",
+        );
     });
 });
 
