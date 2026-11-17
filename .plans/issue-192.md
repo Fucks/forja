@@ -25,10 +25,10 @@
 
 - [x] 1. Fixed output shapes — `src/shared/node_output_shapes.ts`
 - [x] 2. Test+impl: `nodes.<slug>.<port>` of upstream nodes, nearest first, agent outputSchema nested with enum/description, self and downstream left out — `src/engine/available_data.ts`, `.test.ts`
-- [ ] 3. Test+impl: deterministic shapes, `port.schema`, `text` and `json` without schema, 4-level limit
-- [ ] 4. Test+impl: `inputs.<port>` with the shape of the connected source port
-- [ ] 5. Test+impl: `item.*` only inside a Map; `project.*` and `run.*`
-- [ ] 6. Test+impl: `loopUntil` scope lists only nodes inside the group
+- [x] 3. Test+impl: deterministic shapes, `port.schema`, `text` and `json` without schema, 4-level limit
+- [x] 4. Test+impl: `inputs.<port>` with the shape of the connected source port
+- [x] 5. Test+impl: `item.*` only inside a Map; `project.*` and `run.*`
+- [x] 6. Test+impl: `loopUntil` scope lists only nodes inside the group
 - [ ] 7. Test+impl: `useLastNodeRunSamples` + `use_available_data.ts`
 - [ ] 8. Test+impl: DataPicker tree, search, type labels and samples — `data_picker.tsx`, `.test.tsx`
 - [ ] 9. Test+impl: DataPicker keyboard (arrows, Enter, Esc), empty state

@@ -43,7 +43,12 @@ export function describePropertyFields(
 }
 
 function toDataField(place: FieldPlace, shape: JsonSchema, depth: number): DataField {
-    const field: DataField = { path: place.path, label: place.label, type: toDataType(shape), depth };
+    const field: DataField = {
+        path: place.path,
+        label: place.label,
+        type: toDataType(shape),
+        depth,
+    };
     const enumValues = readEnumValues(shape);
     if (enumValues) {
         field.enumValues = enumValues;

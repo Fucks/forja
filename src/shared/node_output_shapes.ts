@@ -17,7 +17,7 @@ export const WORK_ITEM_SHAPE: JsonSchema = {
     },
 };
 
-const WORK_ITEM_LIST_SHAPE: JsonSchema = { type: "array", items: WORK_ITEM_SHAPE };
+export const WORK_ITEM_LIST_SHAPE: JsonSchema = { type: "array", items: WORK_ITEM_SHAPE };
 
 const GIT_RESULT_SHAPE: JsonSchema = {
     type: "object",
