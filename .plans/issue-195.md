@@ -42,7 +42,7 @@
       masking — `script_executor.ts`, `script_executor.test.ts`, `error_mapping.ts`, `node_run_state.ts`,
       `retry_policy.ts`, labels; move script tests from `deterministic_executors.test.ts`
 - [x] 9. Defaults + templates keep loop green — `node_defaults.ts`, `review_loop.ts`, `flow_graph_factory.ts`
-- [ ] 10. Output shapes for `script.result` (with `data: object`) and `script.output` — `node_output_shapes.ts`,
+- [x] 10. Output shapes for `script.result` (with `data: object`) and `script.output` — `node_output_shapes.ts`,
       `available_data.test.ts`
 - [ ] 11. Validation: item required only with `runIn: "item"`; empty command, `image` without isolated,
       duplicated env name — `port_rules.ts`, `graph_validation.ts`, `graph_validation.test.ts`

@@ -135,7 +135,17 @@ describe("describeAvailableData of deterministic and untyped outputs", () => {
         const fields = describeAvailableData(buildLoopFlow(), "review", NODE_SCOPE);
 
         expect(findField(fields, "nodes.testes.result.exitCode")?.type).toBe("number");
-        expect(findField(fields, "nodes.testes.result.stdoutTail")?.type).toBe("string");
+        expect(findField(fields, "nodes.testes.result.passed")?.type).toBe("boolean");
+        expect(findField(fields, "nodes.testes.result.stdout")?.type).toBe("string");
+        expect(findField(fields, "nodes.testes.result.stderr")?.type).toBe("string");
+        expect(findField(fields, "nodes.testes.result.durationMs")?.type).toBe("number");
+        expect(findField(fields, "nodes.testes.result.data")?.type).toBe("object");
+    });
+
+    it("lists the text output of a script as a string", () => {
+        const fields = describeAvailableData(buildLoopFlow(), "review", NODE_SCOPE);
+
+        expect(findField(fields, "nodes.testes.output")?.type).toBe("string");
     });
 
     it("lists the items of a source as a list", () => {

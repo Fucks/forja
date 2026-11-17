@@ -32,14 +32,23 @@ const SCRIPT_RESULT_SHAPE: JsonSchema = {
     type: "object",
     properties: {
         exitCode: { type: "integer", description: "Código de saída do comando; 0 é sucesso." },
-        stdoutTail: { type: "string", description: "Últimas linhas da saída do comando." },
+        passed: { type: "boolean", description: "Se o comando terminou com código 0." },
+        stdout: { type: "string", description: "Últimas 200 linhas da saída do comando." },
+        stderr: { type: "string", description: "Últimas 200 linhas dos erros do comando." },
+        durationMs: { type: "integer", description: "Quanto o comando demorou, em milissegundos." },
+        data: { type: "object", description: "O JSON lido da saída, quando pedido." },
     },
+};
+
+const SCRIPT_OUTPUT_SHAPE: JsonSchema = {
+    type: "string",
+    description: "Últimas 200 linhas da saída do comando.",
 };
 
 const NODE_OUTPUT_SHAPES: Partial<Record<NodeType, OutputShapesByPort>> = {
     trigger: { items: WORK_ITEM_LIST_SHAPE },
     source: { items: WORK_ITEM_LIST_SHAPE },
-    script: { result: SCRIPT_RESULT_SHAPE },
+    script: { result: SCRIPT_RESULT_SHAPE, output: SCRIPT_OUTPUT_SHAPE },
     git: { result: GIT_RESULT_SHAPE },
 };
 
