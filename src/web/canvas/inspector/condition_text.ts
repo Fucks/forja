@@ -1,16 +1,14 @@
 import type { DataField } from "@/engine/available_data.js";
 import { assertNever } from "@/lib/assert_never.js";
-import type { Comparison, Condition } from "@/shared/conditions.js";
-import { findOperatorOption } from "@/web/canvas/inspector/condition_operators.js";
+import type { Comparison, ComparisonOperator, Condition } from "@/shared/conditions.js";
 import {
     findRuleField,
+    findRuleOperatorOption,
     isRuleCondition,
-    listRuleOperatorOptions,
     toConditionRule,
 } from "@/web/canvas/inspector/condition_rules.js";
 import type { RuleCondition } from "@/web/canvas/inspector/condition_rules.js";
 
-export type ComparisonOperator = Comparison["op"];
 export type ComparisonValue = Extract<Comparison, { op: "eq" | "neq" }>["value"];
 type Combination = Extract<Condition, { conditions: Condition[] }>;
 
@@ -147,7 +145,7 @@ function describeOperandInWords(operand: Condition, fields: DataField[]): Senten
 function describeRuleInWords(condition: RuleCondition, fields: DataField[]): SentencePart[] {
     const rule = toConditionRule(condition);
     const field = findRuleField(rule, fields);
-    const option = findOperatorOption(listRuleOperatorOptions(rule, fields), rule);
+    const option = findRuleOperatorOption(rule, fields);
     const comparedValue =
         option?.valueInput.kind === "fixed" ? undefined : describeValueInWords(condition);
     const phrase = [option?.label ?? rule.operator, comparedValue]

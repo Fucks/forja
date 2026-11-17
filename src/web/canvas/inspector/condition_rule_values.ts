@@ -1,7 +1,7 @@
 import type { DataField } from "@/engine/available_data.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { ValueInput } from "@/web/canvas/inspector/condition_operators.js";
-import type { ConditionRule } from "@/web/canvas/inspector/condition_rules.js";
+import type { RuleValueFields } from "@/web/canvas/inspector/condition_rules.js";
 import type { ComparisonValue } from "@/web/canvas/inspector/condition_text.js";
 
 export type RuleValue =
@@ -24,7 +24,7 @@ export const CHOICE_REQUIRED_ERROR = "Escolha ao menos uma das opções.";
 /** The value of the rule, read the way the chosen operator asks for it. */
 export function readRuleValue(
     valueInput: ValueInput,
-    { valueText, values }: Pick<ConditionRule, "valueText" | "values">,
+    { valueText, values }: RuleValueFields,
     field: DataField | undefined,
 ): ValueReading {
     switch (valueInput.kind) {

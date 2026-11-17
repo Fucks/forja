@@ -4,6 +4,7 @@ import {
     findOperatorOption,
     operatorsFor,
     operatorsForField,
+    toComparisonOperator,
 } from "@/web/canvas/inspector/condition_operators.js";
 import type { OperatorOption } from "@/web/canvas/inspector/condition_operators.js";
 
@@ -46,7 +47,7 @@ describe("operatorsFor", () => {
             const options = [...operatorsFor(type), ...operatorsFor(type, { hasEnumValues: true })];
 
             const mismatches = options.map(({ operator }) =>
-                describeOperatorTypeMismatch(operator === "notExists" ? "exists" : operator, type),
+                describeOperatorTypeMismatch(toComparisonOperator(operator), type),
             );
 
             expect(mismatches.filter((mismatch) => mismatch !== undefined)).toEqual([]);

@@ -2,20 +2,19 @@ import type { JSX } from "react";
 
 import { assertNever } from "@/lib/assert_never.js";
 import type { ValueInput } from "@/web/canvas/inspector/condition_operators.js";
-import type { ConditionRule } from "@/web/canvas/inspector/condition_rules.js";
+import type { RuleValueChanges, RuleValueFields } from "@/web/canvas/inspector/condition_rules.js";
 import { Input } from "@/web/components/ui/input.js";
 import { Select } from "@/web/components/ui/select.js";
 
-type RuleValue = Pick<ConditionRule, "valueText" | "values">;
 type EnumValue = string | number;
 
 interface ConditionValueInputProps {
     label: string;
     valueInput: ValueInput;
-    value: RuleValue;
+    value: RuleValueFields;
     enumValues: EnumValue[];
-    onEdit: (changes: Partial<RuleValue>) => void;
-    onApply: (changes: Partial<RuleValue>) => void;
+    onEdit: (changes: RuleValueChanges) => void;
+    onApply: (changes: RuleValueChanges) => void;
     onBlur: () => void;
 }
 

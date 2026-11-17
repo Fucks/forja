@@ -3,18 +3,18 @@ import type { JSX } from "react";
 
 import type { DataField } from "@/engine/available_data.js";
 import { describeOperatorTypeMismatch } from "@/engine/validation_rules/condition_rules.js";
-import { findOperatorOption } from "@/web/canvas/inspector/condition_operators.js";
-import type { OperatorOption, RuleOperator } from "@/web/canvas/inspector/condition_operators.js";
+import {
+    findOperatorOption,
+    toComparisonOperator,
+} from "@/web/canvas/inspector/condition_operators.js";
+import type { OperatorOption } from "@/web/canvas/inspector/condition_operators.js";
 import { findRuleField, listRuleOperatorOptions } from "@/web/canvas/inspector/condition_rules.js";
-import type { ConditionRule } from "@/web/canvas/inspector/condition_rules.js";
+import type { ConditionRule, RuleValueChanges } from "@/web/canvas/inspector/condition_rules.js";
 import { ConditionValueInput } from "@/web/canvas/inspector/condition_value_input.js";
-import type { ComparisonOperator } from "@/web/canvas/inspector/condition_text.js";
 import { DataPicker } from "@/web/canvas/inspector/data_picker.js";
 import type { PickableDataField } from "@/web/canvas/inspector/data_picker.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { Select } from "@/web/components/ui/select.js";
-
-type RuleValueChanges = Partial<Pick<ConditionRule, "valueText" | "values">>;
 
 /** What a row can do to its rule. */
 export interface RuleEditing {
@@ -118,9 +118,4 @@ function describeRuleTypeMismatch(
     }
 
     return describeOperatorTypeMismatch(toComparisonOperator(rule.operator), field.type);
-}
-
-// 'não existe' is a negated `exists`, so it fits wherever `exists` does.
-function toComparisonOperator(operator: RuleOperator): ComparisonOperator {
-    return operator === "notExists" ? "exists" : operator;
 }

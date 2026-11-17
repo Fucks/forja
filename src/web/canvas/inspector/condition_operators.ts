@@ -1,5 +1,5 @@
 import type { DataField, DataType } from "@/engine/available_data.js";
-import type { ComparisonOperator } from "@/web/canvas/inspector/condition_text.js";
+import type { ComparisonOperator } from "@/shared/conditions.js";
 
 /** A comparison of the rule; `notExists` is written as `not` of `exists`. */
 export type RuleOperator = ComparisonOperator | "notExists";
@@ -141,4 +141,9 @@ export function findOperatorOption(
 
 function acceptsValueText({ valueInput }: OperatorOption, valueText: string): boolean {
     return valueInput.kind !== "fixed" || String(valueInput.value) === valueText.trim();
+}
+
+/** The comparison the rule writes; 'não existe' is a negated `exists`, so it fits where `exists` does. */
+export function toComparisonOperator(operator: RuleOperator): ComparisonOperator {
+    return operator === "notExists" ? "exists" : operator;
 }

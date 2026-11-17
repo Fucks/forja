@@ -9,10 +9,9 @@ import type {
     ConditionRule,
     ConditionRules,
     RuleConnective,
+    RuleValueChanges,
 } from "@/web/canvas/inspector/condition_rules.js";
 import { conditionToText } from "@/web/canvas/inspector/condition_text.js";
-
-type RuleValueChanges = Partial<Pick<ConditionRule, "valueText" | "values">>;
 
 export interface ConditionRulesEditing {
     conditionRules: ConditionRules | undefined;

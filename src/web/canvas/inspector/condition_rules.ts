@@ -19,6 +19,10 @@ export interface ConditionRule {
     values: (string | number)[];
 }
 
+/** What the row's value control fills in. */
+export type RuleValueFields = Pick<ConditionRule, "valueText" | "values">;
+export type RuleValueChanges = Partial<RuleValueFields>;
+
 export interface ConditionRules {
     connective: RuleConnective;
     rules: ConditionRule[];
@@ -83,6 +87,14 @@ export function listRuleOperatorOptions(
     return currentOption ? [...options, currentOption] : options;
 }
 
+/** The option the rule is written with, among the operators it can use. */
+export function findRuleOperatorOption(
+    rule: ConditionRule,
+    fields: DataField[],
+): OperatorOption | undefined {
+    return findOperatorOption(listRuleOperatorOptions(rule, fields), rule);
+}
+
 export function findRuleField(rule: ConditionRule, fields: DataField[]): DataField | undefined {
     return fields.find((field) => field.path === rule.path.trim());
 }
@@ -129,7 +141,7 @@ function toRuleCondition(rule: ConditionRule, fields: DataField[]): RulesConvers
     }
 
     const field = findRuleField(rule, fields);
-    const option = findOperatorOption(listRuleOperatorOptions(rule, fields), rule);
+    const option = findRuleOperatorOption(rule, fields);
     if (!option) {
         return { ok: false, error: VALUE_TYPE_ERROR };
     }

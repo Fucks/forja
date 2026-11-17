@@ -49,6 +49,35 @@ export function ConditionPreview({
     );
 }
 
+function useConditionPreviewSample(
+    flow: FlowInEditor | undefined,
+    decisionId: string,
+): ConditionPreviewSample | undefined {
+    const sample = useQuery({
+        // Under the project's runs key, so whatever reloads the runs reloads the sample too.
+        queryKey: [
+            ...projectRunsQueryKey(flow?.projectId ?? ""),
+            SAMPLE_QUERY_KEY,
+            flow?.flowId,
+            decisionId,
+        ],
+        queryFn: () => (flow ? fetchSample(flow, decisionId) : null),
+        enabled: flow !== undefined,
+    });
+
+    return sample.data ?? undefined;
+}
+
+// React Query refuses undefined as query data, so "no sample" travels as null.
+async function fetchSample(
+    flow: FlowInEditor,
+    decisionId: string,
+): Promise<ConditionPreviewSample | null> {
+    const runViews = await fetchRecentRunViews(flow);
+
+    return findConditionPreviewSample(runViews, decisionId) ?? null;
+}
+
 // A disabled button gets no pointer events, so the tooltip hangs on a wrapper that can be focused.
 function TestButtonWithoutRun(): JSX.Element {
     return (
@@ -86,33 +115,4 @@ function describeSampleOrigin({ runId, workItemId }: ConditionPreviewSample): st
     }
 
     return `${runText} · ${describeItem(workItemId)}`;
-}
-
-function useConditionPreviewSample(
-    flow: FlowInEditor | undefined,
-    decisionId: string,
-): ConditionPreviewSample | undefined {
-    const sample = useQuery({
-        // Under the project's runs key, so whatever reloads the runs reloads the sample too.
-        queryKey: [
-            ...projectRunsQueryKey(flow?.projectId ?? ""),
-            SAMPLE_QUERY_KEY,
-            flow?.flowId,
-            decisionId,
-        ],
-        queryFn: () => (flow ? fetchSample(flow, decisionId) : null),
-        enabled: flow !== undefined,
-    });
-
-    return sample.data ?? undefined;
-}
-
-// React Query refuses undefined as query data, so "no sample" travels as null.
-async function fetchSample(
-    flow: FlowInEditor,
-    decisionId: string,
-): Promise<ConditionPreviewSample | null> {
-    const runViews = await fetchRecentRunViews(flow);
-
-    return findConditionPreviewSample(runViews, decisionId) ?? null;
 }

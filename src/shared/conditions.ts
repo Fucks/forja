@@ -13,6 +13,7 @@ export type Condition =
     | { op: "not"; condition: Condition };
 
 export type Comparison = Extract<Condition, { path: string }>;
+export type ComparisonOperator = Comparison["op"];
 
 export const conditionSchema: z.ZodType<Condition> = z.lazy(() =>
     z.discriminatedUnion("op", [

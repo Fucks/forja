@@ -2,12 +2,11 @@ import { describeAvailableData } from "@/engine/available_data.js";
 import type { DataField, DataType } from "@/engine/available_data.js";
 import { errorIssue, nodeTarget } from "@/engine/validation_rules/validation_issues.js";
 import { listComparisons } from "@/shared/conditions.js";
-import type { Comparison } from "@/shared/conditions.js";
+import type { Comparison, ComparisonOperator } from "@/shared/conditions.js";
 import { isNodeOfType } from "@/shared/flow_graph.js";
 import type { FlowGraph, NodeOfType, NodeType, Port } from "@/shared/flow_graph.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 
-type ComparisonOperator = Comparison["op"];
 type KnownDataType = Exclude<DataType, "any">;
 
 const ACCEPTED_OPERATORS: Record<KnownDataType, ComparisonOperator[]> = {

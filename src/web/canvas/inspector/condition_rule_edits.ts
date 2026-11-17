@@ -4,7 +4,7 @@ import {
     operatorsForField,
 } from "@/web/canvas/inspector/condition_operators.js";
 import type { OperatorOption } from "@/web/canvas/inspector/condition_operators.js";
-import { findRuleField, listRuleOperatorOptions } from "@/web/canvas/inspector/condition_rules.js";
+import { findRuleField, findRuleOperatorOption } from "@/web/canvas/inspector/condition_rules.js";
 import type { ConditionRule } from "@/web/canvas/inspector/condition_rules.js";
 
 /** The rule reading another path; an operator or value that does not fit the new field restarts. */
@@ -13,7 +13,7 @@ export function withRulePath(
     path: string,
     fields: DataField[],
 ): ConditionRule {
-    const currentOption = findCurrentOption(rule, fields);
+    const currentOption = findRuleOperatorOption(rule, fields);
     const movedRule = { ...rule, path };
     const options = operatorsForField(findRuleField(movedRule, fields));
     const keptOption = findOperatorOption(options, movedRule);
@@ -40,16 +40,12 @@ export function withOperatorOption(
     option: OperatorOption,
     fields: DataField[],
 ): ConditionRule {
-    const currentOption = findCurrentOption(rule, fields);
+    const currentOption = findRuleOperatorOption(rule, fields);
     if (currentOption && haveSameValueInput(option, currentOption)) {
         return { ...rule, operator: option.operator, valueText: valueTextFor(option, rule) };
     }
 
     return { ...rule, operator: option.operator, valueText: fixedValueText(option), values: [] };
-}
-
-function findCurrentOption(rule: ConditionRule, fields: DataField[]): OperatorOption | undefined {
-    return findOperatorOption(listRuleOperatorOptions(rule, fields), rule);
 }
 
 function haveSameValueInput(first: OperatorOption, second: OperatorOption): boolean {
