@@ -13,7 +13,7 @@ import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
 import { NodeInspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
 import { withNodeConfig } from "@/web/canvas/inspector/node_updates.js";
-import { TextField } from "@/web/canvas/inspector/text_field.js";
+import { ScriptCommandField } from "@/web/canvas/inspector/script_command_field.js";
 
 export function ScriptInspector({ node, graph, onChange }: InspectorProps): JSX.Element {
     // The registry routes only scripts here; the check narrows the node to its script config.
@@ -28,13 +28,10 @@ export function ScriptInspector({ node, graph, onChange }: InspectorProps): JSX.
     return (
         <NodeInspectorFrame node={node} graph={graph} onChange={onChange}>
             <InspectorFields>
-                <TextField
-                    doc={fieldDoc("script", "command")}
-                    text={config.command}
-                    placeholder="npm test"
-                    hint="roda dentro do container do item"
-                    mono
-                    onChange={(command) => changeConfig({ command })}
+                <ScriptCommandField
+                    script={node}
+                    graph={graph}
+                    onCommandChange={(command) => changeConfig({ command })}
                 />
             </InspectorFields>
             <AdvancedSection>

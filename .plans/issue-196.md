@@ -26,7 +26,7 @@
 - [x] 1. Test + implement the script summary with `runIn` and `onFailure` — `node_summary.ts`, `node_summary.test.ts`
 - [x] 2. `SCRIPT_PRESETS` contract — `script_presets.ts`
 - [x] 3. `PromptEditor` shell mode (label, no markdown, 4–12 lines) and `replaceAll` handle — `prompt_editor.tsx`, `prompt_editor_extensions.ts`
-- [ ] 4. Move the ScriptInspector tests to `script_inspector.test.tsx`; command in the shell editor with Inserir dado, the {{…}} notice and the docs link — `script_command_field.tsx`, `script_inspector.tsx`
+- [x] 4. Move the ScriptInspector tests to `script_inspector.test.tsx`; command in the shell editor with Inserir dado, the {{…}} notice and the docs link — `script_command_field.tsx`, `script_inspector.tsx`
 - [ ] 5. Test + implement: a preset chip fills an empty command with its config
 - [ ] 6. Test + implement: a preset over an existing command asks for inline confirmation (Substituir / Cancelar)
 - [ ] 7. Test + implement: "Onde roda" cards with the item notice; doc texts — `script_doc.ts`
