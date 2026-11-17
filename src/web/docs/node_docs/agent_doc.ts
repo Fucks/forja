@@ -122,8 +122,9 @@ export const agentDoc: NodeDoc = {
             key: "outputSchema",
             label: "Formato da resposta",
             description:
-                "Os campos que o agente devolve no Resultado. Sem ele, uma Decisão não tem " +
-                "campos para ler.",
+                "Os campos que o agente devolve no Resultado, cada um com nome e tipo (sim/não, " +
+                "número, texto, lista ou uma das opções). As Decisões seguintes leem esses " +
+                "campos; sem eles, a resposta é só texto e não há o que comparar.",
             defaultValue: "Vazio (resposta livre)",
         },
         {
@@ -190,10 +191,19 @@ export const agentDoc: NodeDoc = {
     ],
     examples: [
         {
-            title: "Reviewer",
+            title: "Reviewer que devolve aprovado + notas",
             description:
-                "Revisa o PR do item e devolve { approved, notes }; uma Decisão olha approved.",
-            config: { prompt: "Revise as mudanças de {{item.title}}.", workspace: "item" },
+                "Revisa as mudanças do item e devolve approved (sim/não, obrigatório) e notes " +
+                "(texto). Use o preset Aprovação; a Decisão seguinte olha approved.",
+            config: {
+                prompt: "Revise as mudanças de {{item.title}}.",
+                workspace: "item",
+                outputSchema: {
+                    type: "object",
+                    properties: { approved: { type: "boolean" }, notes: { type: "string" } },
+                    required: ["approved"],
+                },
+            },
         },
     ],
     pitfalls: [

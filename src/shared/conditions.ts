@@ -165,3 +165,7 @@ function lookUpKey(parent: PathLookup, key: string): PathLookup {
 function isObject(value: unknown): value is object {
     return typeof value === "object" && value !== null;
 }
+
+export function listConditionPaths(condition: Condition): string[] {
+    return listComparisons(condition).map((comparison) => comparison.path);
+}

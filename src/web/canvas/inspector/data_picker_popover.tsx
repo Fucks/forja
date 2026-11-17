@@ -12,7 +12,8 @@ import { Input } from "@/web/components/ui/input.js";
 interface DataPickerPopoverProps {
     fields: PickableDataField[];
     onPick: (path: string) => void;
-    onTypePath: () => void;
+    /** Without it, the picker offers only the known fields. */
+    onTypePath?: () => void;
     onClose: () => void;
 }
 
@@ -102,13 +103,15 @@ export function DataPickerPopover({
                     onPick={onPick}
                 />
             </div>
-            <button
-                type="button"
-                onClick={onTypePath}
-                className="self-start text-xs text-muted underline hover:text-text"
-            >
-                Digitar caminho
-            </button>
+            {onTypePath && (
+                <button
+                    type="button"
+                    onClick={onTypePath}
+                    className="self-start text-xs text-muted underline hover:text-text"
+                >
+                    Digitar caminho
+                </button>
+            )}
         </div>
     );
 }

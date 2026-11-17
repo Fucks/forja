@@ -465,6 +465,50 @@ describe("empty_prompt", () => {
     });
 });
 
+describe("agent_without_response_format", () => {
+    it("warns on the agent when a Decision reads its result and it has no format", () => {
+        const graph = addDecisionReading(buildCanonicalFlow(), "nodes.dev.result.x");
+
+        expect(issuesWithCode(graph, "agent_without_response_format")).toEqual([
+            expect.objectContaining({ level: "warning", target: { kind: "node", id: "dev" } }),
+        ]);
+    });
+
+    it("accepts a Decision that reads the result of an agent with a format", () => {
+        const graph = addDecisionReading(buildCanonicalFlow(), "nodes.reviewer.result.approved");
+
+        expect(issuesWithCode(graph, "agent_without_response_format")).toEqual([]);
+    });
+
+    it("accepts a Decision that reads the summary of an agent without a format", () => {
+        const graph = addDecisionReading(buildCanonicalFlow(), "nodes.dev.summary");
+
+        expect(issuesWithCode(graph, "agent_without_response_format")).toEqual([]);
+    });
+
+    it("warns when the until of a loop reads the result of an agent without a format", () => {
+        const graph = updateLoopCondition(buildLoopFlow(), "review_loop", {
+            op: "eq",
+            path: "nodes.desenvolver.result.done",
+            value: true,
+        });
+
+        expect(targetsOf(graph, "agent_without_response_format")).toEqual([
+            { kind: "node", id: "dev" },
+        ]);
+    });
+
+    it("warns once per agent, however many conditions read its result", () => {
+        const graph = addDecisionReading(
+            buildCanonicalFlow(),
+            "nodes.dev.result.x",
+            "nodes.dev.result.y",
+        );
+
+        expect(issuesWithCode(graph, "agent_without_response_format")).toHaveLength(1);
+    });
+});
+
 describe("unknown_tool_profile and unknown_credential", () => {
     it("points to an agent whose tool profile is not in the context", () => {
         const context = { knownToolProfileIds: ["tlp_builtin_readonly"] };
@@ -543,4 +587,14 @@ function addReviewerDecision(graph: FlowGraph, condition: Condition): FlowGraph 
     ]);
 
     return addEdges(withDecision, [connect(["reviewer", "result"], ["check", "value"])]);
+}
+
+function addDecisionReading(graph: FlowGraph, ...paths: string[]): FlowGraph {
+    const decision = createNodeOfType("condition", "decide", { x: 0, y: 0 });
+    const condition: Condition = {
+        op: "and",
+        conditions: paths.map((path) => ({ op: "exists", path })),
+    };
+
+    return addNodes(graph, [{ ...decision, config: { condition } }]);
 }

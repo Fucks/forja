@@ -50,7 +50,7 @@ export interface AvailableDataOptions {
 
 type PortLabeler = AvailableDataOptions["portLabels"];
 
-const AGENT_RESULT_PORT = "result";
+export const AGENT_RESULT_PORT = "result";
 const ITEM_GROUP: FieldPlace = { path: "item", label: "Item atual" };
 const INPUTS_GROUP: FieldPlace = { path: "inputs", label: "Entradas deste nó" };
 const PROJECT_GROUP: FieldPlace = { path: "project", label: "Projeto" };
