@@ -1,5 +1,8 @@
-import { lookUpPath } from "@/shared/conditions.js";
+import { listUpstreamNodes } from "@/engine/graph_queries.js";
+import { CONDITION_PATH_SEPARATOR, lookUpPath } from "@/shared/conditions.js";
+import type { DataContext, DataRoot } from "@/shared/data_context.js";
 import type { FlowGraph, FlowGroup, FlowNode, NodeOfType, Port } from "@/shared/flow_graph.js";
+import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 
 export interface TemplateToken {
@@ -7,21 +10,6 @@ export interface TemplateToken {
     value: string;
     start: number;
     end: number;
-}
-
-export interface PromptContext {
-    inputs: Record<string, unknown>;
-    item?: {
-        id: string;
-        title: string;
-        body: string;
-        number?: number;
-        url?: string;
-        labels: string[];
-        branch?: string;
-    };
-    project: { name: string; baseBranch: string; githubRepo?: string };
-    run: { id: string; iteration: number; attempt: number };
 }
 
 export class PromptRenderError extends Error {
@@ -72,7 +60,7 @@ function textTokensBetween(template: string, start: number, end: number): Templa
 
 const JSON_INDENT_SPACES = 2;
 
-export function renderPrompt(template: string, context: PromptContext): string {
+export function renderPrompt(template: string, context: DataContext): string {
     const renderedTokens = parsePromptTemplate(template).map((token) => {
         if (token.kind === "text") {
             return token.value;
@@ -84,7 +72,7 @@ export function renderPrompt(template: string, context: PromptContext): string {
     return renderedTokens.join("");
 }
 
-function resolveVariable(variable: string, context: PromptContext): unknown {
+function resolveVariable(variable: string, context: DataContext): unknown {
     const lookup = lookUpPath(context, variable);
     if (!lookup.isFound || lookup.value === undefined) {
         throw new PromptRenderError(variable);
@@ -199,12 +187,39 @@ function withoutRepeatedPaths(variables: VariableInfo[]): VariableInfo[] {
 
 export type AgentNode = NodeOfType<"agent">;
 
+interface KnownVariables {
+    paths: Set<string>;
+    upstreamNodeSlugs: Set<string>;
+}
+
+const NODES_ROOT: DataRoot = "nodes";
+
 export function checkPromptVariables(node: AgentNode, graph: FlowGraph): ValidationIssue[] {
-    const knownPaths = new Set(availableVariables(node, graph).map((variable) => variable.path));
+    const known: KnownVariables = {
+        paths: new Set(availableVariables(node, graph).map((variable) => variable.path)),
+        upstreamNodeSlugs: new Set(
+            listUpstreamNodes(graph, node.id).map((upstreamNode) => nodeSlug(upstreamNode.label)),
+        ),
+    };
 
     return parsePromptTemplate(node.config.prompt)
-        .filter((token) => token.kind === "var" && !knownPaths.has(token.value))
-        .map((token) => buildUnknownVariableIssue(node, token.value));
+        .filter((token) => token.kind === "var")
+        .flatMap((token) => findVariableIssues(node, token.value, known));
+}
+
+function findVariableIssues(
+    node: AgentNode,
+    variable: string,
+    known: KnownVariables,
+): ValidationIssue[] {
+    const [root, nodeSlugInPath = ""] = variable.split(CONDITION_PATH_SEPARATOR);
+    if (root === NODES_ROOT) {
+        return known.upstreamNodeSlugs.has(nodeSlugInPath)
+            ? []
+            : [buildNodeNotUpstreamIssue(node, variable)];
+    }
+
+    return known.paths.has(variable) ? [] : [buildUnknownVariableIssue(node, variable)];
 }
 
 function buildUnknownVariableIssue(node: AgentNode, variable: string): ValidationIssue {
@@ -212,6 +227,15 @@ function buildUnknownVariableIssue(node: AgentNode, variable: string): Validatio
         level: "error",
         code: "unknown_variable",
         message: `Variável desconhecida no prompt de "${node.label}": {{${variable}}}`,
+        target: { kind: "node", id: node.id },
+    };
+}
+
+function buildNodeNotUpstreamIssue(node: AgentNode, variable: string): ValidationIssue {
+    return {
+        level: "error",
+        code: "variable_node_not_upstream",
+        message: `Variável aponta para um nó que não vem antes deste: {{${variable}}}`,
         target: { kind: "node", id: node.id },
     };
 }

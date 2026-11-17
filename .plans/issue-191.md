@@ -41,9 +41,9 @@
       over FAILED retry) — `src/engine/upstream_outputs.ts`, `.test.ts`
 - [x] 8. Scheduler sends `upstreamOutputs` in `start_node_run`; ActiveRun/NodeRunExecution/
       NodeExecutionContext carry it; context factory default `{}`
-- [ ] 9. `buildDataContext`; `PromptContext` → `DataContext`; prompt renders `{{nodes.tl.summary}}` —
+- [x] 9. `buildDataContext`; `PromptContext` → `DataContext`; prompt renders `{{nodes.tl.summary}}` —
       `run_context.ts`, `prompt_template.ts` (+ test)
-- [ ] 10. Prompt variable validation for `nodes.*` (valid upstream, error for downstream/unknown) —
+- [x] 10. Prompt variable validation for `nodes.*` (valid upstream, error for downstream/unknown) —
       `prompt_template.ts` (+ test)
 - [ ] 11. Decisão reads `DataContext` (`nodes.*` and `inputs.value.*`) — `condition_executor.ts`,
       `deterministic_executors.test.ts`

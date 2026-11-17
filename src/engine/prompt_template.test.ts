@@ -3,17 +3,18 @@ import {
     availableVariables,
     checkPromptVariables,
     parsePromptTemplate,
-    type PromptContext,
     PromptRenderError,
     renderPrompt,
 } from "@/engine/prompt_template.js";
+import type { DataContext } from "@/shared/data_context.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import { buildCanonicalFlow, buildLoopFlow } from "@/test/factories/flow_graph_factory.js";
 
-function buildPromptContext(inputs: Record<string, unknown> = {}): PromptContext {
+function buildPromptContext(inputs: Record<string, unknown> = {}): DataContext {
     return {
         inputs,
+        nodes: { tl: { summary: "Especificação do TL" } },
         item: { id: "wi_42", title: "Login com GitHub", body: "Descrição", number: 42, labels: [] },
         project: { name: "forja", baseBranch: "development" },
         run: { id: "run_1", iteration: 2, attempt: 1 },
@@ -63,6 +64,12 @@ describe("parsePromptTemplate", () => {
 });
 
 describe("renderPrompt", () => {
+    it("replaces a nodes variable with the output of the node before it", () => {
+        const prompt = renderPrompt("Siga: {{nodes.tl.summary}}", buildPromptContext());
+
+        expect(prompt).toBe("Siga: Especificação do TL");
+    });
+
     it("replaces variables with values from the context", () => {
         const prompt = renderPrompt(
             "Implemente {{item.title}} a partir de {{ project.baseBranch }}",
@@ -154,6 +161,41 @@ describe("checkPromptVariables", () => {
                 target: { kind: "node", id: "dev" },
             },
         ]);
+    });
+
+    it("accepts a nodes variable of a node that comes before it", () => {
+        const graph = buildCanonicalFlow();
+        const developer = withPrompt(findAgentNode(graph, "dev"), "Siga {{nodes.tl.summary}}");
+
+        const issues = checkPromptVariables(developer, graph);
+
+        expect(issues).toEqual([]);
+    });
+
+    it("reports a nodes variable of a node that comes after it", () => {
+        const graph = buildCanonicalFlow();
+        const techLead = withPrompt(findAgentNode(graph, "tl"), "Veja {{nodes.dev.summary}}");
+
+        const issues = checkPromptVariables(techLead, graph);
+
+        expect(issues).toEqual([
+            {
+                level: "error",
+                code: "variable_node_not_upstream",
+                message:
+                    "Variável aponta para um nó que não vem antes deste: {{nodes.dev.summary}}",
+                target: { kind: "node", id: "tl" },
+            },
+        ]);
+    });
+
+    it("reports a nodes variable of a node that does not exist", () => {
+        const graph = buildCanonicalFlow();
+        const developer = withPrompt(findAgentNode(graph, "dev"), "Veja {{nodes.ninguem.summary}}");
+
+        const issues = checkPromptVariables(developer, graph);
+
+        expect(issues.map((issue) => issue.code)).toEqual(["variable_node_not_upstream"]);
     });
 
     it("reports item variables in a node that has no current item", () => {
