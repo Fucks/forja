@@ -35,7 +35,7 @@
 - [x] 5. `createEmptyGroup` in grouping — `grouping.ts`, `grouping.test.ts`
 - [x] 6. Add group from the palette (click: empty at center or wrap selection) — `use_add_node.ts`, palette test
 - [x] 7. Drag a group from the palette onto the canvas — `node_type_drag.ts`, `use_node_drop.ts`, canvas test
-- [ ] 8. Empty group shows "Arraste nós para dentro" — `group_frame.tsx`, `group_node.tsx`
+- [x] 8. Empty group shows "Arraste nós para dentro" — `group_frame.tsx`, `group_node.tsx`
 - [ ] 9. Detail card (tagline, what it does, ports with label and type icon, first example, Documentação
       completa opens `NodeDocDrawer`) — `node_palette_detail.tsx`, palette test
 - [ ] 10. `AddFromPortMenu` with search, positioned at the drop point, Esc closes — `add_from_port_menu.tsx`
