@@ -7,7 +7,7 @@
   issue: condition → `inputs.value.<path>`, loop `until` → `nodes.<path>`, git `bodyFrom` → `inputs.<path>`.
 - `flowGraphSchema = z.preprocess(migrateFlowGraph, flowGraphV2Schema)`; `FlowGraph = z.output<...>`.
   Every reader (repository, YAML, API, clipboard) migrates through it.
-- Fixture of the "Padrao" flow: #185 has no JSON, so `src/shared/fixtures/standard_flow_v1.json` is the
+- Fixture of the "Padrao" flow: #185 has no JSON, so `src/test/fixtures/standard_flow_v1.json` is the
   review-loop template as it was exported in v1 (prompts shortened). It has a loop `until` and a git
   `bodyFrom`.
 - `upstreamOutputs` is computed in the **scheduler** (`startNodeRun`, where `findNodeRun` lives) and travels in
@@ -28,10 +28,10 @@
 
 ## Tasks
 
-- [ ] 1. `DataContext` / `DATA_ROOTS` — `src/shared/data_context.ts`
-- [ ] 2. Test + implement `migrateFlowGraph` rules (version, condition incl. and/or/not, loop until, git
+- [x] 1. `DataContext` / `DATA_ROOTS` — `src/shared/data_context.ts`
+- [x] 2. Test + implement `migrateFlowGraph` rules (version, condition incl. and/or/not, loop until, git
       bodyFrom, v2 untouched, non-graph untouched, idempotence, standard flow fixture) —
-      `src/shared/migrate_flow_graph.ts`, `.test.ts`, `src/shared/fixtures/standard_flow_v1.json`
+      `src/shared/migrate_flow_graph.ts`, `.test.ts`, `src/test/fixtures/standard_flow_v1.json`
 - [ ] 3. `flowGraphSchema` = preprocess + v2; update `schemaVersion: 1` literals in src/e2e (except migration
       fixtures), flow_graph/flow_service tests that used 2 as "invalid" — `src/shared/flow_graph.ts` & tests
 - [ ] 4. Templates in v2 with new paths (`inputs.value.*`, `nodes.*`, `inputs.*`) — templates/*.ts + tests
