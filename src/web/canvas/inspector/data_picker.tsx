@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { JSX, RefObject } from "react";
+import { useCallback, useRef, useState } from "react";
+import type { JSX } from "react";
 
 import type { DataField } from "@/engine/available_data.js";
 import { DataPickerPopover } from "@/web/canvas/inspector/data_picker_popover.js";
+import { useCloseOnPointerOutside } from "@/web/canvas/inspector/use_close_on_pointer_outside.js";
 import { Button } from "@/web/components/ui/button.js";
 import { Input } from "@/web/components/ui/input.js";
 
@@ -110,21 +111,4 @@ function TypedPathField({
             </Button>
         </div>
     );
-}
-
-function useCloseOnPointerOutside(
-    containerRef: RefObject<HTMLElement | null>,
-    onClose: () => void,
-): void {
-    useEffect(() => {
-        function closeWhenOutside(event: PointerEvent): void {
-            const container = containerRef.current;
-            if (container && event.target instanceof Node && !container.contains(event.target)) {
-                onClose();
-            }
-        }
-
-        document.addEventListener("pointerdown", closeWhenOutside);
-        return () => document.removeEventListener("pointerdown", closeWhenOutside);
-    }, [containerRef, onClose]);
 }

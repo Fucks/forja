@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { Mock } from "vitest";
 
@@ -278,6 +278,26 @@ describe("AgentInspector", () => {
 
             const inputNames = inspector.lastChangedNode().inputs.map((port) => port.name);
             expect(inputNames).not.toContain("spec");
+        });
+    });
+
+    describe("insert data", () => {
+        it("inserts the picked field as a variable at the cursor of the prompt", async () => {
+            const developer = withConfig("dev", { prompt: "Implemente." });
+            const inspector = renderAgentInspector(developer);
+
+            await userEvent.click(screen.getByRole("button", { name: "Inserir dado" }));
+            await userEvent.type(
+                screen.getByRole("searchbox", { name: "Buscar dado" }),
+                "tl.summary",
+            );
+            await userEvent.keyboard("{Enter}");
+
+            await waitFor(() =>
+                expect(inspector.lastChangedConfig().prompt).toBe(
+                    "{{nodes.tl.summary}}Implemente.",
+                ),
+            );
         });
     });
 

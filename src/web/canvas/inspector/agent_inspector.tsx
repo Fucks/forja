@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import type { JSX } from "react";
 
 import { availableVariables } from "@/engine/prompt_template.js";
@@ -20,13 +20,16 @@ import {
     withoutInputPort,
 } from "@/web/canvas/inspector/node_updates.js";
 import { PortListEditor } from "@/web/canvas/inspector/port_list_editor.js";
+import { InsertDataButton } from "@/web/canvas/inspector/insert_data_button.js";
 import { PromptEditor } from "@/web/canvas/inspector/prompt_editor.js";
+import type { PromptEditorHandle } from "@/web/canvas/inspector/prompt_editor.js";
 import { ResponseFormatEditor } from "@/web/canvas/inspector/response_format_editor.js";
 import {
     CredentialField,
     ToolProfileField,
 } from "@/web/canvas/inspector/tools_credential_fields.js";
 import { SwitchField } from "@/web/canvas/inspector/switch_field.js";
+import { useAvailableData } from "@/web/canvas/inspector/use_available_data.js";
 
 type AgentNode = NodeOfType<"agent">;
 type ChangeAgentConfig = (changes: Partial<AgentConfig>) => void;
@@ -76,15 +79,24 @@ function PromptSection({
     graph,
     onConfigChange,
 }: AgentSectionProps & { graph: FlowGraph }): JSX.Element {
+    const promptEditorRef = useRef<PromptEditorHandle>(null);
     const variables = useMemo(() => availableVariables(agent, graph), [agent, graph]);
+    const fields = useAvailableData(graph, agent.id, { scope: "node" });
 
     return (
         <InspectorSection title="Prompt" isInitiallyOpen>
             <FieldHeading doc={fieldDoc("agent", "prompt")} />
             <PromptEditor
+                ref={promptEditorRef}
                 prompt={agent.config.prompt}
                 variables={variables}
                 onChange={(prompt) => onConfigChange({ prompt })}
+                toolbarActions={
+                    <InsertDataButton
+                        fields={fields}
+                        onInsert={(variable) => promptEditorRef.current?.insertAtCursor(variable)}
+                    />
+                }
             />
         </InspectorSection>
     );
