@@ -4,7 +4,7 @@ import type { JSX } from "react";
 
 import type { JsonSchema } from "@/shared/json_schema.js";
 import { OutputSchemaEditor } from "@/web/canvas/inspector/output_schema_editor.js";
-import { ResponseFieldRowEditor } from "@/web/canvas/inspector/response_field_row.js";
+import { ResponseFieldRowEditor } from "@/web/canvas/inspector/response_field_row_editor.js";
 import { EMPTY_RESPONSE_FIELD_ROW } from "@/web/canvas/inspector/response_field_rows.js";
 import type { ResponseFieldRow } from "@/web/canvas/inspector/response_field_rows.js";
 import { fromJsonSchema } from "@/web/canvas/inspector/response_format.js";

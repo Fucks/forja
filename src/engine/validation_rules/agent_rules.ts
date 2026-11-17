@@ -75,13 +75,14 @@ export function findUnknownCredentials(
 }
 
 export function findAgentsWithoutResponseFormat(graph: FlowGraph): ValidationIssue[] {
-    const slugsWithResultFieldsRead = new Set(
-        listGraphConditions(graph).flatMap(listConditionPaths).flatMap(listSlugsWithResultFieldRead),
+    const slugsWithResultRead = new Set(
+        listGraphConditions(graph)
+            .flatMap(listConditionPaths)
+            .flatMap((path) => findSlugWhoseResultFieldIsRead(path) ?? []),
     );
     const agentsWithoutFormat = agentNodes(graph).filter(
         (node) =>
-            node.config.outputSchema === undefined &&
-            slugsWithResultFieldsRead.has(nodeSlug(node.label)),
+            node.config.outputSchema === undefined && slugsWithResultRead.has(nodeSlug(node.label)),
     );
 
     return agentsWithoutFormat.map((node) =>
@@ -111,15 +112,15 @@ function listGraphConditions(graph: FlowGraph): Condition[] {
 }
 
 // A path such as `nodes.dev.result.approved` reads the field `approved` of the agent `dev`.
-function listSlugsWithResultFieldRead(path: string): string[] {
+function findSlugWhoseResultFieldIsRead(path: string): string | undefined {
     const [root, slug, port, field] = path.split(CONDITION_PATH_SEPARATOR);
     const readsResultField =
         root === NODES_ROOT && port === AGENT_RESULT_PORT && field !== undefined;
-    if (!readsResultField || slug === undefined) {
-        return [];
+    if (!readsResultField) {
+        return undefined;
     }
 
-    return [slug];
+    return slug;
 }
 
 function isConditionNode(node: FlowNode): node is NodeOfType<"condition"> {
