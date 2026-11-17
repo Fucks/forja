@@ -3,11 +3,9 @@ import type { JSX } from "react";
 
 import { jsonSchemaSchema } from "@/shared/json_schema.js";
 import type { JsonSchema } from "@/shared/json_schema.js";
-import { FieldHelp } from "@/web/canvas/inspector/field_help.js";
 import { Button } from "@/web/components/ui/button.js";
 import { Field } from "@/web/components/ui/field.js";
 import { Textarea } from "@/web/components/ui/textarea.js";
-import type { FieldDoc } from "@/web/docs/node_docs/node_doc.js";
 
 type ParsedOutputSchema =
     { ok: true; schema: JsonSchema | undefined } | { ok: false; error: string };
@@ -20,13 +18,11 @@ const JSON_INDENT_SPACES = 2;
 const INVALID_JSON_MESSAGE = "JSON inválido.";
 const NOT_AN_OBJECT_MESSAGE = "O schema precisa ser um objeto JSON.";
 
-// The help comes from the doc, but the label stays technical until the schema editor is redone.
+/** The response format as raw JSON Schema, for formats beyond the visual editor. */
 export function OutputSchemaEditor({
-    doc,
     outputSchema,
     onChange,
 }: {
-    doc: FieldDoc;
     outputSchema: JsonSchema | undefined;
     onChange: (outputSchema: JsonSchema | undefined) => void;
 }): JSX.Element {
@@ -55,12 +51,7 @@ export function OutputSchemaEditor({
 
     return (
         <div className="flex flex-col gap-2">
-            <Field
-                label="Schema de saída"
-                labelAddon={<FieldHelp doc={doc} />}
-                htmlFor={textareaId}
-                error={parseError}
-            >
+            <Field label="JSON Schema" htmlFor={textareaId} error={parseError}>
                 <Textarea
                     mono
                     rows={8}

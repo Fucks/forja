@@ -44,6 +44,11 @@ const GITHUB_CREDENTIAL = buildCredential({
     kind: "github_token",
 });
 
+const NESTED_SCHEMA = {
+    type: "object",
+    properties: { review: { type: "object", properties: { approved: { type: "boolean" } } } },
+};
+
 describe("AgentInspector", () => {
     describe("effort", () => {
         it("sets the chosen effort on the node", async () => {
@@ -276,10 +281,120 @@ describe("AgentInspector", () => {
         });
     });
 
-    describe("output schema", () => {
+    describe("response format", () => {
+        it("shows the fields of the reviewer in the visual editor", () => {
+            renderAgentInspector(requireAgent("reviewer"));
+
+            expect(screen.getByRole("textbox", { name: "Nome do campo 1" })).toHaveValue(
+                "approved",
+            );
+            expect(screen.getByRole("textbox", { name: "Nome do campo 2" })).toHaveValue("notes");
+        });
+
+        it("turns a required yes/no and an optional text into a schema", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+
+            await addField("approved", "sim/não");
+            await userEvent.click(within(requireFieldRow(1)).getByLabelText("obrigatório"));
+            await addField("notes", "texto");
+
+            expect(inspector.lastChangedConfig().outputSchema).toEqual({
+                type: "object",
+                properties: { approved: { type: "boolean" }, notes: { type: "string" } },
+                required: ["approved"],
+            });
+        });
+
+        it("turns 'uma das opções' into an enum", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+
+            await addField("kind", "uma das opções");
+            await userEvent.type(
+                screen.getByRole("textbox", { name: "Opções do campo 1" }),
+                "bug, feature",
+            );
+            await userEvent.tab();
+
+            expect(inspector.lastChangedConfig().outputSchema).toEqual({
+                type: "object",
+                properties: { kind: { type: "string", enum: ["bug", "feature"] } },
+                required: [],
+            });
+        });
+
+        it("keeps the node unchanged while a field name is invalid", async () => {
+            const onChange = renderAgentInspector(requireAgent("dev")).onChange;
+
+            await addField("2 notas", "texto");
+
+            expect(
+                screen.getByText("Use letras, números e _, sem começar por número."),
+            ).toBeInTheDocument();
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it("keeps the node unchanged while two fields share a name", async () => {
+            const inspector = renderAgentInspector(requireAgent("reviewer"));
+
+            await userEvent.clear(screen.getByRole("textbox", { name: "Nome do campo 2" }));
+            await userEvent.type(
+                screen.getByRole("textbox", { name: "Nome do campo 2" }),
+                "approved",
+            );
+            await userEvent.tab();
+
+            expect(screen.getByText("Já existe um campo com esse nome.")).toBeInTheDocument();
+            expect(inspector.onChange).not.toHaveBeenCalled();
+        });
+
+        it("fills the fields with the Aprovação preset", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+
+            await userEvent.click(screen.getByRole("button", { name: "Aprovação" }));
+
+            expect(inspector.lastChangedConfig().outputSchema).toEqual({
+                type: "object",
+                properties: { approved: { type: "boolean" }, notes: { type: "string" } },
+                required: ["approved"],
+            });
+        });
+
+        it("fills the fields with the Pronto? preset", async () => {
+            const inspector = renderAgentInspector(requireAgent("dev"));
+
+            await userEvent.click(screen.getByRole("button", { name: "Pronto?" }));
+
+            expect(inspector.lastChangedConfig().outputSchema).toEqual({
+                type: "object",
+                properties: { ready: { type: "boolean" } },
+                required: ["ready"],
+            });
+        });
+
+        it("removes the format when the last field is removed", async () => {
+            const inspector = renderAgentInspector(requireAgent("tl"));
+
+            await userEvent.click(screen.getByRole("button", { name: "Remover o campo 1" }));
+
+            expect(inspector.lastChangedConfig().outputSchema).toBeUndefined();
+        });
+
+        it("opens a nested schema in the JSON tab with the advanced notice", () => {
+            renderAgentInspector(withConfig("dev", { outputSchema: NESTED_SCHEMA }));
+
+            expect(screen.getByRole("tab", { name: "JSON" })).toHaveAttribute(
+                "aria-selected",
+                "true",
+            );
+            expect(
+                screen.getByText("Este formato é avançado demais para o editor visual."),
+            ).toBeInTheDocument();
+        });
+
         it("shows the error and keeps the node unchanged when the JSON is invalid", async () => {
             const onChange = renderAgentInspector(requireAgent("dev")).onChange;
-            const schemaField = screen.getByRole("textbox", { name: "Schema de saída" });
+            await openJsonTab();
+            const schemaField = screen.getByRole("textbox", { name: "JSON Schema" });
 
             await userEvent.click(schemaField);
             await userEvent.paste('{ "type": ');
@@ -292,8 +407,9 @@ describe("AgentInspector", () => {
 
         it("rejects JSON that is not an object", async () => {
             const onChange = renderAgentInspector(requireAgent("dev")).onChange;
+            await openJsonTab();
 
-            await userEvent.click(screen.getByRole("textbox", { name: "Schema de saída" }));
+            await userEvent.click(screen.getByRole("textbox", { name: "JSON Schema" }));
             await userEvent.paste("[]");
             await userEvent.tab();
 
@@ -303,6 +419,7 @@ describe("AgentInspector", () => {
 
         it("applies the example schema", async () => {
             const inspector = renderAgentInspector(requireAgent("dev"));
+            await openJsonTab();
 
             await userEvent.click(screen.getByRole("button", { name: "Exemplo" }));
 
@@ -312,16 +429,34 @@ describe("AgentInspector", () => {
             });
         });
 
-        it("removes the schema when the field is cleared", async () => {
+        it("removes the schema when the JSON is cleared", async () => {
             const inspector = renderAgentInspector(requireAgent("tl"));
+            await openJsonTab();
 
-            await userEvent.clear(screen.getByRole("textbox", { name: "Schema de saída" }));
+            await userEvent.clear(screen.getByRole("textbox", { name: "JSON Schema" }));
             await userEvent.tab();
 
             expect(inspector.lastChangedConfig().outputSchema).toBeUndefined();
         });
     });
 });
+
+async function addField(name: string, typeLabel: string): Promise<void> {
+    await userEvent.click(screen.getByRole("button", { name: "Adicionar campo" }));
+    const rowNumber = screen.getAllByRole("group", { name: /^Campo \d+$/ }).length;
+    await userEvent.click(screen.getByRole("combobox", { name: `Tipo do campo ${rowNumber}` }));
+    await userEvent.click(screen.getByRole("option", { name: typeLabel }));
+    await userEvent.type(screen.getByRole("textbox", { name: `Nome do campo ${rowNumber}` }), name);
+    await userEvent.tab();
+}
+
+async function openJsonTab(): Promise<void> {
+    await userEvent.click(screen.getByRole("tab", { name: "JSON" }));
+}
+
+function requireFieldRow(rowNumber: number): HTMLElement {
+    return screen.getByRole("group", { name: `Campo ${rowNumber}` });
+}
 
 interface RenderedInspector {
     onChange: NodeChangeSpy;

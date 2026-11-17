@@ -19,9 +19,9 @@ import {
     withNodeConfig,
     withoutInputPort,
 } from "@/web/canvas/inspector/node_updates.js";
-import { OutputSchemaEditor } from "@/web/canvas/inspector/output_schema_editor.js";
 import { PortListEditor } from "@/web/canvas/inspector/port_list_editor.js";
 import { PromptEditor } from "@/web/canvas/inspector/prompt_editor.js";
+import { ResponseFormatEditor } from "@/web/canvas/inspector/response_format_editor.js";
 import {
     CredentialField,
     ToolProfileField,
@@ -52,9 +52,9 @@ export function AgentInspector({ node, graph, onChange }: InspectorProps): JSX.E
             <InspectorSection title="Execução">
                 <ExecutionFields config={node.config} onChange={changeConfig} />
             </InspectorSection>
-            <InspectorSection title="Saída">
-                <OutputSchemaEditor
-                    doc={fieldDoc("agent", "outputSchema")}
+            <InspectorSection title="Formato da resposta">
+                <FieldHeading doc={fieldDoc("agent", "outputSchema")} />
+                <ResponseFormatEditor
                     outputSchema={node.config.outputSchema}
                     onChange={(outputSchema) => changeConfig({ outputSchema })}
                 />
