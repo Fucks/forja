@@ -1,14 +1,27 @@
+import type { DataField } from "@/engine/available_data.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { Comparison, Condition } from "@/shared/conditions.js";
-import type { ComparisonOperator, ComparisonValue } from "@/web/canvas/inspector/condition_text.js";
+import {
+    findOperatorOption,
+    operatorsForField,
+} from "@/web/canvas/inspector/condition_operators.js";
+import type { OperatorOption, RuleOperator } from "@/web/canvas/inspector/condition_operators.js";
+import { readRuleValue } from "@/web/canvas/inspector/condition_rule_values.js";
+import type { RuleValue } from "@/web/canvas/inspector/condition_rule_values.js";
 
 export type RuleConnective = "and" | "or";
 
+/** One row of the editor: `valueText` holds what is typed, `values` the enum values chosen. */
 export interface ConditionRule {
     path: string;
-    operator: ComparisonOperator;
+    operator: RuleOperator;
     valueText: string;
+    values: (string | number)[];
 }
+
+/** What the row's value control fills in. */
+export type RuleValueFields = Pick<ConditionRule, "valueText" | "values">;
+export type RuleValueChanges = Partial<RuleValueFields>;
 
 export interface ConditionRules {
     connective: RuleConnective;
@@ -17,104 +30,170 @@ export interface ConditionRules {
 
 export type RulesConversion = { ok: true; condition: Condition } | { ok: false; error: string };
 
-type ComparisonConversion = { ok: true; comparison: Comparison } | { ok: false; error: string };
+type NotExists = { op: "not"; condition: { op: "exists"; path: string } };
 
-const BOOLEAN_TEXTS = new Map([
-    ["true", true],
-    ["false", false],
-]);
+/** A condition that fits one rule row. */
+export type RuleCondition = Comparison | NotExists;
+
+const LIST_VALUE_JOINER = ", ";
 
 export const MISSING_PATH_ERROR = "Informe o caminho de cada regra.";
-export const NUMBER_REQUIRED_ERROR = "Use um número para comparar com > ou <.";
+const VALUE_TYPE_ERROR = "O valor desta regra não serve para o operador escolhido.";
 
-// Only a flat list of comparisons fits the rows; `not` and nested groups stay as they are.
+// Only a flat list of comparisons fits the rows; other `not`s and nested groups stay as they are.
 export function toConditionRules(condition: Condition): ConditionRules | undefined {
-    if (isComparison(condition)) {
-        return { connective: "and", rules: [toRule(condition)] };
+    if (isRuleCondition(condition)) {
+        return { connective: "and", rules: [toConditionRule(condition)] };
     }
-    if (condition.op === "not" || !condition.conditions.every(isComparison)) {
+    if (condition.op === "not" || !condition.conditions.every(isRuleCondition)) {
         return undefined;
     }
 
-    return { connective: condition.op, rules: condition.conditions.map(toRule) };
+    return { connective: condition.op, rules: condition.conditions.map(toConditionRule) };
 }
 
-export function toCondition({ connective, rules }: ConditionRules): RulesConversion {
-    const comparisons: Comparison[] = [];
+export function toCondition(
+    { connective, rules }: ConditionRules,
+    fields: DataField[],
+): RulesConversion {
+    const conditions: Condition[] = [];
     for (const rule of rules) {
-        const conversion = toComparison(rule);
+        const conversion = toRuleCondition(rule, fields);
         if (!conversion.ok) {
             return conversion;
         }
-        comparisons.push(conversion.comparison);
+        conditions.push(conversion.condition);
     }
 
-    const [onlyComparison] = comparisons;
-    if (onlyComparison && comparisons.length === 1) {
-        return { ok: true, condition: onlyComparison };
+    const [onlyCondition] = conditions;
+    if (onlyCondition && conditions.length === 1) {
+        return { ok: true, condition: onlyCondition };
     }
 
-    return { ok: true, condition: { op: connective, conditions: comparisons } };
+    return { ok: true, condition: { op: connective, conditions } };
 }
 
-function isComparison(condition: Condition): condition is Comparison {
-    return "path" in condition;
+/** The operators the rule can use; an operator that does not fit the field stays listed. */
+export function listRuleOperatorOptions(
+    rule: ConditionRule,
+    fields: DataField[],
+): OperatorOption[] {
+    const options = operatorsForField(findRuleField(rule, fields));
+    if (findOperatorOption(options, rule)) {
+        return options;
+    }
+
+    const currentOption = findOperatorOption(operatorsForField(undefined), rule);
+    return currentOption ? [...options, currentOption] : options;
 }
 
-function toRule(comparison: Comparison): ConditionRule {
-    const valueText = comparison.op === "exists" ? "" : String(comparison.value);
-
-    return { path: comparison.path, operator: comparison.op, valueText };
+/** The option the rule is written with, among the operators it can use. */
+export function findRuleOperatorOption(
+    rule: ConditionRule,
+    fields: DataField[],
+): OperatorOption | undefined {
+    return findOperatorOption(listRuleOperatorOptions(rule, fields), rule);
 }
 
-function toComparison({ path, operator, valueText }: ConditionRule): ComparisonConversion {
-    const trimmedPath = path.trim();
-    if (trimmedPath === "") {
+export function findRuleField(rule: ConditionRule, fields: DataField[]): DataField | undefined {
+    return fields.find((field) => field.path === rule.path.trim());
+}
+
+export function isRuleCondition(condition: Condition): condition is RuleCondition {
+    return "path" in condition || isNotExists(condition);
+}
+
+function isNotExists(condition: Condition): condition is NotExists {
+    return condition.op === "not" && condition.condition.op === "exists";
+}
+
+export function toConditionRule(condition: RuleCondition): ConditionRule {
+    if (condition.op === "not") {
+        return { path: condition.condition.path, operator: "notExists", valueText: "", values: [] };
+    }
+
+    const values = condition.op === "in" ? condition.values : [];
+    return {
+        path: condition.path,
+        operator: condition.op,
+        valueText: toValueText(condition),
+        values,
+    };
+}
+
+function toValueText(comparison: Comparison): string {
+    switch (comparison.op) {
+        case "exists":
+        case "isEmpty":
+        case "isNotEmpty":
+            return "";
+        case "in":
+            return comparison.values.join(LIST_VALUE_JOINER);
+        default:
+            return String(comparison.value);
+    }
+}
+
+function toRuleCondition(rule: ConditionRule, fields: DataField[]): RulesConversion {
+    const path = rule.path.trim();
+    if (path === "") {
         return { ok: false, error: MISSING_PATH_ERROR };
     }
 
+    const field = findRuleField(rule, fields);
+    const option = findRuleOperatorOption(rule, fields);
+    if (!option) {
+        return { ok: false, error: VALUE_TYPE_ERROR };
+    }
+
+    const reading = readRuleValue(option.valueInput, rule, field);
+    if (!reading.ok) {
+        return reading;
+    }
+
+    return buildRuleCondition(rule.operator, path, reading.value);
+}
+
+function buildRuleCondition(
+    operator: RuleOperator,
+    path: string,
+    ruleValue: RuleValue,
+): RulesConversion {
+    const value = ruleValue.kind === "single" ? ruleValue.value : undefined;
+
     switch (operator) {
         case "exists":
-            return { ok: true, comparison: { op: operator, path: trimmedPath } };
+        case "isEmpty":
+        case "isNotEmpty":
+            return accepted({ op: operator, path });
+        case "notExists":
+            return accepted({ op: "not", condition: { op: "exists", path } });
         case "eq":
         case "neq":
-            return {
-                ok: true,
-                comparison: { op: operator, path: trimmedPath, value: parseRuleValue(valueText) },
-            };
+            return value === undefined ? refused() : accepted({ op: operator, path, value });
         case "gt":
+        case "gte":
         case "lt":
-            return toNumberComparison(operator, trimmedPath, valueText);
+        case "lte":
+        case "minLength":
+            return typeof value === "number" ? accepted({ op: operator, path, value }) : refused();
+        case "contains":
+        case "notContains":
+        case "startsWith":
+            return typeof value === "string" ? accepted({ op: operator, path, value }) : refused();
+        case "in":
+            return ruleValue.kind === "list"
+                ? accepted({ op: operator, path, values: ruleValue.values })
+                : refused();
         default:
             return assertNever(operator);
     }
 }
 
-function toNumberComparison(
-    operator: "gt" | "lt",
-    path: string,
-    valueText: string,
-): ComparisonConversion {
-    const value = parseRuleValue(valueText);
-    if (typeof value !== "number") {
-        return { ok: false, error: NUMBER_REQUIRED_ERROR };
-    }
-
-    return { ok: true, comparison: { op: operator, path, value } };
+function accepted(condition: Condition): RulesConversion {
+    return { ok: true, condition };
 }
 
-// Typed values follow JSON: `true`/`false` are booleans, numerals are numbers, anything else is text.
-function parseRuleValue(valueText: string): ComparisonValue {
-    const trimmedText = valueText.trim();
-    const booleanValue = BOOLEAN_TEXTS.get(trimmedText);
-    if (booleanValue !== undefined) {
-        return booleanValue;
-    }
-
-    const numberValue = Number(trimmedText);
-    if (trimmedText !== "" && Number.isFinite(numberValue)) {
-        return numberValue;
-    }
-
-    return valueText;
+function refused(): RulesConversion {
+    return { ok: false, error: VALUE_TYPE_ERROR };
 }

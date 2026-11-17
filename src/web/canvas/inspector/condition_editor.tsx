@@ -2,11 +2,14 @@ import { Plus } from "lucide-react";
 import type { JSX } from "react";
 
 import type { Condition } from "@/shared/conditions.js";
+import { ConditionSentence } from "@/web/canvas/inspector/condition_sentence.js";
 import { ConditionRuleRow } from "@/web/canvas/inspector/condition_rule_row.js";
+import type { RuleEditing } from "@/web/canvas/inspector/condition_rule_row.js";
 import type { RuleConnective } from "@/web/canvas/inspector/condition_rules.js";
 import { conditionToText } from "@/web/canvas/inspector/condition_text.js";
 import type { PickableDataField } from "@/web/canvas/inspector/data_picker.js";
 import { useConditionRules } from "@/web/canvas/inspector/use_condition_rules.js";
+import type { ConditionRulesEditing } from "@/web/canvas/inspector/use_condition_rules.js";
 import { Button } from "@/web/components/ui/button.js";
 import { SegmentedControl } from "@/web/components/ui/segmented_control.js";
 
@@ -24,7 +27,7 @@ export function ConditionEditor({
     onChange: (condition: Condition) => void;
     fields: PickableDataField[];
 }): JSX.Element {
-    const editing = useConditionRules(value, onChange);
+    const editing = useConditionRules(value, fields, onChange);
     const { conditionRules } = editing;
 
     if (!conditionRules) {
@@ -35,6 +38,7 @@ export function ConditionEditor({
 
     return (
         <div className="flex flex-col gap-3">
+            <ConditionSentence condition={value} fields={fields} />
             <SegmentedControl
                 label="Combinar regras com"
                 value={conditionRules.connective}
@@ -47,10 +51,7 @@ export function ConditionEditor({
                     rule={rule}
                     ruleNumber={index + 1}
                     fields={fields}
-                    onEdit={(changes) => editing.editRule(index, changes)}
-                    onApply={(changes) => editing.applyRuleChanges(index, changes)}
-                    onBlur={editing.applyEditedRules}
-                    onRemove={canRemoveRules ? () => editing.removeRule(index) : undefined}
+                    editing={editRuleAt(editing, index, { canRemove: canRemoveRules })}
                 />
             ))}
             {editing.error && (
@@ -64,6 +65,22 @@ export function ConditionEditor({
             </Button>
         </div>
     );
+}
+
+function editRuleAt(
+    editing: ConditionRulesEditing,
+    index: number,
+    { canRemove }: { canRemove: boolean },
+): RuleEditing {
+    return {
+        typePath: (path) => editing.typeRulePath(index, path),
+        pickPath: (path) => editing.pickRulePath(index, path),
+        chooseOperator: (option) => editing.chooseRuleOperator(index, option),
+        editValue: (changes) => editing.editRuleValue(index, changes),
+        applyValue: (changes) => editing.applyRuleValue(index, changes),
+        applyEditedRule: editing.applyEditedRules,
+        remove: canRemove ? () => editing.removeRule(index) : undefined,
+    };
 }
 
 function ConditionBeyondRules({

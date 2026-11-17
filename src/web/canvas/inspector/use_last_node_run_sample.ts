@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useParams } from "react-router";
 
 import type { RunListItem, SerializedNodeRun, SerializedRunView } from "@/shared/run_types.js";
 import { apiClient } from "@/web/api/api_client.js";
@@ -25,6 +26,16 @@ const SAMPLE_QUERY_KEY = "last-node-run-sample";
 const SAMPLES_QUERY_KEY = "last-node-run-samples";
 const RECENT_RUNS_SEARCHED = 5;
 const NO_SAMPLES: NodeRunSamples = {};
+
+/** The flow open in the editor; outside the editor there is none. */
+export function useFlowInEditor(): FlowInEditor | undefined {
+    const { projectId, flowId } = useParams();
+    if (projectId === undefined || flowId === undefined) {
+        return undefined;
+    }
+
+    return { projectId, flowId };
+}
 
 /** The inputs and outputs of the node in the newest of the flow's recent runs that ran it. */
 export function useLastNodeRunSample(nodeInFlow: NodeInFlow): NodeRunSample | undefined {
@@ -68,14 +79,20 @@ async function fetchLastNodeRunSamples(
     flow: FlowInEditor,
     nodeIds: string[],
 ): Promise<NodeRunSamples> {
-    const recentRuns = await apiClient.get<RunListItem[]>(recentRunsPath(flow));
-    const runViews = await Promise.all(recentRuns.map((run) => fetchRunView(run.id)));
+    const runViews = await fetchRecentRunViews(flow);
     const sampledNodes = nodeIds.flatMap<[string, NodeRunSample]>((nodeId) => {
         const sample = findNewestNodeRunSample(runViews, nodeId);
         return sample ? [[nodeId, sample]] : [];
     });
 
     return Object.fromEntries(sampledNodes);
+}
+
+/** The views of the flow's most recent runs, newest first. */
+export async function fetchRecentRunViews(flow: FlowInEditor): Promise<SerializedRunView[]> {
+    const recentRuns = await apiClient.get<RunListItem[]>(recentRunsPath(flow));
+
+    return Promise.all(recentRuns.map((run) => fetchRunView(run.id)));
 }
 
 function recentRunsPath({ projectId, flowId }: FlowInEditor): string {

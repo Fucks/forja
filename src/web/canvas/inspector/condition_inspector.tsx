@@ -2,6 +2,7 @@ import type { JSX } from "react";
 
 import { isNodeOfType } from "@/shared/flow_graph.js";
 import { ConditionEditor } from "@/web/canvas/inspector/condition_editor.js";
+import { ConditionPreview } from "@/web/canvas/inspector/condition_preview.js";
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
@@ -28,6 +29,7 @@ export function ConditionInspector({ node, graph, onChange }: InspectorProps): J
                         onChange((current) => withNodeConfig(current, "condition", { condition }))
                     }
                 />
+                <ConditionPreview condition={node.config.condition} decisionId={node.id} />
             </InspectorFields>
         </NodeInspectorFrame>
     );

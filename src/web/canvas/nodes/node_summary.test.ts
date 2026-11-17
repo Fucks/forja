@@ -1,3 +1,4 @@
+import type { DataField } from "@/engine/available_data.js";
 import type { Effort } from "@/shared/agent_types.js";
 import type { FlowGroup, FlowNode, NodeOfType, NodeType } from "@/shared/flow_graph.js";
 import { createNodeOfType } from "@/test/factories/flow_graph_factory.js";
@@ -29,7 +30,7 @@ describe("summarizeNode", () => {
     it("shows the project's model and effort as the default when the agent inherits them", () => {
         const agent = buildNode("agent", { model: undefined, effort: undefined });
 
-        const summary = summarizeNode(agent, PROJECT_DEFAULTS);
+        const summary = summarizeNode(agent, { agentDefaults: PROJECT_DEFAULTS });
 
         expect(summary.line1).toBe("opus-5-5 (padrão) · effort high (padrão)");
     });
@@ -69,17 +70,33 @@ describe("summarizeNode", () => {
         expect(summary.line1).toHaveLength(40);
     });
 
-    it("writes the condition as text", () => {
+    it("reads the condition as a sentence with the labels of the data", () => {
+        const condition = buildNode("condition", {
+            condition: { op: "eq", path: "nodes.reviewer.result.approved", value: true },
+        });
+        const approved: DataField = {
+            path: "nodes.reviewer.result.approved",
+            label: "Reviewer › approved",
+            type: "boolean",
+            depth: 1,
+        };
+
+        const summary = summarizeNode(condition, { dataFields: [approved] });
+
+        expect(summary.line1).toBe("Se Reviewer › approved é verdadeiro");
+    });
+
+    it("reads the path of a condition whose data is unknown", () => {
         const condition = buildNode("condition", {
             condition: { op: "eq", path: "review.approved", value: true },
         });
 
         const summary = summarizeNode(condition);
 
-        expect(summary.line1).toBe("review.approved = true");
+        expect(summary.line1).toBe("Se review.approved é verdadeiro");
     });
 
-    it("writes combined conditions as text", () => {
+    it("reads combined conditions as one sentence", () => {
         const condition = buildNode("condition", {
             condition: {
                 op: "and",
@@ -100,8 +117,8 @@ describe("summarizeNode", () => {
         const summary = summarizeNode(condition);
 
         expect(summary.line1).toBe(
-            "tests.passed > 0 E NÃO (tests.failures existe) E " +
-                '(review.state ≠ "rejected" OU review.round < 3)',
+            "Se tests.passed > 0 e tests.failures não existe e " +
+                '(review.state ≠ "rejected" ou review.round < 3)',
         );
     });
 
