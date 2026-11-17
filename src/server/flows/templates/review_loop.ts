@@ -122,7 +122,8 @@ function buildTestsScript(): FlowNode {
         ...tests,
         label: "Testes",
         inputs: [...tests.inputs, DEVELOPER_CHANGES_INPUT],
-        config: { ...tests.config, command: TEST_COMMAND },
+        // The loop's condition judges the exit code, so a failing run must not fail the node.
+        config: { ...tests.config, command: TEST_COMMAND, onFailure: "continue" },
     };
 }
 

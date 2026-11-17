@@ -14,6 +14,7 @@ const RETRYABLE_KINDS: FailureKind[] = [
     "timeout_idle",
     "timeout_total",
     "runtime",
+    "script_failed",
 ];
 
 describe("decideRetry", () => {

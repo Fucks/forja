@@ -7,6 +7,7 @@ export const NODE_RUN_ERROR_KINDS = [
     "timeout_idle",
     "structured_output",
     "runtime",
+    "script_failed",
     "workspace",
     "budget",
     "canceled",

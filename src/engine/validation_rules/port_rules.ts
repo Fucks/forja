@@ -6,7 +6,13 @@ import {
 } from "@/engine/graph_queries.js";
 import { findSourcePort, findTargetPort } from "@/engine/validation_rules/graph_lookups.js";
 import { edgeTarget, errorIssue, nodeTarget } from "@/engine/validation_rules/validation_issues.js";
-import type { FlowEdge, FlowGraph, FlowNode, Port } from "@/shared/flow_graph.js";
+import {
+    type FlowEdge,
+    type FlowGraph,
+    type FlowNode,
+    isNodeOfType,
+    type Port,
+} from "@/shared/flow_graph.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 
 export interface Connection {
@@ -77,11 +83,15 @@ function findUnconnectedRequiredInputsOfNode(graph: FlowGraph, node: FlowNode): 
 function inputsThatMustBeConnected(graph: FlowGraph, node: FlowNode): Port[] {
     const isItemImplicit = enclosingGroups(graph, node.id).some(isMapGroup);
     const requiredInputs = node.inputs.filter((port) => port.required);
-    if (!isItemImplicit) {
+    if (!isItemImplicit && !runsWithoutItem(node)) {
         return requiredInputs;
     }
 
     return requiredInputs.filter((port) => port.type !== "workItem");
+}
+
+function runsWithoutItem(node: FlowNode): boolean {
+    return isNodeOfType(node, "script") && node.config.runIn === "isolated";
 }
 
 function isInputConnected(graph: FlowGraph, node: FlowNode, port: Port): boolean {

@@ -22,7 +22,7 @@ describe("listCompatibleNodeTypes", () => {
     it.each<[PortType, NodeType[]]>([
         ["workItemList", ["trigger", "source", "condition"]],
         ["workItem", ["condition", "gate"]],
-        ["text", ["agent", "condition"]],
+        ["text", ["agent", "script", "condition"]],
         ["json", ["agent", "script", "condition", "git"]],
         ["any", ["trigger", "source", "agent", "script", "condition", "gate", "git"]],
     ])("lists the nodes with an output that feeds an input of type %s", (portType, expected) => {

@@ -1,9 +1,7 @@
 import { describeAvailableData } from "@/engine/available_data.js";
-import type { AgentEvent } from "@/integrations/agent_runtime/agent_runtime.js";
 import { executeConditionNode } from "@/server/runtime/executors/condition_executor.js";
 import { createOutputExecutor } from "@/server/runtime/executors/output_executor.js";
 import type { NodeExecutionContext, NodeExecutionResult } from "@/server/runtime/node_executors.js";
-import { executeScriptNode } from "@/server/runtime/executors/script_executor.js";
 import { executeTriggerNode } from "@/server/runtime/executors/trigger_executor.js";
 import type { Condition } from "@/shared/conditions.js";
 import {
@@ -27,8 +25,7 @@ import { buildNodeRunState } from "@/test/factories/node_run_state_factory.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildArtifactRecord, buildRunRecord } from "@/test/factories/run_record_factory.js";
 import { buildGithubIssue } from "@/test/factories/work_item_factory.js";
-import { FakeAgentRuntime, type ScriptedExec } from "@/test/fakes/fake_agent_runtime.js";
-import { FakeClock } from "@/test/fakes/fake_clock.js";
+import type { ScriptedExec } from "@/test/fakes/fake_agent_runtime.js";
 import { FakeGitHubProvider } from "@/test/fakes/fake_github_provider.js";
 import { InMemoryRunRepository } from "@/test/fakes/in_memory_run_repository.js";
 
@@ -36,8 +33,6 @@ const POSITION = { x: 0, y: 0 };
 const ISSUE_1 = buildIssueSnapshot(1);
 const ISSUE_2 = buildIssueSnapshot(2);
 const TEST_COMMAND = "npm run test";
-const STDOUT_TAIL_MAX_LINES = 200;
-const EXTRA_STDOUT_LINES = 50;
 const REVIEW_PROMPT = "Revise a issue";
 const APPROVED_REVIEW = { approved: true, notes: "ok" };
 const PASSING_TESTS: ScriptedExec = { exitCode: 0, stdoutTail: "all passed" };
@@ -75,44 +70,6 @@ describe("deterministic executors", () => {
             const result = await executeTriggerNode(context);
 
             expect(result.outputs).toEqual({ items: [ISSUE_1, ISSUE_2] });
-        });
-    });
-
-    describe("script", () => {
-        it("succeeds with the exit code of a failing command as its result", async () => {
-            const context = buildScriptContext(FAILING_TESTS);
-
-            const result = await executeScriptNode(context);
-
-            expect(result.outputs).toEqual({ result: FAILING_TESTS });
-        });
-
-        it("sends each output line of the command as a raw agent event", async () => {
-            const events: AgentEvent[] = [];
-            const context = buildScriptContext(
-                { ...PASSING_TESTS, outputLines: SCRIPT_LINES },
-                { onAgentEvent: (event) => events.push(event) },
-            );
-
-            await executeScriptNode(context);
-
-            const rawLines = events.flatMap((event) => (event.kind === "raw" ? [event.line] : []));
-            expect(rawLines).toEqual(SCRIPT_LINES);
-        });
-
-        it("keeps only the last 200 lines of the stdout tail", async () => {
-            const lines = Array.from(
-                { length: STDOUT_TAIL_MAX_LINES + EXTRA_STDOUT_LINES },
-                (_, index) => `linha ${index + 1}`,
-            );
-            const context = buildScriptContext({ exitCode: 0, stdoutTail: lines.join("\n") });
-
-            const result = await executeScriptNode(context);
-
-            expect(result.outputs.result).toEqual({
-                exitCode: 0,
-                stdoutTail: lines.slice(-STDOUT_TAIL_MAX_LINES).join("\n"),
-            });
         });
     });
 
@@ -364,14 +321,27 @@ describe("deterministic executors", () => {
             return started.id;
         }
 
-        it("finishes a script that exits with 1 as SUCCEEDED with its exit code", async () => {
+        it("finishes a script that continues after exit 1 as SUCCEEDED with its exit code", async () => {
             bed.runtime.scriptExec(TEST_COMMAND, FAILING_TESTS);
 
             const runId = await runToTheEnd(buildRunnableLoopFlow());
 
             const tests = await bed.findNodeRun(runId, "tests");
             expect(tests.status).toBe("SUCCEEDED");
-            expect(tests.outputs).toEqual({ result: FAILING_TESTS });
+            expect(tests.outputs?.result).toMatchObject({ exitCode: 1, passed: false });
+        });
+
+        it("fails a script that fails on exit 1 with script_failed", async () => {
+            bed.runtime.scriptExec(TEST_COMMAND, FAILING_TESTS);
+
+            const runId = await runToTheEnd(buildTestsOnlyFlow());
+
+            const tests = await bed.findNodeRun(runId, "tests");
+            expect(tests.status).toBe("FAILED");
+            expect(tests.error).toMatchObject({
+                kind: "script_failed",
+                message: "O comando terminou com código 1",
+            });
         });
 
         it("fails a script that runs past its timeout with timeout_total", async () => {
@@ -467,7 +437,10 @@ describe("deterministic executors", () => {
             const testsResults = (await bed.nodeRunsOf(runId, "tests")).map(
                 (nodeRun) => nodeRun.outputs?.result,
             );
-            expect(testsResults).toEqual([FAILING_TESTS, PASSING_TESTS]);
+            expect(testsResults).toEqual([
+                expect.objectContaining({ exitCode: 1, passed: false }),
+                expect.objectContaining({ exitCode: 0, passed: true }),
+            ]);
             expect((await bed.findRun(runId)).status).toBe("SUCCEEDED");
         });
     });
@@ -575,18 +548,4 @@ function withTestsTimeoutMinutes(graph: FlowGraph, timeoutMinutes: number): Flow
     return updateNode(graph, "tests", (node) =>
         node.type === "script" ? { ...node, config: { ...node.config, timeoutMinutes } } : node,
     );
-}
-
-function buildScriptContext(
-    execution: ScriptedExec,
-    overrides: Partial<NodeExecutionContext> = {},
-): NodeExecutionContext {
-    const runtime = new FakeAgentRuntime({ clock: new FakeClock() }).scriptExec(
-        TEST_COMMAND,
-        execution,
-    );
-    const script = createNodeOfType("script", "tests", POSITION);
-    const node = { ...script, config: { ...script.config, command: TEST_COMMAND } };
-
-    return buildNodeExecutionContext(node, { runtime, item: ISSUE_1, ...overrides });
 }

@@ -59,6 +59,7 @@ export function decideRetry(
         case "timeout_idle":
         case "timeout_total":
         case "runtime":
+        case "script_failed":
             return retryWithBackoff(attempt, maxRetries);
         case "workspace":
             return retryWorkspace(attempt);

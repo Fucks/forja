@@ -18,7 +18,7 @@ Cada nó e cada grupo do editor de fluxos, por categoria.
 
 ## Executar
 
-- [Comando](script.md) — Roda um comando de terminal no workspace do item
+- [Comando](script.md) — Roda um comando de terminal num container
 
 ## Decidir
 

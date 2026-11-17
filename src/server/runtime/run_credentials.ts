@@ -9,9 +9,10 @@ import type {
     CredentialService,
     RuntimeCredential,
 } from "@/server/credentials/credential_service.js";
+import { NotFoundError } from "@/server/errors.js";
 import { nodesThatRunAgents } from "@/server/runtime/executors/rebaser_node.js";
 import { resolveAgentDefaults } from "@/server/settings/resolve_agent_defaults.js";
-import type { FlowGraph } from "@/shared/flow_graph.js";
+import { type FlowGraph, isNodeOfType } from "@/shared/flow_graph.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
 
 /** The credentials the agents of a run need, revealed once when the run is set up. */
@@ -20,6 +21,8 @@ export interface RunCredentials {
     claudeCredentialOf(node: AgentNode): ClaudeCredential;
     /** The project's GitHub token; without one, `gh` falls back to the host's own login. */
     githubToken: string | undefined;
+    /** @throws NotFoundError for a credential that no script env of the run reads */
+    credentialValueOf(credentialId: string): string;
 }
 
 export interface RunCredentialsDeps {
@@ -40,15 +43,18 @@ export async function loadRunCredentials(
     const agentCredentialIds = nodesThatRunAgents(graph).map((node) =>
         credentialIdOf(node, settings),
     );
-    const [claudeCredentials, github] = await Promise.all([
+    const [claudeCredentials, github, scriptCredentialValues] = await Promise.all([
         revealClaudeCredentials(agentCredentialIds, deps),
         revealOptionalCredential(settings.githubCredentialId, deps),
+        revealScriptCredentials(graph, deps),
     ]);
 
     return {
         claudeCredentialOf: (node) =>
             findClaudeCredential(claudeCredentials, credentialIdOf(node, settings)),
         githubToken: github?.value,
+        credentialValueOf: (credentialId) =>
+            findCredentialValue(scriptCredentialValues, credentialId),
     };
 }
 
@@ -74,6 +80,31 @@ async function revealClaudeCredentials(
     return claudeCredentials;
 }
 
+async function revealScriptCredentials(
+    graph: FlowGraph,
+    deps: RunCredentialsDeps,
+): Promise<Map<string, string>> {
+    const credentialIds = new Set(credentialIdsOfScriptEnvs(graph));
+    const revealed = await Promise.all(
+        [...credentialIds].map(async (id) => {
+            const credential = await revealAndMaskInLogs(id, deps);
+            return [id, credential.value] as const;
+        }),
+    );
+
+    return new Map(revealed);
+}
+
+function credentialIdsOfScriptEnvs(graph: FlowGraph): string[] {
+    return graph.nodes.flatMap((node) => {
+        if (!isNodeOfType(node, "script")) {
+            return [];
+        }
+
+        return node.config.env.flatMap((envVar) => envVar.credentialId ?? []);
+    });
+}
+
 async function revealOptionalCredential(
     credentialId: string | null,
     deps: RunCredentialsDeps,
@@ -93,6 +124,15 @@ async function revealAndMaskInLogs(
     deps.redactor.register(credential.value);
 
     return credential;
+}
+
+function findCredentialValue(values: Map<string, string>, credentialId: string): string {
+    const value = values.get(credentialId);
+    if (value === undefined) {
+        throw new NotFoundError(`Credencial ${credentialId} não encontrada.`);
+    }
+
+    return value;
 }
 
 // A credential of another kind (a GitHub token, say) cannot run Claude, so it counts as missing.

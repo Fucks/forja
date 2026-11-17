@@ -5,7 +5,8 @@ import {
 import type { ExecOptions, ExecResult } from "@/integrations/agent_runtime/agent_runtime.js";
 import type { FakeClock } from "@/test/fakes/fake_clock.js";
 
-export interface ScriptedExec extends ExecResult {
+export interface ScriptedExec extends Omit<ExecResult, "stderrTail"> {
+    stderrTail?: string;
     outputLines?: string[];
     // Past the timeoutMs of the call, the command times out like in the real workspace.
     durationMs?: number;
@@ -16,9 +17,9 @@ export function playScriptedExec(
     execution: ScriptedExec,
     options: ExecOptions,
 ): Promise<ExecResult> {
-    const { outputLines = [], durationMs = 0 } = execution;
+    const { outputLines = [], durationMs = 0, stderrTail = "" } = execution;
     outputLines.forEach((line) => options.onOutput?.(line));
-    const result = { exitCode: execution.exitCode, stdoutTail: execution.stdoutTail };
+    const result = { exitCode: execution.exitCode, stdoutTail: execution.stdoutTail, stderrTail };
     if (durationMs === 0) {
         return Promise.resolve(result);
     }

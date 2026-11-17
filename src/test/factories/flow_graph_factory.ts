@@ -273,7 +273,11 @@ function buildLoopDeveloperNode(): FlowNode {
 function buildTestsScriptNode(): FlowNode {
     const tests = createNodeOfType("script", "tests", gridPosition(3));
 
-    return { ...tests, label: "Testes", config: { ...tests.config, command: "npm run test" } };
+    return {
+        ...tests,
+        label: "Testes",
+        config: { ...tests.config, command: "npm run test", onFailure: "continue" },
+    };
 }
 
 function buildLoopReviewerNode(): FlowNode {

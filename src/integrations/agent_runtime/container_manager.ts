@@ -30,6 +30,8 @@ export interface StartContainerInput {
 export interface ContainerExecOptions {
     env: Record<string, string>;
     stdin?: string;
+    /** Defaults to the workdir the container was started with. */
+    workdir?: string;
     timeoutMs: number;
     signal: AbortSignal;
     onStdoutLine?: LineListener;
@@ -223,10 +225,18 @@ interface ExecArgsInput {
 // Secrets never reach argv: `-e NAME` without a value makes docker read it from its own environment.
 function buildExecArgs({ id, command, execId, options }: ExecArgsInput): string[] {
     const stdinArgs = options.stdin === undefined ? [] : ["-i"];
+    const workdirArgs = options.workdir === undefined ? [] : ["-w", options.workdir];
     const envNames = new Set([EXEC_ID_VARIABLE, ...Object.keys(options.env)]);
     const envArgs = [...envNames].flatMap((name) => ["-e", name]);
 
-    return ["exec", ...stdinArgs, ...envArgs, id, ...wrapWithExecMarker(command, execId)];
+    return [
+        "exec",
+        ...stdinArgs,
+        ...workdirArgs,
+        ...envArgs,
+        id,
+        ...wrapWithExecMarker(command, execId),
+    ];
 }
 
 function buildLabelFilters(labels: Record<string, string>): string[] {

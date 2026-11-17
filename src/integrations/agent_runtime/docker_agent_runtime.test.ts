@@ -6,6 +6,7 @@ import { buildAgentEnv } from "@/integrations/agent_runtime/agent_env.js";
 import {
     AgentCanceledError,
     AgentRuntimeError,
+    AgentTimeoutError,
     WorkspaceError,
 } from "@/integrations/agent_runtime/agent_errors.js";
 import type {
@@ -445,9 +446,28 @@ describe("DockerAgentRuntime workspace", () => {
             onOutput: (line) => outputLines.push(line),
         });
 
-        expect(result).toEqual({ exitCode: 2, stdoutTail: "1 failing" });
+        expect(result).toEqual({ exitCode: 2, stdoutTail: "1 failing", stderrTail: "erro" });
         expect(outputLines).toEqual(["1 failing", "erro"]);
         expect(dockerExecCommands(commands).at(-1)).toEqual(["sh", "-c", "npm test"]);
+    });
+
+    it("runs a command with its shell, working directory and extra env", async () => {
+        const commands = new FakeCommandRunner();
+        const { workspace } = await openWorkspace(commands);
+
+        await workspace.exec("npm test", {
+            timeoutMs: 60_000,
+            signal: neverAborted(),
+            env: { CI: "true" },
+            cwd: "web",
+            shell: "bash",
+        });
+
+        const execCall = commands.calls.filter((call) => isDocker("exec")(call.args)).at(-1);
+        expect(execCall?.args.slice(1, 3)).toEqual(["-w", "/home/agent/workspace/web"]);
+        expect(execCall?.args).toContain("CI");
+        expect(execCall?.options.env).toMatchObject({ CI: "true" });
+        expect(dockerExecCommands(commands).at(-1)).toEqual(["bash", "-c", "npm test"]);
     });
 
     it("diffs the branch against the base in the worktree, stat first", async () => {
@@ -707,5 +727,55 @@ describe("DockerAgentRuntime.runHeadless", () => {
 
         await expect(running).rejects.toBeInstanceOf(AgentRuntimeError);
         expect(argsOf(commands, "docker").at(-1)).toEqual(["rm", "-f", CONTAINER_ID]);
+    });
+});
+
+describe("DockerAgentRuntime.execHeadless", () => {
+    it("runs the command in an ephemeral container with the repository mounted read-only", async () => {
+        const commands = new FakeCommandRunner();
+        scriptHealthyHost(commands);
+        commands
+            .when("docker", isDockerExecOf("npm run lint"))
+            .returns({ exitCode: 1, stdout: "2 problems", stderr: "aviso" });
+
+        const result = await createRuntime(commands).execHeadless(headlessSpec(), "npm run lint", {
+            timeoutMs: 60_000,
+            signal: neverAborted(),
+            shell: "bash",
+        });
+
+        expect(result).toEqual({ exitCode: 1, stdoutTail: "2 problems", stderrTail: "aviso" });
+        expect(dockerRunArgs(commands)).toContain(`${REPO_PATH}:/home/agent/workspace:ro`);
+        expect(dockerExecCommands(commands).at(-1)).toEqual(["bash", "-c", "npm run lint"]);
+        expect(argsOf(commands, "git")).toEqual([]);
+        expect(argsOf(commands, "docker").at(-1)).toEqual(["rm", "-f", CONTAINER_ID]);
+    });
+
+    it("removes the ephemeral container even when the command times out", async () => {
+        const commands = new FakeCommandRunner();
+        scriptHealthyHost(commands);
+        commands.when("docker", isDockerExecOf("sleep 60")).returns({ timedOut: true });
+
+        const executing = createRuntime(commands).execHeadless(headlessSpec(), "sleep 60", {
+            timeoutMs: 60_000,
+            signal: neverAborted(),
+        });
+
+        await expect(executing).rejects.toBeInstanceOf(AgentTimeoutError);
+        expect(argsOf(commands, "docker").at(-1)).toEqual(["rm", "-f", CONTAINER_ID]);
+    });
+
+    it("rejects without starting a container when the signal was already aborted", async () => {
+        const commands = new FakeCommandRunner();
+        const controller = new AbortController();
+        controller.abort();
+
+        const executing = createRuntime(commands).execHeadless(headlessSpec(), "npm test", {
+            timeoutMs: 60_000,
+            signal: controller.signal,
+        });
+
+        await expect(executing).rejects.toBeInstanceOf(AgentCanceledError);
+        expect(commands.calls).toEqual([]);
     });
 });

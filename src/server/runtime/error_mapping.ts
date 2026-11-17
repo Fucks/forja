@@ -11,6 +11,8 @@ import {
     WorkspaceError,
 } from "@/integrations/agent_runtime/agent_errors.js";
 import { GitHubError } from "@/integrations/github/github_provider.js";
+import { CommandRenderError } from "@/server/runtime/executors/script_environment.js";
+import { ScriptFailedError } from "@/server/runtime/executors/script_failed_error.js";
 import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
 
 const GITHUB_STDERR_MAX_CHARS = 500;
@@ -24,6 +26,7 @@ const UNEXPECTED_FAILURE: NodeRunError = {
 const RUNTIME_ERRORS_SHOWN_TO_USERS = [
     AgentRuntimeError,
     PromptRenderError,
+    CommandRenderError,
     UnsupportedNodeTypeError,
     GitHubError,
 ] as const;
@@ -74,6 +77,9 @@ function failureKindOf(error: Error): FailureKind | undefined {
     }
     if (error instanceof WorkspaceError) {
         return "workspace";
+    }
+    if (error instanceof ScriptFailedError) {
+        return "script_failed";
     }
     if (RUNTIME_ERRORS_SHOWN_TO_USERS.some((ErrorClass) => error instanceof ErrorClass)) {
         return "runtime";

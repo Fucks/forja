@@ -459,8 +459,50 @@ describe("FakeAgentRuntime", () => {
             const tests = await workspace.exec("npm test", execOptions());
             const lint = await workspace.exec("npm run lint", execOptions());
 
-            expect(tests).toEqual({ exitCode: 0, stdoutTail: "" });
-            expect(lint).toEqual({ exitCode: 1, stdoutTail: "2 problems" });
+            expect(tests).toEqual({ exitCode: 0, stdoutTail: "", stderrTail: "" });
+            expect(lint).toEqual({ exitCode: 1, stdoutTail: "2 problems", stderrTail: "" });
+        });
+
+        it("records the env, working directory and shell each command received", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock });
+            const workspace = await runtime.openWorkspace(
+                workspaceSpec("issue-4"),
+                SILENT_HOOKS,
+                neverAborted(),
+            );
+
+            await workspace.exec("npm test", {
+                ...execOptions(),
+                env: { CI: "true" },
+                cwd: "web",
+                shell: "bash",
+            });
+
+            expect(runtime.receivedExecs).toEqual([
+                {
+                    kind: "exec",
+                    command: "npm test",
+                    workItemId: "issue-4",
+                    env: { CI: "true" },
+                    cwd: "web",
+                    shell: "bash",
+                },
+            ]);
+        });
+
+        it("plays the scripted executions of a command run in an ephemeral container", async () => {
+            const clock = new FakeClock(START);
+            const runtime = new FakeAgentRuntime({ clock }).scriptExec("npm run lint", {
+                exitCode: 1,
+                stdoutTail: "",
+                stderrTail: "2 problems",
+            });
+
+            const lint = await runtime.execHeadless(headlessSpec(), "npm run lint", execOptions());
+
+            expect(lint).toEqual({ exitCode: 1, stdoutTail: "", stderrTail: "2 problems" });
+            expect(runtime.calls.map((call) => call.kind)).toEqual(["execHeadless"]);
         });
 
         it("plays the scripted executions of a command in order, repeating the last", async () => {
@@ -522,7 +564,11 @@ describe("FakeAgentRuntime", () => {
             const execution = workspace.exec("npm test", execOptions());
             clock.advance(5_000);
 
-            await expect(execution).resolves.toEqual({ exitCode: 0, stdoutTail: "ok" });
+            await expect(execution).resolves.toEqual({
+                exitCode: 0,
+                stdoutTail: "ok",
+                stderrTail: "",
+            });
         });
 
         it("times out an exec that lasts longer than its timeoutMs", async () => {

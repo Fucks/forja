@@ -24,7 +24,10 @@ const EXPECTED_PORTS: Record<NodeType, { inputs: Port[]; outputs: Port[] }> = {
     },
     script: {
         inputs: [{ name: "item", type: "workItem", required: true }],
-        outputs: [{ name: "result", type: "json", required: true }],
+        outputs: [
+            { name: "result", type: "json", required: true },
+            { name: "output", type: "text", required: true },
+        ],
     },
     condition: {
         inputs: [{ name: "value", type: "json", required: true }],
@@ -120,7 +123,15 @@ describe("createDefaultNode", () => {
 
         expect(configs).toEqual([
             { kind: "manual" },
-            { command: "", timeoutMinutes: 15, workspace: "item" },
+            {
+                command: "",
+                shell: "bash",
+                runIn: "item",
+                env: [],
+                onFailure: "fail",
+                parseOutput: "none",
+                timeoutMinutes: 15,
+            },
             { condition: { op: "eq", path: "inputs.value.approved", value: true } },
             { message: "", show: ["diff", "artifacts", "logs"] },
             { action: "open_pr", draft: false },
