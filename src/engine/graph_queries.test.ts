@@ -7,6 +7,7 @@ import {
     groupMembers,
     incomingEdges,
     isItemCorrelatedEdge,
+    listUpstreamNodes,
     outgoingEdges,
     topologicalOrder,
 } from "@/engine/graph_queries.js";
@@ -130,6 +131,33 @@ describe("topologicalOrder", () => {
         ]);
 
         expect(() => topologicalOrder(graph)).toThrow(CycleOutsideLoopError);
+    });
+});
+
+describe("listUpstreamNodes", () => {
+    it("lists every node with a path to the node, nearest first", () => {
+        const graph = buildCanonicalFlow();
+
+        const upstreamIds = listUpstreamNodes(graph, "dev").map((node) => node.id);
+
+        expect(upstreamIds).toEqual(["tl", "source", "trigger"]);
+    });
+
+    it("leaves out the node itself and the nodes after it", () => {
+        const graph = buildCanonicalFlow();
+
+        const upstreamIds = listUpstreamNodes(graph, "tl").map((node) => node.id);
+
+        expect(upstreamIds).not.toContain("tl");
+        expect(upstreamIds).not.toContain("dev");
+    });
+
+    it("lists each node once when the flow has a loop", () => {
+        const graph = buildLoopFlow();
+
+        const upstreamIds = listUpstreamNodes(graph, "review").map((node) => node.id);
+
+        expect(new Set(upstreamIds).size).toBe(upstreamIds.length);
     });
 });
 

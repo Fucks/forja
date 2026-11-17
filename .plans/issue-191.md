@@ -28,15 +28,15 @@
 
 ## Tasks
 
+(Tasks 4 and 5 run after 13: the templates in v2 only pass once the executors read the DataContext.)
+
 - [x] 1. `DataContext` / `DATA_ROOTS` — `src/shared/data_context.ts`
 - [x] 2. Test + implement `migrateFlowGraph` rules (version, condition incl. and/or/not, loop until, git
       bodyFrom, v2 untouched, non-graph untouched, idempotence, standard flow fixture) —
       `src/shared/migrate_flow_graph.ts`, `.test.ts`, `src/test/fixtures/standard_flow_v1.json`
 - [x] 3. `flowGraphSchema` = preprocess + v2; update `schemaVersion: 1` literals in src/e2e (except migration
       fixtures), flow_graph/flow_service tests that used 2 as "invalid" — `src/shared/flow_graph.ts` & tests
-- [ ] 4. Templates in v2 with new paths (`inputs.value.*`, `nodes.*`, `inputs.*`) — templates/*.ts + tests
-- [ ] 5. YAML: importing a v1 template YAML works, exporting writes v2 — `flow_yaml.test.ts`
-- [ ] 6. Move BFS into `listUpstreamNodes` — `src/engine/graph_queries.ts` (+ test)
+- [x] 6. Move BFS into `listUpstreamNodes` — `src/engine/graph_queries.ts` (+ test)
 - [ ] 7. Test + implement `collectUpstreamOutputs` (per item, per run, skipped branch absent, SUCCEEDED wins
       over FAILED retry) — `src/engine/upstream_outputs.ts`, `.test.ts`
 - [ ] 8. Scheduler sends `upstreamOutputs` in `start_node_run`; ActiveRun/NodeRunExecution/
@@ -50,7 +50,10 @@
 - [ ] 12. Git `bodyFrom` reads `DataContext` (`inputs.*`, `nodes.*`) — `git_executor.ts` (+ test)
 - [ ] 13. Loop `iterationData` under `nodes.*`, carry, loop_rules path check — `loop_group.ts`,
       `loop_rules.ts` (+ tests)
+- [ ] 4. Templates in v2 with new paths (`inputs.value.*`, `nodes.*`, `inputs.*`) — templates/*.ts + tests
+- [ ] 5. YAML: importing a v1 template YAML works, exporting writes v2 — `flow_yaml.test.ts`
 - [ ] 14. Duplicate node slug validation error — `identity_rules.ts` (+ test)
 - [ ] 15. Suggestions `nodes.<slug>.<port>` for Decisão and Loop using `listUpstreamNodes` —
       `condition_suggestions.ts` (+ test); end-to-end test: a suggested path drives the condition executor
 - [ ] 16. Self-review checklist and feedback loops (typecheck, lint, test)
+- [ ] 17. Default condition path (`node_defaults.ts`) and the paths in test factories in the v2 dialect

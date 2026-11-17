@@ -1,34 +1,16 @@
-import { findNode, incomingEdges, nodesInsideGroup } from "@/engine/graph_queries.js";
+import { listUpstreamNodes, nodesInsideGroup } from "@/engine/graph_queries.js";
 import { CONDITION_PATH_SEPARATOR } from "@/shared/conditions.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 
 // Paths a condition can read: each output of every node upstream, nearest nodes first.
 export function listUpstreamOutputPaths(graph: FlowGraph, nodeId: string): string[] {
-    return findUpstreamNodes(graph, nodeId).flatMap(listOutputPaths);
+    return listUpstreamNodes(graph, nodeId).flatMap(listOutputPaths);
 }
 
 // Paths a loop condition can read: each output of every node inside the group.
 export function listGroupOutputPaths(graph: FlowGraph, groupId: string): string[] {
     return nodesInsideGroup(graph, groupId).flatMap(listOutputPaths);
-}
-
-function findUpstreamNodes(graph: FlowGraph, nodeId: string): FlowNode[] {
-    const visitedIds = new Set([nodeId]);
-    const upstreamNodes: FlowNode[] = [];
-    let frontierIds = [nodeId];
-
-    while (frontierIds.length > 0) {
-        frontierIds = listSourceNodeIds(graph, frontierIds).filter((id) => !visitedIds.has(id));
-        frontierIds.forEach((id) => visitedIds.add(id));
-        upstreamNodes.push(...frontierIds.flatMap((id) => findNode(graph, id) ?? []));
-    }
-
-    return upstreamNodes;
-}
-
-function listSourceNodeIds(graph: FlowGraph, nodeIds: string[]): string[] {
-    return nodeIds.flatMap((id) => incomingEdges(graph, id).map((edge) => edge.from.nodeId));
 }
 
 function listOutputPaths(node: FlowNode): string[] {
