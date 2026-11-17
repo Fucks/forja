@@ -37,6 +37,15 @@ const ORIGIN = { x: 0, y: 0 };
 const PROJECT_ID = "forja";
 const FLOW_ID = "flow";
 const RECENT_RUNS_ROUTE = `GET /api/projects/${PROJECT_ID}/runs?limit=5&flowId=${FLOW_ID}`;
+const DECISION_AFTER_REVIEWER: FlowNode = {
+    ...createNodeOfType("condition", "decision", ORIGIN),
+    parentGroupId: "review_and_open_pr",
+};
+const GRAPH_WITH_DECISION: FlowGraph = {
+    ...GRAPH,
+    nodes: [...GRAPH.nodes, DECISION_AFTER_REVIEWER],
+    edges: [...GRAPH.edges, connect(["reviewer", "result"], ["decision", "value"])],
+};
 
 beforeEach(() => {
     localStorage.clear();
@@ -233,8 +242,10 @@ describe("ConditionInspector", () => {
         const inspector = renderInspector(ConditionInspector, condition);
 
         await userEvent.click(screen.getByRole("button", { name: "Adicionar regra" }));
+        await userEvent.click(screen.getByRole("button", { name: "Caminho da regra 2" }));
+        await userEvent.click(screen.getByRole("button", { name: "Digitar caminho" }));
         await userEvent.type(
-            screen.getByRole("combobox", { name: "Caminho da regra 2" }),
+            screen.getByRole("textbox", { name: "Caminho da regra 2" }),
             "review.notes",
         );
         await userEvent.click(
@@ -252,21 +263,40 @@ describe("ConditionInspector", () => {
         });
     });
 
-    it("suggests the outputs of the nodes upstream", () => {
-        const condition = createNodeOfType("condition", "approved", ORIGIN);
-        const graph = {
-            ...GRAPH,
-            nodes: [...GRAPH.nodes, condition],
-            edges: [...GRAPH.edges, connect(["tl", "result"], ["approved", "value"])],
-        };
+    it("lists the reviewer result fields for a decision after the reviewer", async () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+        renderInspector(ConditionInspector, DECISION_AFTER_REVIEWER, GRAPH_WITH_DECISION);
 
-        renderInspector(ConditionInspector, condition, graph);
+        await userEvent.click(screen.getByRole("button", { name: "Caminho da regra 1" }));
 
-        const suggestions = screen.getAllByRole("option", { hidden: true });
+        expect(
+            screen.getByRole("treeitem", { name: "Reviewer › Resultado › approved (sim/não)" }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole("treeitem", { name: "Reviewer › Resultado › notes (texto)" }),
+        ).toBeInTheDocument();
+    });
 
-        expect(suggestions.map((option) => option.getAttribute("value"))).toContain(
-            "nodes.tl.result",
-        );
+    it("shows the value each field had in the last run", async () => {
+        const lastRun = buildRunListItem({ id: "run-8", flowId: FLOW_ID });
+        const reviewerRun = buildSerializedNodeRun({
+            runId: lastRun.id,
+            nodeId: "reviewer",
+            outputs: { result: { approved: true, notes: "Tudo certo" } },
+        });
+        stubFetchRoutes({
+            [RECENT_RUNS_ROUTE]: () => Response.json([lastRun]),
+            [`GET /api/runs/${lastRun.id}`]: () =>
+                Response.json(buildSerializedRunView({ nodeRuns: [reviewerRun] })),
+        });
+        renderInspector(ConditionInspector, DECISION_AFTER_REVIEWER, GRAPH_WITH_DECISION);
+
+        await userEvent.click(screen.getByRole("button", { name: "Caminho da regra 1" }));
+
+        const notesRow = screen.getByRole("treeitem", {
+            name: "Reviewer › Resultado › notes (texto)",
+        });
+        expect(await within(notesRow).findByText("Tudo certo")).toBeInTheDocument();
     });
 });
 

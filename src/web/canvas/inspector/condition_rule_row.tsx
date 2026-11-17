@@ -4,6 +4,8 @@ import type { JSX } from "react";
 import type { ConditionRule } from "@/web/canvas/inspector/condition_rules.js";
 import { COMPARISON_OPERATOR_SYMBOLS } from "@/web/canvas/inspector/condition_text.js";
 import type { ComparisonOperator } from "@/web/canvas/inspector/condition_text.js";
+import { DataPicker } from "@/web/canvas/inspector/data_picker.js";
+import type { PickableDataField } from "@/web/canvas/inspector/data_picker.js";
 import { IconButton } from "@/web/components/ui/icon_button.js";
 import { Input } from "@/web/components/ui/input.js";
 import { SegmentedControl } from "@/web/components/ui/segmented_control.js";
@@ -17,7 +19,7 @@ const OPERATOR_OPTIONS = COMPARISON_OPERATORS.map((operator) => ({
 interface ConditionRuleRowProps {
     rule: ConditionRule;
     ruleNumber: number;
-    suggestionListId: string;
+    fields: PickableDataField[];
     onEdit: (changes: Partial<ConditionRule>) => void;
     onApply: (changes: Partial<ConditionRule>) => void;
     onBlur: () => void;
@@ -28,7 +30,7 @@ interface ConditionRuleRowProps {
 export function ConditionRuleRow({
     rule,
     ruleNumber,
-    suggestionListId,
+    fields,
     onEdit,
     onApply,
     onBlur,
@@ -39,14 +41,13 @@ export function ConditionRuleRow({
     return (
         <fieldset aria-label={`Regra ${ruleNumber}`} className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1">
-                <Input
-                    aria-label={`Caminho da ${ruleName}`}
-                    value={rule.path}
-                    list={suggestionListId}
-                    placeholder="nodes.review.approved"
-                    mono
-                    onChange={(event) => onEdit({ path: event.target.value })}
-                    onBlur={onBlur}
+                <DataPicker
+                    label={`Caminho da ${ruleName}`}
+                    path={rule.path}
+                    fields={fields}
+                    onPick={(path) => onApply({ path })}
+                    onType={(path) => onEdit({ path })}
+                    onTypingDone={onBlur}
                 />
                 {onRemove && (
                     <IconButton label={`Remover ${ruleName}`} icon={Trash2} onClick={onRemove} />

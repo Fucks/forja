@@ -1,10 +1,11 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import type { Mock } from "vitest";
 
 import type { FlowGraph, FlowGroup } from "@/shared/flow_graph.js";
 import { buildLoopFlow } from "@/test/factories/flow_graph_factory.js";
+import { renderWithQueryClient } from "@/test/render_with_query_client.js";
 import { GroupInspector } from "@/web/canvas/inspector/group_inspector.js";
 
 type GroupUpdate = (group: FlowGroup) => FlowGroup;
@@ -121,14 +122,30 @@ describe("GroupInspector of a loop", () => {
         });
     });
 
-    it("suggests the outputs of the nodes inside the loop", () => {
+    it("offers only the outputs of the nodes inside the loop", async () => {
         renderGroupInspector("review_loop");
 
-        const suggestions = screen.getAllByRole("option", { hidden: true });
+        await userEvent.click(screen.getByRole("button", { name: "Escolher da lista" }));
 
-        expect(suggestions.map((option) => option.getAttribute("value"))).toContain(
-            "nodes.revisar.summary",
+        const groups = screen.getAllByRole("treeitem", { expanded: true });
+        expect(groups.map((group) => group.getAttribute("aria-label"))).toEqual([
+            "Desenvolver",
+            "Testes",
+            "Revisar",
+        ]);
+    });
+
+    it("writes the picked field into the condition that ends the loop", async () => {
+        const onChange = renderGroupInspector("review_loop");
+
+        await userEvent.click(screen.getByRole("button", { name: "Escolher da lista" }));
+        await userEvent.click(
+            screen.getByRole("treeitem", { name: "Revisar › Resultado › approved (sim/não)" }),
         );
+
+        expect(applyLastUpdate(onChange, "review_loop").config).toMatchObject({
+            until: { op: "eq", path: "nodes.revisar.result.approved", value: true },
+        });
     });
 
     it("carries an output port to the next iteration", async () => {
@@ -152,7 +169,7 @@ describe("GroupInspector of a loop", () => {
 
 function renderGroupInspector(groupId: string, graph: FlowGraph = LOOP_FLOW): GroupChangeSpy {
     const onChange: GroupChangeSpy = vi.fn();
-    render(
+    renderWithQueryClient(
         <MemoryRouter>
             <GroupInspector group={findGroupIn(graph, groupId)} graph={graph} onChange={onChange} />
         </MemoryRouter>,

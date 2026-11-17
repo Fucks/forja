@@ -5,17 +5,25 @@ import type { Mock } from "vitest";
 import type { Condition } from "@/shared/conditions.js";
 import { ConditionEditor } from "@/web/canvas/inspector/condition_editor.js";
 import { NUMBER_REQUIRED_ERROR } from "@/web/canvas/inspector/condition_rules.js";
+import type { PickableDataField } from "@/web/canvas/inspector/data_picker.js";
 
 type ConditionChangeSpy = Mock<(condition: Condition) => void>;
 
 const APPROVED: Condition = { op: "eq", path: "review.approved", value: true };
+const REVIEWER_NOTES: PickableDataField = {
+    path: "nodes.reviewer.result.notes",
+    label: "Reviewer › Resultado › notes",
+    type: "string",
+    sourceNodeId: "reviewer",
+    depth: 1,
+};
 
 describe("ConditionEditor", () => {
     it("builds an 'and' of two rules", async () => {
         const onChange = renderConditionEditor(APPROVED);
 
         await userEvent.click(screen.getByRole("button", { name: "Adicionar regra" }));
-        await typeIntoField(getPathField(2), "tests.exitCode");
+        await typePath(2, "tests.exitCode");
         await typeIntoField(screen.getByRole("textbox", { name: "Valor da regra 2" }), "0");
 
         expect(onChange).toHaveBeenLastCalledWith({
@@ -67,15 +75,19 @@ describe("ConditionEditor", () => {
         expect(onChange).toHaveBeenLastCalledWith(APPROVED);
     });
 
-    it("suggests the known paths for each rule", () => {
-        renderConditionEditor(APPROVED, ["tl.summary", "fonte.items"]);
+    it("writes the exact path of the field picked for a rule", async () => {
+        const onChange = renderConditionEditor({ op: "exists", path: "" }, [REVIEWER_NOTES]);
 
-        const suggestions = screen.getAllByRole("option", { hidden: true });
+        await userEvent.click(getPathPicker(1));
+        await userEvent.click(
+            screen.getByRole("treeitem", { name: "Reviewer › Resultado › notes (texto)" }),
+        );
 
-        expect(suggestions.map((option) => option.getAttribute("value"))).toEqual([
-            "tl.summary",
-            "fonte.items",
-        ]);
+        expect(onChange).toHaveBeenLastCalledWith({
+            op: "exists",
+            path: "nodes.reviewer.result.notes",
+        });
+        expect(getPathPicker(1)).toHaveTextContent("Reviewer › Resultado › notes");
     });
 
     it("shows a condition the rules cannot express as text, until it is restarted", async () => {
@@ -85,13 +97,16 @@ describe("ConditionEditor", () => {
 
         await userEvent.click(screen.getByRole("button", { name: "Recomeçar como regras" }));
 
-        expect(getPathField(1)).toHaveValue("");
+        expect(getPathPicker(1)).toHaveTextContent("Escolher dado…");
     });
 });
 
-function renderConditionEditor(value: Condition, suggestions: string[] = []): ConditionChangeSpy {
+function renderConditionEditor(
+    value: Condition,
+    fields: PickableDataField[] = [],
+): ConditionChangeSpy {
     const onChange: ConditionChangeSpy = vi.fn();
-    render(<ConditionEditor value={value} onChange={onChange} suggestions={suggestions} />);
+    render(<ConditionEditor value={value} onChange={onChange} fields={fields} />);
 
     return onChange;
 }
@@ -100,9 +115,17 @@ function getRule(ruleNumber: number): HTMLElement {
     return screen.getByRole("group", { name: `Regra ${ruleNumber}` });
 }
 
-// The path field offers suggestions, so it is a combobox rather than a plain textbox.
-function getPathField(ruleNumber: number): HTMLElement {
-    return screen.getByRole("combobox", { name: `Caminho da regra ${ruleNumber}` });
+function getPathPicker(ruleNumber: number): HTMLElement {
+    return screen.getByRole("button", { name: `Caminho da regra ${ruleNumber}` });
+}
+
+async function typePath(ruleNumber: number, path: string): Promise<void> {
+    await userEvent.click(getPathPicker(ruleNumber));
+    await userEvent.click(screen.getByRole("button", { name: "Digitar caminho" }));
+    await typeIntoField(
+        screen.getByRole("textbox", { name: `Caminho da regra ${ruleNumber}` }),
+        path,
+    );
 }
 
 async function typeIntoField(field: HTMLElement, text: string): Promise<void> {
