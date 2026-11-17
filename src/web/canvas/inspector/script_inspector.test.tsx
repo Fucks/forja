@@ -47,6 +47,54 @@ describe("ScriptInspector", () => {
         });
     });
 
+    describe("presets", () => {
+        it("fills an empty command with npm test, the item container and failing on errors", async () => {
+            const emptyScript = withConfig({
+                command: "",
+                runIn: "isolated",
+                onFailure: "continue",
+            });
+            const inspector = renderScriptInspector(emptyScript);
+
+            await userEvent.click(screen.getByRole("button", { name: "Rodar testes" }));
+
+            expect(inspector.lastChangedConfig()).toMatchObject({
+                command: "npm test",
+                runIn: "item",
+                onFailure: "fail",
+            });
+        });
+
+        it("asks before replacing a command that is already filled", async () => {
+            const onChange = renderScriptInspector(withConfig({ command: "make build" })).onChange;
+
+            await userEvent.click(screen.getByRole("button", { name: "Rodar testes" }));
+
+            expect(screen.getByText("Substituir o comando atual?")).toBeInTheDocument();
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it("replaces the command once the replacement is confirmed", async () => {
+            const inspector = renderScriptInspector(withConfig({ command: "make build" }));
+
+            await userEvent.click(screen.getByRole("button", { name: "Rodar lint" }));
+            await userEvent.click(screen.getByRole("button", { name: "Substituir" }));
+
+            expect(inspector.lastChangedConfig().command).toBe("npm run lint");
+            expect(screen.queryByText("Substituir o comando atual?")).not.toBeInTheDocument();
+        });
+
+        it("keeps the command when the replacement is cancelled", async () => {
+            const onChange = renderScriptInspector(withConfig({ command: "make build" })).onChange;
+
+            await userEvent.click(screen.getByRole("button", { name: "Rodar lint" }));
+            await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+            expect(screen.queryByText("Substituir o comando atual?")).not.toBeInTheDocument();
+            expect(onChange).not.toHaveBeenCalled();
+        });
+    });
+
     describe("advanced", () => {
         it("applies a new timeout", async () => {
             const inspector = renderScriptInspector(requireTestsScript());

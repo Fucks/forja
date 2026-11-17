@@ -28,11 +28,7 @@ export function ScriptInspector({ node, graph, onChange }: InspectorProps): JSX.
     return (
         <NodeInspectorFrame node={node} graph={graph} onChange={onChange}>
             <InspectorFields>
-                <ScriptCommandField
-                    script={node}
-                    graph={graph}
-                    onCommandChange={(command) => changeConfig({ command })}
-                />
+                <ScriptCommandField script={node} graph={graph} onConfigChange={changeConfig} />
             </InspectorFields>
             <AdvancedSection>
                 <IntegerField
