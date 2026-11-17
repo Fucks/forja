@@ -147,7 +147,6 @@ function buildRuleCondition(
     path: string,
     ruleValue: RuleValue,
 ): RulesConversion {
-    const accepted = (condition: Condition): RulesConversion => ({ ok: true, condition });
     const value = ruleValue.kind === "single" ? ruleValue.value : undefined;
 
     switch (operator) {
@@ -177,6 +176,10 @@ function buildRuleCondition(
         default:
             return assertNever(operator);
     }
+}
+
+function accepted(condition: Condition): RulesConversion {
+    return { ok: true, condition };
 }
 
 function refused(): RulesConversion {

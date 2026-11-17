@@ -14,7 +14,7 @@ export type ComparisonOperator = Comparison["op"];
 export type ComparisonValue = Extract<Comparison, { op: "eq" | "neq" }>["value"];
 type Combination = Extract<Condition, { conditions: Condition[] }>;
 
-export const COMPARISON_OPERATOR_SYMBOLS: Record<ComparisonOperator, string> = {
+const COMPARISON_OPERATOR_SYMBOLS: Record<ComparisonOperator, string> = {
     eq: "=",
     neq: "≠",
     gt: ">",

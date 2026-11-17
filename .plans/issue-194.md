@@ -39,4 +39,4 @@
 - [x] 13. `condition_preview.tsx` in the condition inspector (disabled with tooltip without a run) — `use_last_node_run_sample.ts`, `condition_inspector.tsx`
 - [x] 14. v1 decisions (`inputs.value.*`) open and edit — `condition_editor.test.tsx`
 - [x] 15. Docs: operators and examples in `condition_doc.ts`, regenerate `docs/nos/condition.md`
-- [ ] 16. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 16. Self-review checklist and feedback loops (typecheck, lint, test)

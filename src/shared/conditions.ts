@@ -98,9 +98,9 @@ function compareValue(comparison: Comparison, actual: unknown): boolean {
         case "lte":
             return typeof actual === "number" && actual <= comparison.value;
         case "contains":
-            return containsValue(actual, comparison.value) === true;
+            return isContainer(actual) && containsValue(actual, comparison.value);
         case "notContains":
-            return containsValue(actual, comparison.value) === false;
+            return isContainer(actual) && !containsValue(actual, comparison.value);
         case "startsWith":
             return typeof actual === "string" && actual.startsWith(comparison.value);
         case "in":
@@ -118,16 +118,17 @@ function compareValue(comparison: Comparison, actual: unknown): boolean {
     }
 }
 
-// Texts contain substrings and lists contain elements; other values contain nothing (undefined).
-function containsValue(container: unknown, value: string): boolean | undefined {
+function isContainer(value: unknown): value is string | unknown[] {
+    return typeof value === "string" || Array.isArray(value);
+}
+
+// Texts contain substrings and lists contain elements.
+function containsValue(container: string | unknown[], value: string): boolean {
     if (typeof container === "string") {
         return container.includes(value);
     }
-    if (Array.isArray(container)) {
-        return container.some((element: unknown) => element === value);
-    }
 
-    return undefined;
+    return container.some((element) => element === value);
 }
 
 function measureSize(value: unknown): number | undefined {

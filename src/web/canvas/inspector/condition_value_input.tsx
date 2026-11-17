@@ -73,9 +73,11 @@ function EnumChoice({ label, value, enumValues, onApply }: ConditionValueInputPr
 }
 
 function EnumChoices({ label, value, enumValues, onApply }: ConditionValueInputProps): JSX.Element {
-    function toggle(enumValue: EnumValue, isChosen: boolean): void {
-        const otherValues = value.values.filter((chosenValue) => chosenValue !== enumValue);
-        const values = isChosen ? [...otherValues, enumValue] : otherValues;
+    // The chosen values keep the enum's order, whatever order they were checked in.
+    function toggle(enumValue: EnumValue): void {
+        const values = value.values.includes(enumValue)
+            ? value.values.filter((chosenValue) => chosenValue !== enumValue)
+            : [...value.values, enumValue];
 
         onApply({ values: enumValues.filter((candidate) => values.includes(candidate)) });
     }
@@ -87,7 +89,7 @@ function EnumChoices({ label, value, enumValues, onApply }: ConditionValueInputP
                     <input
                         type="checkbox"
                         checked={value.values.includes(enumValue)}
-                        onChange={(event) => toggle(enumValue, event.target.checked)}
+                        onChange={() => toggle(enumValue)}
                     />
                     {String(enumValue)}
                 </label>
