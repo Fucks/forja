@@ -1,6 +1,6 @@
 import { listUpstreamNodes } from "@/engine/graph_queries.js";
 import { CONDITION_PATH_SEPARATOR, lookUpPath } from "@/shared/conditions.js";
-import type { DataContext, DataRoot } from "@/shared/data_context.js";
+import { type DataContext, NODES_ROOT } from "@/shared/data_context.js";
 import type { FlowGraph, FlowGroup, FlowNode, NodeOfType, Port } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
@@ -191,8 +191,6 @@ interface KnownVariables {
     paths: Set<string>;
     upstreamNodeSlugs: Set<string>;
 }
-
-const NODES_ROOT: DataRoot = "nodes";
 
 export function checkPromptVariables(node: AgentNode, graph: FlowGraph): ValidationIssue[] {
     const known: KnownVariables = {

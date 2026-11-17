@@ -15,12 +15,10 @@ import {
 } from "@/engine/validation_rules/validation_issues.js";
 import { assertNever } from "@/lib/assert_never.js";
 import { type Condition, CONDITION_PATH_SEPARATOR } from "@/shared/conditions.js";
-import type { DataRoot } from "@/shared/data_context.js";
+import { NODES_ROOT } from "@/shared/data_context.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
-
-const NODES_ROOT: DataRoot = "nodes";
 
 type CycleNodeIds = [firstNodeId: string, ...otherNodeIds: string[]];
 

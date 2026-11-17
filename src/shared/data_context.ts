@@ -1,5 +1,6 @@
 export const DATA_ROOTS = ["item", "inputs", "nodes", "run", "project"] as const;
 export type DataRoot = (typeof DATA_ROOTS)[number];
+export const NODES_ROOT: DataRoot = "nodes";
 
 export type NodeOutputsBySlug = Record<string, Record<string, unknown>>;
 
