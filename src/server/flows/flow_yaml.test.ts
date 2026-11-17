@@ -1,9 +1,12 @@
+import { stringify } from "yaml";
+
 import { DomainValidationError } from "@/server/errors.js";
 import { FlowFileError, flowFileName, flowToYaml, yamlToFlow } from "@/server/flows/flow_yaml.js";
 import type { FlowFile } from "@/server/flows/flow_yaml.js";
 import type { FlowGraph, Position } from "@/shared/flow_graph.js";
 import { normalizeFlowGraph } from "@/shared/normalize_flow_graph.js";
 import { buildCanonicalFlow, buildLoopFlow } from "@/test/factories/flow_graph_factory.js";
+import standardFlowV1 from "@/test/fixtures/standard_flow_v1.json" with { type: "json" };
 
 const EXPORTED_AT = "2026-11-08T12:00:00.000Z";
 
@@ -58,6 +61,12 @@ describe("flowToYaml and yamlToFlow", () => {
 });
 
 describe("flowToYaml", () => {
+    it("writes the graph in schemaVersion 2", () => {
+        const yaml = flowToYaml(buildFlowFile(buildCanonicalFlow()));
+
+        expect(yaml).toMatch(/^ {2}schemaVersion: 2$/m);
+    });
+
     it("writes the same text for the same graph in a different order", () => {
         const graph = buildCanonicalFlow();
         const shuffled: FlowGraph = {
@@ -130,6 +139,21 @@ describe("flowToYaml", () => {
 });
 
 describe("yamlToFlow", () => {
+    it("reads a v1 file of a template and migrates its graph to v2", () => {
+        const yamlV1 = stringify({
+            forja: 1,
+            name: "Revisão em loop",
+            exportedAt: EXPORTED_AT,
+            graph: standardFlowV1,
+        });
+
+        const file = yamlToFlow(yamlV1);
+
+        const openPullRequest = file.graph.nodes.find((node) => node.id === "open_pr");
+        expect(file.graph.schemaVersion).toBe(2);
+        expect(openPullRequest?.config).toMatchObject({ bodyFrom: "inputs.summary" });
+    });
+
     it("rejects a file of an unknown forja version", () => {
         const yaml = flowToYaml(buildFlowFile(buildCanonicalFlow())).replace(
             "forja: 1",
