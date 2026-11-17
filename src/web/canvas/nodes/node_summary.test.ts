@@ -51,12 +51,31 @@ describe("summarizeNode", () => {
         expect(summary.line2).toBe("sem workspace · até 1 iteração");
     });
 
-    it("shows a short script command whole", () => {
-        const script = buildNode("script", { command: "npm test" });
+    it("shows a short script command whole, running in the item container", () => {
+        const script = buildNode("script", {
+            command: "npm test",
+            runIn: "item",
+            onFailure: "fail",
+        });
 
         const summary = summarizeNode(script);
 
-        expect(summary).toEqual({ line1: "npm test" });
+        expect(summary).toEqual({ line1: "npm test", line2: "container do item · falha se ≠ 0" });
+    });
+
+    it("tells that an isolated script continues when the command fails", () => {
+        const script = buildNode("script", {
+            command: "./report.sh",
+            runIn: "isolated",
+            onFailure: "continue",
+        });
+
+        const summary = summarizeNode(script);
+
+        expect(summary).toEqual({
+            line1: "./report.sh",
+            line2: "container isolado · continua se ≠ 0",
+        });
     });
 
     it("truncates the script command at 40 characters", () => {

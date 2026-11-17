@@ -23,7 +23,7 @@
 
 ## Tasks
 
-- [ ] 1. Test + implement the script summary with `runIn` and `onFailure` — `node_summary.ts`, `node_summary.test.ts`
+- [x] 1. Test + implement the script summary with `runIn` and `onFailure` — `node_summary.ts`, `node_summary.test.ts`
 - [ ] 2. `SCRIPT_PRESETS` contract — `script_presets.ts`
 - [ ] 3. `PromptEditor` shell mode (label, no markdown, 4–12 lines) and `replaceAll` handle — `prompt_editor.tsx`, `prompt_editor_extensions.ts`
 - [ ] 4. Move the ScriptInspector tests to `script_inspector.test.tsx`; command in the shell editor with Inserir dado, the {{…}} notice and the docs link — `script_command_field.tsx`, `script_inspector.tsx`
