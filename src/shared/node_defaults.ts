@@ -50,8 +50,8 @@ const NODE_TEMPLATES: { [Type in NodeType]: NodeTemplate<Type> } = {
         type: "script",
         label: "Script",
         inputs: [requiredPort("item", "workItem")],
-        outputs: [requiredPort("result", "json")],
-        config: scriptConfigSchema.parse({ command: "" }),
+        outputs: [requiredPort("result", "json"), requiredPort("output", "text")],
+        config: scriptConfigSchema.parse({ command: "", onFailure: "fail" }),
     },
     condition: {
         type: "condition",

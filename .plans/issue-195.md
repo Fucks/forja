@@ -31,7 +31,7 @@
 - [x] 2. Docker workspace exec: env merge, cwd (`-w`), shell, separate stderr — `docker_workspace.ts`,
       `container_manager.ts`, `workspace_layout.ts`, tests
 - [x] 3. Docker `execHeadless` in an ephemeral container with the repo read-only — `docker_agent_runtime.ts`, test
-- [ ] 4. New script config contract (constants, env var schema, defaults, old `workspace` dropped)
+- [x] 4. New script config contract (constants, env var schema, defaults, old `workspace` dropped)
       — `script_config.ts`, test
 - [ ] 5. Test + implement `renderCommand` with shell-quoting and missing variable error
       — `script_environment.ts`, `script_environment.test.ts`
@@ -41,10 +41,10 @@
 - [ ] 8. Executor: `ScriptResult`, `output` port, `onFailure` (`script_failed`), runIn item/isolated, parseOutput,
       masking — `script_executor.ts`, `script_executor.test.ts`, `error_mapping.ts`, `node_run_state.ts`,
       `retry_policy.ts`, labels; move script tests from `deterministic_executors.test.ts`
-- [ ] 9. Defaults + templates keep loop green — `node_defaults.ts`, `review_loop.ts`, `flow_graph_factory.ts`
+- [x] 9. Defaults + templates keep loop green — `node_defaults.ts`, `review_loop.ts`, `flow_graph_factory.ts`
 - [ ] 10. Output shapes for `script.result` (with `data: object`) and `script.output` — `node_output_shapes.ts`,
       `available_data.test.ts`
 - [ ] 11. Validation: item required only with `runIn: "item"`; empty command, `image` without isolated,
       duplicated env name — `port_rules.ts`, `graph_validation.ts`, `graph_validation.test.ts`
-- [ ] 12. Docs: `script_doc.ts` and regenerated `docs/nos/script.md`
+- [x] 12. Docs: `script_doc.ts` and regenerated `docs/nos/script.md`
 - [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)
