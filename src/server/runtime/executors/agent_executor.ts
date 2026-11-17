@@ -14,7 +14,7 @@ import { assertNever } from "@/lib/assert_never.js";
 import { acquireItemWorkspace } from "@/server/runtime/executors/item_workspace.js";
 import { asNodeOfType } from "@/server/runtime/executors/node_of_type.js";
 import type { NodeExecutionContext, NodeExecutionResult } from "@/server/runtime/node_executors.js";
-import { buildHeadlessSpec, buildPromptContext } from "@/server/runtime/run_context.js";
+import { buildDataContext, buildHeadlessSpec } from "@/server/runtime/run_context.js";
 import { resolveAgentDefaults } from "@/server/settings/resolve_agent_defaults.js";
 
 const SECONDS_PER_MINUTE = 60;
@@ -133,7 +133,7 @@ function materializeNodeToolProfile(
 }
 
 function renderNodePrompt(context: NodeExecutionContext, node: AgentNode): string {
-    return renderPrompt(node.config.prompt, buildPromptContext(context));
+    return renderPrompt(node.config.prompt, buildDataContext(context));
 }
 
 function appendProjectConventions(prompt: string, systemPrompt: string): string {

@@ -35,7 +35,7 @@ import {
     type SchedulerHarnessOptions,
 } from "@/test/factories/scheduler_harness.js";
 
-const APPROVED: Condition = { op: "eq", path: "approved", value: true };
+const APPROVED: Condition = { op: "eq", path: "inputs.value.approved", value: true };
 const RUNTIME_ERROR: NodeRunError = { kind: "runtime", message: "boom" };
 const FAILED_FOR_GOOD: NodeOutcome = { kind: "fail", error: RUNTIME_ERROR };
 const WORKSPACE_DOWN: NodeRunError = { kind: "workspace", message: "Docker parado" };
@@ -80,6 +80,19 @@ describe("scheduler: DAG per item", () => {
         expect(startsOfB.map((command) => command.inputs)).toEqual([
             { context: "a/1.summary" },
             { context: "a/2.summary" },
+        ]);
+    });
+
+    it("gives B the outputs of the upstream nodes by slug, from the run of the same item", () => {
+        const harness = createSchedulerHarness({ graph: buildLinearAgentFlow() });
+
+        harness.start(["1", "2"]);
+        harness.runToCompletion();
+
+        const startsOfB = harness.startCommandsOf("b");
+        expect(startsOfB.map((command) => command.upstreamOutputs.a?.summary)).toEqual([
+            "a/1.summary",
+            "a/2.summary",
         ]);
     });
 

@@ -2,14 +2,19 @@ import { findGroup, type LoopGroup } from "@/engine/graph_queries.js";
 import {
     decideAfterIteration,
     iterationData,
+    type LoopIterationData,
     type LoopInstanceState,
     startLoop,
 } from "@/engine/loop_group.js";
-import type { Condition } from "@/shared/conditions.js";
+import { type Condition, evaluateCondition } from "@/shared/conditions.js";
+import { parseFlowGraph } from "@/shared/flow_graph.js";
 import { buildLoopFlow } from "@/test/factories/flow_graph_factory.js";
+import standardFlowV1 from "@/test/fixtures/standard_flow_v1.json" with { type: "json" };
 
-const REVIEW_APPROVED: Condition = { op: "eq", path: "revisar.approved", value: true };
+const REVIEW_APPROVED: Condition = { op: "eq", path: "nodes.revisar.approved", value: true };
 const NOTES_PORT = "notes";
+// The until of the review loop in the v1 fixture, which read the node slugs at the root.
+const UNTIL_V1: Condition = { op: "eq", path: "revisar.result.approved", value: true };
 
 describe("startLoop", () => {
     it("starts at iteration 1 with the cap of the group and nothing carried", () => {
@@ -27,7 +32,7 @@ describe("startLoop", () => {
 });
 
 describe("iterationData", () => {
-    it("names the outputs of each loop node by the slug of its label", () => {
+    it("puts the outputs of each loop node under nodes, by the slug of its label", () => {
         const graph = buildLoopFlow();
 
         const data = iterationData(graph, reviewLoopOf(graph), {
@@ -37,9 +42,11 @@ describe("iterationData", () => {
         });
 
         expect(data).toEqual({
-            desenvolver: { summary: "feito" },
-            testes: { result: { exitCode: 1 } },
-            revisar: { approved: false, notes: "faltam testes" },
+            nodes: {
+                desenvolver: { summary: "feito" },
+                testes: { result: { exitCode: 1 } },
+                revisar: { approved: false, notes: "faltam testes" },
+            },
         });
     });
 
@@ -51,7 +58,7 @@ describe("iterationData", () => {
             review: { approved: true },
         });
 
-        expect(data).toEqual({ revisar: { approved: true } });
+        expect(data).toEqual({ nodes: { revisar: { approved: true } } });
     });
 });
 
@@ -95,7 +102,7 @@ describe("decideAfterIteration", () => {
 
     it("replaces the carry with the values of the last iteration", () => {
         const state = runningLoop({ iteration: 1, carry: { notes: "antigas", other: 1 } });
-        const data = { revisar: { approved: false, notes: "novas" } };
+        const data = { nodes: { revisar: { approved: false, notes: "novas" } } };
 
         const decision = decideAfterIteration(state, REVIEW_APPROVED, data, [NOTES_PORT]);
 
@@ -104,11 +111,33 @@ describe("decideAfterIteration", () => {
 
     it("leaves out a carry port that no node produced in the iteration", () => {
         const state = runningLoop({ iteration: 1 });
-        const data = { revisar: { approved: false } };
+        const data = { nodes: { revisar: { approved: false } } };
 
         const decision = decideAfterIteration(state, REVIEW_APPROVED, data, [NOTES_PORT]);
 
         expect(decision.state.carry).toEqual({});
+    });
+});
+
+describe("a v1 until migrated to nodes", () => {
+    it("exits on the same iteration as before the migration", () => {
+        const graph = parseFlowGraph(standardFlowV1);
+        const reviewLoop = findGroup(graph, "review_loop");
+        if (reviewLoop?.kind !== "loop") {
+            throw new Error("the standard flow has no review_loop loop group");
+        }
+        const reviewOutputs = { review: { result: { approved: true } } };
+        const outputsV1 = { revisar: { result: { approved: true } } };
+
+        const decision = decideAfterIteration(
+            runningLoop({ iteration: 1 }),
+            reviewLoop.config.until,
+            iterationData(graph, reviewLoop, reviewOutputs),
+            [],
+        );
+
+        expect(evaluateCondition(UNTIL_V1, outputsV1)).toBe(true);
+        expect(decision.next).toBe("exit");
     });
 });
 
@@ -133,9 +162,11 @@ function runningLoop(overrides: Partial<LoopInstanceState>): LoopInstanceState {
     };
 }
 
-function reviewData(isApproved: boolean): Record<string, unknown> {
+function reviewData(isApproved: boolean): LoopIterationData {
     return {
-        testes: { result: { exitCode: 0 } },
-        revisar: { approved: isApproved, notes: "faltam testes" },
+        nodes: {
+            testes: { result: { exitCode: 0 } },
+            revisar: { approved: isApproved, notes: "faltam testes" },
+        },
     };
 }

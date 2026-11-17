@@ -92,6 +92,25 @@ export function topologicalOrder(graph: FlowGraph): string[] {
     return sortTopologically([...nodeIds], forwardEdges);
 }
 
+// Every node with a path to the node, nearest first; the node itself is left out.
+export function listUpstreamNodes(graph: FlowGraph, nodeId: string): FlowNode[] {
+    const visitedIds = new Set([nodeId]);
+    const upstreamNodes: FlowNode[] = [];
+    let frontierIds = [nodeId];
+
+    while (frontierIds.length > 0) {
+        frontierIds = listSourceNodeIds(graph, frontierIds).filter((id) => !visitedIds.has(id));
+        frontierIds.forEach((id) => visitedIds.add(id));
+        upstreamNodes.push(...frontierIds.flatMap((id) => findNode(graph, id) ?? []));
+    }
+
+    return upstreamNodes;
+}
+
+function listSourceNodeIds(graph: FlowGraph, nodeIds: string[]): string[] {
+    return nodeIds.flatMap((id) => incomingEdges(graph, id).map((edge) => edge.from.nodeId));
+}
+
 export function areTypesCompatible(from: PortType, to: PortType): boolean {
     return from === "any" || to === "any" || from === to;
 }

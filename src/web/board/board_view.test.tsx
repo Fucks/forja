@@ -27,7 +27,7 @@ const EMPTY_TIMELINE: ItemTimeline = { entries: [], totalCostUsd: 0 };
 
 const ITEM = buildWorkItem({ id: "itm_42", number: 42, title: "Tela de login" });
 const COLUMNS = deriveColumns(buildCanonicalFlow());
-const EMPTY_GRAPH: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+const EMPTY_GRAPH: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 
 const NODE_RUN_UPDATED: EventEnvelope = {
     id: 1,

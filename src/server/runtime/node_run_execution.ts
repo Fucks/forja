@@ -25,6 +25,7 @@ import type { RunToolProfiles } from "@/server/runtime/run_tool_profiles.js";
 import { UnsupportedNodeTypeError } from "@/server/runtime/unsupported_node_type_error.js";
 import type { WorkspacePool } from "@/server/runtime/workspace_pool.js";
 import type { NewUsageRecord, UsageService } from "@/server/usage/usage_service.js";
+import type { NodeOutputsBySlug } from "@/shared/data_context.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import type { Project } from "@/shared/project_types.js";
 import type { ProjectSettings } from "@/shared/settings_types.js";
@@ -36,6 +37,7 @@ export interface NodeRunExecutionDeps {
     run: RunRecord;
     nodeRun: NodeRunState;
     inputs: Record<string, unknown>;
+    upstreamOutputs: NodeOutputsBySlug;
     item?: WorkItemSnapshot;
     runItems: WorkItemSnapshot[];
     graph: FlowGraph;
@@ -117,6 +119,7 @@ export class NodeRunExecution {
             node,
             graph: deps.graph,
             inputs: deps.inputs,
+            upstreamOutputs: deps.upstreamOutputs,
             item: deps.item,
             runItems: deps.runItems,
             project: deps.project,

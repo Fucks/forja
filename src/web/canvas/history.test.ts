@@ -3,7 +3,7 @@ import { createHistory } from "@/web/canvas/history.js";
 
 // Each graph is a distinct object, so the assertions tell them apart by identity.
 function buildGraph(): FlowGraph {
-    return { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+    return { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 }
 
 const FIRST = buildGraph();

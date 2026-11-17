@@ -8,7 +8,11 @@ import {
     findGroupOverlaps,
     findMapListInputProblems,
 } from "@/engine/validation_rules/group_rules.js";
-import { checkTriggerCount, findDuplicateIds } from "@/engine/validation_rules/identity_rules.js";
+import {
+    checkTriggerCount,
+    findDuplicateIds,
+    findDuplicateNodeSlugs,
+} from "@/engine/validation_rules/identity_rules.js";
 import {
     findCyclesOutsideLoops,
     findLoopsWithoutBackEdge,
@@ -35,6 +39,7 @@ type ValidationRule = (graph: FlowGraph, context: ValidationContext) => Validati
 
 const VALIDATION_RULES: ValidationRule[] = [
     findDuplicateIds,
+    findDuplicateNodeSlugs,
     checkTriggerCount,
     findDanglingEdges,
     findUnconnectedRequiredInputs,

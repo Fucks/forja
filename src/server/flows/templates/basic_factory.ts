@@ -53,7 +53,7 @@ function buildBasicFactory(): FlowGraph {
     });
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         nodes: [
             buildManualTrigger(),
             buildSandcastleIssuesSource(),

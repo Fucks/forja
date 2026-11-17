@@ -4,7 +4,7 @@ import { hintPort } from "@/web/canvas/connection_hints.js";
 
 const ORIGIN = { x: 0, y: 0 };
 const GRAPH: FlowGraph = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     nodes: [buildAgent("writer"), buildAgent("reader")],
     edges: [],
     groups: [],

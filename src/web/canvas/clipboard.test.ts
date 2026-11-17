@@ -10,7 +10,7 @@ import type { FlowFragment } from "@/web/canvas/clipboard.js";
 
 const CANONICAL_FLOW = buildCanonicalFlow();
 const LOOP_FLOW = buildLoopFlow();
-const EMPTY_FLOW: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
+const EMPTY_FLOW: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 const PASTE_POINT: Position = { x: 2000, y: 1000 };
 
 function createIdSequence(): () => string {

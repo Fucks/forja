@@ -1,0 +1,427 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "dev",
+            "type": "agent",
+            "label": "Desenvolver",
+            "parentGroupId": "review_loop",
+            "position": {
+                "x": 640,
+                "y": 0
+            },
+            "inputs": [
+                {
+                    "name": "item",
+                    "type": "workItem",
+                    "required": false
+                },
+                {
+                    "name": "context",
+                    "type": "text",
+                    "required": false
+                },
+                {
+                    "name": "notes",
+                    "type": "text",
+                    "required": false
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "result",
+                    "type": "json",
+                    "required": true
+                },
+                {
+                    "name": "summary",
+                    "type": "text",
+                    "required": true
+                }
+            ],
+            "config": {
+                "prompt": "Trabalhe no item {{item.title}}.",
+                "maxIterations": 50,
+                "expandPromptCommands": true,
+                "workspace": "item",
+                "timeoutMinutes": 60,
+                "idleTimeoutMinutes": 10,
+                "retries": 1,
+                "completionSignal": "<promise>COMPLETE</promise>",
+                "toolProfileId": "tlp_builtin_codegraph"
+            }
+        },
+        {
+            "id": "needs_human",
+            "type": "output",
+            "label": "Precisa de humano",
+            "parentGroupId": "items",
+            "position": {
+                "x": 1600,
+                "y": 320
+            },
+            "inputs": [
+                {
+                    "name": "item",
+                    "type": "workItem",
+                    "required": true
+                }
+            ],
+            "outputs": [],
+            "config": {
+                "moveItemTo": "needs_human",
+                "commentOnIssue": false
+            }
+        },
+        {
+            "id": "open_pr",
+            "type": "git",
+            "label": "Abrir PR",
+            "parentGroupId": "items",
+            "position": {
+                "x": 1600,
+                "y": 0
+            },
+            "inputs": [
+                {
+                    "name": "item",
+                    "type": "workItem",
+                    "required": true
+                },
+                {
+                    "name": "body",
+                    "type": "text",
+                    "required": false
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "result",
+                    "type": "json",
+                    "required": true
+                }
+            ],
+            "config": {
+                "action": "open_pr",
+                "draft": false,
+                "bodyFrom": "summary"
+            }
+        },
+        {
+            "id": "output",
+            "type": "output",
+            "label": "Saída",
+            "parentGroupId": "items",
+            "position": {
+                "x": 1600,
+                "y": 160
+            },
+            "inputs": [
+                {
+                    "name": "item",
+                    "type": "workItem",
+                    "required": true
+                },
+                {
+                    "name": "pullRequest",
+                    "type": "json",
+                    "required": false
+                }
+            ],
+            "outputs": [],
+            "config": {
+                "moveItemTo": "done",
+                "commentOnIssue": false
+            }
+        },
+        {
+            "id": "review",
+            "type": "agent",
+            "label": "Revisar",
+            "parentGroupId": "review_loop",
+            "position": {
+                "x": 1280,
+                "y": 0
+            },
+            "inputs": [
+                {
+                    "name": "item",
+                    "type": "workItem",
+                    "required": false
+                },
+                {
+                    "name": "context",
+                    "type": "text",
+                    "required": false
+                },
+                {
+                    "name": "tests",
+                    "type": "json",
+                    "required": true
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "result",
+                    "type": "json",
+                    "required": true
+                },
+                {
+                    "name": "summary",
+                    "type": "text",
+                    "required": true
+                }
+            ],
+            "config": {
+                "prompt": "Trabalhe no item {{item.title}}.",
+                "maxIterations": 1,
+                "expandPromptCommands": true,
+                "workspace": "item",
+                "timeoutMinutes": 60,
+                "idleTimeoutMinutes": 10,
+                "retries": 1,
+                "effort": "high",
+                "outputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "approved": {
+                            "type": "boolean"
+                        },
+                        "notes": {
+                            "type": "string"
+                        }
+                    },
+                    "required": ["approved", "notes"]
+                }
+            }
+        },
+        {
+            "id": "source",
+            "type": "source",
+            "label": "Fonte",
+            "position": {
+                "x": 320,
+                "y": 0
+            },
+            "inputs": [
+                {
+                    "name": "trigger",
+                    "type": "any",
+                    "required": false
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "items",
+                    "type": "workItemList",
+                    "required": true
+                }
+            ],
+            "config": {
+                "provider": "github",
+                "state": "open",
+                "limit": 20,
+                "skipBlocked": true,
+                "label": "Sandcastle"
+            }
+        },
+        {
+            "id": "tests",
+            "type": "script",
+            "label": "Testes",
+            "parentGroupId": "review_loop",
+            "position": {
+                "x": 960,
+                "y": 0
+            },
+            "inputs": [
+                {
+                    "name": "item",
+                    "type": "workItem",
+                    "required": true
+                },
+                {
+                    "name": "changes",
+                    "type": "text",
+                    "required": false
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "result",
+                    "type": "json",
+                    "required": true
+                }
+            ],
+            "config": {
+                "command": "npm run test",
+                "timeoutMinutes": 15,
+                "workspace": "item"
+            }
+        },
+        {
+            "id": "trigger",
+            "type": "trigger",
+            "label": "Gatilho",
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "items",
+                    "type": "workItemList",
+                    "required": false
+                }
+            ],
+            "config": {
+                "kind": "manual"
+            }
+        }
+    ],
+    "groups": [
+        {
+            "id": "items",
+            "kind": "map",
+            "label": "Por item",
+            "position": {
+                "x": 608,
+                "y": -32
+            },
+            "size": {
+                "width": 1264,
+                "height": 484
+            },
+            "config": {
+                "concurrency": 2,
+                "barrier": false,
+                "failFast": false
+            }
+        },
+        {
+            "id": "review_loop",
+            "kind": "loop",
+            "label": "Revisar até aprovar",
+            "parentGroupId": "items",
+            "position": {
+                "x": 624,
+                "y": -16
+            },
+            "size": {
+                "width": 912,
+                "height": 452
+            },
+            "config": {
+                "maxIterations": 3,
+                "until": {
+                    "op": "eq",
+                    "path": "revisar.result.approved",
+                    "value": true
+                },
+                "carry": ["notes"]
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "dev.summary->review.context",
+            "from": {
+                "nodeId": "dev",
+                "port": "summary"
+            },
+            "to": {
+                "nodeId": "review",
+                "port": "context"
+            }
+        },
+        {
+            "id": "dev.summary->tests.changes",
+            "from": {
+                "nodeId": "dev",
+                "port": "summary"
+            },
+            "to": {
+                "nodeId": "tests",
+                "port": "changes"
+            }
+        },
+        {
+            "id": "open_pr.result->output.pullRequest",
+            "from": {
+                "nodeId": "open_pr",
+                "port": "result"
+            },
+            "to": {
+                "nodeId": "output",
+                "port": "pullRequest"
+            }
+        },
+        {
+            "id": "review.summary->dev.notes",
+            "from": {
+                "nodeId": "review",
+                "port": "summary"
+            },
+            "to": {
+                "nodeId": "dev",
+                "port": "notes"
+            }
+        },
+        {
+            "id": "review.summary->open_pr.body",
+            "from": {
+                "nodeId": "review",
+                "port": "summary"
+            },
+            "to": {
+                "nodeId": "open_pr",
+                "port": "body"
+            }
+        },
+        {
+            "id": "review_loop.exhausted->needs_human.item",
+            "from": {
+                "nodeId": "review_loop",
+                "port": "exhausted"
+            },
+            "to": {
+                "nodeId": "needs_human",
+                "port": "item"
+            }
+        },
+        {
+            "id": "source.items->dev.item",
+            "from": {
+                "nodeId": "source",
+                "port": "items"
+            },
+            "to": {
+                "nodeId": "dev",
+                "port": "item"
+            }
+        },
+        {
+            "id": "tests.result->review.tests",
+            "from": {
+                "nodeId": "tests",
+                "port": "result"
+            },
+            "to": {
+                "nodeId": "review",
+                "port": "tests"
+            }
+        },
+        {
+            "id": "trigger.items->source.trigger",
+            "from": {
+                "nodeId": "trigger",
+                "port": "items"
+            },
+            "to": {
+                "nodeId": "source",
+                "port": "trigger"
+            }
+        }
+    ]
+}

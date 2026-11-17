@@ -47,8 +47,10 @@ import {
     type WorkItemRef,
 } from "@/engine/scheduler_types.js";
 import { computeResumeAt } from "@/engine/usage_pause.js";
+import { collectUpstreamOutputs } from "@/engine/upstream_outputs.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { ApprovalDecision } from "@/shared/approval_types.js";
+import type { NodeOutputsBySlug } from "@/shared/data_context.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 
@@ -833,7 +835,8 @@ class DagScheduler implements Scheduler {
         const inputs = resolution.kind === "ready" ? resolution.inputs : {};
         const running = transitionNodeRun(nodeRun, "RUNNING", now, { inputs });
         this.changeNodeRun(running);
-        this.outbox.push({ type: "start_node_run", nodeRun: running, inputs });
+        const upstreamOutputs = this.collectUpstreamOutputsOf(running);
+        this.outbox.push({ type: "start_node_run", nodeRun: running, inputs, upstreamOutputs });
         this.scheduleWakeupAtDeadline(running);
     }
 
@@ -882,6 +885,15 @@ class DagScheduler implements Scheduler {
                 mapGroupOf: (nodeId) => this.mapGroups.mapGroupOf(nodeId),
                 loops: this.loops,
             },
+        );
+    }
+
+    private collectUpstreamOutputsOf(nodeRun: NodeRunState): NodeOutputsBySlug {
+        return collectUpstreamOutputs(
+            this.plan.graph,
+            nodeRun.nodeId,
+            nodeRun.workItemId,
+            (nodeId, workItemId) => this.nodeRuns.find(nodeId, workItemId),
         );
     }
 

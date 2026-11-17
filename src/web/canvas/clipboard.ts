@@ -1,11 +1,11 @@
 import type { z } from "zod";
 
 import { enclosingGroups, groupAncestors } from "@/engine/graph_queries.js";
-import { flowGraphSchema } from "@/shared/flow_graph.js";
+import { currentFlowGraphSchema } from "@/shared/flow_graph.js";
 import type { FlowEdge, FlowGraph, Position } from "@/shared/flow_graph.js";
 import { boundingFrame, nodeFrame } from "@/web/canvas/group_frame_geometry.js";
 
-const flowFragmentSchema = flowGraphSchema.pick({ nodes: true, edges: true, groups: true });
+const flowFragmentSchema = currentFlowGraphSchema.pick({ nodes: true, edges: true, groups: true });
 export type FlowFragment = z.infer<typeof flowFragmentSchema>;
 
 export interface PastedFragment {

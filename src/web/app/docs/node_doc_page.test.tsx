@@ -48,7 +48,7 @@ describe("NodeDocPage", () => {
         renderAppAt("/docs/nodes/condition");
 
         const example = screen.getByRole("heading", { level: 3, name: "Testes passaram?" });
-        expect(example.parentElement).toHaveTextContent('"path": "exitCode"');
+        expect(example.parentElement).toHaveTextContent('"path": "inputs.value.exitCode"');
     });
 
     it("links the related nodes to their pages", () => {

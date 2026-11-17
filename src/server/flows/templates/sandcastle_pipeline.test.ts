@@ -79,7 +79,7 @@ describe("Pipeline Sandcastle template", () => {
     it("sends an item without commits to a human before the review", () => {
         expect(findNode(graph, "has_commits")).toMatchObject({
             label: "Fez commits?",
-            config: { condition: { op: "gt", path: "commits", value: 0 } },
+            config: { condition: { op: "gt", path: "inputs.value.commits", value: 0 } },
         });
         expect(findNode(graph, "needs_human_without_commits")).toMatchObject({
             config: { moveItemTo: "needs_human", commentOnIssue: true },
@@ -118,10 +118,10 @@ describe("Pipeline Sandcastle template", () => {
     it("opens the pull request with the evidence body only when the checks passed", () => {
         expect(findNode(graph, "checks_passed")).toMatchObject({
             label: "Checks passaram?",
-            config: { condition: { op: "eq", path: "checksPassed", value: true } },
+            config: { condition: { op: "eq", path: "inputs.value.checksPassed", value: true } },
         });
         expect(findNode(graph, "open_pr")).toMatchObject({
-            config: { action: "open_pr", bodyFrom: "evidence.body" },
+            config: { action: "open_pr", bodyFrom: "inputs.evidence.body" },
         });
         expect(findNode(graph, "output")).toMatchObject({ config: { moveItemTo: "done" } });
         expect(findNode(graph, "needs_human_failed_checks")).toMatchObject({

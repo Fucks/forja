@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { conditionSchema } from "@/shared/conditions.js";
 import { jsonSchemaSchema } from "@/shared/json_schema.js";
+import { FLOW_SCHEMA_VERSION, migrateFlowGraph } from "@/shared/migrate_flow_graph.js";
 import { agentConfigSchema } from "@/shared/node_configs/agent_config.js";
 import { conditionConfigSchema } from "@/shared/node_configs/condition_config.js";
 import { gateConfigSchema } from "@/shared/node_configs/gate_config.js";
@@ -139,13 +140,16 @@ export const flowGroupSchema = z.discriminatedUnion("kind", [
 ]);
 export type FlowGroup = z.infer<typeof flowGroupSchema>;
 
-export const flowGraphSchema = z.object({
-    schemaVersion: z.literal(1),
+export const currentFlowGraphSchema = z.object({
+    schemaVersion: z.literal(FLOW_SCHEMA_VERSION),
     nodes: z.array(flowNodeSchema),
     edges: z.array(flowEdgeSchema),
     groups: z.array(flowGroupSchema),
 });
-export type FlowGraph = z.infer<typeof flowGraphSchema>;
+
+// Graphs stored or exported in an older version are migrated as they are read.
+export const flowGraphSchema = z.preprocess(migrateFlowGraph, currentFlowGraphSchema);
+export type FlowGraph = z.output<typeof flowGraphSchema>;
 
 export interface FlowGraphParseIssue {
     path: string;

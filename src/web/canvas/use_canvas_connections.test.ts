@@ -110,7 +110,7 @@ describe("useCanvasConnections", () => {
 function buildAgents(ids: string[]): FlowGraph {
     const nodes: FlowNode[] = ids.map((id) => createDefaultNode("agent", id, ORIGIN));
 
-    return { schemaVersion: 1, nodes, edges: [], groups: [] };
+    return { schemaVersion: 2, nodes, edges: [], groups: [] };
 }
 
 function createStoreWith(graph: FlowGraph): EditorStore {
