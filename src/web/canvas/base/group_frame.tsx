@@ -21,6 +21,7 @@ export interface GroupFrameProps {
     progress?: GroupProgress;
     selected?: boolean;
     invalid?: boolean;
+    isEmpty?: boolean;
     /** Shown in the tooltip of the invalid marker. */
     issueMessages?: string[];
 }
@@ -32,6 +33,7 @@ export const GROUP_KIND_ICONS: Record<GroupKind, LucideIcon> = {
 
 const KIND_ICON_SIZE_PX = 14;
 const COUNTER_SEPARATOR = " · ";
+const EMPTY_GROUP_HINT = "Arraste nós para dentro";
 
 export function GroupFrame({
     kind,
@@ -40,6 +42,7 @@ export function GroupFrame({
     progress,
     selected,
     invalid,
+    isEmpty,
     issueMessages,
 }: GroupFrameProps): JSX.Element {
     const KindIcon = GROUP_KIND_ICONS[kind];
@@ -61,6 +64,7 @@ export function GroupFrame({
                     {invalid && <InvalidMarker messages={issueMessages} />}
                 </div>
                 {progress && <span className="text-muted">{formatGroupProgress(progress)}</span>}
+                {isEmpty && <span className="text-muted">{EMPTY_GROUP_HINT}</span>}
             </div>
         </div>
     );

@@ -47,4 +47,10 @@ describe("GroupFrame", () => {
 
         expect(screen.getByRole("img", { name: "Configuração inválida" })).toBeInTheDocument();
     });
+
+    it("invites to drag nodes into an empty group", () => {
+        render(<GroupFrame kind="map" label="Map" configLabel="map ×1" isEmpty />);
+
+        expect(screen.getByText("Arraste nós para dentro")).toBeInTheDocument();
+    });
 });

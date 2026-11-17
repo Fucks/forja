@@ -10,7 +10,7 @@ Avalia uma regra sobre os dados que chegam na entrada. Se a regra for verdadeira
 
 ## Quando usar
 
-- Para seguir caminhos diferentes quando o Reviewer aprova ou reprova.
+- Para seguir caminhos diferentes conforme o Reviewer aprovar ou reprovar.
 - Para checar se os testes passaram antes de abrir o PR.
 
 ## Quando não usar

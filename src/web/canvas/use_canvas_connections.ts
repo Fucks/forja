@@ -110,7 +110,7 @@ function findRejectedDrop(connectionState: FinalConnectionState): RejectedDrop |
     return { dragged, dropped };
 }
 
-function pointerPosition(event: MouseEvent | TouchEvent): Position {
+export function pointerPosition(event: MouseEvent | TouchEvent): Position {
     if ("changedTouches" in event) {
         const touch = event.changedTouches[0];
         return { x: touch?.clientX ?? 0, y: touch?.clientY ?? 0 };

@@ -18,7 +18,11 @@ export const TRIGGER_INSIDE_GROUP_REASON = "O trigger não pode ficar dentro de 
 // An empty path never matches, so validation reports the loop until the user defines its exit.
 const UNDEFINED_LOOP_CONDITION: Condition = { op: "exists", path: "" };
 
+export const GROUP_KINDS: readonly GroupKind[] = ["map", "loop"];
+
 export const GROUP_KIND_LABELS: Record<GroupKind, string> = { map: "Map", loop: "Loop" };
+
+export const EMPTY_GROUP_SIZE: FlowGroup["size"] = { width: 320, height: 200 };
 
 export class GroupingRejectedError extends Error {
     constructor(readonly reason: string) {
@@ -61,6 +65,23 @@ export function groupNodes(
         frame: frameAround(members.map(nodeFrame)),
     });
     const withGroup = addGroupHolding(graph, group, members);
+
+    return { graph: growAncestorsToContain(withGroup, group.id), groupId: group.id };
+}
+
+export function createEmptyGroup(
+    graph: FlowGraph,
+    kind: GroupKind,
+    position: Position,
+    newId: () => string,
+): { graph: FlowGraph; groupId: string } {
+    const group = createGroup({
+        id: newId(),
+        kind,
+        parentGroupId: findDropGroup(graph, position),
+        frame: { position, size: EMPTY_GROUP_SIZE },
+    });
+    const withGroup = { ...graph, groups: [...graph.groups, group] };
 
     return { graph: growAncestorsToContain(withGroup, group.id), groupId: group.id };
 }

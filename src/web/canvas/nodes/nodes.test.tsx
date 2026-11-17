@@ -209,6 +209,17 @@ describe("canvas node components", () => {
         expect(screen.queryByLabelText("Rodando")).not.toBeInTheDocument();
     });
 
+    it("invites to drag nodes into a group only while it is empty", () => {
+        const developer = createDefaultNode("agent", "dev", { x: 0, y: 0 });
+        renderOnCanvas({
+            groups: [MAP_GROUP, LOOP_GROUP],
+            nodes: [{ ...developer, parentGroupId: MAP_GROUP.id }],
+        });
+
+        const emptyHint = screen.getByText("Arraste nós para dentro");
+        expect(screen.getByRole("group", { name: "Revisão" })).toContainElement(emptyHint);
+    });
+
     it("offers resize handles only on the selected group", () => {
         renderOnCanvas(
             { groups: [MAP_GROUP, { ...MAP_GROUP, id: "other_map" }] },

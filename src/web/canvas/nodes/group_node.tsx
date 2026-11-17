@@ -1,5 +1,5 @@
-import { NodeResizer } from "@xyflow/react";
-import type { NodeProps } from "@xyflow/react";
+import { NodeResizer, useStore } from "@xyflow/react";
+import type { NodeProps, ReactFlowState } from "@xyflow/react";
 import type { JSX } from "react";
 
 import { GroupFrame } from "@/web/canvas/base/group_frame.js";
@@ -17,6 +17,7 @@ export function GroupNode({ data, selected }: NodeProps<GroupRFNode>): JSX.Eleme
     const { progress } = useNodeLiveState(flowGroup.id);
     const isDropTarget = useIsDropTargetGroup(flowGroup.id);
     const { invalid, issueMessages } = useTargetValidation(flowGroup.id);
+    const isEmpty = useStore((state) => !hasChildren(state, flowGroup.id));
 
     return (
         <>
@@ -32,8 +33,13 @@ export function GroupNode({ data, selected }: NodeProps<GroupRFNode>): JSX.Eleme
                 progress={progress}
                 selected={selected || isDropTarget}
                 invalid={invalid}
+                isEmpty={isEmpty}
                 issueMessages={issueMessages}
             />
         </>
     );
+}
+
+function hasChildren({ nodes }: ReactFlowState, groupId: string): boolean {
+    return nodes.some((node) => node.parentId === groupId);
 }

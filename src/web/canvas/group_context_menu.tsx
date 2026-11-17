@@ -1,9 +1,10 @@
 import { Maximize2, Ungroup } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { JSX } from "react";
 
 import type { Position } from "@/shared/flow_graph.js";
+import { useCloseOnOutsideInteraction } from "@/web/canvas/use_close_on_outside_interaction.js";
 import { cn } from "@/web/components/ui/cn.js";
 import { FOCUS_RING_CLASSES } from "@/web/components/ui/control_styles.js";
 
@@ -60,31 +61,4 @@ function GroupMenuItem({
             {label}
         </button>
     );
-}
-
-function useCloseOnOutsideInteraction(
-    menuRef: { current: HTMLElement | null },
-    onClose: () => void,
-): void {
-    useEffect(() => {
-        function closeOnEscape(event: KeyboardEvent): void {
-            if (event.key === "Escape") {
-                onClose();
-            }
-        }
-        function closeOnPointerOutside(event: PointerEvent): void {
-            const isInsideMenu =
-                event.target instanceof Node && menuRef.current?.contains(event.target);
-            if (!isInsideMenu) {
-                onClose();
-            }
-        }
-
-        document.addEventListener("keydown", closeOnEscape);
-        document.addEventListener("pointerdown", closeOnPointerOutside);
-        return () => {
-            document.removeEventListener("keydown", closeOnEscape);
-            document.removeEventListener("pointerdown", closeOnPointerOutside);
-        };
-    }, [menuRef, onClose]);
 }

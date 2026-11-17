@@ -17,6 +17,11 @@ export interface HandleRef {
     type: HandleType;
 }
 
+export const OPPOSITE_HANDLE_TYPES: Record<HandleType, HandleType> = {
+    source: "target",
+    target: "source",
+};
+
 export const ConnectionGraphContext = createContext<FlowGraph | undefined>(undefined);
 
 export function usePortHint(port: string, type: HandleType): PortHint {
@@ -72,7 +77,10 @@ function isSamePort(a: HandleRef, b: HandleRef): boolean {
 }
 
 // A connection dragged out of an input runs backwards: the handle it is dropped on is its origin.
-function orientConnection(draggedHandle: HandleRef, droppedHandle: HandleRef): ConnectionPorts {
+export function orientConnection(
+    draggedHandle: HandleRef,
+    droppedHandle: HandleRef,
+): ConnectionPorts {
     const dragged = toPortRef(draggedHandle);
     const dropped = toPortRef(droppedHandle);
     if (draggedHandle.type === "target") {
