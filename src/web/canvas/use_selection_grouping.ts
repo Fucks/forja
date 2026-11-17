@@ -16,23 +16,24 @@ export function useSelectionGrouping(store: EditorStore): SelectionGrouping {
     const selection = store((state) => state.selection);
     const selectedNodeIds = listSelectedNodeIds(graph, selection);
 
-    function groupSelection(kind: GroupKind): void {
-        const editor = store.getState();
-        const nodeIds = listSelectedNodeIds(editor.graph, editor.selection);
-        if (!canGroup(editor.graph, nodeIds).ok) {
-            return;
-        }
-
-        const groupId = newId("grp");
-        editor.applyGraph((current) => groupNodes(current, nodeIds, kind, () => groupId).graph);
-        editor.select([groupId]);
-    }
-
     return {
         hasSelectedNodes: selectedNodeIds.length > 0,
         verdict: canGroup(graph, selectedNodeIds),
-        groupSelection,
+        groupSelection: (kind) => tryGroupingSelection(store, kind),
     };
+}
+
+export function tryGroupingSelection(store: EditorStore, kind: GroupKind): boolean {
+    const editor = store.getState();
+    const nodeIds = listSelectedNodeIds(editor.graph, editor.selection);
+    if (!canGroup(editor.graph, nodeIds).ok) {
+        return false;
+    }
+
+    const groupId = newId("grp");
+    editor.applyGraph((current) => groupNodes(current, nodeIds, kind, () => groupId).graph);
+    editor.select([groupId]);
+    return true;
 }
 
 // The selection also holds edges and groups; only nodes are grouped.

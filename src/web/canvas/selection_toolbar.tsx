@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 
 import { GROUP_KIND_ICONS } from "@/web/canvas/base/group_frame.js";
+import { GROUP_KINDS } from "@/web/canvas/grouping.js";
 import type { GroupingVerdict, GroupKind } from "@/web/canvas/grouping.js";
 import { GROUPING_SHORTCUT_LABELS } from "@/web/canvas/shortcuts.js";
 import { Button } from "@/web/components/ui/button.js";
@@ -10,7 +11,6 @@ const GROUP_ACTION_LABELS: Record<GroupKind, string> = {
     map: "Agrupar em map",
     loop: "Agrupar em loop",
 };
-const GROUP_KINDS: GroupKind[] = ["map", "loop"];
 
 // aria-disabled instead of disabled: a refused action still takes focus, so its tooltip tells why.
 const REFUSED_ACTION_CLASSES = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50";

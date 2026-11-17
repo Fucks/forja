@@ -12,7 +12,10 @@ import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FlowCanvas, markFlowingEdges } from "@/web/canvas/flow_canvas.js";
 import { toReactFlow } from "@/web/canvas/graph_mapping.js";
 import { MIXED_GROUPS_REASON } from "@/web/canvas/grouping.js";
-import { NODE_TYPE_DRAG_FORMAT } from "@/web/canvas/palette/node_type_drag.js";
+import {
+    GROUP_KIND_DRAG_FORMAT,
+    NODE_TYPE_DRAG_FORMAT,
+} from "@/web/canvas/palette/node_type_drag.js";
 import { SHORTCUTS } from "@/web/canvas/shortcuts.js";
 import {
     DUPLICATE_OFFSET_PX,
@@ -101,6 +104,20 @@ describe("FlowCanvas", () => {
         dropNodeType("script", centerOf(developGroup));
 
         expect(store.getState().graph.nodes.at(-1)?.parentGroupId).toBe(developGroup.id);
+    });
+
+    it("creates an empty map where the dragged Map is dropped", () => {
+        const store = createStoreWith(EMPTY_FLOW);
+        renderCanvas(store);
+
+        fireDragEvent("drop", { x: 40, y: 60 }, { [GROUP_KIND_DRAG_FORMAT]: "map" });
+
+        const { graph, selection } = store.getState();
+        expect(graph.groups).toEqual([
+            expect.objectContaining({ kind: "map", position: { x: 40, y: 60 } }),
+        ]);
+        expect(graph.nodes).toEqual([]);
+        expect(selection).toEqual([graph.groups[0]?.id]);
     });
 
     it("ignores a drop that does not carry a node type", () => {

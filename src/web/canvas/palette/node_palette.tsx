@@ -1,42 +1,59 @@
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { useId, useState } from "react";
 import type { JSX } from "react";
 
-import type { FlowNode, NodeType } from "@/shared/flow_graph.js";
+import type { FlowNode } from "@/shared/flow_graph.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
-import { startDraggingNodeType } from "@/web/canvas/palette/node_type_drag.js";
-import { PALETTE_ITEMS, filterPaletteItems } from "@/web/canvas/palette/palette_items.js";
-import type { PaletteItem } from "@/web/canvas/palette/palette_items.js";
+import { startDraggingPaletteItem } from "@/web/canvas/palette/node_type_drag.js";
+import {
+    filterPaletteItems,
+    groupPaletteItemsByCategory,
+    PALETTE_ITEMS,
+} from "@/web/canvas/palette/palette_items.js";
+import type {
+    PaletteItem,
+    PaletteItemRef,
+    PaletteSection,
+} from "@/web/canvas/palette/palette_items.js";
 import { useAddNode } from "@/web/canvas/palette/use_add_node.js";
 import { cn } from "@/web/components/ui/cn.js";
+import { FOCUS_RING_CLASSES } from "@/web/components/ui/control_styles.js";
 import { Input } from "@/web/components/ui/input.js";
 import { Tooltip } from "@/web/components/ui/tooltip.js";
 
 const ITEM_ICON_SIZE_PX = 16;
+const SECTION_CHEVRON_SIZE_PX = 14;
 
 export function NodePalette({ store }: { store: EditorStore }): JSX.Element {
     const [query, setQuery] = useState("");
     const nodes = store((state) => state.graph.nodes);
-    const { addNodeAtViewportCenter } = useAddNode(store);
-    const visibleItems = filterPaletteItems(PALETTE_ITEMS, query);
+    const { addNodeAtViewportCenter, addGroupAtViewportCenter } = useAddNode(store);
+    const sections = groupPaletteItemsByCategory(filterPaletteItems(PALETTE_ITEMS, query));
+
+    function addAtViewportCenter(item: PaletteItemRef): void {
+        if (item.kind === "group") {
+            addGroupAtViewportCenter(item.type);
+            return;
+        }
+        addNodeAtViewportCenter(item.type);
+    }
 
     return (
         <div className="flex min-h-0 flex-1 flex-col gap-2 px-2 pb-2">
             <PaletteSearchField query={query} onQueryChange={setQuery} />
-            {visibleItems.length === 0 && (
+            {sections.length === 0 && (
                 <p className="px-1 text-sm text-muted">Nenhum nó encontrado</p>
             )}
-            <ul className="flex min-h-0 flex-col gap-1 overflow-y-auto">
-                {visibleItems.map((item) => (
-                    <li key={item.type}>
-                        <PaletteEntry
-                            item={item}
-                            isUnavailable={isSingletonTaken(item, nodes)}
-                            onAdd={addNodeAtViewportCenter}
-                        />
-                    </li>
+            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto">
+                {sections.map((section) => (
+                    <PaletteCategorySection
+                        key={section.category}
+                        section={section}
+                        nodes={nodes}
+                        onAdd={addAtViewportCenter}
+                    />
                 ))}
-            </ul>
+            </div>
         </div>
     );
 }
@@ -66,6 +83,59 @@ function PaletteSearchField({
     );
 }
 
+function PaletteCategorySection({
+    section,
+    nodes,
+    onAdd,
+}: {
+    section: PaletteSection;
+    nodes: FlowNode[];
+    onAdd: (item: PaletteItemRef) => void;
+}): JSX.Element {
+    const labelId = useId();
+    const listId = useId();
+    const [isExpanded, setIsExpanded] = useState(true);
+    const { label, items } = section;
+
+    return (
+        <section aria-labelledby={labelId}>
+            <h3>
+                <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    aria-controls={listId}
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className={cn(
+                        "flex w-full items-center gap-1 rounded-sm px-1 py-0.5 text-xs font-medium tracking-wide text-muted uppercase",
+                        FOCUS_RING_CLASSES,
+                    )}
+                >
+                    <ChevronDown
+                        size={SECTION_CHEVRON_SIZE_PX}
+                        aria-hidden="true"
+                        className={cn("transition-transform", !isExpanded && "-rotate-90")}
+                    />
+                    <span id={labelId}>{label}</span>
+                    <span className="ml-auto font-mono">{items.length}</span>
+                </button>
+            </h3>
+            {isExpanded && (
+                <ul id={listId} className="flex flex-col gap-1">
+                    {items.map((item) => (
+                        <li key={item.type}>
+                            <PaletteEntry
+                                item={item}
+                                isUnavailable={isSingletonTaken(item, nodes)}
+                                onAdd={onAdd}
+                            />
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
+    );
+}
+
 function isSingletonTaken(item: PaletteItem, nodes: FlowNode[]): boolean {
     return item.singleton === true && nodes.some((node) => node.type === item.type);
 }
@@ -77,15 +147,15 @@ function PaletteEntry({
 }: {
     item: PaletteItem;
     isUnavailable: boolean;
-    onAdd: (type: NodeType) => void;
+    onAdd: (item: PaletteItemRef) => void;
 }): JSX.Element {
     const labelId = useId();
     const descriptionId = useId();
-    const { icon: Icon, type, label, description } = item;
+    const { icon: Icon, label, description } = item;
 
     function addUnlessUnavailable(): void {
         if (!isUnavailable) {
-            onAdd(type);
+            onAdd(item);
         }
     }
 
@@ -98,10 +168,11 @@ function PaletteEntry({
             aria-disabled={isUnavailable}
             aria-labelledby={labelId}
             aria-describedby={descriptionId}
-            onDragStart={(event) => startDraggingNodeType(event, type)}
+            onDragStart={(event) => startDraggingPaletteItem(event, item)}
             onClick={addUnlessUnavailable}
             className={cn(
                 "flex w-full items-start gap-2 rounded-sm px-2 py-1.5 text-left",
+                FOCUS_RING_CLASSES,
                 isUnavailable
                     ? "cursor-not-allowed opacity-50"
                     : "cursor-grab hover:bg-surface-raised",

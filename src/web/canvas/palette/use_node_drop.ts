@@ -5,7 +5,10 @@ import type { DragEvent } from "react";
 import type { Position } from "@/shared/flow_graph.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { findDropGroup } from "@/web/canvas/palette/drop_target.js";
-import { isDraggingNodeType, readDraggedNodeType } from "@/web/canvas/palette/node_type_drag.js";
+import {
+    isDraggingPaletteItem,
+    readDraggedPaletteItem,
+} from "@/web/canvas/palette/node_type_drag.js";
 import { useAddNode } from "@/web/canvas/palette/use_add_node.js";
 
 export interface NodeDrop {
@@ -17,7 +20,7 @@ export interface NodeDrop {
 
 export function useNodeDrop(store: EditorStore): NodeDrop {
     const { screenToFlowPosition } = useReactFlow();
-    const { addNodeAtPoint } = useAddNode(store);
+    const { addNodeAtPoint, addGroupAtPoint } = useAddNode(store);
     const [dropTargetGroupId, setDropTargetGroupId] = useState<string | undefined>();
 
     function toFlowPoint(event: DragEvent): Position {
@@ -25,7 +28,7 @@ export function useNodeDrop(store: EditorStore): NodeDrop {
     }
 
     function onDragOver(event: DragEvent): void {
-        if (!isDraggingNodeType(event)) {
+        if (!isDraggingPaletteItem(event)) {
             return;
         }
 
@@ -44,13 +47,17 @@ export function useNodeDrop(store: EditorStore): NodeDrop {
 
     function onDrop(event: DragEvent): void {
         setDropTargetGroupId(undefined);
-        const type = readDraggedNodeType(event);
-        if (!type) {
+        const item = readDraggedPaletteItem(event);
+        if (!item) {
             return;
         }
 
         event.preventDefault();
-        addNodeAtPoint(type, toFlowPoint(event));
+        if (item.kind === "group") {
+            addGroupAtPoint(item.type, toFlowPoint(event));
+            return;
+        }
+        addNodeAtPoint(item.type, toFlowPoint(event));
     }
 
     return { dropTargetGroupId, onDragOver, onDragLeave, onDrop };

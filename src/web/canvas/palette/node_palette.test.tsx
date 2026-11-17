@@ -1,25 +1,74 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
-import { NODE_TYPES } from "@/shared/flow_graph.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import { createEditorStore } from "@/web/canvas/editor_store.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { NodePalette } from "@/web/canvas/palette/node_palette.js";
+import { EMPTY_GROUP_SIZE } from "@/web/canvas/grouping.js";
 import { PALETTE_ITEMS } from "@/web/canvas/palette/palette_items.js";
 import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
 
 describe("NodePalette", () => {
-    it.each(NODE_TYPES)("lists the %s node with its title and tagline from the catalog", (type) => {
+    it.each(PALETTE_ITEMS.map((item) => item.type))(
+        "lists the %s item with its title and tagline from the catalog",
+        (type) => {
+            renderPalette(createStoreWith(EMPTY_GRAPH));
+
+            const { title, tagline } = getNodeDoc(type);
+
+            expect(
+                screen.getByRole("button", { name: title, description: tagline }),
+            ).toBeInTheDocument();
+        },
+    );
+
+    it("shows the categories in order, from Início to Grupos", () => {
         renderPalette(createStoreWith(EMPTY_GRAPH));
 
-        const { title, tagline } = getNodeDoc(type);
+        const sectionNames = screen.getAllByRole("region").map(readAccessibleName);
 
-        expect(
-            screen.getByRole("button", { name: title, description: tagline }),
-        ).toBeInTheDocument();
+        expect(sectionNames).toEqual([
+            "Início",
+            "Buscar trabalho",
+            "IA",
+            "Executar",
+            "Decidir",
+            "Humano",
+            "Entrega",
+            "Fim",
+            "Grupos",
+        ]);
+    });
+
+    it("puts Map and Loop in the Grupos section", () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        const groupsSection = screen.getByRole("region", { name: "Grupos" });
+
+        expect(listEntryNames(groupsSection)).toEqual(["Map", "Loop"]);
+    });
+
+    it("counts the items of each section", () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        const groupsHeader = screen.getByRole("button", { name: /^Grupos/, expanded: true });
+
+        expect(groupsHeader).toHaveTextContent("Grupos2");
+    });
+
+    it("collapses and expands a section from its header", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+        const groupsHeader = screen.getByRole("button", { name: /^Grupos/ });
+
+        await userEvent.click(groupsHeader);
+        expect(screen.queryByRole("button", { name: "Map" })).not.toBeInTheDocument();
+        expect(groupsHeader).toHaveAttribute("aria-expanded", "false");
+
+        await userEvent.click(groupsHeader);
+        expect(screen.getByRole("button", { name: "Map" })).toBeInTheDocument();
     });
 
     it("names the decision, command and human approval nodes in plain words", () => {
@@ -30,10 +79,10 @@ describe("NodePalette", () => {
         expect(screen.getByRole("button", { name: "Aprovação humana" })).toBeInTheDocument();
     });
 
-    it("lists one item per node type", () => {
+    it("lists one item per documented node and group", () => {
         renderPalette(createStoreWith(EMPTY_GRAPH));
 
-        expect(screen.getAllByRole("button")).toHaveLength(PALETTE_ITEMS.length);
+        expect(screen.getAllByRole("listitem")).toHaveLength(PALETTE_ITEMS.length);
     });
 
     it("creates the clicked node type in the draft and selects it", async () => {
@@ -51,27 +100,49 @@ describe("NodePalette", () => {
     it("filters the items by name", async () => {
         renderPalette(createStoreWith(EMPTY_GRAPH));
 
-        await userEvent.type(screen.getByRole("searchbox", { name: "Buscar nós" }), "AGEN");
+        await searchFor("GATILH");
 
-        expect(screen.getAllByRole("button")).toEqual([
-            screen.getByRole("button", { name: "Agente" }),
-        ]);
+        expect(listEntryNames(document.body)).toEqual(["Gatilho"]);
     });
 
     it("filters the items by description", async () => {
         renderPalette(createStoreWith(EMPTY_GRAPH));
 
-        await userEvent.type(screen.getByRole("searchbox", { name: "Buscar nós" }), "branch");
+        await searchFor("branch");
 
-        expect(screen.getAllByRole("button")).toEqual([
-            screen.getByRole("button", { name: "Git" }),
-        ]);
+        expect(listEntryNames(document.body)).toEqual(["Git"]);
+    });
+
+    it("finds the command node by what it is used for", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        await searchFor("testes");
+
+        expect(listEntryNames(document.body)).toContain("Comando");
+    });
+
+    it("finds the human approval and the decision nodes by what they are used for", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        await searchFor("aprovar");
+
+        expect(listEntryNames(document.body)).toEqual(
+            expect.arrayContaining(["Aprovação humana", "Decisão"]),
+        );
+    });
+
+    it("hides the sections without matches while searching", async () => {
+        renderPalette(createStoreWith(EMPTY_GRAPH));
+
+        await searchFor("branch");
+
+        expect(screen.getAllByRole("region").map(readAccessibleName)).toEqual(["Entrega"]);
     });
 
     it("tells when no item matches the search", async () => {
         renderPalette(createStoreWith(EMPTY_GRAPH));
 
-        await userEvent.type(screen.getByRole("searchbox", { name: "Buscar nós" }), "xyz");
+        await searchFor("xyz");
 
         expect(screen.getByText("Nenhum nó encontrado")).toBeInTheDocument();
     });
@@ -106,11 +177,58 @@ describe("NodePalette", () => {
     });
 });
 
+describe("NodePalette groups", () => {
+    it("adds an empty map at the center of the canvas and selects it", async () => {
+        const store = createStoreWith(EMPTY_GRAPH);
+        renderPalette(store);
+
+        await userEvent.click(screen.getByRole("button", { name: "Map" }));
+
+        const { graph, selection } = store.getState();
+        expect(graph.groups).toHaveLength(1);
+        expect(graph.groups[0]).toMatchObject({ kind: "map", size: EMPTY_GROUP_SIZE });
+        expect(selection).toEqual([graph.groups[0]?.id]);
+    });
+
+    it("wraps the two selected nodes in the map", async () => {
+        const store = createStoreWith(GRAPH_WITH_TWO_AGENTS);
+        store.getState().select(["writer", "reviewer"]);
+        renderPalette(store);
+
+        await userEvent.click(screen.getByRole("button", { name: "Map" }));
+
+        const { graph } = store.getState();
+        const [map] = graph.groups;
+        expect(map?.kind).toBe("map");
+        expect(graph.nodes.map((node) => node.parentGroupId)).toEqual([map?.id, map?.id]);
+    });
+
+    it("adds an empty loop when the selection cannot be grouped", async () => {
+        const store = createStoreWith(GRAPH_WITH_TRIGGER);
+        store.getState().select(["trigger"]);
+        renderPalette(store);
+
+        await userEvent.click(screen.getByRole("button", { name: "Loop" }));
+
+        const { graph } = store.getState();
+        expect(graph.groups.map((group) => group.kind)).toEqual(["loop"]);
+        expect(graph.nodes[0]?.parentGroupId).toBeUndefined();
+    });
+});
+
 const EMPTY_GRAPH: FlowGraph = { schemaVersion: 1, nodes: [], edges: [], groups: [] };
 
 const GRAPH_WITH_TRIGGER: FlowGraph = {
     ...EMPTY_GRAPH,
     nodes: [createDefaultNode("trigger", "trigger", { x: 0, y: 0 })],
+};
+
+const GRAPH_WITH_TWO_AGENTS: FlowGraph = {
+    ...EMPTY_GRAPH,
+    nodes: [
+        createDefaultNode("agent", "writer", { x: 0, y: 0 }),
+        createDefaultNode("agent", "reviewer", { x: 300, y: 0 }),
+    ],
 };
 
 function createStoreWith(graph: FlowGraph): EditorStore {
@@ -131,4 +249,20 @@ function renderPalette(store: EditorStore): void {
             <NodePalette store={store} />
         </ReactFlowProvider>,
     );
+}
+
+async function searchFor(query: string): Promise<void> {
+    await userEvent.type(screen.getByRole("searchbox", { name: "Buscar nós" }), query);
+}
+
+function listEntryNames(container: HTMLElement): string[] {
+    return within(container)
+        .queryAllByRole("listitem")
+        .map((entry) => readAccessibleName(within(entry).getByRole("button")));
+}
+
+function readAccessibleName(element: HTMLElement): string {
+    const labelId = element.getAttribute("aria-labelledby") ?? "";
+
+    return document.getElementById(labelId)?.textContent ?? "";
 }

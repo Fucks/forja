@@ -10,7 +10,7 @@ export const conditionDoc: NodeDoc = {
         "item segue por Sim; senão, por Não. O que chegou na entrada passa adiante pelo caminho " +
         "escolhido.",
     whenToUse: [
-        "Para seguir caminhos diferentes quando o Reviewer aprova ou reprova.",
+        "Para seguir caminhos diferentes conforme o Reviewer aprovar ou reprovar.",
         "Para checar se os testes passaram antes de abrir o PR.",
     ],
     whenNotToUse: ["Para esperar a decisão de uma pessoa: use uma Aprovação humana."],
