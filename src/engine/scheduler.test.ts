@@ -35,7 +35,7 @@ import {
     type SchedulerHarnessOptions,
 } from "@/test/factories/scheduler_harness.js";
 
-const APPROVED: Condition = { op: "eq", path: "approved", value: true };
+const APPROVED: Condition = { op: "eq", path: "inputs.value.approved", value: true };
 const RUNTIME_ERROR: NodeRunError = { kind: "runtime", message: "boom" };
 const FAILED_FOR_GOOD: NodeOutcome = { kind: "fail", error: RUNTIME_ERROR };
 const WORKSPACE_DOWN: NodeRunError = { kind: "workspace", message: "Docker parado" };

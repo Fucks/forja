@@ -48,7 +48,7 @@ const EXPECTED_SUMMARIES: Record<NodeType, string> = {
     source: "GitHub · até 20 itens",
     agent: "padrão · effort padrão",
     script: "npm test",
-    condition: "approved = true",
+    condition: "inputs.value.approved = true",
     gate: "Revise o pull request",
     git: "abrir PR",
     output: "Move para Concluído",

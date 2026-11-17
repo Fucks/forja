@@ -43,7 +43,7 @@ export function ConditionRuleRow({
                     aria-label={`Caminho da ${ruleName}`}
                     value={rule.path}
                     list={suggestionListId}
-                    placeholder="review.approved"
+                    placeholder="nodes.review.approved"
                     mono
                     onChange={(event) => onEdit({ path: event.target.value })}
                     onBlur={onBlur}

@@ -56,4 +56,4 @@
 - [x] 15. Suggestions `nodes.<slug>.<port>` for Decisão and Loop using `listUpstreamNodes` —
       `condition_suggestions.ts` (+ test); end-to-end test: a suggested path drives the condition executor
 - [ ] 16. Self-review checklist and feedback loops (typecheck, lint, test)
-- [ ] 17. Default condition path (`node_defaults.ts`) and the paths in test factories in the v2 dialect
+- [x] 17. Default condition path (`node_defaults.ts`) and the paths in test factories in the v2 dialect

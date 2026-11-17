@@ -246,7 +246,7 @@ describe("ConditionInspector", () => {
         expect(inspector.lastChangedNode("condition").config.condition).toEqual({
             op: "and",
             conditions: [
-                { op: "eq", path: "approved", value: true },
+                { op: "eq", path: "inputs.value.approved", value: true },
                 { op: "exists", path: "review.notes" },
             ],
         });

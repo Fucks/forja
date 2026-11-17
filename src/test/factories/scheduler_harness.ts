@@ -398,7 +398,7 @@ function chooseConditionPort(
     inputs: Record<string, unknown>,
 ): Record<string, unknown> {
     const value = inputs[CONDITION_INPUT_PORT];
-    const chosenPort = evaluateCondition(condition, value) ? "true" : "false";
+    const chosenPort = evaluateCondition(condition, { inputs }) ? "true" : "false";
 
     return { [chosenPort]: value };
 }

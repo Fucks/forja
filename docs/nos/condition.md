@@ -48,7 +48,7 @@ Liga o Resultado do Reviewer na entrada e testa se approved é verdadeiro.
 {
   "condition": {
     "op": "eq",
-    "path": "approved",
+    "path": "inputs.value.approved",
     "value": true
   }
 }
@@ -62,7 +62,7 @@ Liga o Resultado de um Comando e testa se exitCode é igual a 0.
 {
   "condition": {
     "op": "eq",
-    "path": "exitCode",
+    "path": "inputs.value.exitCode",
     "value": 0
   }
 }
