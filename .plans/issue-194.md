@@ -28,7 +28,7 @@
 - [x] 2. Engine: `in`, `isEmpty`/`isNotEmpty` (missing path), `minLength`, schema of the new ops — `conditions.ts`, `conditions.test.ts`
 - [x] 3. Technical text of the new operators — `condition_text.ts`, `condition_text.test.ts`
 - [x] 4. `operatorsFor` table by type — `condition_operators.ts`, `condition_operators.test.ts`
-- [ ] 5. Validation `condition_operator_type` (error on boolean `contains`, none for unknown type) — `src/engine/validation_rules/condition_rules.ts`, `graph_validation.ts`, test
+- [x] 5. Validation `condition_operator_type` (error on boolean `contains`, none for unknown type) — `src/engine/validation_rules/condition_rules.ts`, `graph_validation.ts`, test
 - [ ] 6. Rules ↔ condition typed by the field (`notExists`, `in`, text stays text) — `condition_rules.ts`, `condition_rules.test.ts`
 - [ ] 7. Changing the field resets an incompatible operator and value — `condition_rules.ts`, `use_condition_rules.ts`
 - [ ] 8. Rule row with typed operator select and `condition_value_input.tsx` (boolean: no value; enum: multi-select; error under the rule) — `condition_rule_row.tsx`, `condition_editor.tsx`, `condition_editor.test.tsx`

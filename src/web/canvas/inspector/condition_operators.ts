@@ -87,6 +87,7 @@ const OPERATORS_BY_TYPE: Record<DataType, OperatorOption[]> = {
     any: PRESENCE_CHECKS,
 };
 
+const ENUM_VALUE_TYPES: ReadonlySet<DataType> = new Set(["string", "number"]);
 const ENUM_OPERATORS: OperatorOption[] = [
     { id: "eq", label: "é", operator: "eq", valueInput: { kind: "enumChoice" } },
     { id: "neq", label: "não é", operator: "neq", valueInput: { kind: "enumChoice" } },
@@ -112,7 +113,7 @@ export function operatorsFor(
     type: DataType,
     { hasEnumValues = false }: { hasEnumValues?: boolean } = {},
 ): OperatorOption[] {
-    if (hasEnumValues) {
+    if (hasEnumValues && ENUM_VALUE_TYPES.has(type)) {
         return ENUM_OPERATORS;
     }
 

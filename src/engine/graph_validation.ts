@@ -4,6 +4,7 @@ import {
     findUnknownCredentials,
     findUnknownToolProfiles,
 } from "@/engine/validation_rules/agent_rules.js";
+import { findConditionOperatorTypeProblems } from "@/engine/validation_rules/condition_rules.js";
 import {
     findGroupOverlaps,
     findMapListInputProblems,
@@ -52,6 +53,7 @@ const VALIDATION_RULES: ValidationRule[] = [
     findLoopsWithoutBackEdge,
     findLoopsWithoutCondition,
     findUnknownLoopConditionPaths,
+    findConditionOperatorTypeProblems,
     findEmptyPrompts,
     findUnknownToolProfiles,
     findUnknownCredentials,

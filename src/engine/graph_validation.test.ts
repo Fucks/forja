@@ -406,6 +406,57 @@ describe("loop_without_condition", () => {
     });
 });
 
+describe("condition_operator_type", () => {
+    it("refuses 'contém' on a yes/no field and suggests the operators that fit", () => {
+        const graph = addReviewerDecision(buildCanonicalFlow(), {
+            op: "contains",
+            path: "nodes.reviewer.result.approved",
+            value: "true",
+        });
+
+        expect(issuesWithCode(graph, "condition_operator_type")).toEqual([
+            {
+                level: "error",
+                code: "condition_operator_type",
+                message: "‘contém’ não serve para sim/não. Escolha ‘é verdadeiro’ ou ‘é falso’.",
+                target: { kind: "node", id: "check" },
+            },
+        ]);
+    });
+
+    it("checks the fields read through the decision's input, as v1 decisions do", () => {
+        const graph = addReviewerDecision(buildCanonicalFlow(), {
+            op: "gt",
+            path: "inputs.value.notes",
+            value: 1,
+        });
+
+        expect(issuesWithCode(graph, "condition_operator_type")).toHaveLength(1);
+    });
+
+    it("accepts an operator that fits the field", () => {
+        const graph = addReviewerDecision(buildCanonicalFlow(), {
+            op: "and",
+            conditions: [
+                { op: "eq", path: "nodes.reviewer.result.approved", value: true },
+                { op: "contains", path: "nodes.reviewer.result.notes", value: "ok" },
+            ],
+        });
+
+        expect(issuesWithCode(graph, "condition_operator_type")).toEqual([]);
+    });
+
+    it("accepts any operator on a path of unknown type", () => {
+        const graph = addReviewerDecision(buildCanonicalFlow(), {
+            op: "contains",
+            path: "nodes.reviewer.result.missing",
+            value: "a",
+        });
+
+        expect(issuesWithCode(graph, "condition_operator_type")).toEqual([]);
+    });
+});
+
 describe("empty_prompt", () => {
     it("points to an agent whose prompt is blank", () => {
         const graph = updateAgentConfig(buildCanonicalFlow(), "tl", { prompt: "  \n" });
@@ -483,4 +534,13 @@ function updateLoopCondition(graph: FlowGraph, groupId: string, until: Condition
     return updateGroup(graph, groupId, (group) =>
         group.kind === "loop" ? { ...group, config: { ...group.config, until } } : group,
     );
+}
+
+function addReviewerDecision(graph: FlowGraph, condition: Condition): FlowGraph {
+    const decision = createNodeOfType("condition", "check", { x: 0, y: 0 });
+    const withDecision = addNodes(graph, [
+        { ...decision, parentGroupId: "review_and_open_pr", config: { condition } },
+    ]);
+
+    return addEdges(withDecision, [connect(["reviewer", "result"], ["check", "value"])]);
 }

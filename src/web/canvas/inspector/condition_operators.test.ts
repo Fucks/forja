@@ -1,4 +1,5 @@
 import type { DataField, DataType } from "@/engine/available_data.js";
+import { describeOperatorTypeMismatch } from "@/engine/validation_rules/condition_rules.js";
 import {
     findOperatorOption,
     operatorsFor,
@@ -37,6 +38,25 @@ describe("operatorsFor", () => {
         const options = operatorsFor(type);
 
         expect(labelsOf(options)).toEqual(expectedLabels);
+    });
+
+    it.each<DataType>(["boolean", "number", "string", "list", "object"])(
+        "offers only operators the flow validation accepts for a %s",
+        (type) => {
+            const options = [...operatorsFor(type), ...operatorsFor(type, { hasEnumValues: true })];
+
+            const mismatches = options.map(({ operator }) =>
+                describeOperatorTypeMismatch(operator === "notExists" ? "exists" : operator, type),
+            );
+
+            expect(mismatches.filter((mismatch) => mismatch !== undefined)).toEqual([]);
+        },
+    );
+
+    it("offers the usual operators of a list even when its schema lists values", () => {
+        const options = operatorsFor("list", { hasEnumValues: true });
+
+        expect(options).toEqual(operatorsFor("list"));
     });
 
     it("offers the enum operators for a text with a closed list of values", () => {

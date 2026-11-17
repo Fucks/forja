@@ -60,6 +60,19 @@ export function evaluateCondition(condition: Condition, data: unknown): boolean 
     }
 }
 
+/** Every comparison of the condition, however deep it is nested. */
+export function listComparisons(condition: Condition): Comparison[] {
+    switch (condition.op) {
+        case "and":
+        case "or":
+            return condition.conditions.flatMap(listComparisons);
+        case "not":
+            return listComparisons(condition.condition);
+        default:
+            return [condition];
+    }
+}
+
 // A missing value is empty, so only isEmpty holds for it.
 function evaluateComparison(comparison: Comparison, lookup: PathLookup): boolean {
     if (!lookup.isFound) {
