@@ -9,10 +9,15 @@ import { validateFlowGraph } from "@/engine/graph_validation.js";
 import { isNodeOfType, NODE_TYPES } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, FlowNode, NodeType } from "@/shared/flow_graph.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
-import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import {
+    buildCanonicalFlow,
+    connect,
+    createNodeOfType,
+} from "@/test/factories/flow_graph_factory.js";
 import { buildMapGroup } from "@/test/factories/flow_graph_variations.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
+import { ConnectionGraphContext } from "@/web/canvas/connection_hints.js";
 import { toReactFlow } from "@/web/canvas/graph_mapping.js";
 import { ImplicitItemOverlay } from "@/web/canvas/implicit_item_overlay.js";
 import { nodeTypes } from "@/web/canvas/nodes/node_components.js";
@@ -48,7 +53,7 @@ const EXPECTED_SUMMARIES: Record<NodeType, string> = {
     source: "GitHub · até 20 itens",
     agent: "padrão · effort padrão",
     script: "npm test",
-    condition: "inputs.value.approved = true",
+    condition: "Se inputs.value.approved é verdadeiro",
     gate: "Revise o pull request",
     git: "abrir PR",
     output: "Move para Concluído",
@@ -94,6 +99,36 @@ describe("canvas node components", () => {
         const tooltip = await screen.findByRole("tooltip");
         expect(tooltip).toHaveTextContent("Os dados que seguem o Formato da resposta.");
         expect(tooltip).toHaveTextContent("result · JSON · obrigatória");
+    });
+
+    it("reads the decision as a sentence naming the data it reads", () => {
+        const graph = buildCanonicalFlow();
+        const decision = createNodeOfType("condition", "check", { x: 0, y: 0 });
+        const reviewerDecision: FlowNode = {
+            ...decision,
+            parentGroupId: "review_and_open_pr",
+            config: {
+                condition: { op: "eq", path: "nodes.reviewer.result.approved", value: true },
+            },
+        };
+
+        renderOnCanvas({
+            ...graph,
+            nodes: [...graph.nodes, reviewerDecision],
+            edges: [...graph.edges, connect(["reviewer", "result"], [decision.id, "value"])],
+        });
+
+        expect(
+            screen.getByText("Se Reviewer › Resultado › approved é verdadeiro"),
+        ).toBeInTheDocument();
+    });
+
+    it("names the decision's ports Sim and Não", () => {
+        renderOnCanvas({ nodes: [buildNamedNode("condition")] });
+
+        const decision = screen.getByLabelText("Nó condition");
+        expect(within(decision).getByText("Sim")).toBeInTheDocument();
+        expect(within(decision).getByText("Não")).toBeInTheDocument();
     });
 
     it("opens the documentation of the node type from its header", async () => {
@@ -320,20 +355,22 @@ function CanvasOf({ graph, state }: { graph: FlowGraph; state: CanvasState }): J
 
     return (
         <MemoryRouter>
-            <NodeLiveContext.Provider value={new NodeLiveStore(liveStates)}>
-                <ImplicitItemOverlay graph={graph}>
-                    <ValidationOverlay issuesByTarget={issuesByTarget}>
-                        <ReactFlowProvider>
-                            <ReactFlow
-                                nodes={nodesWithSelection}
-                                edges={edges}
-                                nodeTypes={nodeTypes}
-                                defaultViewport={{ x: 0, y: 0, zoom }}
-                            />
-                        </ReactFlowProvider>
-                    </ValidationOverlay>
-                </ImplicitItemOverlay>
-            </NodeLiveContext.Provider>
+            <ConnectionGraphContext value={graph}>
+                <NodeLiveContext.Provider value={new NodeLiveStore(liveStates)}>
+                    <ImplicitItemOverlay graph={graph}>
+                        <ValidationOverlay issuesByTarget={issuesByTarget}>
+                            <ReactFlowProvider>
+                                <ReactFlow
+                                    nodes={nodesWithSelection}
+                                    edges={edges}
+                                    nodeTypes={nodeTypes}
+                                    defaultViewport={{ x: 0, y: 0, zoom }}
+                                />
+                            </ReactFlowProvider>
+                        </ValidationOverlay>
+                    </ImplicitItemOverlay>
+                </NodeLiveContext.Provider>
+            </ConnectionGraphContext>
         </MemoryRouter>
     );
 }

@@ -1,4 +1,5 @@
 import { assertNever } from "@/lib/assert_never.js";
+import type { DataField } from "@/engine/available_data.js";
 import type { Effort } from "@/shared/agent_types.js";
 import type { FlowGroup, FlowNode, NodeOfType } from "@/shared/flow_graph.js";
 import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
@@ -6,7 +7,7 @@ import type { GitConfig } from "@/shared/node_configs/git_config.js";
 import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 import type { SourceConfig } from "@/shared/node_configs/source_config.js";
 import type { TriggerConfig } from "@/shared/node_configs/trigger_config.js";
-import { conditionToText } from "@/web/canvas/inspector/condition_text.js";
+import { conditionToSentence } from "@/web/canvas/inspector/condition_text.js";
 
 interface NodeSummary {
     line1: string;
@@ -16,6 +17,12 @@ interface NodeSummary {
 interface AgentDefaults {
     model: string;
     effort: Effort;
+}
+
+/** What the summary needs beyond the node: the project's agent defaults and the data it reads. */
+interface SummaryContext {
+    agentDefaults?: AgentDefaults;
+    dataFields?: DataField[];
 }
 
 const SUMMARY_MAX_LENGTH = 40;
@@ -61,14 +68,17 @@ const ITEM_DESTINATION_LABELS: Record<NonNullable<OutputConfig["moveItemTo"]>, s
     needs_human: "Precisa de humano",
 };
 
-export function summarizeNode(node: FlowNode, defaults?: AgentDefaults): NodeSummary {
+export function summarizeNode(
+    node: FlowNode,
+    { agentDefaults, dataFields = [] }: SummaryContext = {},
+): NodeSummary {
     switch (node.type) {
         case "agent":
-            return summarizeAgent(node, defaults);
+            return summarizeAgent(node, agentDefaults);
         case "script":
             return { line1: truncate(node.config.command) };
         case "condition":
-            return { line1: conditionToText(node.config.condition) };
+            return { line1: conditionToSentence(node.config.condition, dataFields) };
         case "gate":
             return { line1: truncate(node.config.message) };
         case "git":

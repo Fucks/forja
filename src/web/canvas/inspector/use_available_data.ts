@@ -41,6 +41,17 @@ export function useAvailableData(
     );
 }
 
+/** The data the node can read, without the last run's values: enough to name each field. */
+export function useAvailableDataFields(graph: FlowGraph | undefined, nodeId: string): DataField[] {
+    return useMemo(() => {
+        if (!graph) {
+            return [];
+        }
+
+        return describeAvailableData(graph, nodeId, { scope: "node", portLabels: labelPort });
+    }, [graph, nodeId]);
+}
+
 function labelPort(nodeType: NodeType, port: Port): string {
     const { inputs, outputs } = getNodeDoc(nodeType).ports;
     const portDoc = [...outputs, ...inputs].find((candidate) => candidate.name === port.name);
