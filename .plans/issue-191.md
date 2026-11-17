@@ -13,8 +13,8 @@
 - `upstreamOutputs` is computed in the **scheduler** (`startNodeRun`, where `findNodeRun` lives) and travels in
   the `start_node_run` command → `ActiveRun.startNodeRun` → `NodeRunExecutionDeps` → `NodeExecutionContext`.
   The issue points at `executor.ts`, but in this codebase the scheduler owns `findNodeRun`.
-- `collectUpstreamOutputs` uses `planNodeScopes` to pick the item (per-item nodes) or no item (per-run nodes),
-  and keeps only SUCCEEDED NodeRuns; slugs via `nodeSlug(label)`.
+- `collectUpstreamOutputs` looks up the NodeRun of the item and falls back to the one without item (per-run
+  nodes), so it needs no scope plan; keeps only SUCCEEDED NodeRuns; slugs via `nodeSlug(label)`.
 - `buildDataContext(context)` in run_context.ts; `buildPromptContext` delegates to it. `PromptContext` is
   removed; prompt_template uses `DataContext`.
 - Prompt variable validation lives in `checkPromptVariables` (prompt_template.ts, injected as `checkPrompt`
@@ -37,7 +37,7 @@
 - [x] 3. `flowGraphSchema` = preprocess + v2; update `schemaVersion: 1` literals in src/e2e (except migration
       fixtures), flow_graph/flow_service tests that used 2 as "invalid" — `src/shared/flow_graph.ts` & tests
 - [x] 6. Move BFS into `listUpstreamNodes` — `src/engine/graph_queries.ts` (+ test)
-- [ ] 7. Test + implement `collectUpstreamOutputs` (per item, per run, skipped branch absent, SUCCEEDED wins
+- [x] 7. Test + implement `collectUpstreamOutputs` (per item, per run, skipped branch absent, SUCCEEDED wins
       over FAILED retry) — `src/engine/upstream_outputs.ts`, `.test.ts`
 - [ ] 8. Scheduler sends `upstreamOutputs` in `start_node_run`; ActiveRun/NodeRunExecution/
       NodeExecutionContext carry it; context factory default `{}`
