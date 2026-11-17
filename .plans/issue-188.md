@@ -32,7 +32,7 @@
       wording, regenerate docs) — `palette_items.ts`, `node_palette.test.tsx`
 - [ ] 3. Palette sections per category, collapsible, in `NODE_CATEGORIES` order with count — `node_palette.tsx`
 - [ ] 4. Arrow keys move between entries — `node_palette.tsx`
-- [ ] 5. `createEmptyGroup` in grouping — `grouping.ts`, `grouping.test.ts`
+- [x] 5. `createEmptyGroup` in grouping — `grouping.ts`, `grouping.test.ts`
 - [ ] 6. Add group from the palette (click: empty at center or wrap selection) — `use_add_node.ts`, palette test
 - [ ] 7. Drag a group from the palette onto the canvas — `node_type_drag.ts`, `use_node_drop.ts`, canvas test
 - [ ] 8. Empty group shows "Arraste nós para dentro" — `group_frame.tsx`, `group_node.tsx`

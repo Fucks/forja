@@ -4,6 +4,8 @@ import { createDefaultNode } from "@/shared/node_defaults.js";
 import { connect } from "@/test/factories/flow_graph_factory.js";
 import {
     canGroup,
+    createEmptyGroup,
+    EMPTY_GROUP_SIZE,
     EMPTY_SELECTION_REASON,
     fitGroupToChildren,
     groupNodes,
@@ -127,6 +129,45 @@ describe("groupNodes", () => {
         expect(() => groupNodes(buildFlow(), ["dev", "source"], "map", () => GROUP_ID)).toThrow(
             new GroupingRejectedError(MIXED_GROUPS_REASON),
         );
+    });
+});
+
+describe("createEmptyGroup", () => {
+    it("creates an empty map at the point, outside any group", () => {
+        const { graph, groupId } = createEmptyGroup(
+            buildFlow(),
+            "map",
+            { x: 0, y: 400 },
+            () => GROUP_ID,
+        );
+
+        expect(groupId).toBe(GROUP_ID);
+        expect(findGroupIn(graph, GROUP_ID)).toEqual({
+            id: GROUP_ID,
+            kind: "map",
+            label: "Map",
+            parentGroupId: undefined,
+            position: { x: 0, y: 400 },
+            size: EMPTY_GROUP_SIZE,
+            config: { concurrency: 1, barrier: false, failFast: false },
+        });
+        expect(graph.nodes).toEqual(buildFlow().nodes);
+    });
+
+    it("creates a loop whose exit is still to be defined", () => {
+        const { graph } = createEmptyGroup(buildFlow(), "loop", { x: 0, y: 400 }, () => GROUP_ID);
+
+        expect(findGroupIn(graph, GROUP_ID)).toMatchObject({ kind: "loop", label: "Loop" });
+    });
+
+    it("nests the group in the group under the point and widens that group to hold it", () => {
+        const { graph } = createEmptyGroup(buildFlow(), "loop", { x: 700, y: 500 }, () => GROUP_ID);
+
+        const develop = findGroupIn(graph, "develop");
+        const created = findGroupIn(graph, GROUP_ID);
+        expect(created.parentGroupId).toBe("develop");
+        expect(rightEdge(develop)).toBeGreaterThan(rightEdge(created));
+        expect(bottomEdge(develop)).toBeGreaterThan(bottomEdge(created));
     });
 });
 
