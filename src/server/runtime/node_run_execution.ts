@@ -36,6 +36,7 @@ export interface NodeRunExecutionDeps {
     run: RunRecord;
     nodeRun: NodeRunState;
     inputs: Record<string, unknown>;
+    upstreamOutputs: Record<string, Record<string, unknown>>;
     item?: WorkItemSnapshot;
     runItems: WorkItemSnapshot[];
     graph: FlowGraph;
@@ -117,6 +118,7 @@ export class NodeRunExecution {
             node,
             graph: deps.graph,
             inputs: deps.inputs,
+            upstreamOutputs: deps.upstreamOutputs,
             item: deps.item,
             runItems: deps.runItems,
             project: deps.project,

@@ -59,7 +59,12 @@ export type SchedulerEvent =
       };
 
 export type SchedulerCommand =
-    | { type: "start_node_run"; nodeRun: NodeRunState; inputs: Record<string, unknown> }
+    | {
+          type: "start_node_run";
+          nodeRun: NodeRunState;
+          inputs: Record<string, unknown>;
+          upstreamOutputs: Record<string, Record<string, unknown>>;
+      }
     | { type: "cancel_node_run"; nodeRunId: string }
     | { type: "node_run_changed"; nodeRun: NodeRunState }
     | { type: "run_changed"; run: RunState }

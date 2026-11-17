@@ -174,12 +174,17 @@ export class ActiveRun {
         }
     }
 
-    private async startNodeRun({ nodeRun, inputs }: StartNodeRunCommand): Promise<void> {
+    private async startNodeRun({
+        nodeRun,
+        inputs,
+        upstreamOutputs,
+    }: StartNodeRunCommand): Promise<void> {
         const { deps } = this;
         const execution = new NodeRunExecution({
             run: this.record,
             nodeRun,
             inputs,
+            upstreamOutputs,
             item: await this.findItemOf(nodeRun),
             runItems: deps.items,
             graph: deps.graph,

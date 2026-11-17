@@ -33,6 +33,8 @@ export interface NodeExecutionContext {
     node: FlowNode;
     graph: FlowGraph;
     inputs: Record<string, unknown>;
+    // The outputs of the nodes before this one, by node slug: what `nodes.*` paths read.
+    upstreamOutputs: Record<string, Record<string, unknown>>;
     item?: WorkItemSnapshot;
     runItems: WorkItemSnapshot[];
     project: Project;

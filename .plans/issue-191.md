@@ -39,7 +39,7 @@
 - [x] 6. Move BFS into `listUpstreamNodes` — `src/engine/graph_queries.ts` (+ test)
 - [x] 7. Test + implement `collectUpstreamOutputs` (per item, per run, skipped branch absent, SUCCEEDED wins
       over FAILED retry) — `src/engine/upstream_outputs.ts`, `.test.ts`
-- [ ] 8. Scheduler sends `upstreamOutputs` in `start_node_run`; ActiveRun/NodeRunExecution/
+- [x] 8. Scheduler sends `upstreamOutputs` in `start_node_run`; ActiveRun/NodeRunExecution/
       NodeExecutionContext carry it; context factory default `{}`
 - [ ] 9. `buildDataContext`; `PromptContext` → `DataContext`; prompt renders `{{nodes.tl.summary}}` —
       `run_context.ts`, `prompt_template.ts` (+ test)

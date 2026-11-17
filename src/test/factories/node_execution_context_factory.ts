@@ -29,6 +29,7 @@ export function buildNodeExecutionContext(
         node,
         graph: { schemaVersion: 2, nodes: [node], edges: [], groups: [] },
         inputs: {},
+        upstreamOutputs: {},
         runItems: [],
         project,
         settings,

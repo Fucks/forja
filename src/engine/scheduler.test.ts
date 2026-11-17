@@ -83,6 +83,19 @@ describe("scheduler: DAG per item", () => {
         ]);
     });
 
+    it("gives B the outputs of the upstream nodes by slug, from the run of the same item", () => {
+        const harness = createSchedulerHarness({ graph: buildLinearAgentFlow() });
+
+        harness.start(["1", "2"]);
+        harness.runToCompletion();
+
+        const startsOfB = harness.startCommandsOf("b");
+        expect(startsOfB.map((command) => command.upstreamOutputs.a?.summary)).toEqual([
+            "a/1.summary",
+            "a/2.summary",
+        ]);
+    });
+
     it("succeeds the trigger right away with the items of the start event", () => {
         const harness = createSchedulerHarness({ graph: buildSingleAgentFlow() });
 
