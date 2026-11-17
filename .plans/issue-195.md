@@ -33,9 +33,9 @@
 - [x] 3. Docker `execHeadless` in an ephemeral container with the repo read-only — `docker_agent_runtime.ts`, test
 - [x] 4. New script config contract (constants, env var schema, defaults, old `workspace` dropped)
       — `script_config.ts`, test
-- [ ] 5. Test + implement `renderCommand` with shell-quoting and missing variable error
+- [x] 5. Test + implement `renderCommand` with shell-quoting and missing variable error
       — `script_environment.ts`, `script_environment.test.ts`
-- [ ] 6. Test + implement `buildScriptEnvironment` (`FORJA_*`, inputs, user vars, precedence, credentials)
+- [x] 6. Test + implement `buildScriptEnvironment` (`FORJA_*`, inputs, user vars, precedence, credentials)
       — `script_environment.ts`, `run_credentials.ts`, factory
 - [ ] 7. Test + implement `parseScriptOutput` — `script_output.ts`, test
 - [ ] 8. Executor: `ScriptResult`, `output` port, `onFailure` (`script_failed`), runIn item/isolated, parseOutput,

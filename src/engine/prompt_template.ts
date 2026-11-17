@@ -81,7 +81,7 @@ function resolveVariable(variable: string, context: DataContext): unknown {
     return lookup.value;
 }
 
-function formatVariableValue(value: unknown): string {
+export function formatVariableValue(value: unknown): string {
     if (typeof value === "string") {
         return value;
     }
