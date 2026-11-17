@@ -29,10 +29,10 @@
 - [x] 4. Test+impl: `inputs.<port>` with the shape of the connected source port
 - [x] 5. Test+impl: `item.*` only inside a Map; `project.*` and `run.*`
 - [x] 6. Test+impl: `loopUntil` scope lists only nodes inside the group
-- [ ] 7. Test+impl: `useLastNodeRunSamples` + `use_available_data.ts`
-- [ ] 8. Test+impl: DataPicker tree, search, type labels and samples — `data_picker.tsx`, `.test.tsx`
-- [ ] 9. Test+impl: DataPicker keyboard (arrows, Enter, Esc), empty state
-- [ ] 10. Test+impl: DataPicker "Digitar caminho" and unknown-path warning
+- [x] 7. Test+impl: `useLastNodeRunSamples` + `use_available_data.ts`
+- [x] 8. Test+impl: DataPicker tree, search, type labels and samples — `data_picker.tsx`, `.test.tsx`
+- [x] 9. Test+impl: DataPicker keyboard (arrows, Enter, Esc), empty state
+- [x] 10. Test+impl: DataPicker "Digitar caminho" and unknown-path warning
 - [ ] 11. Condition editor/rule row use DataPicker with `fields`; picking writes the exact path — `condition_editor.tsx`, `condition_rule_row.tsx`, `condition_editor.test.tsx`
 - [ ] 12. Condition inspector and loop fields pass `fields`; remove `condition_suggestions.ts`; update inspector tests
 - [ ] 13. Self-review checklist (section 5) and feedback loops (section 6)

@@ -10,14 +10,21 @@ export interface NodeRunSample {
     outputs?: Record<string, unknown>;
 }
 
-interface NodeInFlow {
+interface FlowInEditor {
     projectId: string;
     flowId: string;
+}
+
+interface NodeInFlow extends FlowInEditor {
     nodeId: string;
 }
 
+export type NodeRunSamples = Record<string, NodeRunSample>;
+
 const SAMPLE_QUERY_KEY = "last-node-run-sample";
+const SAMPLES_QUERY_KEY = "last-node-run-samples";
 const RECENT_RUNS_SEARCHED = 5;
+const NO_SAMPLES: NodeRunSamples = {};
 
 /** The inputs and outputs of the node in the newest of the flow's recent runs that ran it. */
 export function useLastNodeRunSample(nodeInFlow: NodeInFlow): NodeRunSample | undefined {
@@ -31,21 +38,59 @@ export function useLastNodeRunSample(nodeInFlow: NodeInFlow): NodeRunSample | un
     return sample.data ?? undefined;
 }
 
-// React Query refuses undefined as query data, so "no sample" travels as null.
-async function fetchLastNodeRunSample(nodeInFlow: NodeInFlow): Promise<NodeRunSample | null> {
-    const recentRuns = await apiClient.get<RunListItem[]>(recentRunsPath(nodeInFlow));
-    const runViews = await Promise.all(recentRuns.map((run) => fetchRunView(run.id)));
-    const sample = runViews
-        .map((view) => findLastNodeRunSample(view, nodeInFlow.nodeId))
-        .find((candidate) => candidate !== undefined);
+/** The last sample of each node, by node id; outside a flow in the editor there are none. */
+export function useLastNodeRunSamples(
+    flow: FlowInEditor | undefined,
+    nodeIds: string[],
+): NodeRunSamples {
+    const samples = useQuery({
+        queryKey: [
+            ...projectRunsQueryKey(flow?.projectId ?? ""),
+            SAMPLES_QUERY_KEY,
+            flow?.flowId,
+            nodeIds,
+        ],
+        queryFn: () => (flow ? fetchLastNodeRunSamples(flow, nodeIds) : NO_SAMPLES),
+        enabled: flow !== undefined,
+    });
 
-    return sample ?? null;
+    return samples.data ?? NO_SAMPLES;
 }
 
-function recentRunsPath({ projectId, flowId }: NodeInFlow): string {
+// React Query refuses undefined as query data, so "no sample" travels as null.
+async function fetchLastNodeRunSample(nodeInFlow: NodeInFlow): Promise<NodeRunSample | null> {
+    const samples = await fetchLastNodeRunSamples(nodeInFlow, [nodeInFlow.nodeId]);
+
+    return samples[nodeInFlow.nodeId] ?? null;
+}
+
+async function fetchLastNodeRunSamples(
+    flow: FlowInEditor,
+    nodeIds: string[],
+): Promise<NodeRunSamples> {
+    const recentRuns = await apiClient.get<RunListItem[]>(recentRunsPath(flow));
+    const runViews = await Promise.all(recentRuns.map((run) => fetchRunView(run.id)));
+    const sampledNodes = nodeIds.flatMap<[string, NodeRunSample]>((nodeId) => {
+        const sample = findNewestNodeRunSample(runViews, nodeId);
+        return sample ? [[nodeId, sample]] : [];
+    });
+
+    return Object.fromEntries(sampledNodes);
+}
+
+function recentRunsPath({ projectId, flowId }: FlowInEditor): string {
     const query = new URLSearchParams({ limit: String(RECENT_RUNS_SEARCHED), flowId });
 
     return `${projectRunsPath(projectId)}?${query.toString()}`;
+}
+
+function findNewestNodeRunSample(
+    runViews: SerializedRunView[],
+    nodeId: string,
+): NodeRunSample | undefined {
+    return runViews
+        .map((view) => findLastNodeRunSample(view, nodeId))
+        .find((candidate) => candidate !== undefined);
 }
 
 function findLastNodeRunSample(view: SerializedRunView, nodeId: string): NodeRunSample | undefined {
