@@ -7,6 +7,7 @@ import {
     nodeTarget,
 } from "@/engine/validation_rules/validation_issues.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 
 interface IdentifiedElement {
@@ -37,6 +38,27 @@ export function checkTriggerCount(graph: FlowGraph): ValidationIssue[] {
 
     const message = `O fluxo tem ${triggers.length} gatilhos; deve ter exatamente um.`;
     return triggers.map((trigger) => errorIssue("many_triggers", message, nodeTarget(trigger.id)));
+}
+
+// `nodes.<slug>` paths name a node by the slug of its label, so two nodes must not share one.
+export function findDuplicateNodeSlugs(graph: FlowGraph): ValidationIssue[] {
+    const seenSlugs = new Set<string>();
+    const issues: ValidationIssue[] = [];
+    for (const node of graph.nodes) {
+        const slug = nodeSlug(node.label);
+        if (seenSlugs.has(slug)) {
+            issues.push(duplicateNodeSlugIssue(node.id, slug));
+        }
+        seenSlugs.add(slug);
+    }
+
+    return issues;
+}
+
+function duplicateNodeSlugIssue(nodeId: string, slug: string): ValidationIssue {
+    const message = `Dois nós com o mesmo nome (${slug}): renomeie um deles`;
+
+    return errorIssue("duplicate_node_slug", message, nodeTarget(nodeId));
 }
 
 function identifiedElements(graph: FlowGraph): IdentifiedElement[] {

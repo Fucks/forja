@@ -494,9 +494,10 @@ function buildReviewDecisionFlow(): FlowGraph {
                 },
             },
             { ...check, config: { condition: APPROVED } },
-            { ...done, inputs: [decisionPort("approved")] },
+            { ...done, label: "Concluído", inputs: [decisionPort("approved")] },
             {
                 ...needsHuman,
+                label: "Precisa de humano",
                 inputs: [decisionPort("rejected")],
                 config: { ...needsHuman.config, moveItemTo: "needs_human" },
             },

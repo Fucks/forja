@@ -54,6 +54,29 @@ describe("duplicate_id", () => {
     });
 });
 
+describe("duplicate_node_slug", () => {
+    it("points to the node whose name gives the same slug as an earlier one", () => {
+        const secondDeveloper = {
+            ...createDefaultNode("agent", "dev_2", { x: 0, y: 0 }),
+            label: " dev ",
+        };
+        const graph = addNodes(buildCanonicalFlow(), [secondDeveloper]);
+
+        expect(issuesWithCode(graph, "duplicate_node_slug")).toEqual([
+            {
+                level: "error",
+                code: "duplicate_node_slug",
+                message: "Dois nós com o mesmo nome (dev): renomeie um deles",
+                target: { kind: "node", id: "dev_2" },
+            },
+        ]);
+    });
+
+    it("accepts a flow whose nodes all have different names", () => {
+        expect(issuesWithCode(buildCanonicalFlow(), "duplicate_node_slug")).toEqual([]);
+    });
+});
+
 describe("no_trigger and many_triggers", () => {
     it("reports a flow without a trigger", () => {
         const graph = removeNodes(buildCanonicalFlow(), ["trigger"]);

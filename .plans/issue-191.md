@@ -52,7 +52,7 @@
       `loop_rules.ts` (+ tests)
 - [x] 4. Templates in v2 with new paths (`inputs.value.*`, `nodes.*`, `inputs.*`) — templates/*.ts + tests
 - [x] 5. YAML: importing a v1 template YAML works, exporting writes v2 — `flow_yaml.test.ts`
-- [ ] 14. Duplicate node slug validation error — `identity_rules.ts` (+ test)
+- [x] 14. Duplicate node slug validation error — `identity_rules.ts` (+ test)
 - [ ] 15. Suggestions `nodes.<slug>.<port>` for Decisão and Loop using `listUpstreamNodes` —
       `condition_suggestions.ts` (+ test); end-to-end test: a suggested path drives the condition executor
 - [ ] 16. Self-review checklist and feedback loops (typecheck, lint, test)
