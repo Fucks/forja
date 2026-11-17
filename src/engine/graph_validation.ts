@@ -22,9 +22,9 @@ import {
 import {
     findDanglingEdges,
     findIncompatiblePorts,
-    findScriptConfigProblems,
     findUnconnectedRequiredInputs,
 } from "@/engine/validation_rules/port_rules.js";
+import { findScriptConfigProblems } from "@/engine/validation_rules/script_rules.js";
 import type { FlowGraph, NodeOfType } from "@/shared/flow_graph.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 

@@ -156,14 +156,10 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
     ): Promise<AgentRunResult> {
         const runtimeDir = headlessRuntimeDir(spec.runId, request.nodeRunId);
         const containerId = await startPreparedContainer(
-            {
+            headlessContainerInput(spec, {
                 name: headlessContainerNameFor(spec.runId, request.nodeRunId),
-                image: spec.image,
-                mounts: [readOnlyRepositoryMount(spec.repoPath), runtimeDirMount(runtimeDir)],
-                labels: headlessLabels(spec),
-                workdir: WORKSPACE_DIR_IN_CONTAINER,
-                user: containerUser,
-            },
+                extraMounts: [runtimeDirMount(runtimeDir)],
+            }),
             (startedId) => runSetup(startedId, spec, hooks, request.signal),
         );
 
@@ -185,14 +181,10 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
     ): Promise<ExecResult> {
         throwIfAborted(options.signal);
         const containerId = await startPreparedContainer(
-            {
+            headlessContainerInput(spec, {
                 name: headlessContainerNameFor(spec.runId, randomUUID()),
-                image: spec.image,
-                mounts: [readOnlyRepositoryMount(spec.repoPath)],
-                labels: headlessLabels(spec),
-                workdir: WORKSPACE_DIR_IN_CONTAINER,
-                user: containerUser,
-            },
+                extraMounts: [],
+            }),
             (startedId) => runSetup(startedId, spec, hooksPrintingTo(options), options.signal),
         );
 
@@ -205,6 +197,20 @@ export function createDockerAgentRuntime(deps: DockerAgentRuntimeDeps): AgentRun
         } finally {
             await containers.stop(containerId);
         }
+    }
+
+    function headlessContainerInput(
+        spec: HeadlessSpec,
+        { name, extraMounts }: { name: string; extraMounts: ContainerMount[] },
+    ): StartContainerInput {
+        return {
+            name,
+            image: spec.image,
+            mounts: [readOnlyRepositoryMount(spec.repoPath), ...extraMounts],
+            labels: headlessLabels(spec),
+            workdir: WORKSPACE_DIR_IN_CONTAINER,
+            user: containerUser,
+        };
     }
 
     async function closeWorkspace(id: string): Promise<void> {
