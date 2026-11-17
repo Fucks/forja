@@ -24,6 +24,8 @@ const BOOLEAN_TEXTS = new Map([
     ["false", false],
 ]);
 
+const LIST_VALUE_SEPARATOR = ", ";
+
 export const MISSING_PATH_ERROR = "Informe o caminho de cada regra.";
 export const NUMBER_REQUIRED_ERROR = "Use um número para comparar com > ou <.";
 
@@ -62,9 +64,20 @@ function isComparison(condition: Condition): condition is Comparison {
 }
 
 function toRule(comparison: Comparison): ConditionRule {
-    const valueText = comparison.op === "exists" ? "" : String(comparison.value);
+    return { path: comparison.path, operator: comparison.op, valueText: toValueText(comparison) };
+}
 
-    return { path: comparison.path, operator: comparison.op, valueText };
+function toValueText(comparison: Comparison): string {
+    switch (comparison.op) {
+        case "exists":
+        case "isEmpty":
+        case "isNotEmpty":
+            return "";
+        case "in":
+            return comparison.values.join(LIST_VALUE_SEPARATOR);
+        default:
+            return String(comparison.value);
+    }
 }
 
 function toComparison({ path, operator, valueText }: ConditionRule): ComparisonConversion {
@@ -75,6 +88,8 @@ function toComparison({ path, operator, valueText }: ConditionRule): ComparisonC
 
     switch (operator) {
         case "exists":
+        case "isEmpty":
+        case "isNotEmpty":
             return { ok: true, comparison: { op: operator, path: trimmedPath } };
         case "eq":
         case "neq":
@@ -82,16 +97,35 @@ function toComparison({ path, operator, valueText }: ConditionRule): ComparisonC
                 ok: true,
                 comparison: { op: operator, path: trimmedPath, value: parseRuleValue(valueText) },
             };
+        case "contains":
+        case "notContains":
+        case "startsWith":
+            return { ok: true, comparison: { op: operator, path: trimmedPath, value: valueText } };
+        case "in":
+            return {
+                ok: true,
+                comparison: { op: operator, path: trimmedPath, values: parseListText(valueText) },
+            };
         case "gt":
         case "lt":
+        case "gte":
+        case "lte":
+        case "minLength":
             return toNumberComparison(operator, trimmedPath, valueText);
         default:
             return assertNever(operator);
     }
 }
 
+function parseListText(valueText: string): (string | number)[] {
+    return valueText.split(LIST_VALUE_SEPARATOR.trim()).flatMap((text) => {
+        const value = parseRuleValue(text.trim());
+        return typeof value === "boolean" ? [] : [value];
+    });
+}
+
 function toNumberComparison(
-    operator: "gt" | "lt",
+    operator: "gt" | "lt" | "gte" | "lte" | "minLength",
     path: string,
     valueText: string,
 ): ComparisonConversion {

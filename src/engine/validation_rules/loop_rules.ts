@@ -13,7 +13,6 @@ import {
     nodeTarget,
     warningIssue,
 } from "@/engine/validation_rules/validation_issues.js";
-import { assertNever } from "@/lib/assert_never.js";
 import type { Condition } from "@/shared/conditions.js";
 import { findNodeSlugInPath } from "@/shared/data_context.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
@@ -149,19 +148,13 @@ function findUnknownConditionPathsOfLoop(graph: FlowGraph, loop: LoopGroup): Val
 
 function listConditionPaths(condition: Condition): string[] {
     switch (condition.op) {
-        case "eq":
-        case "neq":
-        case "gt":
-        case "lt":
-        case "exists":
-            return [condition.path];
         case "and":
         case "or":
             return condition.conditions.flatMap(listConditionPaths);
         case "not":
             return listConditionPaths(condition.condition);
         default:
-            return assertNever(condition);
+            return [condition.path];
     }
 }
 

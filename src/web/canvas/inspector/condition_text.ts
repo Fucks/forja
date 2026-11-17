@@ -1,4 +1,3 @@
-import { assertNever } from "@/lib/assert_never.js";
 import type { Comparison, Condition } from "@/shared/conditions.js";
 
 export type ComparisonOperator = Comparison["op"];
@@ -9,7 +8,16 @@ export const COMPARISON_OPERATOR_SYMBOLS: Record<ComparisonOperator, string> = {
     eq: "=",
     neq: "≠",
     gt: ">",
+    gte: "≥",
     lt: "<",
+    lte: "≤",
+    contains: "contém",
+    notContains: "não contém",
+    startsWith: "começa com",
+    in: "em",
+    isEmpty: "está vazio",
+    isNotEmpty: "não está vazio",
+    minLength: "tem pelo menos",
     exists: "existe",
 };
 const COMBINATION_CONNECTIVES: Record<Combination["op"], string> = {
@@ -20,12 +28,6 @@ const NEGATION_WORD = "NÃO";
 
 export function conditionToText(condition: Condition): string {
     switch (condition.op) {
-        case "eq":
-        case "neq":
-        case "gt":
-        case "lt":
-        case "exists":
-            return describeComparison(condition);
         case "and":
         case "or":
             return condition.conditions
@@ -34,17 +36,31 @@ export function conditionToText(condition: Condition): string {
         case "not":
             return `${NEGATION_WORD} (${conditionToText(condition.condition)})`;
         default:
-            return assertNever(condition);
+            return describeComparison(condition);
     }
 }
 
 function describeComparison(comparison: Comparison): string {
-    const symbol = COMPARISON_OPERATOR_SYMBOLS[comparison.op];
-    if (comparison.op === "exists") {
-        return `${comparison.path} ${symbol}`;
-    }
+    const parts = [
+        comparison.path,
+        COMPARISON_OPERATOR_SYMBOLS[comparison.op],
+        describeComparedValue(comparison),
+    ];
 
-    return `${comparison.path} ${symbol} ${formatComparisonValue(comparison.value)}`;
+    return parts.filter((part) => part !== undefined).join(" ");
+}
+
+function describeComparedValue(comparison: Comparison): string | undefined {
+    switch (comparison.op) {
+        case "exists":
+        case "isEmpty":
+        case "isNotEmpty":
+            return undefined;
+        case "in":
+            return JSON.stringify(comparison.values);
+        default:
+            return formatComparisonValue(comparison.value);
+    }
 }
 
 function describeOperand(operand: Condition): string {

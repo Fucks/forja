@@ -27,6 +27,40 @@ describe("conditionToText", () => {
         expect(text).toBe("tests.failures existe");
     });
 
+    it("writes the typed comparisons with their symbols", () => {
+        const texts = [
+            conditionToText({ op: "gte", path: "review.score", value: 7 }),
+            conditionToText({ op: "lte", path: "review.round", value: 3 }),
+            conditionToText({ op: "contains", path: "item.labels", value: "urgent" }),
+            conditionToText({ op: "notContains", path: "item.title", value: "WIP" }),
+            conditionToText({ op: "startsWith", path: "item.title", value: "fix" }),
+            conditionToText({ op: "minLength", path: "item.labels", value: 2 }),
+        ];
+
+        expect(texts).toEqual([
+            "review.score ≥ 7",
+            "review.round ≤ 3",
+            'item.labels contém "urgent"',
+            'item.title não contém "WIP"',
+            'item.title começa com "fix"',
+            "item.labels tem pelo menos 2",
+        ]);
+    });
+
+    it("lists the values of an in comparison", () => {
+        const text = conditionToText({ op: "in", path: "review.state", values: ["approved", 1] });
+
+        expect(text).toBe('review.state em ["approved",1]');
+    });
+
+    it("writes the emptiness checks without a value", () => {
+        const empty = conditionToText({ op: "isEmpty", path: "review.notes" });
+        const notEmpty = conditionToText({ op: "isNotEmpty", path: "review.notes" });
+
+        expect(empty).toBe("review.notes está vazio");
+        expect(notEmpty).toBe("review.notes não está vazio");
+    });
+
     it("joins the rules of an and with E", () => {
         const text = conditionToText({
             op: "and",
