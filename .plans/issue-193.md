@@ -23,5 +23,5 @@
 - [x] 2. Rule `agent_without_response_format` (move `listConditionPaths`) — `agent_rules.ts`, `graph_validation.ts`, test
 - [x] 3. `OutputSchemaEditor` becomes the JSON tab; `ResponseFormatEditor` with field rows, presets and advanced-schema notice; wire in `agent_inspector.tsx`; tests
 - [x] 4. `PromptEditor` `insertAtCursor` + `InsertDataButton` in the prompt bar; test
-- [ ] 5. Docs: outputSchema text and "Reviewer que devolve aprovado + notas" example — `agent_doc.ts`
+- [x] 5. Docs: outputSchema text and "Reviewer que devolve aprovado + notas" example — `agent_doc.ts`
 - [ ] 6. Self-review checklist and feedback loops

@@ -78,7 +78,7 @@ O texto que o agente escreve para dizer que terminou, como &lt;promise&gt;COMPLE
 
 ### Formato da resposta (`outputSchema`)
 
-Os campos que o agente devolve no Resultado. Sem ele, uma Decisão não tem campos para ler.
+Os campos que o agente devolve no Resultado, cada um com nome e tipo (sim/não, número, texto, lista ou uma das opções). As Decisões seguintes leem esses campos; sem eles, a resposta é só texto e não há o que comparar.
 
 - Padrão: Vazio (resposta livre)
 
@@ -132,14 +132,28 @@ Troca cada !`comando` do prompt pelo que o comando imprime, antes de enviar ao a
 
 ## Exemplos
 
-### Reviewer
+### Reviewer que devolve aprovado + notas
 
-Revisa o PR do item e devolve { approved, notes }; uma Decisão olha approved.
+Revisa as mudanças do item e devolve approved (sim/não, obrigatório) e notes (texto). Use o preset Aprovação; a Decisão seguinte olha approved.
 
 ```json
 {
   "prompt": "Revise as mudanças de {{item.title}}.",
-  "workspace": "item"
+  "workspace": "item",
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "approved": {
+        "type": "boolean"
+      },
+      "notes": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "approved"
+    ]
+  }
 }
 ```
 
