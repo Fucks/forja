@@ -1,11 +1,16 @@
 import { useReactFlow } from "@xyflow/react";
-import type { FinalConnectionState, HandleType } from "@xyflow/react";
+import type { FinalConnectionState } from "@xyflow/react";
 import { useState } from "react";
 
 import { findNode } from "@/engine/graph_queries.js";
 import { newId } from "@/lib/ids.js";
 import type { FlowGraph, NodeType, PortType, Position } from "@/shared/flow_graph.js";
-import { checkHandles, orientConnection, toHandleRef } from "@/web/canvas/connection_hints.js";
+import {
+    checkHandles,
+    OPPOSITE_HANDLE_TYPES,
+    orientConnection,
+    toHandleRef,
+} from "@/web/canvas/connection_hints.js";
 import type { HandleRef } from "@/web/canvas/connection_hints.js";
 import { connect } from "@/web/canvas/edge_actions.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
@@ -29,11 +34,6 @@ interface LinkedNodeRequest {
     nodeId: string;
     edgeId: string;
 }
-
-const OPPOSITE_HANDLE_TYPES: Record<HandleType, HandleType> = {
-    source: "target",
-    target: "source",
-};
 
 export interface OpenAddFromPortMenu {
     screenPosition: Position;

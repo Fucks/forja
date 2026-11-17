@@ -17,6 +17,11 @@ export interface HandleRef {
     type: HandleType;
 }
 
+export const OPPOSITE_HANDLE_TYPES: Record<HandleType, HandleType> = {
+    source: "target",
+    target: "source",
+};
+
 export const ConnectionGraphContext = createContext<FlowGraph | undefined>(undefined);
 
 export function usePortHint(port: string, type: HandleType): PortHint {
