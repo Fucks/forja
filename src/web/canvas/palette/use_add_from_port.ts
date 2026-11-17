@@ -16,7 +16,7 @@ import {
 import { addNodeAt } from "@/web/canvas/palette/drop_target.js";
 import { pointerPosition } from "@/web/canvas/use_canvas_connections.js";
 
-export interface PortDrop {
+interface PortDrop {
     draggedHandle: HandleRef;
     portType: PortType;
     screenPosition: Position;

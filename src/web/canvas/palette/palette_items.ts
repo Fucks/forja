@@ -23,6 +23,8 @@ export type PaletteItem = PaletteItemRef & {
     singleton?: boolean;
 };
 
+export type NodePaletteItem = Extract<PaletteItem, { kind: "node" }>;
+
 export interface PaletteSection {
     category: NodeCategory;
     label: string;
@@ -32,8 +34,6 @@ export interface PaletteSection {
 const SINGLETON_NODE_TYPES: ReadonlySet<NodeType> = new Set(["trigger"]);
 
 export const PALETTE_ITEMS: PaletteItem[] = ALL_NODE_DOCS.map(toPaletteItem);
-
-export type NodePaletteItem = Extract<PaletteItem, { kind: "node" }>;
 
 export function filterPaletteItems<Item extends PaletteItem>(items: Item[], query: string): Item[] {
     const normalizedQuery = query.trim().toLowerCase();

@@ -43,4 +43,4 @@
 - [x] 10. `AddFromPortMenu` with search, positioned at the drop point, Esc closes — `add_from_port_menu.tsx`
 - [x] 11. `onConnectEnd` on empty space opens the menu; choosing creates node + edge in one history entry —
       `use_add_from_port.ts`, `flow_canvas.tsx`, `flow_canvas.test.tsx`
-- [ ] 12. Self-review checklist and feedback loops
+- [x] 12. Self-review checklist and feedback loops
