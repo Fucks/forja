@@ -13,16 +13,18 @@ import { OptionCardsField } from "@/web/canvas/inspector/option_cards_field.js";
 import { SwitchField } from "@/web/canvas/inspector/switch_field.js";
 
 type ItemDestination = (typeof ITEM_DESTINATIONS)[number];
+type DestinationChoice = ItemDestination | typeof KEEP_ITEM;
 
 // The extra card stands for "no destination", so choosing it reports undefined.
-const KEEP_ITEM_CARD: OptionCard<"keep"> = {
-    value: "keep",
+const KEEP_ITEM = "keep";
+const KEEP_ITEM_CARD: OptionCard<typeof KEEP_ITEM> = {
+    value: KEEP_ITEM,
     label: "Não mover",
     description: "O item fica onde está no board.",
 };
 
 const DESTINATION_DOC = fieldDoc("output", "moveItemTo");
-const DESTINATION_CARDS: OptionCard<ItemDestination | "keep">[] = [
+const DESTINATION_CARDS: OptionCard<DestinationChoice>[] = [
     ...fieldOptionCards(DESTINATION_DOC, ITEM_DESTINATIONS),
     KEEP_ITEM_CARD,
 ];
@@ -42,7 +44,7 @@ export function OutputInspector({ node, graph, onChange }: InspectorProps): JSX.
             <InspectorFields>
                 <OptionCardsField
                     doc={DESTINATION_DOC}
-                    value={config.moveItemTo ?? KEEP_ITEM_CARD.value}
+                    value={config.moveItemTo ?? KEEP_ITEM}
                     options={DESTINATION_CARDS}
                     onChange={(destination) =>
                         changeConfig({ moveItemTo: toMoveItemTo(destination) })
@@ -58,6 +60,6 @@ export function OutputInspector({ node, graph, onChange }: InspectorProps): JSX.
     );
 }
 
-function toMoveItemTo(destination: ItemDestination | "keep"): ItemDestination | undefined {
-    return destination === KEEP_ITEM_CARD.value ? undefined : destination;
+function toMoveItemTo(destination: DestinationChoice): ItemDestination | undefined {
+    return destination === KEEP_ITEM ? undefined : destination;
 }

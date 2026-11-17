@@ -13,7 +13,7 @@ interface SelectFieldOption<T extends string> {
 
 const EMPTY_OPTION_VALUE = "__empty__";
 
-export function SelectField<T extends string>({
+function SelectField<T extends string>({
     value,
     options,
     onChange,
@@ -55,13 +55,6 @@ export function OptionalSelectField<T extends string>({
             onChange={(selected) => onChange(findOptionValue(options, selected))}
         />
     );
-}
-
-export function toSelectOptions<T extends string>(
-    values: readonly T[],
-    labels: Record<T, string>,
-): SelectFieldOption<T>[] {
-    return values.map((value) => ({ value, label: labels[value] }));
 }
 
 function findOptionValue<T extends string>(

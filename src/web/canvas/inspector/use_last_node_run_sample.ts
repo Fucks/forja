@@ -2,10 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { RunListItem, SerializedNodeRun, SerializedRunView } from "@/shared/run_types.js";
 import { apiClient } from "@/web/api/api_client.js";
+import { projectRunsPath, projectRunsQueryKey } from "@/web/app/runs/use_runs.js";
 import { fetchRunView } from "@/web/canvas/live/use_live_run.js";
 
 export interface NodeRunSample {
-    runId: string;
     inputs?: Record<string, unknown>;
     outputs?: Record<string, unknown>;
 }
@@ -16,8 +16,6 @@ interface NodeInFlow {
     nodeId: string;
 }
 
-// Starts with the project's runs key, so whatever reloads the runs reloads the sample too.
-const RUNS_QUERY_KEY = "runs";
 const SAMPLE_QUERY_KEY = "last-node-run-sample";
 const RECENT_RUNS_SEARCHED = 5;
 
@@ -25,7 +23,8 @@ const RECENT_RUNS_SEARCHED = 5;
 export function useLastNodeRunSample(nodeInFlow: NodeInFlow): NodeRunSample | undefined {
     const { projectId, flowId, nodeId } = nodeInFlow;
     const sample = useQuery({
-        queryKey: [RUNS_QUERY_KEY, projectId, SAMPLE_QUERY_KEY, flowId, nodeId],
+        // Under the project's runs key, so whatever reloads the runs reloads the sample too.
+        queryKey: [...projectRunsQueryKey(projectId), SAMPLE_QUERY_KEY, flowId, nodeId],
         queryFn: () => fetchLastNodeRunSample(nodeInFlow),
     });
 
@@ -46,7 +45,7 @@ async function fetchLastNodeRunSample(nodeInFlow: NodeInFlow): Promise<NodeRunSa
 function recentRunsPath({ projectId, flowId }: NodeInFlow): string {
     const query = new URLSearchParams({ limit: String(RECENT_RUNS_SEARCHED), flowId });
 
-    return `/projects/${encodeURIComponent(projectId)}/runs?${query.toString()}`;
+    return `${projectRunsPath(projectId)}?${query.toString()}`;
 }
 
 function findLastNodeRunSample(view: SerializedRunView, nodeId: string): NodeRunSample | undefined {
@@ -59,5 +58,5 @@ function findLastNodeRunSample(view: SerializedRunView, nodeId: string): NodeRun
 }
 
 function toSample(nodeRun: SerializedNodeRun): NodeRunSample {
-    return { runId: nodeRun.runId, inputs: nodeRun.inputs, outputs: nodeRun.outputs };
+    return { inputs: nodeRun.inputs, outputs: nodeRun.outputs };
 }
