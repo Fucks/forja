@@ -24,7 +24,14 @@ const UNKNOWN_PATH_WARNING =
     "Este caminho não aparece nos formatos conhecidos; ele só funciona se o dado existir na execução";
 
 /** Chooses a data path from the known fields, or lets the user type any path by hand. */
-export function DataPicker({ path, fields, ...props }: DataPickerProps): JSX.Element {
+export function DataPicker({
+    label,
+    path,
+    fields,
+    onPick,
+    onType,
+    onTypingDone,
+}: DataPickerProps): JSX.Element {
     const pickerRef = useRef<HTMLDivElement>(null);
     const chosenField = fields.find((field) => field.path === path);
     const isUnknownPath = path.trim() !== "" && !chosenField;
@@ -35,7 +42,7 @@ export function DataPicker({ path, fields, ...props }: DataPickerProps): JSX.Ele
 
     function pickField(pickedPath: string): void {
         closePopover();
-        props.onPick(pickedPath);
+        onPick(pickedPath);
     }
 
     function startTyping(): void {
@@ -51,10 +58,16 @@ export function DataPicker({ path, fields, ...props }: DataPickerProps): JSX.Ele
     return (
         <div ref={pickerRef} className="relative flex min-w-0 flex-1 flex-col gap-1">
             {mode === "typing" ? (
-                <TypedPathField path={path} {...props} onChooseFromList={chooseFromList} />
+                <TypedPathField
+                    label={label}
+                    path={path}
+                    onType={onType}
+                    onTypingDone={onTypingDone}
+                    onChooseFromList={chooseFromList}
+                />
             ) : (
                 <Button
-                    aria-label={props.label}
+                    aria-label={label}
                     aria-expanded={isOpen}
                     onClick={() => setIsOpen(!isOpen)}
                     className="justify-start truncate"

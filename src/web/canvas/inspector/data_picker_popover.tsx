@@ -41,7 +41,9 @@ export function DataPickerPopover({
 
     function toggleGroup(title: string): void {
         const nextTitles = new Set(collapsedTitles);
-        if (!nextTitles.delete(title)) {
+        if (nextTitles.has(title)) {
+            nextTitles.delete(title);
+        } else {
             nextTitles.add(title);
         }
         setCollapsedTitles(nextTitles);

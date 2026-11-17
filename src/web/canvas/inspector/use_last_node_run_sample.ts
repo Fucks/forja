@@ -10,7 +10,7 @@ export interface NodeRunSample {
     outputs?: Record<string, unknown>;
 }
 
-interface FlowInEditor {
+export interface FlowInEditor {
     projectId: string;
     flowId: string;
 }
@@ -89,11 +89,14 @@ function findNewestNodeRunSample(
     nodeId: string,
 ): NodeRunSample | undefined {
     return runViews
-        .map((view) => findLastNodeRunSample(view, nodeId))
+        .map((view) => findNodeRunSampleInRun(view, nodeId))
         .find((candidate) => candidate !== undefined);
 }
 
-function findLastNodeRunSample(view: SerializedRunView, nodeId: string): NodeRunSample | undefined {
+function findNodeRunSampleInRun(
+    view: SerializedRunView,
+    nodeId: string,
+): NodeRunSample | undefined {
     const lastNodeRun = view.nodeRuns.filter((nodeRun) => nodeRun.nodeId === nodeId).at(-1);
     if (!lastNodeRun) {
         return undefined;

@@ -9,7 +9,10 @@ import type { FlowGraph, NodeType, Port } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { PickableDataField } from "@/web/canvas/inspector/data_picker.js";
 import { useLastNodeRunSamples } from "@/web/canvas/inspector/use_last_node_run_sample.js";
-import type { NodeRunSamples } from "@/web/canvas/inspector/use_last_node_run_sample.js";
+import type {
+    FlowInEditor,
+    NodeRunSamples,
+} from "@/web/canvas/inspector/use_last_node_run_sample.js";
 import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
 
 type DataScope = Omit<AvailableDataOptions, "portLabels">;
@@ -29,7 +32,8 @@ export function useAvailableData(
         () => describeAvailableData(graph, nodeId, { scope, groupId, portLabels: labelPort }),
         [graph, nodeId, scope, groupId],
     );
-    const samples = useLastNodeRunSamples(useFlowInEditor(), listSampledNodeIds(nodeId, fields));
+    const flow = useFlowInEditor();
+    const samples = useLastNodeRunSamples(flow, listSampledNodeIds(nodeId, fields));
 
     return useMemo(
         () => withSamples(fields, buildSampleContext(graph, nodeId, samples)),
@@ -44,7 +48,7 @@ function labelPort(nodeType: NodeType, port: Port): string {
     return portDoc?.label ?? port.name;
 }
 
-function useFlowInEditor(): { projectId: string; flowId: string } | undefined {
+function useFlowInEditor(): FlowInEditor | undefined {
     const { projectId, flowId } = useParams();
     if (projectId === undefined || flowId === undefined) {
         return undefined;
