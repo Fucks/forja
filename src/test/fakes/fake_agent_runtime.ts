@@ -78,6 +78,7 @@ export class FakeAgentRuntime implements AgentRuntime {
     // The base branches the workspaces were diffed against, in call order.
     readonly diffBaseBranches: string[] = [];
     readonly receivedExecs: ReceivedExec[] = [];
+    readonly headlessExecSpecs: HeadlessSpec[] = [];
     private readonly clock: FakeClock;
     private readonly defaultDurationMs: number;
     private readonly steps: ScriptedStepUsage[] = [];
@@ -158,6 +159,7 @@ export class FakeAgentRuntime implements AgentRuntime {
     }
 
     execHeadless(spec: HeadlessSpec, command: string, options: ExecOptions): Promise<ExecResult> {
+        this.headlessExecSpecs.push(spec);
         return this.exec({ kind: "execHeadless", command, workItemId: spec.workItemId }, options);
     }
 

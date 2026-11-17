@@ -10,6 +10,8 @@ import {
 } from "@/integrations/agent_runtime/agent_errors.js";
 import { GitHubError } from "@/integrations/github/github_provider.js";
 import { mapAgentError, usageLimitResetAtOf } from "@/server/runtime/error_mapping.js";
+import { CommandRenderError } from "@/server/runtime/executors/script_environment.js";
+import { ScriptFailedError } from "@/server/runtime/executors/script_failed_error.js";
 
 const RESET_AT = new Date("2026-01-01T15:00:00Z");
 
@@ -23,6 +25,8 @@ describe("mapAgentError", () => {
         [new WorkspaceError("Docker parado"), "workspace"],
         [new AgentRuntimeError("claude saiu com código 1"), "runtime"],
         [new PromptRenderError("item.number"), "runtime"],
+        [new CommandRenderError("item.url"), "runtime"],
+        [new ScriptFailedError(1), "script_failed"],
     ])("maps %s to the failure kind %s with its message", (error, kind) => {
         const mapped = mapAgentError(error);
 

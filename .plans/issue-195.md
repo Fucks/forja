@@ -38,7 +38,7 @@
 - [x] 6. Test + implement `buildScriptEnvironment` (`FORJA_*`, inputs, user vars, precedence, credentials)
       — `script_environment.ts`, `run_credentials.ts`, factory
 - [x] 7. Test + implement `parseScriptOutput` — `script_output.ts`, test
-- [ ] 8. Executor: `ScriptResult`, `output` port, `onFailure` (`script_failed`), runIn item/isolated, parseOutput,
+- [x] 8. Executor: `ScriptResult`, `output` port, `onFailure` (`script_failed`), runIn item/isolated, parseOutput,
       masking — `script_executor.ts`, `script_executor.test.ts`, `error_mapping.ts`, `node_run_state.ts`,
       `retry_policy.ts`, labels; move script tests from `deterministic_executors.test.ts`
 - [x] 9. Defaults + templates keep loop green — `node_defaults.ts`, `review_loop.ts`, `flow_graph_factory.ts`

@@ -6,6 +6,7 @@ export const NODE_RUN_ERROR_LABELS: Record<NodeRunErrorKind, string> = {
     timeout_idle: "Tempo esgotado (inatividade)",
     structured_output: "Saída estruturada inválida",
     runtime: "Erro de execução",
+    script_failed: "Comando falhou",
     workspace: "Erro no workspace",
     budget: "Orçamento esgotado",
     canceled: "Cancelado",
