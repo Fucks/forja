@@ -66,7 +66,9 @@ export function DataPickerPopover({
             return;
         }
 
+        // The keys belong to the picker: Esc must not also close the inspector around it.
         event.preventDefault();
+        event.stopPropagation();
         action();
     }
 
