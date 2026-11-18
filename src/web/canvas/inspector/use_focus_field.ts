@@ -20,6 +20,8 @@ export type FieldFocusStore = UseBoundStore<StoreApi<FieldFocusState>>;
 // Typed controls come first, so a field with a toolbar focuses where the user writes.
 const EDITABLE_SELECTOR = 'textarea, input:not([type="hidden"]), select, [contenteditable="true"]';
 const FOCUSABLE_SELECTOR = 'button, [href], [tabindex]:not([tabindex="-1"])';
+// Long enough for an editor that builds its DOM after mounting, such as CodeMirror.
+const EDITABLE_CONTROL_WAIT_MS = 500;
 
 export function createFieldFocusStore(): FieldFocusStore {
     return create<FieldFocusState>()((set) => ({
@@ -32,8 +34,8 @@ export function createFieldFocusStore(): FieldFocusStore {
 // An inspector rendered outside the editor (as in its own tests) never receives a request.
 const STORE_WITHOUT_REQUESTS: FieldFocusStore = create<FieldFocusState>()(() => ({
     pendingRequest: undefined,
-    requestFocus: ignoreRequest,
-    clearRequest: ignoreRequest,
+    requestFocus: doNothing,
+    clearRequest: doNothing,
 }));
 
 export const FieldFocusContext = createContext<FieldFocusStore>(STORE_WITHOUT_REQUESTS);
@@ -60,15 +62,14 @@ export function useFocusField<FieldElement extends HTMLElement>(
     const fieldFocusStore = use(FieldFocusContext);
     const clearRequest = fieldFocusStore((state) => state.clearRequest);
 
-    // Runs after the field's children mount, so editors that build their DOM in an effect are there.
     useEffect(() => {
         const fieldElement = fieldRef.current;
         if (request?.fieldKey !== fieldKey || !fieldElement) {
             return;
         }
 
-        revealAndFocus(fieldElement);
-        clearRequest();
+        openEnclosingSections(fieldElement);
+        return focusWhenControlAppears(fieldElement, clearRequest);
     }, [request, fieldKey, clearRequest]);
 
     return fieldRef;
@@ -85,13 +86,41 @@ function useRequestForInspectedTarget(): FieldFocusRequest | undefined {
     return request;
 }
 
-function revealAndFocus(fieldElement: HTMLElement): void {
-    openEnclosingSections(fieldElement);
-    const control =
-        fieldElement.querySelector<HTMLElement>(EDITABLE_SELECTOR) ??
-        fieldElement.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ??
-        fieldElement;
+/** Focuses the field's editable control, waiting for it when the field builds it later. */
+function focusWhenControlAppears(fieldElement: HTMLElement, onFocused: () => void): () => void {
+    if (focusControlMatching(fieldElement, EDITABLE_SELECTOR)) {
+        onFocused();
+        return doNothing;
+    }
+
+    const stopWaiting = (): void => {
+        observer.disconnect();
+        clearTimeout(fallbackTimer);
+    };
+    const observer = new MutationObserver(() => {
+        if (focusControlMatching(fieldElement, EDITABLE_SELECTOR)) {
+            stopWaiting();
+            onFocused();
+        }
+    });
+    const fallbackTimer = setTimeout(() => {
+        stopWaiting();
+        focusControlMatching(fieldElement, FOCUSABLE_SELECTOR);
+        onFocused();
+    }, EDITABLE_CONTROL_WAIT_MS);
+    observer.observe(fieldElement, { childList: true, subtree: true });
+
+    return stopWaiting;
+}
+
+function focusControlMatching(fieldElement: HTMLElement, selector: string): boolean {
+    const control = fieldElement.querySelector<HTMLElement>(selector);
+    if (!control) {
+        return false;
+    }
+
     control.focus();
+    return true;
 }
 
 function openEnclosingSections(fieldElement: HTMLElement): void {
@@ -102,4 +131,4 @@ function openEnclosingSections(fieldElement: HTMLElement): void {
     }
 }
 
-function ignoreRequest(): void {}
+function doNothing(): void {}

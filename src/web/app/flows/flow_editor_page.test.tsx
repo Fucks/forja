@@ -287,6 +287,22 @@ describe("FlowEditorPage validation and publishing", () => {
         expect(within(inspector).getByRole("textbox", { name: "Rótulo" })).toHaveValue("Dev");
     });
 
+    it("opens Configurar and focuses the prompt of the agent whose prompt is missing", async () => {
+        localStorage.setItem("forja.inspector.tab.agent", "help");
+        stubFetchRoutes(fakeEditorApi({ draftGraph: GRAPH_WITH_EMPTY_PROMPT }));
+        renderAppAt(EDITOR_PATH);
+        const problemsPanel = await screen.findByRole("region", { name: "Problemas" });
+
+        await userEvent.click(within(problemsPanel).getByText(EMPTY_PROMPT_MESSAGE));
+
+        const inspector = screen.getByRole("complementary", { name: "Inspector" });
+        expect(within(inspector).getByRole("tab", { name: "Configurar" })).toHaveAttribute(
+            "aria-selected",
+            "true",
+        );
+        expect(within(inspector).getByRole("textbox", { name: "Prompt" })).toHaveFocus();
+    });
+
     it("marks the node of a problem as invalid on the canvas", async () => {
         stubFetchRoutes(fakeEditorApi({ draftGraph: GRAPH_WITH_EMPTY_PROMPT }));
         renderAppAt(EDITOR_PATH);

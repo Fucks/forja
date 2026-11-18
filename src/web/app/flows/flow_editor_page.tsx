@@ -1,5 +1,6 @@
 import { ReactFlowProvider } from "@xyflow/react";
 import { TriangleAlert } from "lucide-react";
+import { useState } from "react";
 import type { JSX } from "react";
 import { useParams } from "react-router";
 
@@ -12,6 +13,10 @@ import { useFlowSummary } from "@/web/app/flows/use_flow_summary.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
 import { InspectorPanel } from "@/web/canvas/inspector/inspector_panel.js";
+import {
+    createFieldFocusStore,
+    FieldFocusContext,
+} from "@/web/canvas/inspector/use_focus_field.js";
 import { NodePalette } from "@/web/canvas/palette/node_palette.js";
 import { ProblemsPanel } from "@/web/canvas/problems_panel.js";
 import { PublishBar } from "@/web/canvas/publish_bar.js";
@@ -66,6 +71,7 @@ function EditorWorkspace({
     location: FlowLocation;
     latestVersion: number | undefined;
 }): JSX.Element {
+    const [fieldFocusStore] = useState(createFieldFocusStore);
     if (draftEditor.isLoading) {
         return <Skeleton className="min-h-0 flex-1" />;
     }
@@ -80,21 +86,24 @@ function EditorWorkspace({
     }
 
     // The palette creates nodes at the canvas viewport, so both share one React Flow instance.
+    // The problems panel asks the inspector to focus a field through the field focus store.
     return (
         <ReactFlowProvider>
-            <div className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border">
-                <EditorSidePanel title="Paleta" side="left" widthClass="w-60">
-                    <NodePalette store={draftEditor.store} />
-                </EditorSidePanel>
-                <EditorCanvasArea
-                    store={draftEditor.store}
-                    flowId={location.flowId}
-                    latestVersion={latestVersion}
-                />
-                <EditorSidePanel title="Inspector" side="right" widthClass="w-90">
-                    <InspectorPanel store={draftEditor.store} projectId={location.projectId} />
-                </EditorSidePanel>
-            </div>
+            <FieldFocusContext value={fieldFocusStore}>
+                <div className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border">
+                    <EditorSidePanel title="Paleta" side="left" widthClass="w-60">
+                        <NodePalette store={draftEditor.store} />
+                    </EditorSidePanel>
+                    <EditorCanvasArea
+                        store={draftEditor.store}
+                        flowId={location.flowId}
+                        latestVersion={latestVersion}
+                    />
+                    <EditorSidePanel title="Inspector" side="right" widthClass="w-90">
+                        <InspectorPanel store={draftEditor.store} projectId={location.projectId} />
+                    </EditorSidePanel>
+                </div>
+            </FieldFocusContext>
         </ReactFlowProvider>
     );
 }

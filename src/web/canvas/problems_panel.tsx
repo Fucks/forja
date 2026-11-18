@@ -8,6 +8,7 @@ import { formatCount } from "@/lib/format.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
+import { useRequestFieldFocus } from "@/web/canvas/inspector/use_focus_field.js";
 import { describeIssueKey, ISSUE_NOUNS } from "@/web/canvas/use_validation.js";
 import type { GraphValidation } from "@/web/canvas/use_validation.js";
 import { cn } from "@/web/components/ui/cn.js";
@@ -90,12 +91,12 @@ function IssueRow({
                 role="img"
                 aria-label={label}
                 size={LEVEL_ICON_SIZE_PX}
-                className={cn("shrink-0", colorClass)}
+                className={cn("mt-0.5 shrink-0", colorClass)}
             />
-            <span>{issue.message}</span>
+            <IssueText issue={issue} />
         </>
     );
-    const rowClasses = "flex w-full items-center gap-2 px-3 py-1 text-left text-sm";
+    const rowClasses = "flex w-full items-start gap-2 px-3 py-1 text-left text-sm";
 
     // An issue about the whole flow has no node, edge or group to jump to.
     if (issue.target.id === undefined) {
@@ -113,8 +114,22 @@ function IssueRow({
     );
 }
 
+function IssueText({ issue }: { issue: ValidationIssue }): JSX.Element {
+    return (
+        <span className="flex flex-col">
+            <span>{issue.message}</span>
+            {issue.fix !== undefined && (
+                <span className="text-xs text-muted">Como corrigir: {issue.fix}</span>
+            )}
+            <span className="text-xs text-muted">(código: {issue.code})</span>
+        </span>
+    );
+}
+
+// Selecting the target opens it in the inspector, where the field of the problem takes the focus.
 function useIssueTargetFocus(store: EditorStore): (issue: ValidationIssue) => void {
     const { fitView } = useReactFlow();
+    const requestFieldFocus = useRequestFieldFocus();
 
     return (issue) => {
         const targetId = issue.target.id;
@@ -123,6 +138,9 @@ function useIssueTargetFocus(store: EditorStore): (issue: ValidationIssue) => vo
         }
 
         store.getState().select([targetId]);
+        if (issue.fieldKey !== undefined) {
+            requestFieldFocus({ targetId, fieldKey: issue.fieldKey });
+        }
         const nodeIds = listNodesToShow(issue.target.kind, targetId, store.getState().graph);
         void fitView({ nodes: nodeIds.map((id) => ({ id })), duration: FOCUS_ANIMATION_MS });
     };

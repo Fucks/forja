@@ -1,4 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
+import { useEffect, useState } from "react";
 import type { JSX, ReactNode } from "react";
 
 import {
@@ -53,6 +54,30 @@ describe("useFocusField", () => {
         act(() => store.getState().requestFocus({ targetId: "dev", fieldKey: "prompt" }));
 
         expect(screen.getByRole("textbox", { name: "Prompt" })).toHaveFocus();
+    });
+
+    it("waits for an editor that builds its control after mounting", async () => {
+        const store = createFieldFocusStore();
+        renderInspectorOf("dev", store, <LateEditorField />);
+
+        act(() => store.getState().requestFocus({ targetId: "dev", fieldKey: "prompt" }));
+
+        expect(await screen.findByRole("textbox", { name: "Prompt" })).toHaveFocus();
+    });
+
+    it("focuses the first button of a field without an editable control", () => {
+        vi.useFakeTimers();
+        const store = createFieldFocusStore();
+        renderInspectorOf("dev", store, <ButtonsOnlyField />);
+
+        act(() => store.getState().requestFocus({ targetId: "dev", fieldKey: "outputSchema" }));
+        act(() => {
+            vi.runAllTimers();
+        });
+
+        expect(screen.getByRole("button", { name: "Adicionar campo" })).toHaveFocus();
+        expect(store.getState().pendingRequest).toBeUndefined();
+        vi.useRealTimers();
     });
 
     it("forgets the request once the field is focused", () => {
@@ -122,4 +147,29 @@ function PromptField({ withToolbarButton = false }: { withToolbarButton?: boolea
 
 function RequestIndicator(): JSX.Element {
     return <p>{useIsFieldFocusRequested() ? "pedido" : "nenhum pedido"}</p>;
+}
+
+function LateEditorField(): JSX.Element {
+    const fieldRef = useFocusField<HTMLDivElement>("prompt");
+    const [isEditorBuilt, setIsEditorBuilt] = useState(false);
+    useEffect(() => {
+        setTimeout(() => setIsEditorBuilt(true), 0);
+    }, []);
+
+    return (
+        <div ref={fieldRef}>
+            <button type="button">Inserir dado</button>
+            {isEditorBuilt && <div role="textbox" aria-label="Prompt" contentEditable="true" />}
+        </div>
+    );
+}
+
+function ButtonsOnlyField(): JSX.Element {
+    const fieldRef = useFocusField<HTMLDivElement>("outputSchema");
+
+    return (
+        <div ref={fieldRef}>
+            <button type="button">Adicionar campo</button>
+        </div>
+    );
 }

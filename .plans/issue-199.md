@@ -33,8 +33,8 @@
       `validation_rules/*` and `prompt_template.ts`; update the rule tests
 - [x] 4. `use_focus_field`: a request focuses the matching field and opens its section — `src/web/canvas/inspector/use_focus_field.ts` (+ test)
 - [x] 5. Inspector: tabs switch to Configurar on a focus request; fields register their `fieldKey` — inspector files
-- [ ] 6. Problems panel shows "Como corrigir:" and the code; click selects the target and requests the field focus — `problems_panel.tsx` (+ test)
-- [ ] 7. Editor page: provider wired; clicking "O Agente ‘Dev’ não tem prompt" focuses Dev's prompt — `flow_editor_page.tsx` (+ test)
+- [x] 6. Problems panel shows "Como corrigir:" and the code; click selects the target and requests the field focus — `problems_panel.tsx` (+ test)
+- [x] 7. Editor page: provider wired; clicking "O Agente ‘Dev’ não tem prompt" focuses Dev's prompt — `flow_editor_page.tsx` (+ test)
 - [ ] 8. Route `GET /api/flow-templates/:templateId` returns the template graph — `flows_routes.ts` (+ test)
 - [ ] 9. A blank new flow starts without nodes — `flow_service.ts` (+ test)
 - [ ] 10. `EmptyCanvas` lists the templates; choosing one fills the draft — `src/web/canvas/empty_canvas.tsx` (+ test)
