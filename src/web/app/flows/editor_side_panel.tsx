@@ -20,11 +20,13 @@ export function EditorSidePanel({
     title,
     side,
     widthClass,
+    tourAnchor,
     children,
 }: {
     title: string;
     side: PanelSide;
     widthClass: string;
+    tourAnchor?: string;
     children?: ReactNode;
 }): JSX.Element {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -33,6 +35,7 @@ export function EditorSidePanel({
     return (
         <aside
             aria-label={title}
+            data-tour-anchor={tourAnchor}
             className={cn(
                 "flex shrink-0 flex-col border-border bg-surface",
                 borderClass,

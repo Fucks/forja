@@ -5,6 +5,11 @@ import path from "node:path";
 
 import { test as base } from "@playwright/test";
 
+import {
+    EDITOR_TOUR_DISMISSED_KEY,
+    EDITOR_TOUR_DISMISSED_VALUE,
+} from "@/web/canvas/editor_tour_storage.js";
+
 import { localBasicFactoryFlow } from "./flow_graphs.js";
 import type { PublishedFlowInput } from "./forja_api.js";
 import { ForjaApi } from "./forja_api.js";
@@ -41,6 +46,15 @@ const BASE_BRANCH = "main";
 const GIT_AUTHOR = ["-c", "user.name=Forja E2E", "-c", "user.email=e2e@forja.local"];
 
 export const test = base.extend<ForjaFixtures>({
+    // The editor tour would cover the editor on its first opening; the specs drive the editor itself.
+    page: async ({ page }, use) => {
+        await page.addInitScript(([key, value]) => localStorage.setItem(key, value), [
+            EDITOR_TOUR_DISMISSED_KEY,
+            EDITOR_TOUR_DISMISSED_VALUE,
+        ] as const);
+        await use(page);
+    },
+
     gitRepo: async ({}, use) => {
         const repo = createTemporaryGitRepo();
         await use(repo);

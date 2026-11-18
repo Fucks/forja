@@ -20,6 +20,10 @@ import {
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
 import { DraftConflictBanner } from "@/web/app/flows/draft_conflict_banner.js";
+import {
+    EDITOR_TOUR_DISMISSED_KEY,
+    EDITOR_TOUR_DISMISSED_VALUE,
+} from "@/web/canvas/editor_tour_storage.js";
 import { AUTOSAVE_DELAY_MS } from "@/web/canvas/use_flow_draft.js";
 import { VALIDATION_DEBOUNCE_MS } from "@/web/canvas/use_validation.js";
 
@@ -87,6 +91,39 @@ function buildPublishedVersion(version: number): FlowVersion {
         publishedAt: "2026-11-11T12:00:00Z",
     };
 }
+
+// The tour opens over the editor on its first opening; only its own tests want to see it.
+beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem(EDITOR_TOUR_DISMISSED_KEY, EDITOR_TOUR_DISMISSED_VALUE);
+});
+
+describe("FlowEditorPage tour", () => {
+    it("introduces the editor on its first opening, starting at the palette", async () => {
+        localStorage.removeItem(EDITOR_TOUR_DISMISSED_KEY);
+        stubFetchRoutes(fakeEditorApi());
+
+        renderAppAt(EDITOR_PATH);
+
+        expect(await screen.findByRole("dialog", { name: "Paleta" })).toHaveTextContent("1 de 5");
+    });
+
+    it("marks the palette, the inspector and the publish bar for the tour", async () => {
+        stubFetchRoutes(fakeEditorApi());
+
+        renderAppAt(EDITOR_PATH);
+
+        const palette = await screen.findByRole("complementary", { name: "Paleta" });
+        expect(palette).toHaveAttribute("data-tour-anchor", "palette");
+        expect(screen.getByRole("complementary", { name: "Inspector" })).toHaveAttribute(
+            "data-tour-anchor",
+            "inspector",
+        );
+        expect(
+            screen.getByRole("button", { name: /Publicar/ }).closest("[data-tour-anchor]"),
+        ).toHaveAttribute("data-tour-anchor", "publish");
+    });
+});
 
 describe("FlowEditorPage", () => {
     it("shows the flow's name in the top bar", async () => {

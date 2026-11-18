@@ -11,6 +11,8 @@ import { useDraftDiffers } from "@/web/app/flows/use_draft_differs.js";
 import { useEditorIssues } from "@/web/app/flows/use_editor_issues.js";
 import { useFlowSummary } from "@/web/app/flows/use_flow_summary.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
+import { EditorTour } from "@/web/canvas/editor_tour.js";
+import { TOUR_ANCHORS } from "@/web/canvas/editor_tour_steps.js";
 import { FlowCanvas } from "@/web/canvas/flow_canvas.js";
 import { InspectorPanel } from "@/web/canvas/inspector/inspector_panel.js";
 import {
@@ -91,7 +93,12 @@ function EditorWorkspace({
         <ReactFlowProvider>
             <FieldFocusContext value={fieldFocusStore}>
                 <div className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border">
-                    <EditorSidePanel title="Paleta" side="left" widthClass="w-60">
+                    <EditorSidePanel
+                        title="Paleta"
+                        side="left"
+                        widthClass="w-60"
+                        tourAnchor={TOUR_ANCHORS.palette}
+                    >
                         <NodePalette store={draftEditor.store} />
                     </EditorSidePanel>
                     <EditorCanvasArea
@@ -99,10 +106,16 @@ function EditorWorkspace({
                         flowId={location.flowId}
                         latestVersion={latestVersion}
                     />
-                    <EditorSidePanel title="Inspector" side="right" widthClass="w-90">
+                    <EditorSidePanel
+                        title="Inspector"
+                        side="right"
+                        widthClass="w-90"
+                        tourAnchor={TOUR_ANCHORS.inspector}
+                    >
                         <InspectorPanel store={draftEditor.store} projectId={location.projectId} />
                     </EditorSidePanel>
                 </div>
+                <EditorTour />
             </FieldFocusContext>
         </ReactFlowProvider>
     );
@@ -124,14 +137,16 @@ function EditorCanvasArea({
 
     return (
         <div className="flex min-w-0 flex-1 flex-col">
-            <PublishBar
-                flowId={flowId}
-                latestVersion={latestVersion}
-                draftDiffers={draftDiffers}
-                errorCount={editorIssues.errorCount}
-                onPublished={ignorePublishedVersion}
-                onRejected={editorIssues.showRefusedPublish}
-            />
+            <div data-tour-anchor={TOUR_ANCHORS.publish}>
+                <PublishBar
+                    flowId={flowId}
+                    latestVersion={latestVersion}
+                    draftDiffers={draftDiffers}
+                    errorCount={editorIssues.errorCount}
+                    onPublished={ignorePublishedVersion}
+                    onRejected={editorIssues.showRefusedPublish}
+                />
+            </div>
             <div className="min-h-0 flex-1">
                 <FlowCanvas store={store} issuesByTarget={editorIssues.byTarget} />
             </div>

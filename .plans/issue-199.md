@@ -24,7 +24,8 @@
 - Tour: Radix Dialog (modal: traps focus, Esc = Pular) placed next to `[data-tour-anchor]` elements (palette,
   inspector, publish) and React Flow's `.react-flow__node` / `.react-flow__handle`; centered when the anchor is
   missing. "Pular" closes it for this opening; finishing or "Não mostrar de novo" stores
-  `forja.editorTour.dismissed` in `localStorage` (try/catch). E2E fixtures pre-set this key.
+  `forja.editorTour.dismissed` in `localStorage` (try/catch, `editor_tour_storage.ts`, React-free so `e2e/fixtures.ts`
+  imports the key and pre-sets it in an init script). Steps in `editor_tour_steps.ts`, placement in `use_tour_placement.ts`.
 - Template keeps id `review_loop`, name becomes "Revisão com volta"; labels "Dev"/"Reviewer" (slug `reviewer`).
 
 ## Tasks
@@ -42,9 +43,9 @@
 - [x] 10. `EmptyCanvas` lists the templates; choosing one fills the draft — `src/web/canvas/empty_canvas.tsx` (+ test)
 - [x] 11. "Começar do zero" adds a Gatilho and the canvas points to the palette — `empty_canvas.tsx`, `flow_canvas.tsx`
 - [x] 12. `FlowCanvas` shows `EmptyCanvas` when the graph has no nodes — `flow_canvas.tsx` (+ test)
-- [ ] 13. Editor tour: 5 steps with "N de 5", Próximo/Voltar/Concluir — `src/web/canvas/editor_tour.tsx` (+ test)
-- [ ] 14. Editor tour: Pular and Esc close it; "Não mostrar de novo" is remembered; storage errors are tolerated — `editor_tour.test.tsx`
-- [ ] 15. Tour in the editor with its anchors; E2E fixtures dismiss it — `flow_editor_page.tsx`, `e2e/`
+- [x] 13. Editor tour: 5 steps with "N de 5", Próximo/Voltar/Concluir — `src/web/canvas/editor_tour.tsx` (+ test)
+- [x] 14. Editor tour: Pular and Esc close it; "Não mostrar de novo" is remembered; storage errors are tolerated — `editor_tour.test.tsx`
+- [x] 15. Tour in the editor with its anchors; E2E fixtures dismiss it — `flow_editor_page.tsx`, `e2e/`
 - [ ] 16. Template "Revisão com volta": Fonte → Map[Loop[Dev → Reviewer]] → Comando → Git PR → Saída; exhausted → Precisa de humano — `review_loop.ts`, `flow_templates.test.ts`
 - [ ] 17. Template runs with the fake runtime: approved opens the PR; always rejected goes to "Precisa de humano" — `flow_templates.test.ts`
 - [ ] 18. Guided example in the concepts points to the template — `src/web/docs/concepts.ts`
