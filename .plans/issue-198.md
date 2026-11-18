@@ -37,7 +37,7 @@
       `work_item_service.ts`
 - [x] 5. Test + `previewSourceItems` (GitHub fake with blocked and free issues, provider error, local, no
       run/item written) — `source_preview.ts`, `source_preview.test.ts`
-- [ ] 6. Test + route `POST /api/projects/:projectId/flows/:flowId/source-preview` with route types —
+- [x] 6. Test + route `POST /api/projects/:projectId/flows/:flowId/source-preview` with route types —
       `flows_routes.ts`, `flows_routes.test.ts`, `api_types.ts`
 - [ ] 7. Git inspector: `bodyFrom` as `DataPicker` (text fields first) with the warning — `git_inspector.tsx`,
       `other_inspectors.test.tsx`
