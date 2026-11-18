@@ -1,6 +1,11 @@
 import { type AgentNode, validateFlowGraph } from "@/engine/graph_validation.js";
 import type { Condition } from "@/shared/conditions.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
+import { branchPortsOf } from "@/shared/node_configs/condition_branches.js";
+import type {
+    SwitchBranch,
+    SwitchConditionConfig,
+} from "@/shared/node_configs/condition_config.js";
 import type { ScriptConfig } from "@/shared/node_configs/script_config.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
@@ -22,6 +27,8 @@ import {
     updateAgentConfig,
     updateGroup,
 } from "@/test/factories/flow_graph_variations.js";
+
+const APPROVED: Condition = { op: "eq", path: "inputs.value.approved", value: true };
 
 describe("validateFlowGraph", () => {
     it("finds no issues in the canonical flow", () => {
@@ -457,6 +464,104 @@ describe("condition_operator_type", () => {
     });
 });
 
+describe("condition_operator_type of a switch", () => {
+    it("checks the rules of every branch", () => {
+        const graph = addSwitchDecision(buildCanonicalFlow(), [
+            branch("approved", { op: "eq", path: "nodes.reviewer.result.approved", value: true }),
+            branch("changes", {
+                op: "contains",
+                path: "nodes.reviewer.result.approved",
+                value: "x",
+            }),
+        ]);
+
+        expect(issuesWithCode(graph, "condition_operator_type")).toHaveLength(1);
+    });
+});
+
+describe("condition_branch_port_duplicate and condition_branch_port_reserved", () => {
+    it("refuses two branches with the same port", () => {
+        const graph = addSwitchDecision(buildCanonicalFlow(), [
+            branch("approved", APPROVED),
+            branch("approved", APPROVED),
+        ]);
+
+        expect(targetsOf(graph, "condition_branch_port_duplicate")).toEqual([
+            { kind: "node", id: "triage" },
+        ]);
+    });
+
+    it.each(["otherwise", "true", "false"])("refuses a branch whose port is %s", (port) => {
+        const graph = addSwitchDecision(buildCanonicalFlow(), [branch(port, APPROVED)]);
+
+        expect(targetsOf(graph, "condition_branch_port_reserved")).toEqual([
+            { kind: "node", id: "triage" },
+        ]);
+    });
+
+    it("accepts branches with distinct ports", () => {
+        const graph = addSwitchDecision(buildCanonicalFlow(), [
+            branch("approved", APPROVED),
+            branch("changes", APPROVED),
+        ]);
+
+        expect(issuesWithCode(graph, "condition_branch_port_duplicate")).toEqual([]);
+        expect(issuesWithCode(graph, "condition_branch_port_reserved")).toEqual([]);
+    });
+});
+
+describe("condition_branch_empty_rule", () => {
+    it("refuses a branch without any rule", () => {
+        const graph = addSwitchDecision(buildCanonicalFlow(), [
+            branch("approved", APPROVED),
+            branch("changes", { op: "and", conditions: [] }),
+        ]);
+
+        expect(issuesWithCode(graph, "condition_branch_empty_rule")).toEqual([
+            {
+                level: "error",
+                code: "condition_branch_empty_rule",
+                message: "O caminho “changes” não tem regra.",
+                target: { kind: "node", id: "triage" },
+            },
+        ]);
+    });
+
+    it("refuses a branch whose rule reads no data", () => {
+        const graph = addSwitchDecision(buildCanonicalFlow(), [
+            branch("approved", { op: "exists", path: " " }),
+        ]);
+
+        expect(issuesWithCode(graph, "condition_branch_empty_rule")).toHaveLength(1);
+    });
+});
+
+describe("condition_edge_without_branch", () => {
+    it("refuses an edge leaving a port that no branch of the decision has", () => {
+        const decision = addSwitchDecision(buildCanonicalFlow(), [branch("approved", APPROVED)]);
+        const graph = addEdges(decision, [connect(["triage", "removed"], ["done", "item"])]);
+
+        expect(issuesWithCode(graph, "condition_edge_without_branch")).toEqual([
+            {
+                level: "error",
+                code: "condition_edge_without_branch",
+                message: "A Decisão “Triagem” não tem mais o caminho “removed”.",
+                target: { kind: "edge", id: "triage.removed->done.item" },
+            },
+        ]);
+    });
+
+    it("accepts edges leaving the branches and otherwise", () => {
+        const decision = addSwitchDecision(buildCanonicalFlow(), [branch("approved", APPROVED)]);
+        const graph = addEdges(decision, [
+            connect(["triage", "approved"], ["done", "item"]),
+            connect(["triage", "otherwise"], ["needs_human", "item"]),
+        ]);
+
+        expect(issuesWithCode(graph, "condition_edge_without_branch")).toEqual([]);
+    });
+});
+
 describe("empty_prompt", () => {
     it("points to an agent whose prompt is blank", () => {
         const graph = updateAgentConfig(buildCanonicalFlow(), "tl", { prompt: "  \n" });
@@ -587,6 +692,27 @@ function addReviewerDecision(graph: FlowGraph, condition: Condition): FlowGraph 
     ]);
 
     return addEdges(withDecision, [connect(["reviewer", "result"], ["check", "value"])]);
+}
+
+function addSwitchDecision(graph: FlowGraph, branches: SwitchBranch[]): FlowGraph {
+    const decision = createNodeOfType("condition", "triage", { x: 0, y: 0 });
+    const config: SwitchConditionConfig = { mode: "switch", branches, otherwise: true };
+
+    const withDecision = addNodes(graph, [
+        {
+            ...decision,
+            label: "Triagem",
+            parentGroupId: "review_and_open_pr",
+            outputs: branchPortsOf(config),
+            config,
+        },
+    ]);
+
+    return addEdges(withDecision, [connect(["reviewer", "result"], ["triage", "value"])]);
+}
+
+function branch(port: string, condition: Condition): SwitchBranch {
+    return { port, label: port, condition };
 }
 
 function addDecisionReading(graph: FlowGraph, ...paths: string[]): FlowGraph {

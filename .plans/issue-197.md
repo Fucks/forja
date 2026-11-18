@@ -27,9 +27,9 @@
 - [x] 6. Scheduler harness chooses ports with `chooseBranchPort` — `scheduler_harness.ts`
 - [x] 7. Validation: operator types and agent result reads cover every branch — `condition_rules.ts`,
       `agent_rules.ts`
-- [ ] 8. Test + implement validation of duplicate/reserved ports and empty rules — `condition_rules.ts`,
+- [x] 8. Test + implement validation of duplicate/reserved ports and empty rules — `condition_rules.ts`,
       `graph_validation.test.ts`
-- [ ] 9. Test + implement validation of edges leaving a port the Decisão does not have
+- [x] 9. Test + implement validation of edges leaving a port the Decisão does not have
 - [ ] 10. Test + implement `updateNodeConfig` dropping edges of removed outputs — `node_updates.ts`
 - [ ] 11. Test + implement branch editor: add a branch — `condition_branches_editor.tsx`, `condition_branch_edits.ts`
 - [ ] 12. Test + implement reorder (up/down) and remove branch
