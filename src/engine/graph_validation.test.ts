@@ -26,6 +26,7 @@ import {
     removeNodes,
     updateAgentConfig,
     updateGroup,
+    updateNode,
 } from "@/test/factories/flow_graph_variations.js";
 
 const APPROVED: Condition = { op: "eq", path: "inputs.value.approved", value: true };
@@ -562,6 +563,43 @@ describe("condition_edge_without_branch", () => {
     });
 });
 
+describe("git_body_source_missing", () => {
+    it("warns when the PR body reads an input port the node does not have", () => {
+        const graph = updateBodyFrom(buildCanonicalFlow(), "inputs.summary");
+
+        expect(issuesWithCode(graph, "git_body_source_missing")).toEqual([
+            {
+                level: "warning",
+                code: "git_body_source_missing",
+                message:
+                    "O corpo do PR aponta para ‘inputs.summary’, que não existe aqui. " +
+                    "Escolha o texto no seletor.",
+                target: { kind: "node", id: "open_pr" },
+            },
+        ]);
+    });
+
+    it("warns when the PR body reads an input port without an edge", () => {
+        const withoutBodyEdge = removeEdges(buildCanonicalFlow(), [
+            "reviewer.summary->open_pr.body",
+        ]);
+
+        expect(issuesWithCode(withoutBodyEdge, "git_body_source_missing")).toHaveLength(1);
+    });
+
+    it("warns when the PR body reads a node that does not come before it", () => {
+        const graph = updateBodyFrom(buildCanonicalFlow(), "nodes.saida.summary");
+
+        expect(issuesWithCode(graph, "git_body_source_missing")).toHaveLength(1);
+    });
+
+    it("accepts a PR body read from a node that comes before it", () => {
+        const graph = updateBodyFrom(buildCanonicalFlow(), "nodes.reviewer.summary");
+
+        expect(issuesWithCode(graph, "git_body_source_missing")).toEqual([]);
+    });
+});
+
 describe("empty_prompt", () => {
     it("points to an agent whose prompt is blank", () => {
         const graph = updateAgentConfig(buildCanonicalFlow(), "tl", { prompt: "  \n" });
@@ -677,6 +715,12 @@ function addScriptOutsideMaps(graph: FlowGraph, config: Partial<ScriptConfig>): 
     return addNodes(graph, [
         { ...script, config: { ...script.config, command: "npm run lint", ...config } },
     ]);
+}
+
+function updateBodyFrom(graph: FlowGraph, bodyFrom: string): FlowGraph {
+    return updateNode(graph, "open_pr", (node) =>
+        node.type === "git" ? { ...node, config: { ...node.config, bodyFrom } } : node,
+    );
 }
 
 function updateLoopCondition(graph: FlowGraph, groupId: string, until: Condition): FlowGraph {

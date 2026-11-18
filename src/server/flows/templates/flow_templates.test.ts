@@ -19,10 +19,14 @@ import { buildCanonicalFlow, connect } from "@/test/factories/flow_graph_factory
 import { addEdges, updateNode } from "@/test/factories/flow_graph_variations.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { agentPromptOf, publishErrorsOf } from "@/test/flow_template_inspection.js";
+import { ExecutorTestBed, TEST_GITHUB_REPO } from "@/test/executor_test_bed.js";
+import { buildGithubIssue } from "@/test/factories/work_item_factory.js";
+import { FakeGitHubProvider } from "@/test/fakes/fake_github_provider.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 
 const PROJECT_ID = "prj_forja";
+const AGENT_DURATION_MS = 60_000;
 
 describe("FLOW_TEMPLATES", () => {
     it("lists the basic factory, the review loop and the Sandcastle pipeline", () => {
@@ -88,6 +92,39 @@ describe("Fábrica básica template", () => {
 
         expect(agentPromptOf(graph, "tl")).toContain("{{item.body}}");
         expect(agentPromptOf(graph, "dev")).toContain("{{inputs.spec}}");
+    });
+});
+
+describe("Fábrica básica run with the fake runtime", () => {
+    const REVIEWER_SUMMARY = "Revisado: nomes mais claros e testes extras.";
+    let github: FakeGitHubProvider;
+    let bed: ExecutorTestBed;
+
+    beforeEach(() => {
+        github = new FakeGitHubProvider();
+        bed = new ExecutorTestBed([], { github });
+    });
+
+    afterEach(() => {
+        bed.close();
+    });
+
+    it("opens the pull request with the summary of the Reviewer as its body", async () => {
+        github.addIssue(TEST_GITHUB_REPO, buildGithubIssue({ number: 7, labels: ["Sandcastle"] }));
+        bed.git.setCommitsAhead("forja/issue-7", 1);
+        bed.runtime.script({
+            match: { promptIncludes: "Review the changes on branch" },
+            durationMs: AGENT_DURATION_MS,
+            result: { summary: REVIEWER_SUMMARY, output: { approved: true, notes: "" } },
+        });
+
+        const flowId = await bed.publishFlow(basicFactoryTemplate.build());
+        const started = await bed.startRun(flowId);
+        await bed.runUntilFinished(started.id);
+
+        expect(github.createdPullRequests).toEqual([
+            expect.objectContaining({ body: expect.stringContaining(REVIEWER_SUMMARY) as unknown }),
+        ]);
     });
 });
 

@@ -10,6 +10,7 @@ import {
     findConditionOperatorTypeProblems,
     findEdgesWithoutBranch,
 } from "@/engine/validation_rules/condition_rules.js";
+import { findGitBodySourceProblems } from "@/engine/validation_rules/git_rules.js";
 import {
     findGroupOverlaps,
     findMapListInputProblems,
@@ -61,6 +62,7 @@ const VALIDATION_RULES: ValidationRule[] = [
     findConditionOperatorTypeProblems,
     findConditionBranchProblems,
     findEdgesWithoutBranch,
+    findGitBodySourceProblems,
     findEmptyPrompts,
     findUnknownToolProfiles,
     findUnknownCredentials,

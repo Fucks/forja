@@ -27,11 +27,11 @@
 
 ## Tasks
 
-- [ ] 1. Test + rule `git_body_source_missing` (inputs port missing, port without edge, node not before) —
+- [x] 1. Test + rule `git_body_source_missing` (inputs port missing, port without edge, node not before) —
       `graph_validation.test.ts`, `git_rules.ts`, `graph_validation.ts`
-- [ ] 2. Templates and canonical factory use `bodyFrom: "inputs.body"` — `template_nodes.ts`,
+- [x] 2. Templates and canonical factory use `bodyFrom: "inputs.body"` — `template_nodes.ts`,
       `flow_graph_factory.ts`
-- [ ] 3. Test: a PR opened by `basic_factory` with the fake runtime has the Reviewer summary as body —
+- [x] 3. Test: a PR opened by `basic_factory` with the fake runtime has the Reviewer summary as body —
       `flow_templates.test.ts`
 - [ ] 4. Make `selectSourceItems` generic over `SourceCandidate` — `select_source_items.ts`,
       `work_item_service.ts`
