@@ -2,7 +2,11 @@ import { NodeResizer, useStore } from "@xyflow/react";
 import type { NodeProps, ReactFlowState } from "@xyflow/react";
 import type { JSX } from "react";
 
+import { LOOP_EXHAUSTED_PORT } from "@/shared/flow_graph.js";
+import type { FlowGroup } from "@/shared/flow_graph.js";
 import { GroupFrame } from "@/web/canvas/base/group_frame.js";
+import type { PortView } from "@/web/canvas/base/port_handle.js";
+import { describeLoopExhaustedPort } from "@/web/canvas/base/port_label.js";
 import type { GroupRFNode } from "@/web/canvas/graph_mapping.js";
 import { useNodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
 import { describeGroupConfig } from "@/web/canvas/nodes/node_summary.js";
@@ -11,6 +15,13 @@ import { useTargetValidation } from "@/web/canvas/validation_overlay.js";
 
 const MIN_GROUP_WIDTH_PX = 160;
 const MIN_GROUP_HEIGHT_PX = 96;
+
+// The item leaves through it like through any work item output, so it connects like one.
+const LOOP_EXHAUSTED_OUTPUT: PortView = {
+    name: LOOP_EXHAUSTED_PORT,
+    type: "workItem",
+    ...describeLoopExhaustedPort(),
+};
 
 export function GroupNode({ data, selected }: NodeProps<GroupRFNode>): JSX.Element {
     const { flowGroup } = data;
@@ -35,9 +46,14 @@ export function GroupNode({ data, selected }: NodeProps<GroupRFNode>): JSX.Eleme
                 invalid={invalid}
                 isEmpty={isEmpty}
                 issueMessages={issueMessages}
+                outputs={listGroupOutputs(flowGroup)}
             />
         </>
     );
+}
+
+function listGroupOutputs(group: FlowGroup): PortView[] {
+    return group.kind === "loop" ? [LOOP_EXHAUSTED_OUTPUT] : [];
 }
 
 function hasChildren({ nodes }: ReactFlowState, groupId: string): boolean {
