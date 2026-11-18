@@ -3,7 +3,6 @@ import type { JSX } from "react";
 import { assertNever } from "@/lib/assert_never.js";
 import { MAX_MAP_CONCURRENCY, MIN_MAP_CONCURRENCY } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, LoopConfig, MapConfig } from "@/shared/flow_graph.js";
-import type { FieldDoc } from "@/web/docs/node_docs/node_doc.js";
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHelp } from "@/web/canvas/inspector/field_help.js";
 import { FieldHint } from "@/web/canvas/inspector/field_hint.js";
@@ -57,6 +56,8 @@ function GroupConfigFields({ group, graph, onChange }: GroupInspectorProps): JSX
     }
 }
 
+const BARRIER_DOC = fieldDoc("map", "barrier");
+const FAIL_FAST_DOC = fieldDoc("map", "failFast");
 const CONCURRENCY_EXAMPLE =
     "Quantos itens ao mesmo tempo. Ex.: com 3, três Devs implementam três issues em paralelo; " +
     "com 1, um item por vez.";
@@ -84,34 +85,19 @@ function MapFields({
                 <p className="text-xs text-muted">{describeConcurrency(config.concurrency)}</p>
                 <FieldHint>{CONCURRENCY_EXAMPLE}</FieldHint>
             </div>
-            <DescribedSwitchField
-                doc={fieldDoc("map", "barrier")}
+            <SwitchField
+                doc={BARRIER_DOC}
                 checked={config.barrier}
+                hint={BARRIER_DOC.description}
                 onChange={(barrier) => onChange({ barrier })}
             />
-            <DescribedSwitchField
-                doc={fieldDoc("map", "failFast")}
+            <SwitchField
+                doc={FAIL_FAST_DOC}
                 checked={config.failFast}
+                hint={FAIL_FAST_DOC.description}
                 onChange={(failFast) => onChange({ failFast })}
             />
         </>
-    );
-}
-
-function DescribedSwitchField({
-    doc,
-    checked,
-    onChange,
-}: {
-    doc: FieldDoc;
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-}): JSX.Element {
-    return (
-        <div className="flex flex-col gap-1">
-            <SwitchField doc={doc} checked={checked} onChange={onChange} />
-            <FieldHint>{doc.description}</FieldHint>
-        </div>
     );
 }
 

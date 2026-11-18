@@ -4,7 +4,6 @@ import { isNodeOfType } from "@/shared/flow_graph.js";
 import { ITEM_DESTINATIONS } from "@/shared/node_configs/output_config.js";
 import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 import { fieldDoc, fieldOptionCards } from "@/web/canvas/inspector/field_doc.js";
-import { FieldHint } from "@/web/canvas/inspector/field_hint.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { NodeInspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
@@ -24,6 +23,9 @@ const KEEP_ITEM_CARD: OptionCard<typeof KEEP_ITEM> = {
     description: "O item fica onde está no board.",
 };
 
+const COMMENT_ON_ISSUE_HINT =
+    "O comentário traz o resultado da run e o link do PR. O motivo vem da primeira entrada com " +
+    "reason, notes ou failureSummary, como as notas do Reviewer.";
 const DESTINATION_DOC = fieldDoc("output", "moveItemTo");
 const DESTINATION_CARDS: OptionCard<DestinationChoice>[] = [
     ...fieldOptionCards(DESTINATION_DOC, ITEM_DESTINATIONS),
@@ -51,18 +53,12 @@ export function OutputInspector({ node, graph, onChange }: InspectorProps): JSX.
                         changeConfig({ moveItemTo: toMoveItemTo(destination) })
                     }
                 />
-                <div className="flex flex-col gap-1">
-                    <SwitchField
-                        doc={fieldDoc("output", "commentOnIssue")}
-                        checked={config.commentOnIssue}
-                        onChange={(commentOnIssue) => changeConfig({ commentOnIssue })}
-                    />
-                    <FieldHint>
-                        O comentário traz o resultado da run e o link do PR. O motivo vem da
-                        primeira entrada com reason, notes ou failureSummary, como as notas do
-                        Reviewer.
-                    </FieldHint>
-                </div>
+                <SwitchField
+                    doc={fieldDoc("output", "commentOnIssue")}
+                    checked={config.commentOnIssue}
+                    hint={COMMENT_ON_ISSUE_HINT}
+                    onChange={(commentOnIssue) => changeConfig({ commentOnIssue })}
+                />
             </InspectorFields>
         </NodeInspectorFrame>
     );

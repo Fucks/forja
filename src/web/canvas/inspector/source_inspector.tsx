@@ -10,7 +10,6 @@ import {
 } from "@/shared/node_configs/source_config.js";
 import type { SourceConfig } from "@/shared/node_configs/source_config.js";
 import { fieldDoc, fieldOptionCards } from "@/web/canvas/inspector/field_doc.js";
-import { FieldHint } from "@/web/canvas/inspector/field_hint.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
@@ -25,6 +24,7 @@ import { Button } from "@/web/components/ui/button.js";
 
 const PROVIDER_DOC = fieldDoc("source", "provider");
 const PROVIDER_CARDS = fieldOptionCards(PROVIDER_DOC, SOURCE_PROVIDERS);
+const SKIP_BLOCKED_EXAMPLE = "#12 com ‘depends on #10’ só entra quando #10 fechar";
 
 export function SourceInspector({ node, graph, onChange }: InspectorProps): JSX.Element {
     // The registry routes only sources here; the check narrows the node to its source config.
@@ -58,14 +58,12 @@ export function SourceInspector({ node, graph, onChange }: InspectorProps): JSX.
                     limits={{ min: MIN_SOURCE_LIMIT, max: MAX_SOURCE_LIMIT }}
                     onChange={(limit) => changeConfig({ limit })}
                 />
-                <div className="flex flex-col gap-1">
-                    <SwitchField
-                        doc={fieldDoc("source", "skipBlocked")}
-                        checked={config.skipBlocked}
-                        onChange={(skipBlocked) => changeConfig({ skipBlocked })}
-                    />
-                    <FieldHint>#12 com ‘depends on #10’ só entra quando #10 fechar</FieldHint>
-                </div>
+                <SwitchField
+                    doc={fieldDoc("source", "skipBlocked")}
+                    checked={config.skipBlocked}
+                    hint={SKIP_BLOCKED_EXAMPLE}
+                    onChange={(skipBlocked) => changeConfig({ skipBlocked })}
+                />
                 <SourcePreviewButton config={config} />
             </InspectorFields>
         </NodeInspectorFrame>

@@ -4,11 +4,10 @@ import { z } from "zod";
 
 import { isNodeOfType } from "@/shared/flow_graph.js";
 import { GATE_REVIEW_SECTIONS } from "@/shared/node_configs/gate_config.js";
-import type { GateConfig } from "@/shared/node_configs/gate_config.js";
+import type { GateConfig, GateReviewSection } from "@/shared/node_configs/gate_config.js";
 import { fieldDoc, fieldOptionCards } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
 import { GatePreview } from "@/web/canvas/inspector/gate_preview.js";
-import type { GateReviewSection } from "@/web/canvas/inspector/gate_preview.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";

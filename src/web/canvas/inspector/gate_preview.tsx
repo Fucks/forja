@@ -1,10 +1,8 @@
 import type { JSX } from "react";
 
-import type { GateConfig } from "@/shared/node_configs/gate_config.js";
+import type { GateConfig, GateReviewSection } from "@/shared/node_configs/gate_config.js";
 import type { OptionCard } from "@/web/canvas/inspector/option_cards.js";
 import { Skeleton } from "@/web/components/ui/skeleton.js";
-
-export type GateReviewSection = GateConfig["show"][number];
 
 const PREVIEW_TITLE = "Prévia da tela Aprovações";
 const MESSAGE_PLACEHOLDER = "Sem mensagem: escreva o que a pessoa deve conferir.";

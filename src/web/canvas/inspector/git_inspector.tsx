@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 
+import type { DataType } from "@/engine/available_data.js";
 import { checkGitBodySource } from "@/engine/validation_rules/git_rules.js";
 import { isNodeOfType } from "@/shared/flow_graph.js";
 import type { FlowGraph, NodeOfType } from "@/shared/flow_graph.js";
@@ -19,7 +20,7 @@ import { useAvailableData } from "@/web/canvas/inspector/use_available_data.js";
 
 const ACTION_DOC = fieldDoc("git", "action");
 const ACTION_CARDS = fieldOptionCards(ACTION_DOC, GIT_ACTIONS);
-const TEXT_DATA_TYPE = "string";
+const TEXT_DATA_TYPE: DataType = "string";
 
 export function GitInspector({ node, graph, onChange }: InspectorProps): JSX.Element {
     // The registry routes only git nodes here; the check narrows the node to its git config.

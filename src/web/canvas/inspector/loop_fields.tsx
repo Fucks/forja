@@ -101,21 +101,12 @@ function listCarryOptions(graph: FlowGraph, loop: LoopGroup): CarryOption[] {
     const outputNames = loopNodes.flatMap((node) => node.outputs.map((port) => port.name));
     const portNames = [...new Set([...outputNames, ...loop.config.carry])];
 
-    return portNames.map((port) => ({
-        port,
-        label: describeCarriedPort(
-            port,
-            loopNodes.filter((node) => producesPort(node, port)),
-        ),
-    }));
-}
-
-function producesPort(node: FlowNode, portName: string): boolean {
-    return node.outputs.some((port) => port.name === portName);
+    return portNames.map((port) => ({ port, label: describeCarriedPort(port, loopNodes) }));
 }
 
 // Named like the Dados tab names the port, with the nodes of the loop that produce it.
-function describeCarriedPort(portName: string, producers: FlowNode[]): string {
+function describeCarriedPort(portName: string, loopNodes: FlowNode[]): string {
+    const producers = loopNodes.filter((node) => producesPort(node, portName));
     const [firstProducer] = producers;
     const producedPort = firstProducer?.outputs.find((port) => port.name === portName);
     if (!firstProducer || !producedPort) {
@@ -124,4 +115,8 @@ function describeCarriedPort(portName: string, producers: FlowNode[]): string {
 
     const producerLabels = producers.map((node) => node.label).join(", ");
     return `Levar ${labelPort(firstProducer.type, producedPort)} (${producerLabels})`;
+}
+
+function producesPort(node: FlowNode, portName: string): boolean {
+    return node.outputs.some((port) => port.name === portName);
 }
