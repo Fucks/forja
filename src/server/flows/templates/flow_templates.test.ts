@@ -29,10 +29,10 @@ const PROJECT_ID = "prj_forja";
 const AGENT_DURATION_MS = 60_000;
 
 describe("FLOW_TEMPLATES", () => {
-    it("lists the basic factory, the review loop and the Sandcastle pipeline", () => {
+    it("lists the basic factory, the review with rounds and the Sandcastle pipeline", () => {
         expect(FLOW_TEMPLATES.map((template) => template.name)).toEqual([
             "Fábrica básica",
-            "Dev ↔ Review em loop com testes",
+            "Revisão com volta",
             "Pipeline Sandcastle",
         ]);
     });
@@ -128,14 +128,14 @@ describe("Fábrica básica run with the fake runtime", () => {
     });
 });
 
-describe("Dev ↔ Review em loop com testes template", () => {
+describe("Revisão com volta template", () => {
     it("works on two items at a time", () => {
         const graph = reviewLoopTemplate.build();
 
         expect(mapConcurrencyOf(graph, "items")).toBe(2);
     });
 
-    it("repeats develop, test and review at most three times until the review approves", () => {
+    it("sends the work back to Dev until Reviewer approves, at most three times", () => {
         const graph = reviewLoopTemplate.build();
 
         expect(findGroup(graph, "review_loop")).toMatchObject({
@@ -143,26 +143,59 @@ describe("Dev ↔ Review em loop com testes template", () => {
             parentGroupId: "items",
             config: {
                 maxIterations: 3,
-                until: { op: "eq", path: "nodes.revisar.result.approved", value: true },
+                until: { op: "eq", path: "nodes.reviewer.result.approved", value: true },
                 carry: ["notes"],
             },
         });
         expect(graph.nodes.filter((node) => node.parentGroupId === "review_loop")).toMatchObject([
-            { id: "dev", type: "agent", label: "Desenvolver" },
-            { id: "tests", type: "script", config: { command: "npm run test" } },
-            { id: "review", type: "agent", label: "Revisar" },
+            { id: "dev", type: "agent", label: "Dev" },
+            { id: "reviewer", type: "agent", label: "Reviewer" },
         ]);
     });
 
-    it("runs the tests after the developer and reviews after the tests", () => {
+    it("asks Reviewer for a verdict with notes", () => {
         const graph = reviewLoopTemplate.build();
 
+        expect(findNode(graph, "reviewer")).toMatchObject({
+            config: { outputSchema: { required: ["approved", "notes"] } },
+        });
         expect(graph.edges.map((edge) => edge.id)).toEqual(
-            expect.arrayContaining(["dev.summary->tests.changes", "tests.result->review.tests"]),
+            expect.arrayContaining([
+                "dev.summary->reviewer.context",
+                "reviewer.summary->dev.notes",
+            ]),
         );
     });
 
-    it("sends the items of an exhausted loop to a human", () => {
+    it("runs npm test on the approved work and stops the item when it fails", () => {
+        const graph = reviewLoopTemplate.build();
+
+        expect(findNode(graph, "tests")).toMatchObject({
+            type: "script",
+            parentGroupId: "items",
+            config: { command: "npm test", onFailure: "fail" },
+        });
+        expect(graph.edges.map((edge) => edge.id)).toContain("reviewer.summary->tests.review");
+    });
+
+    it("opens the pull request after the tests, with the notes of Reviewer as its body", () => {
+        const graph = reviewLoopTemplate.build();
+
+        expect(findNode(graph, "open_pr")).toMatchObject({
+            type: "git",
+            config: { action: "open_pr", bodyFrom: "inputs.body" },
+        });
+        expect(graph.edges.map((edge) => edge.id)).toEqual(
+            expect.arrayContaining([
+                "tests.result->open_pr.tests",
+                "reviewer.summary->open_pr.body",
+                "open_pr.result->output.pullRequest",
+            ]),
+        );
+        expect(findNode(graph, "output")).toMatchObject({ config: { moveItemTo: "done" } });
+    });
+
+    it("sends the items Reviewer never approved to Precisa de humano", () => {
         const graph = reviewLoopTemplate.build();
 
         const exhaustedEdge = graph.edges.find(
@@ -170,32 +203,15 @@ describe("Dev ↔ Review em loop com testes template", () => {
         );
         expect(findNode(graph, exhaustedEdge?.to.nodeId ?? "")).toMatchObject({
             type: "output",
+            label: "Precisa de humano",
             config: { moveItemTo: "needs_human" },
         });
     });
 
-    it("opens a pull request for approved items before moving them to done", () => {
-        const graph = reviewLoopTemplate.build();
-
-        expect(graph.edges.map((edge) => edge.id)).toEqual(
-            expect.arrayContaining([
-                "review.summary->open_pr.body",
-                "open_pr.result->output.pullRequest",
-            ]),
-        );
-        expect(findNode(graph, "output")).toMatchObject({ config: { moveItemTo: "done" } });
-    });
-
-    it("does not ask the developer for review notes, which are empty in the first round", () => {
+    it("does not ask Dev for review notes, which are empty in the first round", () => {
         const graph = reviewLoopTemplate.build();
 
         expect(agentPromptOf(graph, "dev")).not.toContain("{{inputs.notes}}");
-    });
-
-    it("gives the reviewer the result of the tests", () => {
-        const graph = reviewLoopTemplate.build();
-
-        expect(agentPromptOf(graph, "review")).toContain("{{inputs.tests}}");
     });
 });
 
@@ -237,7 +253,7 @@ describe("flow template routes", () => {
             },
             {
                 id: "review_loop",
-                name: "Dev ↔ Review em loop com testes",
+                name: "Revisão com volta",
                 description: reviewLoopTemplate.description,
             },
             {
