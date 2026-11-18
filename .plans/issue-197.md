@@ -30,7 +30,7 @@
 - [x] 8. Test + implement validation of duplicate/reserved ports and empty rules — `condition_rules.ts`,
       `graph_validation.test.ts`
 - [x] 9. Test + implement validation of edges leaving a port the Decisão does not have
-- [ ] 10. Test + implement `updateNodeConfig` dropping edges of removed outputs — `node_updates.ts`
+- [x] 10. Test + implement `updateNodeConfig` dropping edges of removed outputs — `node_updates.ts`
 - [ ] 11. Test + implement branch editor: add a branch — `condition_branches_editor.tsx`, `condition_branch_edits.ts`
 - [ ] 12. Test + implement reorder (up/down) and remove branch
 - [ ] 13. Test + implement the Senão switch and editing the branch name
