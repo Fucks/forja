@@ -5,6 +5,7 @@ import type {
     AgentRunResult,
 } from "@/integrations/agent_runtime/agent_runtime.js";
 import { minimalValueForSchema } from "@/integrations/agent_runtime/minimal_schema_value.js";
+import type { ScriptedAgentOutputs } from "@/integrations/agent_runtime/scripted_agent_outputs.js";
 import type { CancelTimeout, Clock } from "@/lib/clock.js";
 import { createSeededRandom, type SeededRandom } from "@/lib/seeded_random.js";
 import type { DemoScript, DemoToolCall } from "@/server/demo/demo_script.js";
@@ -15,6 +16,7 @@ export interface ScriptedRunSettings {
     /** 1 plays each run in 3–8 s; 50 plays it 50 times faster. */
     speed: number;
     script: DemoScript;
+    outputs: ScriptedAgentOutputs;
 }
 
 type PlannedEvent =
@@ -56,7 +58,7 @@ export function playScriptedAgentRun(
 }
 
 function planScriptedRun(
-    { speed, script }: ScriptedRunSettings,
+    { speed, script, outputs }: ScriptedRunSettings,
     request: AgentRunRequest,
 ): ScriptedRunPlan {
     const random = createSeededRandom(request.nodeRunId);
@@ -68,7 +70,7 @@ function planScriptedRun(
         durationMs,
         events: [...events, { kind: "text", text: summary }],
         result: {
-            output: outputFor(request),
+            output: outputFor(request, outputs),
             summary,
             commits: [],
             usage: randomTokenUsage(random),
@@ -99,9 +101,14 @@ function toolCallEvent(toolCall: DemoToolCall): PlannedEvent {
     return { kind: "tool_call", name: toolCall.name, args: JSON.stringify(toolCall.args) };
 }
 
-function outputFor(request: AgentRunRequest): unknown {
+function outputFor(request: AgentRunRequest, outputs: ScriptedAgentOutputs): unknown {
     if (request.outputSchema === undefined) {
         return undefined;
+    }
+
+    const scripted = outputs.takeNext(request.prompt);
+    if (scripted.isScripted) {
+        return scripted.output;
     }
 
     return minimalValueForSchema(request.outputSchema);

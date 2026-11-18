@@ -8,6 +8,7 @@ import type {
 } from "@/integrations/agent_runtime/agent_runtime.js";
 import { AgentCanceledError } from "@/integrations/agent_runtime/agent_errors.js";
 import { jsonSchemaToZod } from "@/integrations/agent_runtime/output_schema.js";
+import { createScriptedAgentOutputs } from "@/integrations/agent_runtime/scripted_agent_outputs.js";
 import { createScriptedAgentRuntime } from "@/integrations/agent_runtime/scripted_agent_runtime.js";
 import { buildAgentRunRequest } from "@/test/factories/agent_run_request_factory.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
@@ -135,6 +136,23 @@ describe("ScriptedAgentRuntime", () => {
                 started.result?.output,
             );
             expect(validation.success).toBe(true);
+        });
+
+        it("outputs the scripted output when the prompt matches a scripted rule", async () => {
+            const clock = new FakeClock();
+            const outputs = createScriptedAgentOutputs();
+            const approved = { approved: true, notes: "" };
+            outputs.replaceRules([{ promptIncludes: "Revise", outputs: [approved] }]);
+            const runtime = createScriptedAgentRuntime({ clock, outputs });
+            const started = startHeadlessRun(runtime, {
+                prompt: "Revise as mudanças do Dev.",
+                outputSchema: REVIEWER_OUTPUT_SCHEMA,
+            });
+
+            clock.advance(MAX_RUN_MS);
+            await flushPromises();
+
+            expect(started.result?.output).toEqual(approved);
         });
 
         it("outputs nothing structured without an output schema", async () => {
