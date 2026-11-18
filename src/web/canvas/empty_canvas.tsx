@@ -29,7 +29,7 @@ export function EmptyCanvas({ store }: { store: EditorStore }): JSX.Element {
                     Por onde começar?
                 </h2>
                 <TemplateChoices
-                    isLoading={startFromTemplate.isPending}
+                    isStarting={startFromTemplate.isPending}
                     onChoose={(templateId) => startFromTemplate.mutate(templateId)}
                 />
                 {startFromTemplate.error && (
@@ -55,10 +55,10 @@ export function EmptyCanvas({ store }: { store: EditorStore }): JSX.Element {
 }
 
 function TemplateChoices({
-    isLoading,
+    isStarting,
     onChoose,
 }: {
-    isLoading: boolean;
+    isStarting: boolean;
     onChoose: (templateId: string) => void;
 }): JSX.Element {
     const templatesQuery = useFlowTemplates();
@@ -72,7 +72,7 @@ function TemplateChoices({
                     <li key={template.id}>
                         <TemplateButton
                             template={template}
-                            disabled={isLoading}
+                            disabled={isStarting}
                             onChoose={() => onChoose(template.id)}
                         />
                     </li>

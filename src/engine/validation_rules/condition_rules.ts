@@ -207,9 +207,15 @@ function findEmptyRuleIssues(decision: SwitchDecision): ValidationIssue[] {
     );
 }
 
+interface BranchProblem {
+    code: string;
+    problem: string;
+    fix: string;
+}
+
 function branchIssue(
     decision: SwitchDecision,
-    { code, problem, fix }: { code: string; problem: string; fix: string },
+    { code, problem, fix }: BranchProblem,
 ): ValidationIssue {
     return errorIssue({
         code,

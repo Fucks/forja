@@ -93,10 +93,6 @@ function focusWhenControlAppears(fieldElement: HTMLElement, onFocused: () => voi
         return doNothing;
     }
 
-    const stopWaiting = (): void => {
-        observer.disconnect();
-        clearTimeout(fallbackTimer);
-    };
     const observer = new MutationObserver(() => {
         if (focusControlMatching(fieldElement, EDITABLE_SELECTOR)) {
             stopWaiting();
@@ -109,6 +105,11 @@ function focusWhenControlAppears(fieldElement: HTMLElement, onFocused: () => voi
         onFocused();
     }, EDITABLE_CONTROL_WAIT_MS);
     observer.observe(fieldElement, { childList: true, subtree: true });
+
+    function stopWaiting(): void {
+        observer.disconnect();
+        clearTimeout(fallbackTimer);
+    }
 
     return stopWaiting;
 }
