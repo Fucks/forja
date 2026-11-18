@@ -35,7 +35,7 @@
       `flow_templates.test.ts`
 - [x] 4. Make `selectSourceItems` generic over `SourceCandidate` — `select_source_items.ts`,
       `work_item_service.ts`
-- [ ] 5. Test + `previewSourceItems` (GitHub fake with blocked and free issues, provider error, local, no
+- [x] 5. Test + `previewSourceItems` (GitHub fake with blocked and free issues, provider error, local, no
       run/item written) — `source_preview.ts`, `source_preview.test.ts`
 - [ ] 6. Test + route `POST /api/projects/:projectId/flows/:flowId/source-preview` with route types —
       `flows_routes.ts`, `flows_routes.test.ts`, `api_types.ts`
