@@ -6,6 +6,7 @@ import type { Mock } from "vitest";
 import type { Condition } from "@/shared/conditions.js";
 import type { FlowGraph, FlowNode } from "@/shared/flow_graph.js";
 import { branchPortsOf } from "@/shared/node_configs/condition_branches.js";
+import { MAX_BRANCHES } from "@/shared/node_configs/condition_config.js";
 import type {
     ConditionConfig,
     SwitchConditionConfig,
@@ -29,7 +30,6 @@ const DECISION_ID = "review";
 
 const APPROVED: Condition = { op: "eq", path: "inputs.value.approved", value: true };
 const HAS_NOTES: Condition = { op: "isNotEmpty", path: "inputs.value.notes" };
-const MAX_BRANCHES = 10;
 const REVIEW_SWITCH: SwitchConditionConfig = {
     mode: "switch",
     branches: [

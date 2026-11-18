@@ -1,9 +1,8 @@
 import type { Condition } from "@/shared/conditions.js";
-import { conditionConfigSchema } from "@/shared/node_configs/condition_config.js";
+import { conditionConfigSchema, MAX_BRANCHES } from "@/shared/node_configs/condition_config.js";
 import type { SwitchBranch } from "@/shared/node_configs/condition_config.js";
 
 const APPROVED: Condition = { op: "eq", path: "inputs.value.approved", value: true };
-const MAX_BRANCHES = 10;
 
 describe("conditionConfigSchema", () => {
     it("reads a decision saved without a mode as a yes/no decision", () => {
