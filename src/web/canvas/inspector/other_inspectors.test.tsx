@@ -173,9 +173,33 @@ describe("GateInspector", () => {
         const gate = createNodeOfType("gate", "gate", ORIGIN);
         const inspector = renderInspector(GateInspector, gate);
 
-        await userEvent.click(screen.getByRole("switch", { name: "Mostrar logs" }));
+        await userEvent.click(screen.getByRole("checkbox", { name: "Logs" }));
 
         expect(inspector.lastChangedNode("gate").config.show).toEqual(["diff", "artifacts"]);
+    });
+
+    it("describes each section the approval can show", () => {
+        renderInspector(GateInspector, createNodeOfType("gate", "gate", ORIGIN));
+
+        expect(screen.getByRole("checkbox", { name: "Diff" })).toHaveAccessibleDescription(
+            "As mudanças no código do item.",
+        );
+    });
+
+    it("previews the approval screen with the message and the chosen sections", () => {
+        const gate = createNodeOfType("gate", "gate", ORIGIN);
+        const gateWithMessage: NodeOfType<"gate"> = {
+            ...gate,
+            config: { ...gate.config, message: "Confira o PR", show: ["diff", "logs"] },
+        };
+
+        renderInspector(GateInspector, gateWithMessage);
+
+        const preview = within(screen.getByRole("figure", { name: "Prévia da tela Aprovações" }));
+        expect(preview.getByText("Confira o PR")).toBeInTheDocument();
+        expect(preview.getByRole("heading", { name: "Diff" })).toBeInTheDocument();
+        expect(preview.getByText("Ver logs da run")).toBeInTheDocument();
+        expect(preview.queryByRole("heading", { name: "Artefatos" })).not.toBeInTheDocument();
     });
 
     it("applies an optional timeout in hours", async () => {

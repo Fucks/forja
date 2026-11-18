@@ -44,7 +44,7 @@
 - [x] 8. Fonte: "Ver o que seria buscado agora" dialog (loading, empty, error, list, skipped) and
       `skipBlocked` example — `source_preview_dialog.tsx`, `source_inspector.tsx`, tests
 - [x] 9. Gatilho: cards for the 5 kinds and link "Configurar em Gatilhos" — `trigger_inspector.tsx`, tests
-- [ ] 10. Aprovação: `show` as described checkboxes and `gate_preview` skeleton — `gate_inspector.tsx`,
+- [x] 10. Aprovação: `show` as described checkboxes and `gate_preview` skeleton — `gate_inspector.tsx`,
       `gate_preview.tsx`, tests
 - [ ] 11. Saída: explanation of the comment and the reason — `output_inspector.tsx`, tests
 - [ ] 12. Map: concurrency explanation with the example — `group_inspector.tsx`, tests
