@@ -27,7 +27,7 @@
 
 ## Tasks
 
-- [ ] 1. `ValidationIssue` and its Zod schema accept `fix` and `fieldKey` — `src/shared/validation_issue.ts` (+ test)
+- [x] 1. `ValidationIssue` and its Zod schema accept `fix` and `fieldKey` — `src/shared/validation_issue.ts` (+ test)
 - [ ] 2. Test: every registered rule produces a `fix` over example invalid graphs — `src/engine/graph_validation.test.ts`
 - [ ] 3. Rules teach: object-form `errorIssue`/`warningIssue`, revised messages with `fix`/`fieldKey` in
       `validation_rules/*` and `prompt_template.ts`; update the rule tests
