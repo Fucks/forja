@@ -50,5 +50,5 @@
 - [x] 12. Map: concurrency explanation with the example — `group_inspector.tsx`, tests
 - [x] 13. Loop: friendly carry labels and `exhausted` diagram with the hint — `loop_fields.tsx`,
       `loop_exhausted_diagram.tsx`, tests
-- [ ] 14. Docs touched by the changes regenerated (`npm run docs:nodes`)
-- [ ] 15. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 14. Docs touched by the changes regenerated (`npm run docs:nodes`)
+- [x] 15. Self-review checklist (section 5) and feedback loops (section 6)

@@ -1,8 +1,8 @@
+import { existsSync } from "node:fs";
+
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
-
-import { existsSync } from "node:fs";
 
 import { systemClock } from "@/lib/clock.js";
 import type { AppDeps } from "@/server/app.js";
