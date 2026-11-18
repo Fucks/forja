@@ -49,4 +49,4 @@
 - [x] 16. Template "Revisão com volta": Fonte → Map[Loop[Dev → Reviewer]] → Comando → Git PR → Saída; exhausted → Precisa de humano — `review_loop.ts`, `flow_templates.test.ts`
 - [x] 17. Template runs with the fake runtime: approved opens the PR; always rejected goes to "Precisa de humano" — `flow_templates.test.ts`
 - [x] 18. Guided example in the concepts points to the template — `src/web/docs/concepts.ts`
-- [ ] 19. Self-review checklist (section 5) and feedback loops (section 6)
+- [x] 19. Self-review checklist (section 5) and feedback loops (section 6)
