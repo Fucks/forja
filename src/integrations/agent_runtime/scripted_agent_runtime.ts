@@ -11,6 +11,10 @@ import type {
     WorkspaceSpec,
 } from "@/integrations/agent_runtime/agent_runtime.js";
 import {
+    createScriptedAgentOutputs,
+    type ScriptedAgentOutputs,
+} from "@/integrations/agent_runtime/scripted_agent_outputs.js";
+import {
     playScriptedAgentRun,
     type ScriptedRunSettings,
 } from "@/integrations/agent_runtime/scripted_agent_run.js";
@@ -23,6 +27,7 @@ export interface ScriptedAgentRuntimeOptions {
     /** 1 = the default demo pace, each agent run taking 3–8 s. */
     speed?: number;
     script?: DemoScript;
+    outputs?: ScriptedAgentOutputs;
 }
 
 const DEFAULT_SPEED = 1;
@@ -38,8 +43,9 @@ export function createScriptedAgentRuntime({
     clock,
     speed = DEFAULT_SPEED,
     script = DEMO_SCRIPT,
+    outputs = createScriptedAgentOutputs(),
 }: ScriptedAgentRuntimeOptions): AgentRuntime {
-    const settings: ScriptedRunSettings = { clock, speed, script };
+    const settings: ScriptedRunSettings = { clock, speed, script, outputs };
     const openWorkspaces = new Map<string, OpenWorkspaceSummary>();
 
     function runAgent(request: AgentRunRequest, hooks: AgentRunHooks): Promise<AgentRunResult> {

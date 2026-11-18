@@ -3,6 +3,8 @@ import type { LucideIcon } from "lucide-react";
 import type { JSX } from "react";
 
 import { InvalidMarker, outlineClasses } from "@/web/canvas/base/canvas_outline.js";
+import { PortHandle } from "@/web/canvas/base/port_handle.js";
+import type { PortView } from "@/web/canvas/base/port_handle.js";
 import { cn } from "@/web/components/ui/cn.js";
 
 type GroupKind = "loop" | "map";
@@ -24,6 +26,7 @@ export interface GroupFrameProps {
     isEmpty?: boolean;
     /** Shown in the tooltip of the invalid marker. */
     issueMessages?: string[];
+    outputs?: PortView[];
 }
 
 export const GROUP_KIND_ICONS: Record<GroupKind, LucideIcon> = {
@@ -44,6 +47,7 @@ export function GroupFrame({
     invalid,
     isEmpty,
     issueMessages,
+    outputs = [],
 }: GroupFrameProps): JSX.Element {
     const KindIcon = GROUP_KIND_ICONS[kind];
 
@@ -66,6 +70,9 @@ export function GroupFrame({
                 {progress && <span className="text-muted">{formatGroupProgress(progress)}</span>}
                 {isEmpty && <span className="text-muted">{EMPTY_GROUP_HINT}</span>}
             </div>
+            {outputs.map((output) => (
+                <PortHandle key={output.name} side="right" {...output} />
+            ))}
         </div>
     );
 }

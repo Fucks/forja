@@ -1,7 +1,7 @@
-import { isNodeOfType } from "@/shared/flow_graph.js";
+import { isNodeOfType, LOOP_EXHAUSTED_PORT } from "@/shared/flow_graph.js";
 import type { FlowNode, NodeType, Port } from "@/shared/flow_graph.js";
 import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
-import type { PortDoc } from "@/web/docs/node_docs/node_doc.js";
+import type { DocumentedType, PortDoc } from "@/web/docs/node_docs/node_doc.js";
 
 export interface PortDescription {
     label: string;
@@ -19,16 +19,27 @@ export function describeNodePort(node: FlowNode, port: Port): PortDescription {
 }
 
 export function describePort(nodeType: NodeType, port: Port): PortDescription {
-    const portDoc = findPortDoc(nodeType, port.name);
-    if (portDoc) {
-        return { label: portDoc.label, description: portDoc.description };
-    }
-
-    return describeUserPort(port);
+    return describeDocumentedPort(nodeType, port.name) ?? describeUserPort(port);
 }
 
-function findPortDoc(nodeType: NodeType, portName: string): PortDoc | undefined {
-    const { inputs, outputs } = getNodeDoc(nodeType).ports;
+export function describeLoopExhaustedPort(): PortDescription {
+    return describeDocumentedPort("loop", LOOP_EXHAUSTED_PORT) ?? { label: LOOP_EXHAUSTED_PORT };
+}
+
+function describeDocumentedPort(
+    type: DocumentedType,
+    portName: string,
+): PortDescription | undefined {
+    const portDoc = findPortDoc(type, portName);
+    if (!portDoc) {
+        return undefined;
+    }
+
+    return { label: portDoc.label, description: portDoc.description };
+}
+
+function findPortDoc(type: DocumentedType, portName: string): PortDoc | undefined {
+    const { inputs, outputs } = getNodeDoc(type).ports;
 
     return [...inputs, ...outputs].find((portDoc) => portDoc.name === portName);
 }

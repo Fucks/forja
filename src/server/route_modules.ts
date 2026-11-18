@@ -17,6 +17,7 @@ import { registerHealthRoutes } from "@/server/health/health_routes.js";
 import { registerProjectsRoutes } from "@/server/projects/projects_routes.js";
 import { registerLogsRoutes } from "@/server/runs/logs_routes.js";
 import { registerRunsRoutes } from "@/server/runs/runs_routes.js";
+import { registerScriptedAgentsRoutes } from "@/server/scripted_agents/scripted_agents_routes.js";
 import { registerSettingsRoutes } from "@/server/settings/settings_routes.js";
 import { registerStaticRoutes } from "@/server/static/static_routes.js";
 import { registerToolProfilesRoutes } from "@/server/tool_profiles/tool_profiles_routes.js";
@@ -45,5 +46,6 @@ export const routeModules: RouteModule[] = [
     registerTriggersRoutes,
     registerWebhookRoutes,
     registerApprovalsRoutes,
+    registerScriptedAgentsRoutes,
     registerStaticRoutes,
 ];

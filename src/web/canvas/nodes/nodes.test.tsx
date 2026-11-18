@@ -90,6 +90,16 @@ describe("canvas node components", () => {
         expect(resultPort.querySelector("svg.lucide-braces")).not.toBeNull();
     });
 
+    it("names each port handle after its side and its label", () => {
+        renderOnCanvas({ nodes: [buildNamedNode("agent")] });
+
+        const agent = screen.getByLabelText("Nó agent");
+        expect(within(agent).getByLabelText("Entrada Item atual")).toHaveClass(
+            "react-flow__handle",
+        );
+        expect(within(agent).getByLabelText("Saída Resultado")).toHaveClass("react-flow__handle");
+    });
+
     it("explains the agent's result port in its tooltip", async () => {
         const user = userEvent.setup();
         renderOnCanvas({ nodes: [buildNamedNode("agent")] });
@@ -254,6 +264,22 @@ describe("canvas node components", () => {
 
         const emptyHint = screen.getByText("Arraste nós para dentro");
         expect(screen.getByRole("group", { name: "Revisão" })).toContainElement(emptyHint);
+    });
+
+    it("offers the Esgotou as voltas port on a loop group", () => {
+        renderOnCanvas({ groups: [LOOP_GROUP] });
+
+        const loop = screen.getByRole("group", { name: "Revisão" });
+        expect(within(loop).getByLabelText("Saída Esgotou as voltas")).toHaveClass(
+            "react-flow__handle",
+        );
+    });
+
+    it("offers no port on a map group", () => {
+        renderOnCanvas({ groups: [MAP_GROUP] });
+
+        const map = screen.getByRole("group", { name: "Desenvolver" });
+        expect(map.querySelector(".react-flow__handle")).toBeNull();
     });
 
     it("offers resize handles only on the selected group", () => {

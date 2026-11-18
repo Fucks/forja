@@ -32,6 +32,11 @@ const HANDLE_TYPE_BY_SIDE: Record<PortSide, HandleType> = {
     right: "source",
 };
 
+const SIDE_NAMES: Record<PortSide, string> = {
+    left: "Entrada",
+    right: "Saída",
+};
+
 const HANDLE_POSITION_BY_SIDE: Record<PortSide, Position> = {
     left: Position.Left,
     right: Position.Right,
@@ -63,6 +68,7 @@ export function PortHandle({
         >
             <Handle
                 id={port.name}
+                aria-label={`${SIDE_NAMES[side]} ${port.label}`}
                 type={handleType}
                 position={HANDLE_POSITION_BY_SIDE[side]}
                 isConnectable={connectable}

@@ -4,6 +4,10 @@ import type { FastifyInstance } from "fastify";
 
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
 import { createDockerAgentRuntime } from "@/integrations/agent_runtime/docker_agent_runtime.js";
+import {
+    createScriptedAgentOutputs,
+    type ScriptedAgentOutputs,
+} from "@/integrations/agent_runtime/scripted_agent_outputs.js";
 import { createScriptedAgentRuntime } from "@/integrations/agent_runtime/scripted_agent_runtime.js";
 import { currentHostUser } from "@/integrations/agent_runtime/workspace_layout.js";
 import { CliGitProvider } from "@/integrations/git/cli_git_provider.js";
@@ -30,6 +34,11 @@ import { createSessionProtection } from "@/server/security/api_protection.js";
 
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 
+interface ChosenAgentRuntime {
+    agentRuntime: AgentRuntime;
+    scriptedAgentOutputs?: ScriptedAgentOutputs;
+}
+
 export type ServerDeps = Omit<
     AppDeps,
     | "db"
@@ -40,6 +49,7 @@ export type ServerDeps = Omit<
     | "redactor"
     | "logs"
     | "agentRuntime"
+    | "scriptedAgentOutputs"
     | "executor"
     | "apiProtection"
 >;
@@ -79,7 +89,7 @@ async function buildAppOwningDatabase(
         redactor,
         clock: systemClock,
     };
-    const agentRuntime = createAgentRuntime(deps, commands);
+    const { agentRuntime, scriptedAgentOutputs } = createAgentRuntime(deps, commands);
     const executor = createAppExecutor({ ...services, runtime: agentRuntime });
     try {
         await recoverRunsOfPreviousProcess(database, executor, agentRuntime);
@@ -94,6 +104,7 @@ async function buildAppOwningDatabase(
             redactor,
             logs,
             agentRuntime,
+            scriptedAgentOutputs,
             executor,
             apiProtection: createSessionProtection(deps.env),
         });
@@ -108,20 +119,35 @@ async function buildAppOwningDatabase(
     }
 }
 
-function createAgentRuntime({ env, paths }: ServerDeps, commands: CommandRunner): AgentRuntime {
+function createAgentRuntime(
+    { env, paths }: ServerDeps,
+    commands: CommandRunner,
+): ChosenAgentRuntime {
     switch (env.FORJA_AGENT_RUNTIME) {
         case "docker":
-            return createDockerAgentRuntime({
-                commands,
-                paths,
-                clock: systemClock,
-                hostUser: currentHostUser(),
-            });
+            return {
+                agentRuntime: createDockerAgentRuntime({
+                    commands,
+                    paths,
+                    clock: systemClock,
+                    hostUser: currentHostUser(),
+                }),
+            };
         case "fake":
-            return createScriptedAgentRuntime({ clock: systemClock });
+            return createScriptedAgents();
         default:
             return assertNever(env.FORJA_AGENT_RUNTIME);
     }
+}
+
+function createScriptedAgents(): ChosenAgentRuntime {
+    const scriptedAgentOutputs = createScriptedAgentOutputs();
+    const agentRuntime = createScriptedAgentRuntime({
+        clock: systemClock,
+        outputs: scriptedAgentOutputs,
+    });
+
+    return { agentRuntime, scriptedAgentOutputs };
 }
 
 // Before the routes exist, so no request sees a run still active from the previous process.

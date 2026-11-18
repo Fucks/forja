@@ -1,6 +1,7 @@
 import type { APIRequestContext, APIResponse } from "@playwright/test";
 import { z } from "zod";
 
+import type { ScriptedOutputRule } from "@/integrations/agent_runtime/scripted_agent_outputs.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { globalSettingsSchema, projectSettingsSchema } from "@/shared/settings_types.js";
 
@@ -24,6 +25,8 @@ const workItemsSchema = z.array(z.object({ id: z.string(), branch: z.string() })
 
 type ListedWorkItem = z.infer<typeof workItemsSchema>[number];
 
+const WEB_APP_ENTRY_PATH = "/";
+
 const SIMULATED_CREDENTIAL = {
     name: "E2E — chave fictícia",
     kind: "anthropic_api_key",
@@ -32,7 +35,13 @@ const SIMULATED_CREDENTIAL = {
 
 /** The preconditions of the scenarios, set up through the REST API of the running Forja. */
 export class ForjaApi {
-    constructor(private readonly request: APIRequestContext) {}
+    private constructor(private readonly request: APIRequestContext) {}
+
+    // The web app hands out the session cookie that every API request must carry.
+    static async openSession(request: APIRequestContext): Promise<ForjaApi> {
+        await assertSucceeded(await request.get(WEB_APP_ENTRY_PATH), `GET ${WEB_APP_ENTRY_PATH}`);
+        return new ForjaApi(request);
+    }
 
     async createProject(project: { name: string; repoPath: string }): Promise<string> {
         const created = await this.send("post", "/api/projects", project);
@@ -77,6 +86,11 @@ export class ForjaApi {
     async listWorkItems(projectId: string): Promise<ListedWorkItem[]> {
         const items = await this.send("get", `/api/projects/${projectId}/work-items`);
         return workItemsSchema.parse(items);
+    }
+
+    /** Decides what the simulated agents answer, until the rules are replaced again. */
+    async scriptAgentOutputs(rules: ScriptedOutputRule[]): Promise<void> {
+        await this.send("put", "/api/scripted-agents/outputs", { rules });
     }
 
     // The simulated agents never use the credential, but no agent starts without one.
