@@ -26,6 +26,10 @@
 - Page object `e2e/pages/flow_editor_page.ts` with the contract methods (`addFromPalette`,
   `connect`, `dropEdgeOnEmpty`, `openInspector`, `pickData`, `chooseOption`, `applyPreset`);
   `chooseLinkedNode` picks from the "adicionar a partir da porta" menu.
+- Nodes added from the palette all land at the viewport center and overlap, so the spec builds the
+  chain through the port menu with "Organizar" after each step; the palette adds the first Agente,
+  the second Saída, the Map and the Loop (grouping the selected nodes). Viewport 2560x1440: below
+  50% of zoom the canvas hides the ports.
 
 ## Tasks
 
@@ -34,8 +38,8 @@
 - [x] 3. Test + impl: `PUT /api/scripted-agents/outputs` replaces the rules, only with the fake runtime — `scripted_agent_routes.ts`, `route_modules.ts`, `app.ts`, `main.ts`
 - [x] 4. Test + impl: port handles have accessible names — `port_handle.tsx`
 - [x] 5. Test + impl: the Loop group shows its "Esgotou as voltas" handle — `group_node.tsx`
-- [ ] 6. E2E infra: session cookie, `gh` shim on the web server PATH, review project fixture — `forja_api.ts`, `fixtures.ts`, `e2e/fake_github/gh`, `playwright.config.ts`
-- [ ] 7. Page object `flow_editor_page.ts`
-- [ ] 8. E2E scenario: Reviewer rejects then approves → Dev twice, tests pass, PR opened, "Concluído" — `flow_authoring.spec.ts`
-- [ ] 9. E2E scenario: Reviewer always rejects → exhausted → "Precisa de humano" — `flow_authoring.spec.ts`
+- [x] 6. E2E infra: session cookie, `gh` shim on the web server PATH, review project fixture — `forja_api.ts`, `fixtures.ts`, `e2e/fake_github/gh`, `playwright.config.ts`
+- [x] 7. Page object `flow_editor_page.ts`
+- [x] 8. E2E scenario: Reviewer rejects then approves → Dev twice, tests pass, PR opened, "Concluído" — `flow_authoring.spec.ts`
+- [x] 9. E2E scenario: Reviewer always rejects → exhausted → "Precisa de humano" — `flow_authoring.spec.ts`
 - [ ] 10. Self-review checklist (section 5) and feedback loops (section 6)

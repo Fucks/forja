@@ -10,6 +10,7 @@ const BUILD_AND_START_TIMEOUT_MS = 180_000;
 const SCENARIO_TIMEOUT_MS = 120_000;
 const EXPECT_TIMEOUT_MS = 15_000;
 const CI_RETRIES = 1;
+const FAKE_GITHUB_CLI_DIR = path.resolve("e2e", "fake_github");
 
 export default defineConfig({
     testDir: "e2e",
@@ -35,6 +36,8 @@ export default defineConfig({
             FORJA_DATA_DIR: e2eDataDir(),
             FORJA_AGENT_RUNTIME: "fake",
             FORJA_PORT: String(FORJA_PORT),
+            // No scenario reaches GitHub: the `gh` found first is the fake one.
+            PATH: `${FAKE_GITHUB_CLI_DIR}${path.delimiter}${process.env.PATH ?? ""}`,
         },
     },
 });

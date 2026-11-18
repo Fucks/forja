@@ -1,7 +1,4 @@
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
+import { rmSync } from "node:fs";
 
 import { test as base } from "@playwright/test";
 
@@ -13,13 +10,9 @@ import {
 import { localBasicFactoryFlow } from "./flow_graphs.js";
 import type { PublishedFlowInput } from "./forja_api.js";
 import { ForjaApi } from "./forja_api.js";
+import { createTemporaryGitRepo, type TemporaryGitRepo } from "./temporary_git_repo.js";
 
 export { expect } from "@playwright/test";
-
-interface TemporaryGitRepo {
-    path: string;
-    createBranches(branches: string[]): void;
-}
 
 interface RunnableProject {
     id: string;
@@ -31,19 +24,25 @@ interface RunnableProject {
     prepareItemsToRun(): Promise<string[]>;
 }
 
+interface GithubProject {
+    id: string;
+    /** The one local item of the project, its branch already ahead of the base. */
+    itemId: string;
+}
+
 interface ForjaFixtures {
     gitRepo: TemporaryGitRepo;
     forja: ForjaApi;
     projectFlow: PublishedFlowInput;
     runnableProject: RunnableProject;
+    githubProject: GithubProject;
 }
 
 /** Enough for the simulated agents of the basic factory to finish a few items. */
 export const RUN_TIMEOUT_MS = 90_000;
 
 const PROJECT_NAME = "Repo E2E";
-const BASE_BRANCH = "main";
-const GIT_AUTHOR = ["-c", "user.name=Forja E2E", "-c", "user.email=e2e@forja.local"];
+const GITHUB_PROJECT_ITEM_TITLE = "Cupom de desconto no checkout";
 
 export const test = base.extend<ForjaFixtures>({
     // The editor tour would cover the editor on its first opening; the specs drive the editor itself.
@@ -62,7 +61,9 @@ export const test = base.extend<ForjaFixtures>({
     },
 
     forja: async ({ request }, use) => {
-        await use(new ForjaApi(request));
+        const forja = await ForjaApi.openSession(request);
+        await use(forja);
+        await forja.scriptAgentOutputs([]);
     },
 
     projectFlow: [localBasicFactoryFlow(), { option: true }],
@@ -83,22 +84,18 @@ export const test = base.extend<ForjaFixtures>({
             },
         });
     },
+
+    githubProject: async ({ gitRepo, forja }, use) => {
+        gitRepo.connectToFakeGithub();
+        const projectId = await forja.createProject({ name: PROJECT_NAME, repoPath: gitRepo.path });
+        await forja.prepareSimulatedAgents(projectId);
+        await forja.createLocalItem(projectId, GITHUB_PROJECT_ITEM_TITLE);
+        const [item] = await forja.listWorkItems(projectId);
+        if (!item) {
+            throw new Error("The local item of the GitHub project was not created");
+        }
+        gitRepo.createBranchesAheadOfBase([item.branch]);
+
+        await use({ id: projectId, itemId: item.id });
+    },
 });
-
-function createTemporaryGitRepo(): TemporaryGitRepo {
-    const repoPath = mkdtempSync(path.join(tmpdir(), "forja-e2e-repo-"));
-    const git = (args: string[]): void => {
-        execFileSync("git", args, { cwd: repoPath, stdio: "ignore" });
-    };
-
-    git(["init", "-b", BASE_BRANCH]);
-    git([...GIT_AUTHOR, "commit", "--allow-empty", "-m", "Primeiro commit"]);
-    // The git node compares each item branch with origin/<base>, and the repo has no remote.
-    git(["update-ref", `refs/remotes/origin/${BASE_BRANCH}`, "HEAD"]);
-
-    return {
-        path: repoPath,
-        createBranches: (branches) =>
-            branches.forEach((branch) => git(["branch", "--force", branch])),
-    };
-}
