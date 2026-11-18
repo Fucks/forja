@@ -17,6 +17,8 @@
 - A blank new flow starts with no nodes (`flow_service.createDefaultFlowGraph`), so it opens on `EmptyCanvas`.
 - The template graph reaches the editor through a new route `GET /api/flow-templates/:templateId` → `{ graph }`
   (templates load prompts from disk, so the web bundle cannot build them).
+- `FirstSteps` (`first_steps.tsx`), inside the editable canvas, shows `EmptyCanvas` for a graph without nodes or
+  groups and the palette hint while a lone trigger is the only node. Both are overlays, so drops still reach the canvas.
 - "Começar do zero" reuses `useAddNode().addNodeAtViewportCenter("trigger")`; the canvas then shows a hint with an
   arrow toward the palette while the trigger is the only node.
 - Tour: Radix Dialog (modal: traps focus, Esc = Pular) placed next to `[data-tour-anchor]` elements (palette,
@@ -37,9 +39,9 @@
 - [x] 7. Editor page: provider wired; clicking "O Agente ‘Dev’ não tem prompt" focuses Dev's prompt — `flow_editor_page.tsx` (+ test)
 - [x] 8. Route `GET /api/flow-templates/:templateId` returns the template graph — `flows_routes.ts` (+ test)
 - [x] 9. A blank new flow starts without nodes — `flow_service.ts` (+ test)
-- [ ] 10. `EmptyCanvas` lists the templates; choosing one fills the draft — `src/web/canvas/empty_canvas.tsx` (+ test)
-- [ ] 11. "Começar do zero" adds a Gatilho and the canvas points to the palette — `empty_canvas.tsx`, `flow_canvas.tsx`
-- [ ] 12. `FlowCanvas` shows `EmptyCanvas` when the graph has no nodes — `flow_canvas.tsx` (+ test)
+- [x] 10. `EmptyCanvas` lists the templates; choosing one fills the draft — `src/web/canvas/empty_canvas.tsx` (+ test)
+- [x] 11. "Começar do zero" adds a Gatilho and the canvas points to the palette — `empty_canvas.tsx`, `flow_canvas.tsx`
+- [x] 12. `FlowCanvas` shows `EmptyCanvas` when the graph has no nodes — `flow_canvas.tsx` (+ test)
 - [ ] 13. Editor tour: 5 steps with "N de 5", Próximo/Voltar/Concluir — `src/web/canvas/editor_tour.tsx` (+ test)
 - [ ] 14. Editor tour: Pular and Esc close it; "Não mostrar de novo" is remembered; storage errors are tolerated — `editor_tour.test.tsx`
 - [ ] 15. Tour in the editor with its anchors; E2E fixtures dismiss it — `flow_editor_page.tsx`, `e2e/`
