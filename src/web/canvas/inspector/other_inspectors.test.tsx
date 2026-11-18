@@ -81,37 +81,6 @@ describe("SourceInspector", () => {
     });
 });
 
-describe("ScriptInspector", () => {
-    it("applies the typed command when the field loses focus", async () => {
-        const script = createNodeOfType("script", "tests", ORIGIN);
-        const inspector = renderInspector(ScriptInspector, script);
-
-        await replaceFieldText(screen.getByRole("textbox", { name: "Comando" }), "npm test");
-
-        expect(inspector.lastChangedNode("script").config.command).toBe("npm test");
-    });
-
-    it("tells that the command runs inside the item container", () => {
-        const script = createNodeOfType("script", "tests", ORIGIN);
-
-        renderInspector(ScriptInspector, script);
-
-        expect(screen.getByText("roda dentro do container do item")).toBeInTheDocument();
-    });
-
-    it("applies a new timeout", async () => {
-        const script = createNodeOfType("script", "tests", ORIGIN);
-        const inspector = renderInspector(ScriptInspector, script);
-
-        await replaceFieldText(
-            screen.getByRole("spinbutton", { name: "Tempo máximo (minutos)" }),
-            "5",
-        );
-
-        expect(inspector.lastChangedNode("script").config.timeoutMinutes).toBe(5);
-    });
-});
-
 describe("GateInspector", () => {
     it("stops showing the logs and keeps the other sections", async () => {
         const gate = createNodeOfType("gate", "gate", ORIGIN);

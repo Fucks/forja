@@ -5,6 +5,7 @@ import type { FlowGroup, FlowNode, NodeOfType } from "@/shared/flow_graph.js";
 import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
 import type { GitConfig } from "@/shared/node_configs/git_config.js";
 import type { OutputConfig } from "@/shared/node_configs/output_config.js";
+import type { ScriptConfig } from "@/shared/node_configs/script_config.js";
 import type { SourceConfig } from "@/shared/node_configs/source_config.js";
 import type { TriggerConfig } from "@/shared/node_configs/trigger_config.js";
 import { conditionToSentence } from "@/web/canvas/inspector/condition_text.js";
@@ -34,6 +35,16 @@ const INHERITED_LABEL = "padrão";
 const WORKSPACE_LABELS: Record<AgentConfig["workspace"], string> = {
     item: "workspace do item",
     none: "sem workspace",
+};
+
+const SCRIPT_RUN_LOCATION_LABELS: Record<ScriptConfig["runIn"], string> = {
+    item: "container do item",
+    isolated: "container isolado",
+};
+
+const SCRIPT_FAILURE_POLICY_LABELS: Record<ScriptConfig["onFailure"], string> = {
+    fail: "falha se ≠ 0",
+    continue: "continua se ≠ 0",
 };
 
 export const TRIGGER_KIND_LABELS: Record<TriggerConfig["kind"], string> = {
@@ -76,7 +87,7 @@ export function summarizeNode(
         case "agent":
             return summarizeAgent(node, agentDefaults);
         case "script":
-            return { line1: truncate(node.config.command) };
+            return summarizeScript(node.config);
         case "condition":
             return { line1: conditionToSentence(node.config.condition, dataFields) };
         case "gate":
@@ -140,6 +151,16 @@ function describeIterationCap(maxIterations: number): string {
     const unit = maxIterations === 1 ? "iteração" : "iterações";
 
     return `até ${maxIterations} ${unit}`;
+}
+
+function summarizeScript({ command, runIn, onFailure }: ScriptConfig): NodeSummary {
+    return {
+        line1: truncate(command),
+        line2: joinParts([
+            SCRIPT_RUN_LOCATION_LABELS[runIn],
+            SCRIPT_FAILURE_POLICY_LABELS[onFailure],
+        ]),
+    };
 }
 
 function describeGitAction({ action, baseBranch }: GitConfig): string {

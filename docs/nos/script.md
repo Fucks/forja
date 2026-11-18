@@ -6,7 +6,7 @@
 
 ## O que faz
 
-Roda um comando de terminal num container, no workspace do item ou num container isolado, e diz se deu certo. Nunca roda na sua máquina. O comando recebe as variáveis FORJA_RUN_ID, FORJA_PROJECT_BASE_BRANCH e FORJA_ITERATION; com item, também FORJA_ITEM_ID, FORJA_ITEM_NUMBER, FORJA_ITEM_TITLE, FORJA_ITEM_BRANCH e FORJA_ITEM_URL; e FORJA_INPUT_&lt;ENTRADA&gt; com o JSON de cada entrada. Os valores de {{...}} entram no comando entre aspas, como um único argumento, sem risco de injeção.
+Roda um comando de terminal num container, no container do item ou num container isolado, e diz se deu certo. Nunca roda na sua máquina. O comando recebe as variáveis FORJA_RUN_ID, FORJA_PROJECT_BASE_BRANCH e FORJA_ITERATION; com item, também FORJA_ITEM_ID, FORJA_ITEM_NUMBER, FORJA_ITEM_TITLE, FORJA_ITEM_BRANCH e FORJA_ITEM_URL; e FORJA_INPUT_&lt;ENTRADA&gt; com o JSON de cada entrada. Os valores de {{...}} entram no comando entre aspas, como um único argumento, sem risco de injeção.
 
 ## Quando usar
 
@@ -22,7 +22,7 @@ Roda um comando de terminal num container, no workspace do item ou num container
 
 | Porta | Nome técnico | Tipo | Obrigatória | Descrição |
 | --- | --- | --- | --- | --- |
-| Item atual | `item` | `workItem` | sim | O item em cujo workspace o comando roda. Só é obrigatória com "Onde roda" no workspace do item. |
+| Item atual | `item` | `workItem` | sim | O item em cujo container o comando roda. Só é obrigatória com "Onde roda" no container do item. |
 
 ## Saídas
 
@@ -41,31 +41,31 @@ O comando de terminal a rodar, como npm test. Aceita {{...}} com os dados do flu
 
 Em qual container o comando roda.
 
-- Padrão: Workspace do item
+- Padrão: Container do item
 - Opções:
-  - `item` — Workspace do item: No container do item, com o código e o branch dele.
-  - `isolated` — Container isolado: Num container novo, só com o repositório para leitura. Não precisa de item e, fora de um Map, roda uma vez por execução.
+  - `item` — Container do item: Na cópia do código deste item, onde os agentes trabalham. Use para testes, lint e build.
+  - `isolated` — Container isolado: Num container novo, sem o código do item. Use para tarefas que não dependem da branch.
 
 ### Se o comando falhar (`onFailure`)
 
 O que acontece quando o código de saída não é 0.
 
-- Padrão: Falhar o nó
+- Padrão: Marcar o nó como falho
 - Opções:
-  - `fail` — Falhar o nó: O nó fica vermelho e tenta de novo, conforme as retentativas do projeto.
-  - `continue` — Continuar: O nó termina bem com passed falso, para uma Decisão ou um Loop julgar.
+  - `fail` — Marcar o nó como falho (recomendado): O nó fica vermelho e tenta de novo, conforme as retentativas do projeto.
+  - `continue` — Continuar e deixar uma Decisão julgar: O nó termina bem com passed falso, para uma Decisão ou um Loop julgar.
 
-### Ler a saída como JSON (`parseOutput`)
+### Formato da saída (`parseOutput`)
 
-Transforma o stdout em dados em result.data. Se não for JSON válido, data fica vazio e o nó não falha.
+Como ler o stdout. Com JSON, os dados vão para result.data; se não for JSON válido, data fica vazio e o nó não falha.
 
-- Padrão: Não
+- Padrão: Texto
 - Opções:
-  - `none` — Não: A saída fica só como texto.
-  - `json` — Saída inteira: O stdout inteiro é um JSON.
-  - `lastLineJson` — Última linha: A última linha não vazia do stdout é um JSON.
+  - `none` — Texto: A saída fica só como texto. Ex.: 12 testes passaram
+  - `json` — JSON (saída inteira): O stdout inteiro é um JSON. Ex.: {"coverage": 81}
+  - `lastLineJson` — JSON (última linha): A última linha não vazia do stdout é um JSON; as anteriores podem ser logs. Ex.: logs e, por fim, {"coverage": 81}
 
-### Variáveis de ambiente (`env`) · avançado
+### Variáveis de ambiente (`env`)
 
 Nome e valor de cada variável. O valor aceita {{...}} ou vem de uma credencial do cofre, que nunca aparece nos logs. Sobrescrevem as FORJA_*, menos FORJA_RUN_ID.
 
@@ -152,7 +152,7 @@ Roda num container isolado, com o token vindo de uma credencial.
 
 ## Erros comuns
 
-- Usar "Falhar o nó" num teste que um Loop deve julgar: o nó para o fluxo em vez de seguir com passed falso. Use "Continuar".
+- Usar "Marcar o nó como falho" num teste que um Loop deve julgar: o nó para o fluxo em vez de seguir com passed falso. Use "Continuar e deixar uma Decisão julgar".
 - Pôr aspas em volta de {{...}}: o valor já entra entre aspas.
 
 ## Relacionados
