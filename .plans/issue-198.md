@@ -33,7 +33,7 @@
       `flow_graph_factory.ts`
 - [x] 3. Test: a PR opened by `basic_factory` with the fake runtime has the Reviewer summary as body —
       `flow_templates.test.ts`
-- [ ] 4. Make `selectSourceItems` generic over `SourceCandidate` — `select_source_items.ts`,
+- [x] 4. Make `selectSourceItems` generic over `SourceCandidate` — `select_source_items.ts`,
       `work_item_service.ts`
 - [ ] 5. Test + `previewSourceItems` (GitHub fake with blocked and free issues, provider error, local, no
       run/item written) — `source_preview.ts`, `source_preview.test.ts`

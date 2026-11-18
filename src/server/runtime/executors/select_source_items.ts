@@ -10,14 +10,20 @@ export interface ExcludedItem {
     reason: ExclusionReason;
 }
 
-export interface SourceSelection {
-    selected: WorkItem[];
+/** The fields of a work item that the selection reads. */
+export type SourceCandidate = Pick<
+    WorkItem,
+    "id" | "number" | "labels" | "state" | "blockedBy" | "createdAt"
+>;
+
+export interface SourceSelection<Item extends SourceCandidate = WorkItem> {
+    selected: Item[];
     excluded: ExcludedItem[];
 }
 
-export interface SourceSelectionInput {
-    candidates: WorkItem[];
-    all: Map<string, WorkItem>;
+export interface SourceSelectionInput<Item extends SourceCandidate = WorkItem> {
+    candidates: Item[];
+    all: Map<string, SourceCandidate>;
     config: SourceConfig;
     requestedIds?: string[];
     itemsInActiveRuns: Set<string>;
@@ -28,8 +34,10 @@ type CandidateCheck = { eligible: true } | { eligible: false; reason: ExclusionR
 
 const ELIGIBLE: CandidateCheck = { eligible: true };
 
-export function selectSourceItems(input: SourceSelectionInput): SourceSelection {
-    const eligible: WorkItem[] = [];
+export function selectSourceItems<Item extends SourceCandidate>(
+    input: SourceSelectionInput<Item>,
+): SourceSelection<Item> {
+    const eligible: Item[] = [];
     const excluded: ExcludedItem[] = [];
     for (const item of startingItems(input)) {
         const check = checkCandidate(item, input);
@@ -43,7 +51,10 @@ export function selectSourceItems(input: SourceSelectionInput): SourceSelection 
     return cutAtLimit(eligible.sort(compareSourceOrder), excluded, input.config.limit);
 }
 
-function startingItems({ candidates, requestedIds }: SourceSelectionInput): WorkItem[] {
+function startingItems<Item extends SourceCandidate>({
+    candidates,
+    requestedIds,
+}: SourceSelectionInput<Item>): Item[] {
     if (requestedIds === undefined) {
         return candidates;
     }
@@ -52,7 +63,10 @@ function startingItems({ candidates, requestedIds }: SourceSelectionInput): Work
 }
 
 // The order of the checks decides which reason an item excluded for several reasons shows.
-function checkCandidate(item: WorkItem, input: SourceSelectionInput): CandidateCheck {
+function checkCandidate(
+    item: SourceCandidate,
+    input: SourceSelectionInput<SourceCandidate>,
+): CandidateCheck {
     if (item.state === "closed") {
         return { eligible: false, reason: "closed" };
     }
@@ -72,12 +86,12 @@ function checkCandidate(item: WorkItem, input: SourceSelectionInput): CandidateC
     return ELIGIBLE;
 }
 
-function hasSourceLabel(item: WorkItem, config: SourceConfig): boolean {
+function hasSourceLabel(item: SourceCandidate, config: SourceConfig): boolean {
     return config.label === undefined || item.labels.includes(config.label);
 }
 
 // Issues follow their number; local items, which have none, follow their creation.
-function compareSourceOrder(a: WorkItem, b: WorkItem): number {
+function compareSourceOrder(a: SourceCandidate, b: SourceCandidate): number {
     if (a.number !== undefined && b.number !== undefined) {
         return a.number - b.number;
     }
@@ -85,11 +99,11 @@ function compareSourceOrder(a: WorkItem, b: WorkItem): number {
     return a.createdAt.localeCompare(b.createdAt);
 }
 
-function cutAtLimit(
-    eligibleInOrder: WorkItem[],
+function cutAtLimit<Item extends SourceCandidate>(
+    eligibleInOrder: Item[],
     excluded: ExcludedItem[],
     limit: number,
-): SourceSelection {
+): SourceSelection<Item> {
     const beyondLimit = eligibleInOrder
         .slice(limit)
         .map((item): ExcludedItem => ({ itemId: item.id, reason: "limit" }));
