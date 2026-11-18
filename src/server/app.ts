@@ -4,6 +4,7 @@ import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import type { AgentRuntime } from "@/integrations/agent_runtime/agent_runtime.js";
+import type { ScriptedAgentOutputs } from "@/integrations/agent_runtime/scripted_agent_outputs.js";
 import type { GitProvider } from "@/integrations/git/git_provider.js";
 import type { CommandRunner } from "@/integrations/process/command_runner.js";
 import type { SecretBox } from "@/integrations/secrets/secret_box.js";
@@ -44,6 +45,8 @@ export interface AppDeps {
     redactor: SecretRedactor;
     logs: LogStore;
     agentRuntime: AgentRuntime;
+    /** Only with the simulated agents of `FORJA_AGENT_RUNTIME=fake`. */
+    scriptedAgentOutputs?: ScriptedAgentOutputs;
     executor: Executor;
     apiProtection: ApiProtection;
 }

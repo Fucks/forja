@@ -31,7 +31,7 @@
 
 - [x] 1. Test + impl: `ScriptedAgentOutputs` gives the scripted outputs in order, repeats the last, nothing without a rule — `scripted_agent_outputs.ts`
 - [x] 2. Test + impl: the scripted runtime answers a matching prompt with the scripted output — `scripted_agent_run.ts`, `scripted_agent_runtime.ts`
-- [ ] 3. Test + impl: `PUT /api/scripted-agents/outputs` replaces the rules, only with the fake runtime — `scripted_agent_routes.ts`, `route_modules.ts`, `app.ts`, `main.ts`
+- [x] 3. Test + impl: `PUT /api/scripted-agents/outputs` replaces the rules, only with the fake runtime — `scripted_agent_routes.ts`, `route_modules.ts`, `app.ts`, `main.ts`
 - [ ] 4. Test + impl: port handles have accessible names — `port_handle.tsx`
 - [ ] 5. Test + impl: the Loop group shows its "Esgotou as voltas" handle — `group_node.tsx`
 - [ ] 6. E2E infra: session cookie, `gh` shim on the web server PATH, review project fixture — `forja_api.ts`, `fixtures.ts`, `e2e/fake_github/gh`, `playwright.config.ts`
