@@ -76,14 +76,14 @@ texto e lista. Tipo errado em tempo de execução → `false`, sem erro, como `g
 
 ### Operadores por tipo (na tela)
 
-| Tipo | Opções (rótulo → op) |
-|---|---|
-| boolean | é verdadeiro → `eq true` · é falso → `eq false` |
-| number | = · ≠ · > · ≥ · < · ≤ |
-| string | é igual · é diferente · contém · não contém · começa com · está vazio · não está vazio |
-| string com enum | é · não é · é um de (`in`) |
-| list | está vazia · não está vazia · contém · tem pelo menos N (`minLength`) |
-| object / any | existe · não existe (`not exists`) |
+| Tipo            | Opções (rótulo → op)                                                                   |
+| --------------- | -------------------------------------------------------------------------------------- |
+| boolean         | é verdadeiro → `eq true` · é falso → `eq false`                                        |
+| number          | = · ≠ · > · ≥ · < · ≤                                                                  |
+| string          | é igual · é diferente · contém · não contém · começa com · está vazio · não está vazio |
+| string com enum | é · não é · é um de (`in`)                                                             |
+| list            | está vazia · não está vazia · contém · tem pelo menos N (`minLength`)                  |
+| object / any    | existe · não existe (`not exists`)                                                     |
 
 ### Pré-visualização
 

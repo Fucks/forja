@@ -1,10 +1,21 @@
-import type { NodeType, Port } from "@/shared/flow_graph.js";
+import { isNodeOfType } from "@/shared/flow_graph.js";
+import type { FlowNode, NodeType, Port } from "@/shared/flow_graph.js";
 import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
 import type { PortDoc } from "@/web/docs/node_docs/node_doc.js";
 
 export interface PortDescription {
     label: string;
     description?: string;
+}
+
+/** Like describePort, but the branches of a switch Decisão are named by their labels. */
+export function describeNodePort(node: FlowNode, port: Port): PortDescription {
+    const branchLabel = findBranchLabel(node, port.name);
+    if (branchLabel !== undefined) {
+        return { label: branchLabel };
+    }
+
+    return describePort(node.type, port);
 }
 
 export function describePort(nodeType: NodeType, port: Port): PortDescription {
@@ -28,4 +39,12 @@ function describeUserPort({ name, description }: Port): PortDescription {
     }
 
     return { label: name, description };
+}
+
+function findBranchLabel(node: FlowNode, portName: string): string | undefined {
+    if (!isNodeOfType(node, "condition") || node.config.mode !== "switch") {
+        return undefined;
+    }
+
+    return node.config.branches.find((branch) => branch.port === portName)?.label;
 }

@@ -58,17 +58,17 @@ Alterar:
 export type DataType = "boolean" | "number" | "string" | "list" | "object" | "any";
 
 export interface DataField {
-    path: string;              // "nodes.reviewer.result.approved"
-    label: string;             // "Reviewer › Resultado › approved"
+    path: string; // "nodes.reviewer.result.approved"
+    label: string; // "Reviewer › Resultado › approved"
     type: DataType;
     enumValues?: (string | number)[];
-    description?: string;      // do JSON Schema (description) ou do PortDoc
+    description?: string; // do JSON Schema (description) ou do PortDoc
     sourceNodeId?: string;
-    depth: number;             // para indentar a árvore
+    depth: number; // para indentar a árvore
 }
 
 export interface AvailableDataOptions {
-    scope: "node" | "loopUntil";  // loopUntil: só nodes.* dos nós dentro do grupo
+    scope: "node" | "loopUntil"; // loopUntil: só nodes.* dos nós dentro do grupo
     groupId?: string;
     portLabels: (nodeType: NodeType, port: Port) => string; // injeta os rótulos do catálogo (web)
 }

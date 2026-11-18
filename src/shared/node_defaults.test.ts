@@ -132,7 +132,7 @@ describe("createDefaultNode", () => {
                 parseOutput: "none",
                 timeoutMinutes: 15,
             },
-            { condition: { op: "eq", path: "inputs.value.approved", value: true } },
+            { mode: "if", condition: { op: "eq", path: "inputs.value.approved", value: true } },
             { message: "", show: ["diff", "artifacts", "logs"] },
             { action: "open_pr", draft: false },
             { moveItemTo: "done", commentOnIssue: false },

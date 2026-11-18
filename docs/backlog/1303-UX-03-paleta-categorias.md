@@ -59,7 +59,7 @@ export interface PaletteItem {
     kind: "node" | "group";
     category: NodeCategory;
     label: string;
-    description: string;   // tagline
+    description: string; // tagline
     icon: LucideIcon;
     singleton?: boolean;
 }

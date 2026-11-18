@@ -39,6 +39,27 @@ describe("updateNodeConfig", () => {
         expect(listEdgesInto(updated, "dev")).toEqual([]);
     });
 
+    it("drops the edges that leave an output the update removed", () => {
+        const graph = buildCanonicalFlow();
+
+        const updated = updateNodeConfig(graph, "dev", (node) => ({
+            ...node,
+            outputs: node.outputs.filter((port) => port.name !== "summary"),
+        }));
+
+        expect(listEdgesOutOf(updated, "dev", "summary")).toEqual([]);
+    });
+
+    it("keeps the edges of the outputs the update kept", () => {
+        const graph = buildCanonicalFlow();
+
+        const updated = updateNodeConfig(graph, "dev", (node) => ({ ...node, label: "Dev 2" }));
+
+        expect(listEdgesOutOf(updated, "dev", "summary")).toEqual(
+            listEdgesOutOf(graph, "dev", "summary"),
+        );
+    });
+
     it("returns the same graph when the node does not exist", () => {
         const graph = buildCanonicalFlow();
 
@@ -118,6 +139,10 @@ function requireNode(graph: FlowGraph, nodeId: string): FlowNode {
     }
 
     return node;
+}
+
+function listEdgesOutOf(graph: FlowGraph, nodeId: string, port: string): FlowGraph["edges"] {
+    return graph.edges.filter((edge) => edge.from.nodeId === nodeId && edge.from.port === port);
 }
 
 function listEdgesInto(graph: FlowGraph, nodeId: string): FlowGraph["edges"] {

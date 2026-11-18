@@ -62,12 +62,12 @@ Alterar:
   filtrado por este fluxo (se a tela aceitar o filtro por query string; senão, só o link).
 - **Aprovação:** `show` vira checkboxes descritos; `gate_preview` mostra um esqueleto de como a tela Aprovações vai
   aparecer, com mensagem e seções.
-- **Git:** cartões de ação (*Rebase* avisa que conflitos são resolvidos por um agente); `bodyFrom` vira `DataPicker`
+- **Git:** cartões de ação (_Rebase_ avisa que conflitos são resolvidos por um agente); `bodyFrom` vira `DataPicker`
   (`scope: "node"`, mostrando primeiro os campos de texto).
 - **`git_body_source_missing`** (aviso): `bodyFrom` começa com `inputs.` e a porta não existe ou não tem aresta, ou começa
   com `nodes.` e o nó não vem antes. A mensagem: "O corpo do PR aponta para ‘<path>’, que não existe aqui. Escolha o
   texto no seletor."
-- **Saída:** cartões *Concluído / Precisa de humano / Não mover* e uma explicação do comentário e do motivo
+- **Saída:** cartões _Concluído / Precisa de humano / Não mover_ e uma explicação do comentário e do motivo
   (`notes`/`reason`/`failureSummary`).
 - **Map:** `concurrency` com a explicação "quantos itens ao mesmo tempo" e o exemplo; `barrier` e `failFast` como
   switches descritos.

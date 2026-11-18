@@ -1,6 +1,6 @@
 import { enclosingMapGroup, findNode, incomingEdges } from "@/engine/graph_queries.js";
 import type { FlowEdge, FlowGraph, FlowNode, Port } from "@/shared/flow_graph.js";
-import { getNodeDoc } from "@/web/docs/node_docs/node_docs.js";
+import { describeNodePort } from "@/web/canvas/base/port_label.js";
 
 export interface PortOrigin {
     nodeLabel: string;
@@ -62,7 +62,7 @@ function describeOrigin(graph: FlowGraph, edge: FlowEdge): PortOrigin[] {
 }
 
 function outputPortLabel(node: FlowNode, portName: string): string {
-    const portDoc = getNodeDoc(node.type).ports.outputs.find((port) => port.name === portName);
+    const port = node.outputs.find((output) => output.name === portName);
 
-    return portDoc?.label ?? portName;
+    return port ? describeNodePort(node, port).label : portName;
 }

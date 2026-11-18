@@ -22,7 +22,7 @@ describe("NodeDocPage", () => {
 
         expect(screen.getByRole("heading", { level: 1, name: "Decisão" })).toBeInTheDocument();
         expect(
-            screen.getByText("Se a regra for verdadeira, segue por Sim; senão, por Não"),
+            screen.getByText("Escolhe o caminho do item: Sim/Não ou vários caminhos com Senão"),
         ).toBeInTheDocument();
         expect(screen.getByRole("heading", { level: 2, name: "Quando usar" })).toBeInTheDocument();
     });

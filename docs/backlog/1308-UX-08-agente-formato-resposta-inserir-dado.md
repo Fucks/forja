@@ -54,14 +54,14 @@ Alterar:
 ```ts
 export type ResponseFieldType = "boolean" | "number" | "string" | "list" | "choice";
 export interface ResponseField {
-    name: string;            // /^[a-zA-Z_][a-zA-Z0-9_]*$/
+    name: string; // /^[a-zA-Z_][a-zA-Z0-9_]*$/
     type: ResponseFieldType;
     description?: string;
     required: boolean;
-    choices?: string[];      // só "choice": vira { type: "string", enum }
+    choices?: string[]; // só "choice": vira { type: "string", enum }
     itemType?: "string" | "number"; // só "list"
 }
-export function toJsonSchema(fields: ResponseField[]): JsonSchema;          // { type: "object", properties, required }
+export function toJsonSchema(fields: ResponseField[]): JsonSchema; // { type: "object", properties, required }
 export function fromJsonSchema(schema: JsonSchema): ResponseField[] | undefined; // undefined = não cabe no editor visual
 ```
 

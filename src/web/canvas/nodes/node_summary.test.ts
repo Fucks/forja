@@ -1,5 +1,6 @@
 import type { DataField } from "@/engine/available_data.js";
 import type { Effort } from "@/shared/agent_types.js";
+import type { Condition } from "@/shared/conditions.js";
 import type { FlowGroup, FlowNode, NodeOfType, NodeType } from "@/shared/flow_graph.js";
 import { createNodeOfType } from "@/test/factories/flow_graph_factory.js";
 import { buildMapGroup } from "@/test/factories/flow_graph_variations.js";
@@ -103,6 +104,22 @@ describe("summarizeNode", () => {
         const summary = summarizeNode(condition, { dataFields: [approved] });
 
         expect(summary.line1).toBe("Se Reviewer › approved é verdadeiro");
+    });
+
+    it("lists the paths of a switch decision with its otherwise", () => {
+        const decision = buildSwitchDecision({ otherwise: true });
+
+        const summary = summarizeNode(decision);
+
+        expect(summary.line1).toBe("3 caminhos: Aprovado · Ajustes · Humano · Senão");
+    });
+
+    it("leaves otherwise out of the paths of a switch decision without it", () => {
+        const decision = buildSwitchDecision({ otherwise: false });
+
+        const summary = summarizeNode(decision);
+
+        expect(summary.line1).toBe("3 caminhos: Aprovado · Ajustes · Humano");
     });
 
     it("reads the path of a condition whose data is unknown", () => {
@@ -259,6 +276,18 @@ function buildNode<Type extends NodeType>(
     const node = createNodeOfType(type, `${type}_1`, { x: 0, y: 0 });
 
     return { ...node, config: { ...node.config, ...config } };
+}
+
+function buildSwitchDecision({ otherwise }: { otherwise: boolean }): FlowNode {
+    const decision = createNodeOfType("condition", "review", { x: 0, y: 0 });
+    const condition: Condition = { op: "exists", path: "inputs.value" };
+    const branches = [
+        { port: "approved", label: "Aprovado", condition },
+        { port: "changes", label: "Ajustes", condition },
+        { port: "human", label: "Humano", condition },
+    ];
+
+    return { ...decision, config: { mode: "switch", branches, otherwise } };
 }
 
 function buildMapGroupWith(config: { concurrency: number; barrier: boolean }): FlowGroup {

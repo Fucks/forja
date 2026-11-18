@@ -8,7 +8,7 @@ import {
     NODE_TYPES,
 } from "@/shared/flow_graph.js";
 import { agentConfigSchema } from "@/shared/node_configs/agent_config.js";
-import { conditionConfigSchema } from "@/shared/node_configs/condition_config.js";
+import { conditionConfigFieldsSchema } from "@/shared/node_configs/condition_config.js";
 import { gateConfigSchema } from "@/shared/node_configs/gate_config.js";
 import { gitConfigSchema } from "@/shared/node_configs/git_config.js";
 import { outputConfigSchema } from "@/shared/node_configs/output_config.js";
@@ -36,7 +36,7 @@ const CONFIG_SCHEMAS: Record<DocumentedType, z.ZodObject> = {
     source: sourceConfigSchema,
     agent: agentConfigSchema,
     script: scriptConfigSchema,
-    condition: conditionConfigSchema,
+    condition: conditionConfigFieldsSchema,
     gate: gateConfigSchema,
     git: gitConfigSchema,
     output: outputConfigSchema,

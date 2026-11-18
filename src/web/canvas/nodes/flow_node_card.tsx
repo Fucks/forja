@@ -9,7 +9,7 @@ import type { BaseNodeProps } from "@/web/canvas/base/base_node.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
 import { NODE_TYPE_LABELS } from "@/web/canvas/base/node_type_labels.js";
 import type { PortView } from "@/web/canvas/base/port_handle.js";
-import { describePort } from "@/web/canvas/base/port_label.js";
+import { describeNodePort } from "@/web/canvas/base/port_label.js";
 import { ITEM_INPUT_PORT, useHasImplicitItem } from "@/web/canvas/implicit_item_overlay.js";
 import { ImplicitItemBadge, NeedsConfigBadge } from "@/web/canvas/nodes/node_badges.js";
 import { useNodeLiveState } from "@/web/canvas/nodes/node_live_context.js";
@@ -42,7 +42,7 @@ export function FlowNodeCard({ node, selected, summary }: FlowNodeCardProps): JS
                 label={node.label}
                 summary={summary}
                 inputs={describeInputs(node, { showsImplicitItemBadge })}
-                outputs={node.outputs.map((port) => describeNodePort(node, port))}
+                outputs={node.outputs.map((port) => describePortView(node, port))}
                 status={status}
                 badge={badge}
                 notice={showsNeedsConfigBadge ? <NeedsConfigBadge /> : undefined}
@@ -66,7 +66,7 @@ function describeInputs(
     { showsImplicitItemBadge }: { showsImplicitItemBadge: boolean },
 ): BaseNodeProps["inputs"] {
     return node.inputs.map((port) => {
-        const describedPort = describeNodePort(node, port);
+        const describedPort = describePortView(node, port);
         if (!showsImplicitItemBadge || port.name !== ITEM_INPUT_PORT) {
             return describedPort;
         }
@@ -75,8 +75,8 @@ function describeInputs(
     });
 }
 
-function describeNodePort(node: FlowNode, port: Port): PortView & Port {
-    return { ...port, ...describePort(node.type, port) };
+function describePortView(node: FlowNode, port: Port): PortView & Port {
+    return { ...port, ...describeNodePort(node, port) };
 }
 
 function isZoomedOut(canvas: ReactFlowState): boolean {

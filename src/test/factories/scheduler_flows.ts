@@ -202,7 +202,7 @@ function buildConditionNode(id: string, condition: Condition): NodeOfType<"condi
             { name: "true", type: "any", required: true },
             { name: "false", type: "any", required: true },
         ],
-        config: { condition },
+        config: { mode: "if", condition },
     };
 }
 

@@ -11,6 +11,7 @@ import {
     parseFlowGraph,
     type Port,
 } from "@/shared/flow_graph.js";
+import type { SwitchConditionConfig } from "@/shared/node_configs/condition_config.js";
 import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 import { buildIssueSnapshot, ExecutorTestBed } from "@/test/executor_test_bed.js";
 import { buildLoopFlow, connect, createNodeOfType } from "@/test/factories/flow_graph_factory.js";
@@ -51,6 +52,18 @@ const REVIEW_OUTPUT_SCHEMA = {
     type: "object",
     properties: { approved: { type: "boolean" } },
     required: ["approved"],
+};
+const REVIEW_SWITCH: SwitchConditionConfig = {
+    mode: "switch",
+    branches: [
+        { port: "approved", label: "Aprovado", condition: APPROVED },
+        {
+            port: "changes",
+            label: "Ajustes",
+            condition: { op: "isNotEmpty", path: "inputs.value.notes" },
+        },
+    ],
+    otherwise: true,
 };
 const DEV_PROMPT_WITHOUT_NOTES = "Implemente a issue #{{item.number}}";
 const TESTS_PASSED_AND_REVIEW_APPROVED: Condition = {
@@ -110,6 +123,57 @@ describe("deterministic executors", () => {
             expect(result.outputs).toEqual({ false: "resumo" });
         });
 
+        it("sends the value through the first branch that holds", async () => {
+            const value = { approved: false, notes: "x" };
+            const context = buildSwitchContext(value, REVIEW_SWITCH);
+
+            const result = await executeConditionNode(context);
+
+            expect(result.outputs).toEqual({ changes: value });
+        });
+
+        it("sends the value through otherwise when no branch holds", async () => {
+            const value = { approved: false, notes: "" };
+            const context = buildSwitchContext(value, REVIEW_SWITCH);
+
+            const result = await executeConditionNode(context);
+
+            expect(result.outputs).toEqual({ otherwise: value });
+        });
+
+        it("sends the item to a human when no branch holds and there is no otherwise", async () => {
+            const context = buildSwitchContext(
+                { approved: false, notes: "" },
+                { ...REVIEW_SWITCH, otherwise: false },
+            );
+
+            const result = await executeConditionNode(context);
+
+            expect(result).toEqual({
+                outputs: {},
+                artifacts: [
+                    {
+                        name: "item_outcome",
+                        kind: "json",
+                        value: {
+                            moveItemTo: "needs_human",
+                            reason: "Nenhum caminho da Decisão Revisão se aplicou",
+                        },
+                    },
+                ],
+            });
+        });
+
+        function buildSwitchContext(
+            value: unknown,
+            config: SwitchConditionConfig,
+        ): NodeExecutionContext {
+            const condition = createNodeOfType("condition", "review", POSITION);
+            const node = { ...condition, label: "Revisão", config };
+
+            return buildNodeExecutionContext(node, { inputs: { value } });
+        }
+
         function buildConditionContext(
             value: unknown,
             options: {
@@ -118,7 +182,10 @@ describe("deterministic executors", () => {
             } = {},
         ): NodeExecutionContext {
             const condition = createNodeOfType("condition", "approved", POSITION);
-            const node = { ...condition, config: { condition: options.condition ?? APPROVED } };
+            const node = {
+                ...condition,
+                config: { mode: "if" as const, condition: options.condition ?? APPROVED },
+            };
 
             return buildNodeExecutionContext(node, {
                 inputs: { value },
@@ -481,7 +548,7 @@ function buildReviewDecisionFlow(): FlowGraph {
                     outputSchema: REVIEW_OUTPUT_SCHEMA,
                 },
             },
-            { ...check, config: { condition: APPROVED } },
+            { ...check, config: { mode: "if", condition: APPROVED } },
             { ...done, label: "Concluído", inputs: [decisionPort("approved")] },
             {
                 ...needsHuman,
@@ -501,7 +568,7 @@ function buildReviewDecisionFlow(): FlowGraph {
 
 function withCheckCondition(graph: FlowGraph, condition: Condition): FlowGraph {
     return updateNode(graph, "check", (node) =>
-        node.type === "condition" ? { ...node, config: { condition } } : node,
+        node.type === "condition" ? { ...node, config: { mode: "if", condition } } : node,
     );
 }
 
@@ -511,7 +578,11 @@ const ANY_VALUE_PORT: Port = { name: "value", type: "any", required: true };
 function buildReviewDecisionFlowReadingNodes(): FlowGraph {
     const graph = updateNode(buildReviewDecisionFlow(), "check", (node) =>
         node.type === "condition"
-            ? { ...node, inputs: [ANY_VALUE_PORT], config: { condition: REVIEW_APPROVED } }
+            ? {
+                  ...node,
+                  inputs: [ANY_VALUE_PORT],
+                  config: { mode: "if", condition: REVIEW_APPROVED },
+              }
             : node,
     );
     const edges = graph.edges.map((edge) =>

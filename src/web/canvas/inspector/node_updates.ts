@@ -21,7 +21,7 @@ export function updateNodeConfig(
 
     const updatedNode = update(node);
     const isStillConnected = (edge: FlowEdge): boolean =>
-        edge.to.nodeId !== nodeId || hasInputPort(updatedNode, edge.to.port);
+        isStillAnInput(updatedNode, edge) && isStillAnOutput(updatedNode, edge);
 
     return {
         ...graph,
@@ -61,6 +61,16 @@ export function withNodeConfig<Type extends NodeType>(
     }
 
     return { ...node, config: { ...node.config, ...changes } };
+}
+
+function isStillAnInput(node: FlowNode, edge: FlowEdge): boolean {
+    return edge.to.nodeId !== node.id || hasInputPort(node, edge.to.port);
+}
+
+function isStillAnOutput(node: FlowNode, edge: FlowEdge): boolean {
+    return (
+        edge.from.nodeId !== node.id || node.outputs.some((port) => port.name === edge.from.port)
+    );
 }
 
 function hasInputPort(node: FlowNode, name: string): boolean {

@@ -28,7 +28,7 @@ describe("renderNodeDocMarkdown", () => {
         const markdown = renderNodeDocMarkdown(conditionDoc);
 
         expect(markdown).toContain(
-            "# Decisão\n\n> Se a regra for verdadeira, segue por Sim; senão, por Não",
+            "# Decisão\n\n> Escolhe o caminho do item: Sim/Não ou vários caminhos com Senão",
         );
     });
 
@@ -87,7 +87,7 @@ describe("renderNodeDocMarkdown", () => {
         const markdown = renderNodeDocMarkdown(conditionDoc);
 
         expect(markdown).toContain(
-            '### Reviewer aprovou?\n\nLiga o Resultado do Reviewer na entrada e testa se approved é verdadeiro.\n\n```json\n{\n  "condition": {\n    "op": "eq",',
+            '### Reviewer aprovou?\n\nLiga o Resultado do Reviewer na entrada e testa se approved é verdadeiro.\n\n```json\n{\n  "mode": "if",\n  "condition": {\n    "op": "eq",',
         );
     });
 
@@ -114,7 +114,7 @@ describe("renderNodeDocsIndexMarkdown", () => {
 
         expect(markdown.indexOf("## Início")).toBeLessThan(markdown.indexOf("## Grupos"));
         expect(markdown).toContain(
-            "## Decidir\n\n- [Decisão](condition.md) — Se a regra for verdadeira, segue por Sim; senão, por Não",
+            "## Decidir\n\n- [Decisão](condition.md) — Escolhe o caminho do item: Sim/Não ou vários caminhos com Senão",
         );
     });
 });
