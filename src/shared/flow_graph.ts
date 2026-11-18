@@ -11,6 +11,7 @@ import { outputConfigSchema } from "@/shared/node_configs/output_config.js";
 import { scriptConfigSchema } from "@/shared/node_configs/script_config.js";
 import { sourceConfigSchema } from "@/shared/node_configs/source_config.js";
 import { triggerConfigSchema } from "@/shared/node_configs/trigger_config.js";
+import { PORT_NAME_PATTERN } from "@/shared/port_name.js";
 
 export const PORT_TYPES = [
     "text",
@@ -23,7 +24,6 @@ export const PORT_TYPES = [
 ] as const;
 export type PortType = (typeof PORT_TYPES)[number];
 
-const PORT_NAME_PATTERN = /^[a-z][a-zA-Z0-9_]*$/;
 export const PORT_DESCRIPTION_MAX_LENGTH = 200;
 
 export const portSchema = z.object({

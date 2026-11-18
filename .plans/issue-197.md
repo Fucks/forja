@@ -17,7 +17,7 @@
 
 ## Tasks
 
-- [ ] 1. Refactor: move `PORT_NAME_PATTERN` to `src/shared/port_name.ts`
+- [x] 1. Refactor: move `PORT_NAME_PATTERN` to `src/shared/port_name.ts`
 - [ ] 2. Test + implement the `mode` schema (preprocess, branch limits) — `condition_config.ts`,
       `condition_config.test.ts`; add `mode: "if"` to defaults, templates, docs examples and test literals
 - [ ] 3. Test + implement `branchPortsOf` — `condition_branches.ts`, `condition_branches.test.ts`
