@@ -68,7 +68,7 @@ export function ScriptInspector({ node, graph, onChange }: InspectorProps): JSX.
                     onChange={(parseOutput) => changeConfig({ parseOutput })}
                 />
             </InspectorSection>
-            <ScriptAdvancedSection script={node} onConfigChange={changeConfig} />
+            <ScriptAdvancedSection config={config} onConfigChange={changeConfig} />
         </NodeInspectorFrame>
     );
 }
@@ -137,15 +137,7 @@ function EnvSection({
     );
 }
 
-function ScriptAdvancedSection({
-    script,
-    onConfigChange,
-}: {
-    script: NodeOfType<"script">;
-    onConfigChange: ChangeScriptConfig;
-}): JSX.Element {
-    const { config } = script;
-
+function ScriptAdvancedSection({ config, onConfigChange }: ScriptSectionProps): JSX.Element {
     return (
         <AdvancedSection>
             <OptionCardsField

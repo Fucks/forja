@@ -36,4 +36,4 @@
 - [x] 11. Test + implement the env rows logic (name validation, duplicates, to/from config) — `env_var_rows.ts`
 - [x] 12. Test + implement `EnvListEditor` with text vars: add, edit, remove, reorder, inline name error — `env_list_editor.tsx`
 - [x] 13. Test + implement credential vars: list the project credentials, save `credentialId`
-- [ ] 14. Self-review checklist and feedback loops (typecheck, lint, test)
+- [x] 14. Self-review checklist and feedback loops (typecheck, lint, test)
