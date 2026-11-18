@@ -52,14 +52,6 @@ const SCRIPT_FAILURE_POLICY_LABELS: Record<ScriptConfig["onFailure"], string> = 
     continue: "continua se ≠ 0",
 };
 
-export const TRIGGER_KIND_LABELS: Record<TriggerConfig["kind"], string> = {
-    manual: "manual",
-    schedule: "agendado",
-    event: "por evento",
-    webhook: "webhook",
-    board_column: "coluna do board",
-};
-
 const TRIGGER_SUMMARIES: Record<TriggerConfig["kind"], string> = {
     manual: "Dispara manualmente",
     schedule: "Dispara no horário agendado",

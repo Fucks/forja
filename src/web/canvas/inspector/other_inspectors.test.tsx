@@ -18,6 +18,7 @@ import {
     buildSerializedRunView,
 } from "@/test/factories/run_view_factory.js";
 import { listSentWrites, respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { TRIGGER_KINDS } from "@/shared/trigger_types.js";
 import { renderWithQueryClient } from "@/test/render_with_query_client.js";
 import { inspectorRegistry } from "@/web/canvas/inspector/inspector_registry.js";
 import type { InspectorComponent } from "@/web/canvas/inspector/inspector_registry.js";
@@ -295,12 +296,21 @@ describe("OutputInspector", () => {
 });
 
 describe("TriggerInspector", () => {
-    it("shows the trigger kind", () => {
+    it("describes each of the five kinds of trigger in a card", () => {
+        renderInspector(TriggerInspector, createNodeOfType("trigger", "trigger", ORIGIN));
+
+        const cards = within(screen.getByRole("radiogroup", { name: "Tipo de disparo" }));
+        expect(cards.getAllByRole("radio")).toHaveLength(TRIGGER_KINDS.length);
+        expect(cards.getByRole("radio", { name: /^Manual/ })).toBeChecked();
+    });
+
+    it("chooses the schedule kind", async () => {
         const trigger = createNodeOfType("trigger", "trigger", ORIGIN);
+        const inspector = renderInspector(TriggerInspector, trigger);
 
-        renderInspector(TriggerInspector, trigger);
+        await userEvent.click(screen.getByRole("radio", { name: /^Agendado/ }));
 
-        expect(screen.getByText("manual")).toBeInTheDocument();
+        expect(inspector.lastChangedNode("trigger").config.kind).toBe("schedule");
     });
 
     it("links to the triggers page of the project", () => {
@@ -308,7 +318,7 @@ describe("TriggerInspector", () => {
 
         renderInspector(TriggerInspector, trigger);
 
-        expect(screen.getByRole("link", { name: "Configurar gatilhos" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: "Configurar em Gatilhos" })).toHaveAttribute(
             "href",
             "/projects/forja/triggers",
         );
