@@ -39,5 +39,5 @@
 - [x] 15. Test + implement canvas port labels from branch labels — `port_label.ts` / `flow_node_card.tsx`
 - [x] 16. Test + implement the switch summary — `node_summary.ts`
 - [x] 17. Docs: `condition_doc.ts`, regenerate `docs/nos/condition.md`, adapt `node_docs.test.ts`
-- [ ] 18. Test: YAML export/import preserves branches — `flow_yaml.test.ts`
+- [x] 18. Test: YAML export/import preserves branches — `flow_yaml.test.ts`
 - [ ] 19. Self-review checklist and feedback loops

@@ -4,8 +4,15 @@ import { DomainValidationError } from "@/server/errors.js";
 import { FlowFileError, flowFileName, flowToYaml, yamlToFlow } from "@/server/flows/flow_yaml.js";
 import type { FlowFile } from "@/server/flows/flow_yaml.js";
 import type { FlowGraph, Position } from "@/shared/flow_graph.js";
+import { branchPortsOf } from "@/shared/node_configs/condition_branches.js";
+import type { SwitchConditionConfig } from "@/shared/node_configs/condition_config.js";
 import { normalizeFlowGraph } from "@/shared/normalize_flow_graph.js";
-import { buildCanonicalFlow, buildLoopFlow } from "@/test/factories/flow_graph_factory.js";
+import {
+    buildCanonicalFlow,
+    buildLoopFlow,
+    createNodeOfType,
+} from "@/test/factories/flow_graph_factory.js";
+import { addNodes } from "@/test/factories/flow_graph_variations.js";
 import standardFlowV1 from "@/test/fixtures/standard_flow_v1.json" with { type: "json" };
 
 const EXPORTED_AT = "2026-11-08T12:00:00.000Z";
@@ -46,6 +53,49 @@ describe("flowToYaml and yamlToFlow", () => {
         expect(roundTrip.graph.nodes).toHaveLength(graph.nodes.length);
         expect(roundTrip.graph.groups).toHaveLength(graph.groups.length);
         expect(roundTrip.graph.edges).toHaveLength(graph.edges.length);
+    });
+
+    it("keeps the branches of a switch decision in order", () => {
+        const triage: SwitchConditionConfig = {
+            mode: "switch",
+            branches: [
+                {
+                    port: "bug",
+                    label: "Bug",
+                    condition: { op: "eq", path: "item.kind", value: "bug" },
+                },
+                { port: "question", label: "Dúvida", condition: { op: "exists", path: "item.q" } },
+            ],
+            otherwise: false,
+        };
+        const decision = createNodeOfType("condition", "triage", { x: 0, y: 0 });
+        const graph = addNodes(buildCanonicalFlow(), [
+            { ...decision, outputs: branchPortsOf(triage), config: triage },
+        ]);
+
+        const roundTrip = yamlToFlow(flowToYaml(buildFlowFile(graph)));
+
+        const importedDecision = roundTrip.graph.nodes.find((node) => node.id === "triage");
+        expect(importedDecision?.config).toEqual(triage);
+        expect(importedDecision?.outputs.map((port) => port.name)).toEqual(["bug", "question"]);
+    });
+
+    it("reads a decision exported without a mode as a yes/no decision", () => {
+        const file = buildFlowFile(buildCanonicalFlow());
+        const condition = { op: "eq", path: "inputs.value.approved", value: true };
+        const decisionWithoutMode = {
+            ...createNodeOfType("condition", "check", { x: 0, y: 0 }),
+            config: { condition },
+        };
+        const graphWithoutMode = {
+            ...file.graph,
+            nodes: [...file.graph.nodes, decisionWithoutMode],
+        };
+
+        const imported = yamlToFlow(stringify({ ...file, graph: graphWithoutMode }));
+
+        const decision = imported.graph.nodes.find((node) => node.id === "check");
+        expect(decision?.config).toEqual({ mode: "if", condition });
     });
 
     it("keeps the description of a port the user created", () => {
