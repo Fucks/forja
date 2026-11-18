@@ -21,7 +21,7 @@ const SETTLING_INTERVAL_MS = 250;
 export class FlowEditorPage {
     private readonly palette: Locator;
     private readonly canvas: Locator;
-    readonly inspector: Locator;
+    private readonly inspector: Locator;
 
     constructor(private readonly page: Page) {
         this.palette = page.getByRole("complementary", { name: "Paleta" });

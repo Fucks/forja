@@ -19,18 +19,20 @@ export function describeNodePort(node: FlowNode, port: Port): PortDescription {
 }
 
 export function describePort(nodeType: NodeType, port: Port): PortDescription {
-    const portDoc = findPortDoc(nodeType, port.name);
-    if (portDoc) {
-        return { label: portDoc.label, description: portDoc.description };
-    }
-
-    return describeUserPort(port);
+    return describeDocumentedPort(nodeType, port.name) ?? describeUserPort(port);
 }
 
 export function describeLoopExhaustedPort(): PortDescription {
-    const portDoc = findPortDoc("loop", LOOP_EXHAUSTED_PORT);
+    return describeDocumentedPort("loop", LOOP_EXHAUSTED_PORT) ?? { label: LOOP_EXHAUSTED_PORT };
+}
+
+function describeDocumentedPort(
+    type: DocumentedType,
+    portName: string,
+): PortDescription | undefined {
+    const portDoc = findPortDoc(type, portName);
     if (!portDoc) {
-        return { label: LOOP_EXHAUSTED_PORT };
+        return undefined;
     }
 
     return { label: portDoc.label, description: portDoc.description };

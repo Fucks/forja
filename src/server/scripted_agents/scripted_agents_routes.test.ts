@@ -1,7 +1,9 @@
 import type { FastifyInstance } from "fastify";
 
-import { createScriptedAgentOutputs } from "@/integrations/agent_runtime/scripted_agent_outputs.js";
-import type { ScriptedAgentOutputs } from "@/integrations/agent_runtime/scripted_agent_outputs.js";
+import {
+    createScriptedAgentOutputs,
+    type ScriptedAgentOutputs,
+} from "@/integrations/agent_runtime/scripted_agent_outputs.js";
 import { buildApp } from "@/server/app.js";
 import type { DatabaseHandle } from "@/server/db/client.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";

@@ -24,15 +24,17 @@ interface RuleProgress {
 const NOT_SCRIPTED: ScriptedOutput = { isScripted: false };
 
 export function createScriptedAgentOutputs(): ScriptedAgentOutputs {
-    let progresses: RuleProgress[] = [];
+    let ruleProgresses: RuleProgress[] = [];
 
     return {
         replaceRules(rules) {
-            progresses = rules.map((rule) => ({ rule, givenCount: 0 }));
+            ruleProgresses = rules.map((rule) => ({ rule, givenCount: 0 }));
         },
 
         takeNext(prompt) {
-            const progress = progresses.find(({ rule }) => prompt.includes(rule.promptIncludes));
+            const progress = ruleProgresses.find(({ rule }) =>
+                prompt.includes(rule.promptIncludes),
+            );
             if (!progress) {
                 return NOT_SCRIPTED;
             }

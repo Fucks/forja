@@ -9,7 +9,7 @@ type GhAnswer = (args: string[]) => string;
 
 const ANSWERS: Record<string, GhAnswer> = {
     "pr create": (args) => pullRequestUrl(optionValue(args, "--repo")),
-    "pr view": (args) => JSON.stringify(describePullRequest(args[2] ?? "")),
+    "pr view": (args) => JSON.stringify(describePullRequest(subcommandTarget(args))),
     "pr list": () => EMPTY_LIST,
     "issue list": () => EMPTY_LIST,
 };
@@ -22,14 +22,18 @@ async function answer(args: string[]): Promise<void> {
     }
 
     const [command, subcommand] = args;
-    const answerOf = ANSWERS[`${command} ${subcommand}`];
-    if (answerOf) {
-        process.stdout.write(`${answerOf(args)}\n`);
+    const answerFor = ANSWERS[`${command} ${subcommand}`];
+    if (answerFor) {
+        process.stdout.write(`${answerFor(args)}\n`);
     }
 }
 
 function optionValue(args: string[], option: string): string {
     return args[args.indexOf(option) + 1] ?? "";
+}
+
+function subcommandTarget([, , target]: string[]): string {
+    return target ?? "";
 }
 
 function pullRequestUrl(repo: string): string {
