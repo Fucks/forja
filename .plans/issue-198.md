@@ -39,7 +39,7 @@
       run/item written) — `source_preview.ts`, `source_preview.test.ts`
 - [x] 6. Test + route `POST /api/projects/:projectId/flows/:flowId/source-preview` with route types —
       `flows_routes.ts`, `flows_routes.test.ts`, `api_types.ts`
-- [ ] 7. Git inspector: `bodyFrom` as `DataPicker` (text fields first) with the warning — `git_inspector.tsx`,
+- [x] 7. Git inspector: `bodyFrom` as `DataPicker` (text fields first) with the warning — `git_inspector.tsx`,
       `other_inspectors.test.tsx`
 - [ ] 8. Fonte: "Ver o que seria buscado agora" dialog (loading, empty, error, list, skipped) and
       `skipBlocked` example — `source_preview_dialog.tsx`, `source_inspector.tsx`, tests

@@ -11,6 +11,7 @@ import {
     connect,
     createNodeOfType,
 } from "@/test/factories/flow_graph_factory.js";
+import { updateNode } from "@/test/factories/flow_graph_variations.js";
 import { buildRunListItem } from "@/test/factories/run_list_item_factory.js";
 import {
     buildSerializedNodeRun,
@@ -120,14 +121,38 @@ describe("GitInspector", () => {
         expect(inspector.lastChangedNode("git").config.action).toBe("push");
     });
 
-    it("takes the PR body from the chosen input port", async () => {
-        const git = createNodeOfType("git", "git", ORIGIN);
-        const inspector = renderInspector(GitInspector, git);
+    it("writes the text picked for the PR body as its path", async () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+        const inspector = renderInspector(GitInspector, requireNode("open_pr"));
 
-        await userEvent.click(screen.getByRole("combobox", { name: "Texto do PR vem de" }));
-        await userEvent.click(screen.getByRole("option", { name: "body" }));
+        await userEvent.click(screen.getByRole("button", { name: "Texto do PR vem de" }));
+        await userEvent.click(
+            screen.getByRole("treeitem", { name: "Entradas deste nó › Texto do PR (texto)" }),
+        );
 
-        expect(inspector.lastChangedNode("git").config.bodyFrom).toBe("body");
+        expect(inspector.lastChangedNode("git").config.bodyFrom).toBe("inputs.body");
+    });
+
+    it("warns when the PR body points to an input that does not reach the node", () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+        const graph = withBodyFrom(GRAPH, "inputs.summary");
+
+        renderInspector(GitInspector, requireNode("open_pr", graph), graph);
+
+        expect(
+            screen.getByText(
+                "O corpo do PR aponta para ‘inputs.summary’, que não existe aqui. " +
+                    "Escolha o texto no seletor.",
+            ),
+        ).toBeInTheDocument();
+    });
+
+    it("does not warn when the PR body comes from the connected text", () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+
+        renderInspector(GitInspector, requireNode("open_pr"));
+
+        expect(screen.queryByText(/O corpo do PR aponta para/)).not.toBeInTheDocument();
     });
 
     it("falls back to the project base branch when the field is cleared", async () => {
@@ -476,8 +501,14 @@ function applyLastUpdate(onChange: NodeChangeSpy, node: FlowNode): FlowNode {
     return lastCall[0](node);
 }
 
-function requireNode(nodeId: string): FlowNode {
-    const node = findNode(GRAPH, nodeId);
+function withBodyFrom(graph: FlowGraph, bodyFrom: string): FlowGraph {
+    return updateNode(graph, "open_pr", (node) =>
+        isNodeOfType(node, "git") ? { ...node, config: { ...node.config, bodyFrom } } : node,
+    );
+}
+
+function requireNode(nodeId: string, graph: FlowGraph = GRAPH): FlowNode {
+    const node = findNode(graph, nodeId);
     if (!node) {
         throw new Error(`Node ${nodeId} not found`);
     }

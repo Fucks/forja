@@ -67,9 +67,10 @@ export const gitDoc: NodeDoc = {
         {
             key: "bodyFrom",
             label: "Texto do PR vem de",
-            description: "De qual entrada vem o texto do PR.",
+            description:
+                "O dado usado como descrição do PR, como o resumo do Reviewer ligado em Texto " +
+                "do PR. Escolha no seletor; os textos aparecem primeiro.",
             defaultValue: "Vazio (texto padrão)",
-            advanced: true,
         },
     ],
     examples: [

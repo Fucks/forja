@@ -48,9 +48,9 @@ Abre o PR como rascunho.
 
 - Padrão: Desligado
 
-### Texto do PR vem de (`bodyFrom`) · avançado
+### Texto do PR vem de (`bodyFrom`)
 
-De qual entrada vem o texto do PR.
+O dado usado como descrição do PR, como o resumo do Reviewer ligado em Texto do PR. Escolha no seletor; os textos aparecem primeiro.
 
 - Padrão: Vazio (texto padrão)
 
