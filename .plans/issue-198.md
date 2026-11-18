@@ -41,7 +41,7 @@
       `flows_routes.ts`, `flows_routes.test.ts`, `api_types.ts`
 - [x] 7. Git inspector: `bodyFrom` as `DataPicker` (text fields first) with the warning — `git_inspector.tsx`,
       `other_inspectors.test.tsx`
-- [ ] 8. Fonte: "Ver o que seria buscado agora" dialog (loading, empty, error, list, skipped) and
+- [x] 8. Fonte: "Ver o que seria buscado agora" dialog (loading, empty, error, list, skipped) and
       `skipBlocked` example — `source_preview_dialog.tsx`, `source_inspector.tsx`, tests
 - [ ] 9. Gatilho: cards for the 5 kinds and link "Configurar em Gatilhos" — `trigger_inspector.tsx`, tests
 - [ ] 10. Aprovação: `show` as described checkboxes and `gate_preview` skeleton — `gate_inspector.tsx`,

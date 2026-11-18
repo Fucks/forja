@@ -17,7 +17,7 @@ import {
     buildSerializedNodeRun,
     buildSerializedRunView,
 } from "@/test/factories/run_view_factory.js";
-import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { listSentWrites, respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderWithQueryClient } from "@/test/render_with_query_client.js";
 import { inspectorRegistry } from "@/web/canvas/inspector/inspector_registry.js";
 import type { InspectorComponent } from "@/web/canvas/inspector/inspector_registry.js";
@@ -79,6 +79,91 @@ describe("SourceInspector", () => {
         await userEvent.click(screen.getByRole("switch", { name: "Pular bloqueadas" }));
 
         expect(inspector.lastChangedNode("source").config.skipBlocked).toBe(false);
+    });
+});
+
+describe("SourceInspector preview", () => {
+    const SOURCE_PREVIEW_ROUTE = `POST /api/projects/${PROJECT_ID}/flows/${FLOW_ID}/source-preview`;
+    const SANDCASTLE_SOURCE: FlowNode = {
+        ...createNodeOfType("source", "source", ORIGIN),
+        config: {
+            provider: "github",
+            label: "Sandcastle",
+            state: "open",
+            limit: 20,
+            skipBlocked: true,
+        },
+    };
+
+    async function openPreview(): Promise<HTMLElement> {
+        renderInspector(SourceInspector, SANDCASTLE_SOURCE);
+        await userEvent.click(
+            screen.getByRole("button", { name: "Ver o que seria buscado agora" }),
+        );
+
+        return screen.getByRole("dialog", { name: "O que seria buscado agora" });
+    }
+
+    it("lists the issues the source would take now and how many were skipped", async () => {
+        stubFetchRoutes({
+            [SOURCE_PREVIEW_ROUTE]: () =>
+                Response.json({
+                    items: [{ number: 12, title: "Tela de login", labels: ["Sandcastle"] }],
+                    skipped: 3,
+                }),
+        });
+
+        const dialog = await openPreview();
+
+        const items = await within(dialog).findAllByRole("listitem");
+        expect(items.map((item) => item.textContent)).toEqual(["#12Tela de loginSandcastle"]);
+        expect(dialog).toHaveTextContent("3 issues puladas porque dependem de issues abertas");
+    });
+
+    it("sends the config being edited", async () => {
+        const fetchSpy = stubFetchRoutes({
+            [SOURCE_PREVIEW_ROUTE]: () => Response.json({ items: [], skipped: 0 }),
+        });
+
+        await openPreview();
+
+        await waitFor(() =>
+            expect(listSentWrites(fetchSpy)).toEqual([
+                expect.objectContaining({ body: { config: SANDCASTLE_SOURCE.config } }),
+            ]),
+        );
+    });
+
+    it("tells when no open issue has the label", async () => {
+        stubFetchRoutes({ [SOURCE_PREVIEW_ROUTE]: () => Response.json({ items: [], skipped: 0 }) });
+
+        const dialog = await openPreview();
+
+        expect(
+            await within(dialog).findByText("Nenhuma issue aberta com a label Sandcastle"),
+        ).toBeInTheDocument();
+    });
+
+    it("shows the GitHub error with a hint about the credential", async () => {
+        stubFetchRoutes({
+            [SOURCE_PREVIEW_ROUTE]: () =>
+                respondWithApiError(422, "Não foi possível buscar as issues do GitHub."),
+        });
+
+        const dialog = await openPreview();
+
+        expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+            "Não foi possível buscar as issues do GitHub. " +
+                "Verifique a credencial do GitHub em Configurações",
+        );
+    });
+
+    it("explains with an example when a blocked issue is taken", () => {
+        renderInspector(SourceInspector, SANDCASTLE_SOURCE);
+
+        expect(
+            screen.getByText("#12 com ‘depends on #10’ só entra quando #10 fechar"),
+        ).toBeInTheDocument();
     });
 });
 
