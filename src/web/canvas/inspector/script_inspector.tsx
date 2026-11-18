@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 
 import { isNodeOfType } from "@/shared/flow_graph.js";
-import type { NodeOfType } from "@/shared/flow_graph.js";
+import type { FlowGraph, NodeOfType } from "@/shared/flow_graph.js";
 import {
     MIN_SCRIPT_TIMEOUT_MINUTES,
     SCRIPT_FAILURE_POLICIES,
@@ -12,7 +12,9 @@ import {
 } from "@/shared/node_configs/script_config.js";
 import type { ScriptConfig, ScriptRunLocation } from "@/shared/node_configs/script_config.js";
 import { AdvancedSection } from "@/web/canvas/inspector/advanced_section.js";
+import { EnvListEditor } from "@/web/canvas/inspector/env_list_editor.js";
 import { fieldDoc, fieldOptionCards } from "@/web/canvas/inspector/field_doc.js";
+import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorFields, InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
@@ -21,6 +23,7 @@ import { withNodeConfig } from "@/web/canvas/inspector/node_updates.js";
 import { OptionCardsField } from "@/web/canvas/inspector/option_cards_field.js";
 import { ScriptCommandField } from "@/web/canvas/inspector/script_command_field.js";
 import { TextField, toOptionalText } from "@/web/canvas/inspector/text_field.js";
+import { useAvailableData } from "@/web/canvas/inspector/use_available_data.js";
 
 type ChangeScriptConfig = (changes: Partial<ScriptConfig>) => void;
 
@@ -35,6 +38,7 @@ const FAILURE_POLICY_DOC = fieldDoc("script", "onFailure");
 const FAILURE_POLICY_CARDS = fieldOptionCards(FAILURE_POLICY_DOC, SCRIPT_FAILURE_POLICIES);
 const OUTPUT_MODE_DOC = fieldDoc("script", "parseOutput");
 const OUTPUT_MODE_CARDS = fieldOptionCards(OUTPUT_MODE_DOC, SCRIPT_OUTPUT_MODES);
+const ENV_DOC = fieldDoc("script", "env");
 const SHELL_DOC = fieldDoc("script", "shell");
 const SHELL_CARDS = fieldOptionCards(SHELL_DOC, SCRIPT_SHELLS);
 
@@ -55,6 +59,7 @@ export function ScriptInspector({ node, graph, onChange }: InspectorProps): JSX.
                 <RunLocationField config={config} onConfigChange={changeConfig} />
                 <FailurePolicyField config={config} onConfigChange={changeConfig} />
             </InspectorFields>
+            <EnvSection script={node} graph={graph} onConfigChange={changeConfig} />
             <InspectorSection title={OUTPUT_MODE_DOC.label}>
                 <OptionCardsField
                     doc={OUTPUT_MODE_DOC}
@@ -106,6 +111,29 @@ function FailurePolicyField({ config, onConfigChange }: ScriptSectionProps): JSX
                 <FieldNote>Ligue Resultado › passed a uma Decisão.</FieldNote>
             )}
         </div>
+    );
+}
+
+function EnvSection({
+    script,
+    graph,
+    onConfigChange,
+}: {
+    script: NodeOfType<"script">;
+    graph: FlowGraph;
+    onConfigChange: ChangeScriptConfig;
+}): JSX.Element {
+    const fields = useAvailableData(graph, script.id, { scope: "node" });
+
+    return (
+        <InspectorSection title={ENV_DOC.label}>
+            <FieldHeading doc={ENV_DOC} />
+            <EnvListEditor
+                env={script.config.env}
+                fields={fields}
+                onChange={(env) => onConfigChange({ env })}
+            />
+        </InspectorSection>
     );
 }
 

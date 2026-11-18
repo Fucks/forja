@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import type { Mock } from "vitest";
 
 import { findNode } from "@/engine/graph_queries.js";
+import type { CredentialSummary } from "@/shared/credential_types.js";
 import { isNodeOfType } from "@/shared/flow_graph.js";
 import type { FlowNode, NodeOfType } from "@/shared/flow_graph.js";
 import type { ScriptConfig } from "@/shared/node_configs/script_config.js";
@@ -22,6 +23,19 @@ const FLOW_ID = "flow";
 const TESTS_SCRIPT_ID = "tests";
 const ITEM_REQUIRED_NOTICE = "Precisa da entrada Item atual ligada.";
 const DECISION_HINT = "Ligue Resultado › passed a uma Decisão.";
+const TWO_ENV_VARS = [
+    { name: "FIRST", value: "1" },
+    { name: "SECOND", value: "2" },
+];
+const NPM_CREDENTIAL: CredentialSummary = {
+    id: "cred_npm",
+    name: "NPM",
+    kind: "generic_env",
+    masked: "••••1234",
+    envVar: "NPM_TOKEN",
+    createdAt: "2026-11-01T10:00:00.000Z",
+    updatedAt: "2026-11-01T10:00:00.000Z",
+};
 
 describe("ScriptInspector", () => {
     describe("command", () => {
@@ -158,6 +172,96 @@ describe("ScriptInspector", () => {
         });
     });
 
+    describe("environment variables", () => {
+        it("adds a text variable with the typed name and value", async () => {
+            const inspector = renderScriptInspector(withConfig({ env: [] }));
+
+            await userEvent.click(screen.getByRole("button", { name: "Adicionar variável" }));
+            await userEvent.type(
+                screen.getByRole("textbox", { name: "Nome da variável 1" }),
+                "TITLE",
+            );
+            await userEvent.type(
+                screen.getByRole("textbox", { name: "Valor da variável 1" }),
+                "Oi",
+            );
+            await userEvent.tab();
+
+            expect(inspector.lastChangedConfig().env).toEqual([{ name: "TITLE", value: "Oi" }]);
+        });
+
+        it("shows the error under an invalid name while it is typed", async () => {
+            const onChange = renderScriptInspector(withConfig({ env: [] })).onChange;
+
+            await userEvent.click(screen.getByRole("button", { name: "Adicionar variável" }));
+            await userEvent.type(
+                screen.getByRole("textbox", { name: "Nome da variável 1" }),
+                "FOO-BAR",
+            );
+
+            expect(
+                screen.getByRole("textbox", { name: "Nome da variável 1" }),
+            ).toHaveAccessibleDescription(
+                "Use letras maiúsculas, números e _, sem começar por número.",
+            );
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it("lists the project credentials and saves the chosen one", async () => {
+            const inspector = renderScriptInspector(
+                withConfig({ env: [{ name: "NPM_TOKEN", value: "" }] }),
+            );
+
+            await userEvent.click(screen.getByRole("combobox", { name: "Tipo da variável 1" }));
+            await userEvent.click(screen.getByRole("option", { name: "Credencial" }));
+            await userEvent.click(
+                screen.getByRole("combobox", { name: "Credencial da variável 1" }),
+            );
+            await userEvent.click(await screen.findByRole("option", { name: NPM_CREDENTIAL.name }));
+
+            expect(inspector.lastChangedConfig().env).toEqual([
+                { name: "NPM_TOKEN", credentialId: NPM_CREDENTIAL.id },
+            ]);
+        });
+
+        it("inserts the picked field at the end of a text value", async () => {
+            const inspector = renderScriptInspector(
+                withConfig({ env: [{ name: "ISSUE", value: "#" }] }),
+            );
+
+            await userEvent.click(
+                within(screen.getByRole("group", { name: "Variável 1" })).getByRole("button", {
+                    name: "Inserir dado",
+                }),
+            );
+            await userEvent.type(screen.getByRole("searchbox", { name: "Buscar dado" }), "number");
+            await userEvent.keyboard("{Enter}");
+
+            expect(inspector.lastChangedConfig().env).toEqual([
+                { name: "ISSUE", value: "#{{item.number}}" },
+            ]);
+        });
+
+        it("removes the chosen variable", async () => {
+            const inspector = renderScriptInspector(withConfig({ env: TWO_ENV_VARS }));
+
+            await userEvent.click(screen.getByRole("button", { name: "Remover a variável 1" }));
+
+            expect(inspector.lastChangedConfig().env).toEqual([{ name: "SECOND", value: "2" }]);
+        });
+
+        it("moves a variable down", async () => {
+            const inspector = renderScriptInspector(withConfig({ env: TWO_ENV_VARS }));
+
+            await userEvent.click(screen.getByRole("button", { name: "Descer a variável 1" }));
+
+            expect(inspector.lastChangedConfig().env).toEqual([
+                { name: "SECOND", value: "2" },
+                { name: "FIRST", value: "1" },
+            ]);
+        });
+    });
+
     describe("output format", () => {
         it("reads the last line as JSON when that card is chosen", async () => {
             const inspector = renderScriptInspector(requireTestsScript());
@@ -245,6 +349,7 @@ interface RenderedInspector {
 function renderScriptInspector(script: ScriptNode): RenderedInspector {
     stubFetchRoutes({
         [`GET /api/projects/${PROJECT_ID}/runs?limit=5&flowId=${FLOW_ID}`]: () => Response.json([]),
+        "GET /api/credentials": () => Response.json([NPM_CREDENTIAL]),
     });
     const onChange: NodeChangeSpy = vi.fn();
     renderWithQueryClient(
