@@ -73,6 +73,16 @@ export function buildCanonicalFlow(): FlowGraph {
     };
 }
 
+/** The smallest flow that publishes: a manual trigger alone. */
+export function buildTriggerOnlyFlow(): FlowGraph {
+    return {
+        schemaVersion: 2,
+        nodes: [createDefaultNode("trigger", "trigger", gridPosition(0))],
+        edges: [],
+        groups: [],
+    };
+}
+
 export function buildLoopFlow(): FlowGraph {
     const itemsGroup = buildMapGroup({
         id: "items",

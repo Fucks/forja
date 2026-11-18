@@ -2,6 +2,15 @@ import type { ValidationIssue } from "@/shared/validation_issue.js";
 
 export type IssueTarget = ValidationIssue["target"];
 
+/** What a rule says about a problem: `fix` is required, so every rule teaches how to solve it. */
+export interface IssueDescription {
+    code: string;
+    message: string;
+    fix: string;
+    fieldKey?: string;
+    target: IssueTarget;
+}
+
 export const FLOW_TARGET: IssueTarget = { kind: "flow" };
 
 export function nodeTarget(nodeId: string): IssueTarget {
@@ -16,10 +25,14 @@ export function groupTarget(groupId: string): IssueTarget {
     return { kind: "group", id: groupId };
 }
 
-export function errorIssue(code: string, message: string, target: IssueTarget): ValidationIssue {
-    return { level: "error", code, message, target };
+export function errorIssue(description: IssueDescription): ValidationIssue {
+    return { level: "error", ...description };
 }
 
-export function warningIssue(code: string, message: string, target: IssueTarget): ValidationIssue {
-    return { level: "warning", code, message, target };
+export function warningIssue(description: IssueDescription): ValidationIssue {
+    return { level: "warning", ...description };
+}
+
+export function quote(text: string): string {
+    return `‘${text}’`;
 }

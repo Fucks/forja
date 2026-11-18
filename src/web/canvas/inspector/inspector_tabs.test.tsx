@@ -1,7 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
 import { InspectorTabs } from "@/web/canvas/inspector/inspector_tabs.js";
+import {
+    createFieldFocusStore,
+    FieldFocusContext,
+    InspectedTargetContext,
+} from "@/web/canvas/inspector/use_focus_field.js";
 import type { DocumentedType } from "@/web/docs/node_docs/node_doc.js";
 
 beforeEach(() => {
@@ -70,6 +75,27 @@ describe("InspectorTabs", () => {
         await userEvent.click(screen.getByRole("tab", { name: "Dados" }));
 
         expect(screen.getByText("entradas e saídas")).toBeInTheDocument();
+    });
+
+    it("goes back to Configurar when a field of the inspected node is asked for", async () => {
+        const fieldFocusStore = createFieldFocusStore();
+        render(
+            <FieldFocusContext value={fieldFocusStore}>
+                <InspectedTargetContext value="dev">
+                    <InspectorTabs
+                        type="agent"
+                        configure={<p>campos do nó</p>}
+                        data={<p>entradas e saídas</p>}
+                        help={<p>documentação</p>}
+                    />
+                </InspectedTargetContext>
+            </FieldFocusContext>,
+        );
+        await userEvent.click(screen.getByRole("tab", { name: "Ajuda" }));
+
+        act(() => fieldFocusStore.getState().requestFocus({ targetId: "dev", fieldKey: "prompt" }));
+
+        expect(screen.getByText("campos do nó")).toBeInTheDocument();
     });
 });
 

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 
-import type { FlowSummary, FlowTemplateSummary } from "@/shared/flow_types.js";
+import type { FlowSummary, FlowTemplateGraph, FlowTemplateSummary } from "@/shared/flow_types.js";
 import { apiClient } from "@/web/api/api_client.js";
 import type { ApiError } from "@/web/api/api_client.js";
 import { PROJECT_FLOWS_QUERY_KEY, projectFlowsPath } from "@/web/app/flows/use_flow_summary.js";
@@ -38,6 +38,12 @@ export function useFlowTemplates(): UseQueryResult<FlowTemplateSummary[]> {
         queryKey: FLOW_TEMPLATES_QUERY_KEY,
         queryFn: () => apiClient.get<FlowTemplateSummary[]>(FLOW_TEMPLATES_PATH),
     });
+}
+
+export function fetchFlowTemplateGraph(templateId: string): Promise<FlowTemplateGraph> {
+    return apiClient.get<FlowTemplateGraph>(
+        `${FLOW_TEMPLATES_PATH}/${encodeURIComponent(templateId)}`,
+    );
 }
 
 /** Without a template the flow starts blank. */

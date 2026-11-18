@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { JSX, ReactNode } from "react";
 
+import { useIsFieldFocusRequested } from "@/web/canvas/inspector/use_focus_field.js";
 import { Tabs } from "@/web/components/ui/tabs.js";
 import type { DocumentedType } from "@/web/docs/node_docs/node_doc.js";
 
@@ -14,6 +15,7 @@ const INSPECTOR_TAB_LABELS: Record<InspectorTab, string> = {
 };
 
 const DEFAULT_TAB: InspectorTab = "configure";
+const FIELDS_TAB: InspectorTab = "configure";
 const TAB_STORAGE_KEY_PREFIX = "forja.inspector.tab.";
 
 // The tab list stays at the top while the panel scrolls.
@@ -32,6 +34,11 @@ export function InspectorTabs({
 }): JSX.Element {
     const [activeTab, setActiveTab] = useState(() => readRememberedTab(type));
     const contentByTab: Record<InspectorTab, ReactNode> = { configure, data, help };
+    const isFieldFocusRequested = useIsFieldFocusRequested();
+    // Switched while rendering, so the requested field mounts right away and takes the focus.
+    if (isFieldFocusRequested && activeTab !== FIELDS_TAB) {
+        setActiveTab(FIELDS_TAB);
+    }
 
     function chooseTab(tab: InspectorTab): void {
         setActiveTab(tab);

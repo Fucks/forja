@@ -8,7 +8,7 @@ import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { FlowDraft, FlowSummary, FlowVersion } from "@/shared/flow_types.js";
 import { normalizeFlowGraph } from "@/shared/normalize_flow_graph.js";
 import { buildProject } from "@/test/factories/project_factory.js";
-import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import { buildCanonicalFlow, buildTriggerOnlyFlow } from "@/test/factories/flow_graph_factory.js";
 import { updateNode } from "@/test/factories/flow_graph_variations.js";
 import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
@@ -51,7 +51,7 @@ describe("flows routes", () => {
         const response = await app.inject({
             method: "POST",
             url: `/api/projects/${PROJECT_ID}/flows`,
-            payload: { name },
+            payload: { name, graph: buildTriggerOnlyFlow() },
         });
         return response.json<FlowSummary>();
     }
@@ -270,7 +270,8 @@ describe("flows routes", () => {
                         {
                             level: "error",
                             code: "no_trigger",
-                            message: "O fluxo precisa de um nó de gatilho.",
+                            message: "O fluxo não tem Gatilho, então nada o faz começar.",
+                            fix: "Arraste um Gatilho da paleta (categoria Início) para o canvas.",
                             target: { kind: "flow" },
                         },
                     ],

@@ -12,6 +12,7 @@ import { ConnectionGraphContext } from "@/web/canvas/connection_hints.js";
 import { ConnectionRejectionTooltip } from "@/web/canvas/connection_rejection_tooltip.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { EditorToolbar } from "@/web/canvas/editor_toolbar.js";
+import { FirstSteps } from "@/web/canvas/first_steps.js";
 import { FLOW_EDGE_TYPE } from "@/web/canvas/graph_mapping.js";
 import type { RFEdge } from "@/web/canvas/graph_mapping.js";
 import { GroupContextMenu } from "@/web/canvas/group_context_menu.js";
@@ -176,6 +177,7 @@ function EditableFlowCanvas({
                             <CanvasBackground />
                             <MiniMap />
                             <Controls showInteractive={false} />
+                            <FirstSteps graph={graph} store={store} />
                             <Panel position="top-right">
                                 <EditorToolbar
                                     store={store}

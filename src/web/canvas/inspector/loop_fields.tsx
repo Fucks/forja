@@ -8,6 +8,7 @@ import type { FlowGraph, FlowNode, LoopConfig } from "@/shared/flow_graph.js";
 import { ConditionEditor } from "@/web/canvas/inspector/condition_editor.js";
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
+import { FocusableField } from "@/web/canvas/inspector/focusable_field.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
 import { LoopExhaustedDiagram } from "@/web/canvas/inspector/loop_exhausted_diagram.js";
 import { labelPort, useAvailableData } from "@/web/canvas/inspector/use_available_data.js";
@@ -47,11 +48,13 @@ export function LoopFields({
             />
             <div className="flex flex-col gap-2">
                 <FieldHeading doc={fieldDoc("loop", "until")} />
-                <ConditionEditor
-                    value={config.until}
-                    fields={untilFields}
-                    onChange={(until) => onChange({ until })}
-                />
+                <FocusableField fieldKey="until">
+                    <ConditionEditor
+                        value={config.until}
+                        fields={untilFields}
+                        onChange={(until) => onChange({ until })}
+                    />
+                </FocusableField>
             </div>
             <CarryPortSwitches
                 options={carryOptions}

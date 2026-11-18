@@ -157,7 +157,9 @@ describe("checkPromptVariables", () => {
             {
                 level: "error",
                 code: "unknown_variable",
-                message: 'Variável desconhecida no prompt de "Dev": {{inputs.plano}}',
+                message: "O prompt de ‘Dev’ usa {{inputs.plano}}, que não existe.",
+                fix: "Troque a variável por um dado escolhido no botão Inserir dado do prompt.",
+                fieldKey: "prompt",
                 target: { kind: "node", id: "dev" },
             },
         ]);
@@ -183,7 +185,11 @@ describe("checkPromptVariables", () => {
                 level: "error",
                 code: "variable_node_not_upstream",
                 message:
-                    "Variável aponta para um nó que não vem antes deste: {{nodes.dev.summary}}",
+                    "O prompt de ‘TL’ lê {{nodes.dev.summary}}, de um nó que não vem antes dele.",
+                fix:
+                    "Ligue esse nó antes deste ou escolha outro dado " +
+                    "no botão Inserir dado do prompt.",
+                fieldKey: "prompt",
                 target: { kind: "node", id: "tl" },
             },
         ]);

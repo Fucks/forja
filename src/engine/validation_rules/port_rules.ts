@@ -5,7 +5,12 @@ import {
     isMapGroup,
 } from "@/engine/graph_queries.js";
 import { findSourcePort, findTargetPort } from "@/engine/validation_rules/graph_lookups.js";
-import { edgeTarget, errorIssue, nodeTarget } from "@/engine/validation_rules/validation_issues.js";
+import {
+    edgeTarget,
+    errorIssue,
+    nodeTarget,
+    quote,
+} from "@/engine/validation_rules/validation_issues.js";
 import {
     type FlowEdge,
     type FlowGraph,
@@ -25,11 +30,12 @@ export function findDanglingEdges(graph: FlowGraph): ValidationIssue[] {
     const danglingEdges = graph.edges.filter((edge) => !resolveConnection(graph, edge));
 
     return danglingEdges.map((edge) =>
-        errorIssue(
-            "dangling_edge",
-            "A aresta aponta para um nó ou porta que não existe.",
-            edgeTarget(edge.id),
-        ),
+        errorIssue({
+            code: "dangling_edge",
+            message: "Uma ligação aponta para um nó ou uma porta que não existe mais.",
+            fix: "Apague essa ligação e ligue as portas de novo.",
+            target: edgeTarget(edge.id),
+        }),
     );
 }
 
@@ -43,12 +49,15 @@ export function findIncompatiblePorts(graph: FlowGraph): ValidationIssue[] {
     );
 
     return incompatibleConnections.map(({ edge, sourcePort, targetPort }) =>
-        errorIssue(
-            "incompatible_ports",
-            `A saída "${sourcePort.name}" (${sourcePort.type}) não é compatível com a entrada ` +
-                `"${targetPort.name}" (${targetPort.type}).`,
-            edgeTarget(edge.id),
-        ),
+        errorIssue({
+            code: "incompatible_ports",
+            message:
+                `A saída ${quote(sourcePort.name)} entrega um dado que a entrada ` +
+                `${quote(targetPort.name)} não aceita ` +
+                `(${sourcePort.type} → ${targetPort.type}).`,
+            fix: "Apague a ligação e ligue a saída a uma entrada do mesmo tipo.",
+            target: edgeTarget(edge.id),
+        }),
     );
 }
 
@@ -72,11 +81,16 @@ function findUnconnectedRequiredInputsOfNode(graph: FlowGraph, node: FlowNode): 
     );
 
     return unconnectedInputs.map((port) =>
-        errorIssue(
-            "required_input_unconnected",
-            `A entrada obrigatória "${port.name}" do nó "${node.label}" não está ligada.`,
-            nodeTarget(node.id),
-        ),
+        errorIssue({
+            code: "required_input_unconnected",
+            message:
+                `O nó ${quote(node.label)} precisa receber ${quote(port.name)}, ` +
+                "mas nada chega lá.",
+            fix:
+                "Arraste uma ligação da saída de um nó anterior " +
+                `até a entrada ${quote(port.name)}.`,
+            target: nodeTarget(node.id),
+        }),
     );
 }
 

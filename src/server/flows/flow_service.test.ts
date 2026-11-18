@@ -9,7 +9,8 @@ import { createEventBus } from "@/server/runtime/event_bus.js";
 import type { EventBus } from "@/server/runtime/event_bus.js";
 import { type AuditLog, createAuditLog } from "@/server/security/audit_log.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
-import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import type { FlowSummary } from "@/shared/flow_types.js";
+import { buildCanonicalFlow, buildTriggerOnlyFlow } from "@/test/factories/flow_graph_factory.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
 import { createTestDb } from "@/test/test_db.js";
@@ -51,12 +52,16 @@ describe("FlowService", () => {
         database.close();
     });
 
+    function createPublishableFlow(name: string): Promise<FlowSummary> {
+        return service.create(PROJECT_ID, { name, graph: buildTriggerOnlyFlow() });
+    }
+
     function minutesAfterCreation(minutes: number): string {
         return new Date(CREATED_AT.getTime() + minutes * ONE_MINUTE_MS).toISOString();
     }
 
     describe("create", () => {
-        it("creates a draft with a single manual trigger node at revision 1", async () => {
+        it("creates an empty draft at revision 1, so the editor opens on its starting choices", async () => {
             const flow = await service.create(PROJECT_ID, { name: "Entrega" });
 
             const draft = await service.getDraft(flow.id);
@@ -70,9 +75,7 @@ describe("FlowService", () => {
                 draftRevision: 1,
             });
             expect(draft.revision).toBe(1);
-            expect(draft.graph.nodes).toEqual([
-                expect.objectContaining({ type: "trigger", config: { kind: "manual" } }),
-            ]);
+            expect(draft.graph.nodes).toEqual([]);
             expect(draft.graph.edges).toEqual([]);
             expect(draft.graph.groups).toEqual([]);
         });
@@ -120,7 +123,7 @@ describe("FlowService", () => {
         });
 
         it("reports the latest published version", async () => {
-            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
+            const flow = await createPublishableFlow("Entrega");
             await service.publish(flow.id);
             await service.publish(flow.id);
 
@@ -240,7 +243,7 @@ describe("FlowService", () => {
 
     describe("publish", () => {
         it("publishes the draft as version 1 with the note and the publication time", async () => {
-            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
+            const flow = await createPublishableFlow("Entrega");
             const draft = await service.getDraft(flow.id);
 
             const version = await service.publish(flow.id, "Primeira versão");
@@ -256,8 +259,8 @@ describe("FlowService", () => {
         });
 
         it("numbers each version after the last one of the same flow", async () => {
-            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
-            const otherFlow = await service.create(PROJECT_ID, { name: "Revisão" });
+            const flow = await createPublishableFlow("Entrega");
+            const otherFlow = await createPublishableFlow("Revisão");
             await service.publish(otherFlow.id);
 
             const first = await service.publish(flow.id);
@@ -267,7 +270,7 @@ describe("FlowService", () => {
         });
 
         it("emits flow.published with the project, the flow and the version", async () => {
-            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
+            const flow = await createPublishableFlow("Entrega");
 
             await service.publish(flow.id);
 
@@ -277,7 +280,7 @@ describe("FlowService", () => {
         });
 
         it("records the publication in the audit log", async () => {
-            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
+            const flow = await createPublishableFlow("Entrega");
 
             await service.publish(flow.id);
 
@@ -352,7 +355,7 @@ describe("FlowService", () => {
 
     describe("versions", () => {
         it("keeps the published version unchanged when the draft is edited", async () => {
-            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
+            const flow = await createPublishableFlow("Entrega");
             const published = await service.publish(flow.id);
 
             await service.saveDraft(flow.id, buildCanonicalFlow(), 1);
@@ -361,7 +364,7 @@ describe("FlowService", () => {
         });
 
         it("lists the versions in order without their graphs", async () => {
-            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
+            const flow = await createPublishableFlow("Entrega");
             await service.publish(flow.id, "Primeira");
             clock.advance(ONE_MINUTE_MS);
             await service.publish(flow.id);
@@ -392,7 +395,7 @@ describe("FlowService", () => {
 
     describe("restoreVersionToDraft", () => {
         it("copies the version's graph into the draft as a new revision", async () => {
-            const flow = await service.create(PROJECT_ID, { name: "Entrega" });
+            const flow = await createPublishableFlow("Entrega");
             const published = await service.publish(flow.id);
             await service.saveDraft(flow.id, buildCanonicalFlow(), 1);
             clock.advance(ONE_MINUTE_MS);

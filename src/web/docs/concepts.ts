@@ -88,4 +88,18 @@ export const CONCEPTS: Concept[] = [
                 "e o Reviewer lê a mesma branch. Dois itens nunca dividem uma branch.",
         ],
     },
+    {
+        id: "guided-example",
+        title: "Exemplo guiado: Revisão com volta",
+        body: [
+            "Para ver Decisão, Comando e Loop juntos, crie um fluxo a partir do template " +
+                "Revisão com volta, em Novo fluxo ou no canvas vazio de um fluxo em branco.",
+            "Dentro do Loop, o Dev implementa e o Reviewer responde se aprova. A condição de " +
+                "parada é a decisão: aprovado, o item sai do Loop; reprovado, volta para o Dev " +
+                "com as notas do Reviewer.",
+            "Aprovado, o Comando roda npm test e falha o item se algum teste quebrar; só então o " +
+                "Git abre o PR com as notas do Reviewer. Se as voltas acabarem sem aprovação, " +
+                "o item vai para Precisa de humano.",
+        ],
+    },
 ];

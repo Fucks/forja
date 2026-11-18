@@ -1,4 +1,5 @@
 import { listUpstreamNodes } from "@/engine/graph_queries.js";
+import { errorIssue, nodeTarget, quote } from "@/engine/validation_rules/validation_issues.js";
 import { lookUpPath } from "@/shared/conditions.js";
 import { type DataContext, findNodeSlugInPath } from "@/shared/data_context.js";
 import type { FlowGraph, FlowGroup, FlowNode, NodeOfType, Port } from "@/shared/flow_graph.js";
@@ -19,6 +20,7 @@ export class PromptRenderError extends Error {
     }
 }
 
+const PROMPT_FIELD = "prompt";
 const ESCAPED_OPENING = "\\{{";
 const LITERAL_OPENING = "{{";
 const TEMPLATE_MARKUP_PATTERN = /\\\{\{|\{\{(?<path>[^{}]*)\}\}/g;
@@ -222,19 +224,23 @@ function findVariableIssues(
 }
 
 function buildUnknownVariableIssue(node: AgentNode, variable: string): ValidationIssue {
-    return {
-        level: "error",
+    return errorIssue({
         code: "unknown_variable",
-        message: `Variável desconhecida no prompt de "${node.label}": {{${variable}}}`,
-        target: { kind: "node", id: node.id },
-    };
+        message: `O prompt de ${quote(node.label)} usa {{${variable}}}, que não existe.`,
+        fix: "Troque a variável por um dado escolhido no botão Inserir dado do prompt.",
+        fieldKey: PROMPT_FIELD,
+        target: nodeTarget(node.id),
+    });
 }
 
 function buildNodeNotUpstreamIssue(node: AgentNode, variable: string): ValidationIssue {
-    return {
-        level: "error",
+    return errorIssue({
         code: "variable_node_not_upstream",
-        message: `Variável aponta para um nó que não vem antes deste: {{${variable}}}`,
-        target: { kind: "node", id: node.id },
-    };
+        message:
+            `O prompt de ${quote(node.label)} lê {{${variable}}}, ` +
+            "de um nó que não vem antes dele.",
+        fix: "Ligue esse nó antes deste ou escolha outro dado no botão Inserir dado do prompt.",
+        fieldKey: PROMPT_FIELD,
+        target: nodeTarget(node.id),
+    });
 }

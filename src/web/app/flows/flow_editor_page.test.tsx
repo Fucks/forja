@@ -20,6 +20,10 @@ import {
 import type { FakeRoutes } from "@/test/fakes/fake_fetch.js";
 import { renderAppAt } from "@/test/render_app_at.js";
 import { DraftConflictBanner } from "@/web/app/flows/draft_conflict_banner.js";
+import {
+    EDITOR_TOUR_DISMISSED_KEY,
+    EDITOR_TOUR_DISMISSED_VALUE,
+} from "@/web/canvas/editor_tour_storage.js";
 import { AUTOSAVE_DELAY_MS } from "@/web/canvas/use_flow_draft.js";
 import { VALIDATION_DEBOUNCE_MS } from "@/web/canvas/use_validation.js";
 
@@ -31,8 +35,8 @@ const PROJECT_FLOWS_URL = `/api/projects/${PROJECT_ID}/flows`;
 const HTTP_CREATED = 201;
 const HTTP_NOT_FOUND = 404;
 const TRIGGER_LABEL = "Gatilho";
-const NO_TRIGGER_MESSAGE = "O fluxo precisa de um nó de gatilho.";
-const EMPTY_PROMPT_MESSAGE = 'O agente "Dev" está sem prompt.';
+const NO_TRIGGER_MESSAGE = "O fluxo não tem Gatilho, então nada o faz começar.";
+const EMPTY_PROMPT_MESSAGE = "O Agente ‘Dev’ não tem prompt.";
 const VALIDATION_WAIT = { timeout: VALIDATION_DEBOUNCE_MS * 2 };
 const AUTOSAVE_WAIT_MS = AUTOSAVE_DELAY_MS * 3;
 
@@ -87,6 +91,39 @@ function buildPublishedVersion(version: number): FlowVersion {
         publishedAt: "2026-11-11T12:00:00Z",
     };
 }
+
+// The tour opens over the editor on its first opening; only its own tests want to see it.
+beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem(EDITOR_TOUR_DISMISSED_KEY, EDITOR_TOUR_DISMISSED_VALUE);
+});
+
+describe("FlowEditorPage tour", () => {
+    it("introduces the editor on its first opening, starting at the palette", async () => {
+        localStorage.removeItem(EDITOR_TOUR_DISMISSED_KEY);
+        stubFetchRoutes(fakeEditorApi());
+
+        renderAppAt(EDITOR_PATH);
+
+        expect(await screen.findByRole("dialog", { name: "Paleta" })).toHaveTextContent("1 de 5");
+    });
+
+    it("marks the palette, the inspector and the publish bar for the tour", async () => {
+        stubFetchRoutes(fakeEditorApi());
+
+        renderAppAt(EDITOR_PATH);
+
+        const palette = await screen.findByRole("complementary", { name: "Paleta" });
+        expect(palette).toHaveAttribute("data-tour-anchor", "palette");
+        expect(screen.getByRole("complementary", { name: "Inspector" })).toHaveAttribute(
+            "data-tour-anchor",
+            "inspector",
+        );
+        expect(
+            screen.getByRole("button", { name: /Publicar/ }).closest("[data-tour-anchor]"),
+        ).toHaveAttribute("data-tour-anchor", "publish");
+    });
+});
 
 describe("FlowEditorPage", () => {
     it("shows the flow's name in the top bar", async () => {
@@ -285,6 +322,22 @@ describe("FlowEditorPage validation and publishing", () => {
 
         const inspector = screen.getByRole("complementary", { name: "Inspector" });
         expect(within(inspector).getByRole("textbox", { name: "Rótulo" })).toHaveValue("Dev");
+    });
+
+    it("opens Configurar and focuses the prompt of the agent whose prompt is missing", async () => {
+        localStorage.setItem("forja.inspector.tab.agent", "help");
+        stubFetchRoutes(fakeEditorApi({ draftGraph: GRAPH_WITH_EMPTY_PROMPT }));
+        renderAppAt(EDITOR_PATH);
+        const problemsPanel = await screen.findByRole("region", { name: "Problemas" });
+
+        await userEvent.click(within(problemsPanel).getByText(EMPTY_PROMPT_MESSAGE));
+
+        const inspector = screen.getByRole("complementary", { name: "Inspector" });
+        expect(within(inspector).getByRole("tab", { name: "Configurar" })).toHaveAttribute(
+            "aria-selected",
+            "true",
+        );
+        expect(within(inspector).getByRole("textbox", { name: "Prompt" })).toHaveFocus();
     });
 
     it("marks the node of a problem as invalid on the canvas", async () => {

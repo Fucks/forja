@@ -43,9 +43,9 @@ export interface ValidationContext {
     checkPrompt?(node: AgentNode, graph: FlowGraph): ValidationIssue[];
 }
 
-type ValidationRule = (graph: FlowGraph, context: ValidationContext) => ValidationIssue[];
+export type ValidationRule = (graph: FlowGraph, context: ValidationContext) => ValidationIssue[];
 
-const VALIDATION_RULES: ValidationRule[] = [
+export const VALIDATION_RULES: ValidationRule[] = [
     findDuplicateIds,
     findDuplicateNodeSlugs,
     checkTriggerCount,

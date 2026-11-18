@@ -7,6 +7,7 @@ import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { GroupInspector } from "@/web/canvas/inspector/group_inspector.js";
 import { InheritedSettingsContext } from "@/web/canvas/inspector/inherited_settings.js";
 import { inspectorRegistry } from "@/web/canvas/inspector/inspector_registry.js";
+import { InspectedTargetContext } from "@/web/canvas/inspector/use_focus_field.js";
 import { updateNodeConfig } from "@/web/canvas/inspector/node_updates.js";
 import { KeyValue } from "@/web/components/ui/key_value.js";
 
@@ -28,7 +29,11 @@ export function InspectorPanel({
 
     const selectedGroup = findGroup(graph, selectedId);
     if (selectedGroup) {
-        return <SelectedGroupInspector store={store} group={selectedGroup} graph={graph} />;
+        return (
+            <InspectedTargetContext value={selectedGroup.id}>
+                <SelectedGroupInspector store={store} group={selectedGroup} graph={graph} />
+            </InspectedTargetContext>
+        );
     }
 
     const selectedNode = findNode(graph, selectedId);
@@ -38,7 +43,9 @@ export function InspectorPanel({
 
     return (
         <InheritedSettingsContext value={projectSettings}>
-            <SelectedNodeInspector store={store} node={selectedNode} graph={graph} />
+            <InspectedTargetContext value={selectedNode.id}>
+                <SelectedNodeInspector store={store} node={selectedNode} graph={graph} />
+            </InspectedTargetContext>
         </InheritedSettingsContext>
     );
 }

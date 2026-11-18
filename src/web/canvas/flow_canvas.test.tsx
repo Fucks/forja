@@ -1,3 +1,4 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Position as HandlePosition, ReactFlowProvider } from "@xyflow/react";
 import type {
     FinalConnectionState,
@@ -23,7 +24,9 @@ import type { FlowEdge, FlowGraph, FlowGroup, NodeType, Position } from "@/share
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 import { createDefaultNode } from "@/shared/node_defaults.js";
 import { FakeClock } from "@/test/fakes/fake_clock.js";
-import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
+import { buildCanonicalFlow, buildTriggerOnlyFlow } from "@/test/factories/flow_graph_factory.js";
+import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { createTestQueryClient } from "@/test/render_with_query_client.js";
 import { createEditorStore, HISTORY_MERGE_WINDOW_MS } from "@/web/canvas/editor_store.js";
 import type { EditorStore } from "@/web/canvas/editor_store.js";
 import { FlowCanvas, markFlowingEdges } from "@/web/canvas/flow_canvas.js";
@@ -59,12 +62,15 @@ vi.mock("@xyflow/react", async (importOriginal) => {
 
 const CANONICAL_FLOW = buildCanonicalFlow();
 const EMPTY_FLOW: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
+const TRIGGER_ONLY_FLOW = buildTriggerOnlyFlow();
 const INVALID_MARKER_LABEL = "Configuração inválida";
+const STARTING_CHOICES_TITLE = "Por onde começar?";
+const PALETTE_HINT_TEXT = "Arraste o próximo passo da paleta";
 
 const EMPTY_PROMPT_ERROR: ValidationIssue = {
     level: "error",
     code: "empty_prompt",
-    message: 'O agente "Dev" está sem prompt.',
+    message: "O Agente ‘Dev’ não tem prompt.",
     target: { kind: "node", id: "dev" },
 };
 const GROUP_OVERLAP_ERROR: ValidationIssue = {
@@ -228,6 +234,45 @@ function createStoreWith(graph: FlowGraph, clock: FakeClock = new FakeClock()): 
 
     return store;
 }
+
+describe("FlowCanvas starting choices", () => {
+    it("offers the starting choices when the flow has no nodes", () => {
+        renderCanvas(createStoreWith(EMPTY_FLOW));
+
+        expect(screen.getByRole("region", { name: STARTING_CHOICES_TITLE })).toBeInTheDocument();
+    });
+
+    it("hides the starting choices once the flow has nodes", () => {
+        renderCanvas(createStoreWith(CANONICAL_FLOW));
+
+        expect(screen.queryByRole("region", { name: STARTING_CHOICES_TITLE })).toBeNull();
+    });
+
+    it("points to the palette after starting from scratch", async () => {
+        const store = createStoreWith(EMPTY_FLOW);
+        renderCanvas(store);
+
+        await userEvent.click(screen.getByRole("button", { name: "Começar do zero" }));
+
+        expect(screen.queryByRole("region", { name: STARTING_CHOICES_TITLE })).toBeNull();
+        expect(screen.getByRole("status")).toHaveTextContent(PALETTE_HINT_TEXT);
+    });
+
+    it("stops pointing to the palette once a second node is added", () => {
+        const store = createStoreWith(EMPTY_FLOW);
+        renderCanvas(store);
+        act(() => store.getState().applyGraph(() => TRIGGER_ONLY_FLOW));
+
+        act(() =>
+            store.getState().applyGraph((graph) => ({
+                ...graph,
+                nodes: [...graph.nodes, createDefaultNode("agent", "dev", { x: 240, y: 0 })],
+            })),
+        );
+
+        expect(screen.queryByText(PALETTE_HINT_TEXT)).toBeNull();
+    });
+});
 
 describe("FlowCanvas grouping", () => {
     it("hides the grouping actions while no node is selected", () => {
@@ -775,13 +820,17 @@ function renderReadOnlyCanvas(store: EditorStore): void {
     );
 }
 
+// An empty flow lists the templates, so their route answers in every test.
 function renderCanvas(store: EditorStore, issuesByTarget: IssuesByTarget = new Map()): void {
+    stubFetchRoutes({ "GET /api/flow-templates": () => Response.json([]) });
     render(
-        <ToastProvider>
-            <ReactFlowProvider>
-                <FlowCanvas store={store} issuesByTarget={issuesByTarget} />
-            </ReactFlowProvider>
-        </ToastProvider>,
+        <QueryClientProvider client={createTestQueryClient()}>
+            <ToastProvider>
+                <ReactFlowProvider>
+                    <FlowCanvas store={store} issuesByTarget={issuesByTarget} />
+                </ReactFlowProvider>
+            </ToastProvider>
+        </QueryClientProvider>,
     );
 }
 
