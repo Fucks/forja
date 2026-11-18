@@ -47,7 +47,7 @@
 - [x] 10. Aprovação: `show` as described checkboxes and `gate_preview` skeleton — `gate_inspector.tsx`,
       `gate_preview.tsx`, tests
 - [x] 11. Saída: explanation of the comment and the reason — `output_inspector.tsx`, tests
-- [ ] 12. Map: concurrency explanation with the example — `group_inspector.tsx`, tests
+- [x] 12. Map: concurrency explanation with the example — `group_inspector.tsx`, tests
 - [ ] 13. Loop: friendly carry labels and `exhausted` diagram with the hint — `loop_fields.tsx`,
       `loop_exhausted_diagram.tsx`, tests
 - [ ] 14. Docs touched by the changes regenerated (`npm run docs:nodes`)

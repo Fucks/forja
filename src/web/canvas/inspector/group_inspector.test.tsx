@@ -56,6 +56,28 @@ describe("GroupInspector of a map", () => {
         expect(screen.getByText("até 2 itens ao mesmo tempo")).toBeInTheDocument();
     });
 
+    it("explains the concurrency with an example", () => {
+        renderGroupInspector("items");
+
+        expect(
+            screen.getByText(
+                "Quantos itens ao mesmo tempo. Ex.: com 3, três Devs implementam três issues " +
+                    "em paralelo; com 1, um item por vez.",
+            ),
+        ).toBeInTheDocument();
+    });
+
+    it("describes what waiting for every item and stopping on the first failure do", () => {
+        renderGroupInspector("items");
+
+        expect(
+            screen.getByText(
+                "O passo depois do grupo só começa quando todos os itens terminam o grupo.",
+            ),
+        ).toBeInTheDocument();
+        expect(screen.getByText("Se um item falhar, cancela os outros.")).toBeInTheDocument();
+    });
+
     it("raises the concurrency with the slider", async () => {
         const onChange = renderGroupInspector("items");
 

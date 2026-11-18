@@ -3,8 +3,10 @@ import type { JSX } from "react";
 import { assertNever } from "@/lib/assert_never.js";
 import { MAX_MAP_CONCURRENCY, MIN_MAP_CONCURRENCY } from "@/shared/flow_graph.js";
 import type { FlowGraph, FlowGroup, LoopConfig, MapConfig } from "@/shared/flow_graph.js";
+import type { FieldDoc } from "@/web/docs/node_docs/node_doc.js";
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHelp } from "@/web/canvas/inspector/field_help.js";
+import { FieldHint } from "@/web/canvas/inspector/field_hint.js";
 import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { GroupDataTab } from "@/web/canvas/inspector/node_data_tab.js";
 import { LoopFields } from "@/web/canvas/inspector/loop_fields.js";
@@ -55,6 +57,10 @@ function GroupConfigFields({ group, graph, onChange }: GroupInspectorProps): JSX
     }
 }
 
+const CONCURRENCY_EXAMPLE =
+    "Quantos itens ao mesmo tempo. Ex.: com 3, três Devs implementam três issues em paralelo; " +
+    "com 1, um item por vez.";
+
 function MapFields({
     config,
     onChange,
@@ -76,18 +82,36 @@ function MapFields({
                     onChange={(concurrency) => onChange({ concurrency })}
                 />
                 <p className="text-xs text-muted">{describeConcurrency(config.concurrency)}</p>
+                <FieldHint>{CONCURRENCY_EXAMPLE}</FieldHint>
             </div>
-            <SwitchField
+            <DescribedSwitchField
                 doc={fieldDoc("map", "barrier")}
                 checked={config.barrier}
                 onChange={(barrier) => onChange({ barrier })}
             />
-            <SwitchField
+            <DescribedSwitchField
                 doc={fieldDoc("map", "failFast")}
                 checked={config.failFast}
                 onChange={(failFast) => onChange({ failFast })}
             />
         </>
+    );
+}
+
+function DescribedSwitchField({
+    doc,
+    checked,
+    onChange,
+}: {
+    doc: FieldDoc;
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+}): JSX.Element {
+    return (
+        <div className="flex flex-col gap-1">
+            <SwitchField doc={doc} checked={checked} onChange={onChange} />
+            <FieldHint>{doc.description}</FieldHint>
+        </div>
     );
 }
 
