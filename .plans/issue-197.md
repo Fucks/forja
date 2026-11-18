@@ -31,10 +31,10 @@
       `graph_validation.test.ts`
 - [x] 9. Test + implement validation of edges leaving a port the Decisão does not have
 - [x] 10. Test + implement `updateNodeConfig` dropping edges of removed outputs — `node_updates.ts`
-- [ ] 11. Test + implement branch editor: add a branch — `condition_branches_editor.tsx`, `condition_branch_edits.ts`
-- [ ] 12. Test + implement reorder (up/down) and remove branch
-- [ ] 13. Test + implement the Senão switch and editing the branch name
-- [ ] 14. Test + implement the mode toggle in the inspector (if→switch, switch→if with confirmation) —
+- [x] 11. Test + implement branch editor: add a branch — `condition_branches_editor.tsx`, `condition_branch_edits.ts`
+- [x] 12. Test + implement reorder (up/down) and remove branch
+- [x] 13. Test + implement the Senão switch and editing the branch name
+- [x] 14. Test + implement the mode toggle in the inspector (if→switch, switch→if with confirmation) —
       `condition_inspector.tsx`
 - [ ] 15. Test + implement canvas port labels from branch labels — `port_label.ts` / `flow_node_card.tsx`
 - [x] 16. Test + implement the switch summary — `node_summary.ts`
