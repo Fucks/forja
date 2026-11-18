@@ -215,6 +215,71 @@ describe("Revisão com volta template", () => {
     });
 });
 
+describe("Revisão com volta run with the fake runtime", () => {
+    const REVIEWER_PROMPT_START = "Review the changes on branch";
+    const REVIEWER_SUMMARY = "Revisado: nomes mais claros.";
+    let github: FakeGitHubProvider;
+    let bed: ExecutorTestBed;
+
+    beforeEach(() => {
+        github = new FakeGitHubProvider();
+        github.addIssue(TEST_GITHUB_REPO, buildGithubIssue({ number: 7, labels: ["Sandcastle"] }));
+        bed = new ExecutorTestBed([], { github });
+        bed.git.setCommitsAhead("forja/issue-7", 1);
+    });
+
+    afterEach(() => {
+        bed.close();
+    });
+
+    function scriptReviewerVerdict(isApproved: boolean): void {
+        bed.runtime.script({
+            match: { promptIncludes: REVIEWER_PROMPT_START },
+            durationMs: AGENT_DURATION_MS,
+            result: {
+                summary: REVIEWER_SUMMARY,
+                output: { approved: isApproved, notes: isApproved ? "" : "Faltam testes." },
+            },
+        });
+    }
+
+    async function runTemplateUntilFinished(): Promise<string> {
+        const flowId = await bed.publishFlow(reviewLoopTemplate.build());
+        const started = await bed.startRun(flowId);
+        await bed.runUntilFinished(started.id);
+
+        return started.id;
+    }
+
+    function reviewerPrompts(): string[] {
+        return bed.runtime.requests
+            .map((request) => request.prompt)
+            .filter((prompt) => prompt.includes(REVIEWER_PROMPT_START));
+    }
+
+    it("tests the approved work and opens its pull request with the notes of Reviewer", async () => {
+        scriptReviewerVerdict(true);
+
+        await runTemplateUntilFinished();
+
+        expect(bed.runtime.receivedExecs.map((exec) => exec.command)).toContain("npm test");
+        expect(github.createdPullRequests).toEqual([
+            expect.objectContaining({ body: expect.stringContaining(REVIEWER_SUMMARY) as unknown }),
+        ]);
+    });
+
+    it("sends the work back three times and then to Precisa de humano when never approved", async () => {
+        scriptReviewerVerdict(false);
+
+        const runId = await runTemplateUntilFinished();
+
+        expect(reviewerPrompts()).toHaveLength(3);
+        expect(await bed.findNodeRun(runId, "needs_human")).toMatchObject({ status: "SUCCEEDED" });
+        expect(bed.runtime.receivedExecs.map((exec) => exec.command)).not.toContain("npm test");
+        expect(github.createdPullRequests).toEqual([]);
+    });
+});
+
 describe("flow template routes", () => {
     let database: DatabaseHandle;
     let app: FastifyInstance;
