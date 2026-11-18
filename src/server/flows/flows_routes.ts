@@ -33,13 +33,14 @@ import {
     renameFlowInput,
     saveFlowDraftInput,
 } from "@/shared/flow_types.js";
-import type { FlowTemplateSummary } from "@/shared/flow_types.js";
+import type { FlowTemplateGraph, FlowTemplateSummary } from "@/shared/flow_types.js";
 
 const PROJECT_FLOWS_PATH = "/projects/:projectId/flows";
 const PROJECT_FLOWS_IMPORT_PATH = `${PROJECT_FLOWS_PATH}/import`;
 const PROJECT_FLOWS_FROM_TEMPLATE_PATH = `${PROJECT_FLOWS_PATH}/from-template`;
 const PROJECT_FLOW_SOURCE_PREVIEW_PATH = `${PROJECT_FLOWS_PATH}/:flowId/source-preview`;
 const FLOW_TEMPLATES_PATH = "/flow-templates";
+const FLOW_TEMPLATE_PATH = `${FLOW_TEMPLATES_PATH}/:templateId`;
 const FLOW_PATH = "/flows/:flowId";
 const FLOW_ARCHIVE_PATH = `${FLOW_PATH}/archive`;
 const FLOW_DEFAULT_PATH = `${FLOW_PATH}/default`;
@@ -57,6 +58,7 @@ const YAML_BODY_CONTENT_TYPES = [YAML_CONTENT_TYPE, "text/yaml"];
 const projectParamsSchema = z.object({ projectId: z.string().min(1) });
 const flowParamsSchema = z.object({ flowId: z.string().min(1) });
 const projectFlowParamsSchema = projectParamsSchema.extend(flowParamsSchema.shape);
+const templateParamsSchema = z.object({ templateId: z.string().min(1) });
 const versionParamsSchema = flowParamsSchema.extend({
     version: z.coerce.number().int().positive(),
 });
@@ -194,6 +196,14 @@ function registerTemplateRoutes(app: FastifyInstance, flows: FlowService): void 
     const typedApp = app.withTypeProvider<ZodTypeProvider>();
 
     typedApp.get(FLOW_TEMPLATES_PATH, () => FLOW_TEMPLATES.map(summarizeTemplate));
+
+    typedApp.get(
+        FLOW_TEMPLATE_PATH,
+        { schema: { params: templateParamsSchema } },
+        (request): FlowTemplateGraph => ({
+            graph: findFlowTemplateOrThrow(request.params.templateId).build(),
+        }),
+    );
 
     typedApp.post(
         PROJECT_FLOWS_FROM_TEMPLATE_PATH,

@@ -48,6 +48,11 @@ export interface FlowTemplateSummary {
     description: string;
 }
 
+/** The graph a template builds, to fill a draft in the editor. */
+export interface FlowTemplateGraph {
+    graph: FlowGraph;
+}
+
 export const createFlowFromTemplateInput = z.object({
     templateId: z.string().min(1),
     name: flowNameSchema,

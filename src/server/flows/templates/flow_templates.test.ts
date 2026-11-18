@@ -248,6 +248,22 @@ describe("flow template routes", () => {
         ]);
     });
 
+    it.each(FLOW_TEMPLATES)("answers the graph of $name by its id", async (template) => {
+        const response = await app.inject({
+            method: "GET",
+            url: `/api/flow-templates/${template.id}`,
+        });
+
+        expect(response.statusCode).toBe(200);
+        expect(response.json()).toEqual({ graph: template.build() });
+    });
+
+    it("answers 404 for the graph of an unknown template", async () => {
+        const response = await app.inject({ method: "GET", url: "/api/flow-templates/tpl_nenhum" });
+
+        expect(response.statusCode).toBe(404);
+    });
+
     it.each(FLOW_TEMPLATES)("creates a flow whose draft is the $name graph", async (template) => {
         const response = await createFlowFromTemplate({ templateId: template.id, name: "Entrega" });
 

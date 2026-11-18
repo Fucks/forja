@@ -20,10 +20,7 @@ import type {
     FlowVersion,
     FlowVersionSummary,
 } from "@/shared/flow_types.js";
-import { createDefaultNode } from "@/shared/node_defaults.js";
 
-const DEFAULT_TRIGGER_NODE_ID = "trigger";
-const CANVAS_ORIGIN = { x: 0, y: 0 };
 const FIRST_VERSION = 1;
 
 export interface FlowService {
@@ -90,20 +87,16 @@ function createFlow(
         id,
         projectId,
         name: input.name,
-        graph: parseDraftGraph(input.graph ?? createDefaultFlowGraph()),
+        graph: parseDraftGraph(input.graph ?? createBlankFlowGraph()),
         createdAt: deps.clock.now().toISOString(),
     });
 
     return findFlowOrThrow(deps.repo, id);
 }
 
-function createDefaultFlowGraph(): FlowGraph {
-    return {
-        schemaVersion: 2,
-        nodes: [createDefaultNode("trigger", DEFAULT_TRIGGER_NODE_ID, CANVAS_ORIGIN)],
-        edges: [],
-        groups: [],
-    };
+// A blank flow opens on the editor's empty canvas, which offers templates or a first trigger.
+function createBlankFlowGraph(): FlowGraph {
+    return { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 }
 
 function listFlows(

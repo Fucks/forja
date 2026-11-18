@@ -35,8 +35,8 @@
 - [x] 5. Inspector: tabs switch to Configurar on a focus request; fields register their `fieldKey` — inspector files
 - [x] 6. Problems panel shows "Como corrigir:" and the code; click selects the target and requests the field focus — `problems_panel.tsx` (+ test)
 - [x] 7. Editor page: provider wired; clicking "O Agente ‘Dev’ não tem prompt" focuses Dev's prompt — `flow_editor_page.tsx` (+ test)
-- [ ] 8. Route `GET /api/flow-templates/:templateId` returns the template graph — `flows_routes.ts` (+ test)
-- [ ] 9. A blank new flow starts without nodes — `flow_service.ts` (+ test)
+- [x] 8. Route `GET /api/flow-templates/:templateId` returns the template graph — `flows_routes.ts` (+ test)
+- [x] 9. A blank new flow starts without nodes — `flow_service.ts` (+ test)
 - [ ] 10. `EmptyCanvas` lists the templates; choosing one fills the draft — `src/web/canvas/empty_canvas.tsx` (+ test)
 - [ ] 11. "Começar do zero" adds a Gatilho and the canvas points to the palette — `empty_canvas.tsx`, `flow_canvas.tsx`
 - [ ] 12. `FlowCanvas` shows `EmptyCanvas` when the graph has no nodes — `flow_canvas.tsx` (+ test)
