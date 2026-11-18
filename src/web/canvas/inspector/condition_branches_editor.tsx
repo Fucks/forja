@@ -34,6 +34,11 @@ interface BranchCardProps {
     branchesEditor: BranchesEditorProps;
 }
 
+interface OtherwiseCardProps {
+    isOn: boolean;
+    onChange: (isOn: boolean) => void;
+}
+
 const CARD_CLASSES = "flex flex-col gap-2 rounded-sm border border-border p-2";
 
 export function ConditionBranchesEditor(props: BranchesEditorProps): JSX.Element {
@@ -114,13 +119,7 @@ function BranchCard({ branch, index, branchesEditor }: BranchCardProps): JSX.Ele
     );
 }
 
-function OtherwiseCard({
-    isOn,
-    onChange,
-}: {
-    isOn: boolean;
-    onChange: (isOn: boolean) => void;
-}): JSX.Element {
+function OtherwiseCard({ isOn, onChange }: OtherwiseCardProps): JSX.Element {
     return (
         <section aria-label={OTHERWISE_LABEL} className={CARD_CLASSES}>
             <Switch label={`Usar ${OTHERWISE_LABEL}`} checked={isOn} onChange={onChange} />

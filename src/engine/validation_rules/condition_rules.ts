@@ -1,6 +1,7 @@
 import { describeAvailableData } from "@/engine/available_data.js";
 import type { DataField, DataType } from "@/engine/available_data.js";
 import { edgeTarget, errorIssue, nodeTarget } from "@/engine/validation_rules/validation_issues.js";
+import type { IssueTarget } from "@/engine/validation_rules/validation_issues.js";
 import { listComparisons } from "@/shared/conditions.js";
 import type { Comparison, ComparisonOperator } from "@/shared/conditions.js";
 import { isNodeOfType } from "@/shared/flow_graph.js";
@@ -134,14 +135,26 @@ function isSwitchDecision(decision: Decision): decision is SwitchDecision {
 function findBranchProblemsOf(decision: SwitchDecision): ValidationIssue[] {
     const { branches } = decision.config;
     const target = nodeTarget(decision.id);
-    const duplicatePortIssues = findDuplicatePorts(branches).map((port) =>
+
+    return [
+        ...findDuplicatePortIssues(branches, target),
+        ...findReservedPortIssues(branches, target),
+        ...findEmptyRuleIssues(branches, target),
+    ];
+}
+
+function findDuplicatePortIssues(branches: SwitchBranch[], target: IssueTarget): ValidationIssue[] {
+    return findDuplicatePorts(branches).map((port) =>
         errorIssue(
             "condition_branch_port_duplicate",
             `Dois caminhos usam a saída “${port}”.`,
             target,
         ),
     );
-    const reservedPortIssues = branches
+}
+
+function findReservedPortIssues(branches: SwitchBranch[], target: IssueTarget): ValidationIssue[] {
+    return branches
         .filter(usesReservedPort)
         .map((branch) =>
             errorIssue(
@@ -150,7 +163,10 @@ function findBranchProblemsOf(decision: SwitchDecision): ValidationIssue[] {
                 target,
             ),
         );
-    const emptyRuleIssues = branches
+}
+
+function findEmptyRuleIssues(branches: SwitchBranch[], target: IssueTarget): ValidationIssue[] {
+    return branches
         .filter(hasEmptyRule)
         .map((branch) =>
             errorIssue(
@@ -159,8 +175,6 @@ function findBranchProblemsOf(decision: SwitchDecision): ValidationIssue[] {
                 target,
             ),
         );
-
-    return [...duplicatePortIssues, ...reservedPortIssues, ...emptyRuleIssues];
 }
 
 function findDuplicatePorts(branches: SwitchBranch[]): string[] {

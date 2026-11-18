@@ -11,19 +11,24 @@ import { SegmentedControl } from "@/web/components/ui/segmented_control.js";
 
 type DecisionMode = ConditionConfig["mode"];
 
+interface DecisionModeSwitchProps {
+    config: ConditionConfig;
+    onChange: (config: ConditionConfig) => void;
+}
+
+interface BranchRemovalConfirmationProps {
+    config: SwitchConditionConfig;
+    onConfirm: () => void;
+    onCancel: () => void;
+}
+
 const MODE_OPTIONS: { value: DecisionMode; label: string }[] = [
     { value: "if", label: "Sim/Não" },
     { value: "switch", label: "Vários caminhos" },
 ];
 
 // Going back to yes/no keeps only the first branch, so dropping the others is confirmed first.
-export function DecisionModeSwitch({
-    config,
-    onChange,
-}: {
-    config: ConditionConfig;
-    onChange: (config: ConditionConfig) => void;
-}): JSX.Element {
+export function DecisionModeSwitch({ config, onChange }: DecisionModeSwitchProps): JSX.Element {
     const [isConfirmingBranchRemoval, setIsConfirmingBranchRemoval] = useState(false);
 
     function chooseMode(mode: DecisionMode): void {
@@ -68,11 +73,7 @@ function BranchRemovalConfirmation({
     config,
     onConfirm,
     onCancel,
-}: {
-    config: SwitchConditionConfig;
-    onConfirm: () => void;
-    onCancel: () => void;
-}): JSX.Element {
+}: BranchRemovalConfirmationProps): JSX.Element {
     const removedBranchCount = config.branches.length - 1;
 
     return (
