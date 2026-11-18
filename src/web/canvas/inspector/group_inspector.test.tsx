@@ -56,6 +56,28 @@ describe("GroupInspector of a map", () => {
         expect(screen.getByText("até 2 itens ao mesmo tempo")).toBeInTheDocument();
     });
 
+    it("explains the concurrency with an example", () => {
+        renderGroupInspector("items");
+
+        expect(
+            screen.getByText(
+                "Quantos itens ao mesmo tempo. Ex.: com 3, três Devs implementam três issues " +
+                    "em paralelo; com 1, um item por vez.",
+            ),
+        ).toBeInTheDocument();
+    });
+
+    it("describes what waiting for every item and stopping on the first failure do", () => {
+        renderGroupInspector("items");
+
+        expect(
+            screen.getByText(
+                "O passo depois do grupo só começa quando todos os itens terminam o grupo.",
+            ),
+        ).toBeInTheDocument();
+        expect(screen.getByText("Se um item falhar, cancela os outros.")).toBeInTheDocument();
+    });
+
     it("raises the concurrency with the slider", async () => {
         const onChange = renderGroupInspector("items");
 
@@ -152,11 +174,38 @@ describe("GroupInspector of a loop", () => {
     it("carries an output port to the next iteration", async () => {
         const onChange = renderGroupInspector("review_loop");
 
-        await userEvent.click(screen.getByRole("switch", { name: "Levar summary" }));
+        await userEvent.click(
+            screen.getByRole("switch", { name: "Levar Resumo em texto (Desenvolver, Revisar)" }),
+        );
 
         expect(applyLastUpdate(onChange, "review_loop").config).toMatchObject({
             carry: ["notes", "summary"],
         });
+    });
+
+    it("offers the typed operators of the picked field", async () => {
+        renderGroupInspector("review_loop");
+
+        await userEvent.click(screen.getByRole("button", { name: "Escolher da lista" }));
+        await userEvent.click(
+            screen.getByRole("treeitem", { name: "Revisar › Resultado › approved (sim/não)" }),
+        );
+        await userEvent.click(screen.getByRole("combobox", { name: "Operador da regra 1" }));
+
+        const operators = screen.getAllByRole("option").map((option) => option.textContent);
+        expect(operators).toEqual(expect.arrayContaining(["é verdadeiro", "é falso"]));
+        expect(operators).not.toContain("contém");
+    });
+
+    it("draws where the items go when the loop runs out of iterations", () => {
+        renderGroupInspector("review_loop");
+
+        expect(
+            screen.getByRole("img", { name: "Volta, teto de 3 voltas, saída Esgotou as voltas" }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText("Ligue a porta Esgotou as voltas a uma Saída ‘Precisa de humano’."),
+        ).toBeInTheDocument();
     });
 
     it("stops carrying a port", async () => {

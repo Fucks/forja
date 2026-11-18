@@ -236,7 +236,7 @@ function buildOpenPullRequestNode(): FlowNode {
     return {
         ...openPullRequest,
         label: "Abrir PR",
-        config: { ...openPullRequest.config, action: "open_pr", bodyFrom: "inputs.summary" },
+        config: { ...openPullRequest.config, action: "open_pr", bodyFrom: "inputs.body" },
     };
 }
 

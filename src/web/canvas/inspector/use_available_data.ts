@@ -51,7 +51,8 @@ export function useAvailableDataFields(graph: FlowGraph | undefined, nodeId: str
     }, [graph, nodeId]);
 }
 
-function labelPort(nodeType: NodeType, port: Port): string {
+/** The name the node documentation gives the port, or the port name when it has none. */
+export function labelPort(nodeType: NodeType, port: Port): string {
     const { inputs, outputs } = getNodeDoc(nodeType).ports;
     const portDoc = [...outputs, ...inputs].find((candidate) => candidate.name === port.name);
 

@@ -11,12 +11,14 @@ import {
     connect,
     createNodeOfType,
 } from "@/test/factories/flow_graph_factory.js";
+import { updateNode } from "@/test/factories/flow_graph_variations.js";
 import { buildRunListItem } from "@/test/factories/run_list_item_factory.js";
 import {
     buildSerializedNodeRun,
     buildSerializedRunView,
 } from "@/test/factories/run_view_factory.js";
-import { stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { listSentWrites, respondWithApiError, stubFetchRoutes } from "@/test/fakes/fake_fetch.js";
+import { TRIGGER_KINDS } from "@/shared/trigger_types.js";
 import { renderWithQueryClient } from "@/test/render_with_query_client.js";
 import { inspectorRegistry } from "@/web/canvas/inspector/inspector_registry.js";
 import type { InspectorComponent } from "@/web/canvas/inspector/inspector_registry.js";
@@ -81,14 +83,123 @@ describe("SourceInspector", () => {
     });
 });
 
+describe("SourceInspector preview", () => {
+    const SOURCE_PREVIEW_ROUTE = `POST /api/projects/${PROJECT_ID}/flows/${FLOW_ID}/source-preview`;
+    const SANDCASTLE_SOURCE: FlowNode = {
+        ...createNodeOfType("source", "source", ORIGIN),
+        config: {
+            provider: "github",
+            label: "Sandcastle",
+            state: "open",
+            limit: 20,
+            skipBlocked: true,
+        },
+    };
+
+    async function openPreview(): Promise<HTMLElement> {
+        renderInspector(SourceInspector, SANDCASTLE_SOURCE);
+        await userEvent.click(
+            screen.getByRole("button", { name: "Ver o que seria buscado agora" }),
+        );
+
+        return screen.getByRole("dialog", { name: "O que seria buscado agora" });
+    }
+
+    it("lists the issues the source would take now and how many were skipped", async () => {
+        stubFetchRoutes({
+            [SOURCE_PREVIEW_ROUTE]: () =>
+                Response.json({
+                    items: [{ number: 12, title: "Tela de login", labels: ["Sandcastle"] }],
+                    skipped: 3,
+                }),
+        });
+
+        const dialog = await openPreview();
+
+        const items = await within(dialog).findAllByRole("listitem");
+        expect(items.map((item) => item.textContent)).toEqual(["#12Tela de loginSandcastle"]);
+        expect(dialog).toHaveTextContent("3 issues puladas porque dependem de issues abertas");
+    });
+
+    it("sends the config being edited", async () => {
+        const fetchSpy = stubFetchRoutes({
+            [SOURCE_PREVIEW_ROUTE]: () => Response.json({ items: [], skipped: 0 }),
+        });
+
+        await openPreview();
+
+        await waitFor(() =>
+            expect(listSentWrites(fetchSpy)).toEqual([
+                expect.objectContaining({ body: { config: SANDCASTLE_SOURCE.config } }),
+            ]),
+        );
+    });
+
+    it("tells when no open issue has the label", async () => {
+        stubFetchRoutes({ [SOURCE_PREVIEW_ROUTE]: () => Response.json({ items: [], skipped: 0 }) });
+
+        const dialog = await openPreview();
+
+        expect(
+            await within(dialog).findByText("Nenhuma issue aberta com a label Sandcastle"),
+        ).toBeInTheDocument();
+    });
+
+    it("shows the GitHub error with a hint about the credential", async () => {
+        stubFetchRoutes({
+            [SOURCE_PREVIEW_ROUTE]: () =>
+                respondWithApiError(422, "Não foi possível buscar as issues do GitHub."),
+        });
+
+        const dialog = await openPreview();
+
+        expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+            "Não foi possível buscar as issues do GitHub. " +
+                "Verifique a credencial do GitHub em Configurações",
+        );
+    });
+
+    it("explains with an example when a blocked issue is taken", () => {
+        renderInspector(SourceInspector, SANDCASTLE_SOURCE);
+
+        expect(
+            screen.getByText("#12 com ‘depends on #10’ só entra quando #10 fechar"),
+        ).toBeInTheDocument();
+    });
+});
+
 describe("GateInspector", () => {
     it("stops showing the logs and keeps the other sections", async () => {
         const gate = createNodeOfType("gate", "gate", ORIGIN);
         const inspector = renderInspector(GateInspector, gate);
 
-        await userEvent.click(screen.getByRole("switch", { name: "Mostrar logs" }));
+        await userEvent.click(screen.getByRole("checkbox", { name: "Logs" }));
 
         expect(inspector.lastChangedNode("gate").config.show).toEqual(["diff", "artifacts"]);
+    });
+
+    it("describes each section the approval can show", () => {
+        renderInspector(GateInspector, createNodeOfType("gate", "gate", ORIGIN));
+
+        expect(screen.getByRole("checkbox", { name: "Diff" })).toHaveAccessibleDescription(
+            "As mudanças no código do item.",
+        );
+    });
+
+    it("previews the approval screen with the message and the chosen sections", () => {
+        const gate = createNodeOfType("gate", "gate", ORIGIN);
+        const gateWithMessage: NodeOfType<"gate"> = {
+            ...gate,
+            config: { ...gate.config, message: "Confira o PR", show: ["diff", "logs"] },
+        };
+
+        renderInspector(GateInspector, gateWithMessage);
+
+        const preview = within(screen.getByRole("figure", { name: "Prévia da tela Aprovações" }));
+        expect(preview.getByText("Confira o PR")).toBeInTheDocument();
+        expect(preview.getByRole("heading", { name: "Diff" })).toBeInTheDocument();
+        expect(preview.getByText("Ver logs da run")).toBeInTheDocument();
+        expect(preview.queryByRole("heading", { name: "Artefatos" })).not.toBeInTheDocument();
     });
 
     it("applies an optional timeout in hours", async () => {
@@ -120,14 +231,38 @@ describe("GitInspector", () => {
         expect(inspector.lastChangedNode("git").config.action).toBe("push");
     });
 
-    it("takes the PR body from the chosen input port", async () => {
-        const git = createNodeOfType("git", "git", ORIGIN);
-        const inspector = renderInspector(GitInspector, git);
+    it("writes the text picked for the PR body as its path", async () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+        const inspector = renderInspector(GitInspector, requireNode("open_pr"));
 
-        await userEvent.click(screen.getByRole("combobox", { name: "Texto do PR vem de" }));
-        await userEvent.click(screen.getByRole("option", { name: "body" }));
+        await userEvent.click(screen.getByRole("button", { name: "Texto do PR vem de" }));
+        await userEvent.click(
+            screen.getByRole("treeitem", { name: "Entradas deste nó › Texto do PR (texto)" }),
+        );
 
-        expect(inspector.lastChangedNode("git").config.bodyFrom).toBe("body");
+        expect(inspector.lastChangedNode("git").config.bodyFrom).toBe("inputs.body");
+    });
+
+    it("warns when the PR body points to an input that does not reach the node", () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+        const graph = withBodyFrom(GRAPH, "inputs.summary");
+
+        renderInspector(GitInspector, requireNode("open_pr", graph), graph);
+
+        expect(
+            screen.getByText(
+                "O corpo do PR aponta para ‘inputs.summary’, que não existe aqui. " +
+                    "Escolha o texto no seletor.",
+            ),
+        ).toBeInTheDocument();
+    });
+
+    it("does not warn when the PR body comes from the connected text", () => {
+        stubFetchRoutes({ [RECENT_RUNS_ROUTE]: () => Response.json([]) });
+
+        renderInspector(GitInspector, requireNode("open_pr"));
+
+        expect(screen.queryByText(/O corpo do PR aponta para/)).not.toBeInTheDocument();
     });
 
     it("falls back to the project base branch when the field is cleared", async () => {
@@ -182,15 +317,46 @@ describe("OutputInspector", () => {
 
         expect(inspector.lastChangedNode("output").config.commentOnIssue).toBe(true);
     });
+
+    it("explains what the comment says and where its reason comes from", () => {
+        renderInspector(OutputInspector, createNodeOfType("output", "done", ORIGIN));
+
+        expect(
+            screen.getByText(
+                "O comentário traz o resultado da run e o link do PR. O motivo vem da primeira " +
+                    "entrada com reason, notes ou failureSummary, como as notas do Reviewer.",
+            ),
+        ).toBeInTheDocument();
+    });
+
+    it("describes the three destinations of the item in cards", () => {
+        renderInspector(OutputInspector, createNodeOfType("output", "done", ORIGIN));
+
+        const cards = within(screen.getByRole("radiogroup", { name: "Mover o item para" }));
+        expect(cards.getAllByRole("radio").map((card) => card.textContent)).toEqual([
+            "ConcluídoO trabalho terminou.",
+            "Precisa de humanoAlguém precisa olhar o item.",
+            "Não moverO item fica onde está no board.",
+        ]);
+    });
 });
 
 describe("TriggerInspector", () => {
-    it("shows the trigger kind", () => {
+    it("describes each of the five kinds of trigger in a card", () => {
+        renderInspector(TriggerInspector, createNodeOfType("trigger", "trigger", ORIGIN));
+
+        const cards = within(screen.getByRole("radiogroup", { name: "Tipo de disparo" }));
+        expect(cards.getAllByRole("radio")).toHaveLength(TRIGGER_KINDS.length);
+        expect(cards.getByRole("radio", { name: /^Manual/ })).toBeChecked();
+    });
+
+    it("chooses the schedule kind", async () => {
         const trigger = createNodeOfType("trigger", "trigger", ORIGIN);
+        const inspector = renderInspector(TriggerInspector, trigger);
 
-        renderInspector(TriggerInspector, trigger);
+        await userEvent.click(screen.getByRole("radio", { name: /^Agendado/ }));
 
-        expect(screen.getByText("manual")).toBeInTheDocument();
+        expect(inspector.lastChangedNode("trigger").config.kind).toBe("schedule");
     });
 
     it("links to the triggers page of the project", () => {
@@ -198,7 +364,7 @@ describe("TriggerInspector", () => {
 
         renderInspector(TriggerInspector, trigger);
 
-        expect(screen.getByRole("link", { name: "Configurar gatilhos" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: "Configurar em Gatilhos" })).toHaveAttribute(
             "href",
             "/projects/forja/triggers",
         );
@@ -476,8 +642,14 @@ function applyLastUpdate(onChange: NodeChangeSpy, node: FlowNode): FlowNode {
     return lastCall[0](node);
 }
 
-function requireNode(nodeId: string): FlowNode {
-    const node = findNode(GRAPH, nodeId);
+function withBodyFrom(graph: FlowGraph, bodyFrom: string): FlowGraph {
+    return updateNode(graph, "open_pr", (node) =>
+        isNodeOfType(node, "git") ? { ...node, config: { ...node.config, bodyFrom } } : node,
+    );
+}
+
+function requireNode(nodeId: string, graph: FlowGraph = GRAPH): FlowNode {
+    const node = findNode(graph, nodeId);
     if (!node) {
         throw new Error(`Node ${nodeId} not found`);
     }

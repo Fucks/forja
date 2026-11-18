@@ -1,18 +1,29 @@
+import { existsSync } from "node:fs";
+
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
 import { systemClock } from "@/lib/clock.js";
+import type { AppDeps } from "@/server/app.js";
 import { describeAttachment } from "@/server/attachment_header.js";
 import { createAppFlowService } from "@/server/flows/app_flow_service.js";
 import type { FlowService } from "@/server/flows/flow_service.js";
 import { flowFileName, flowToYaml } from "@/server/flows/flow_yaml.js";
+import { createSourcePreviewer } from "@/server/flows/source_preview.js";
+import type { SourcePreviewer } from "@/server/flows/source_preview.js";
 import {
     FLOW_TEMPLATES,
     findFlowTemplateOrThrow,
 } from "@/server/flows/templates/flow_template_registry.js";
 import type { FlowTemplate } from "@/server/flows/templates/flow_template_registry.js";
+import { ProjectRepository } from "@/server/projects/project_repository.js";
+import { createProjectService } from "@/server/projects/project_service.js";
 import type { RouteModule } from "@/server/route_modules.js";
+import { createGithubOfProject } from "@/server/work_items/project_github_provider.js";
+import { WorkItemRepository } from "@/server/work_items/work_item_repository.js";
+import { createWorkItemService } from "@/server/work_items/work_item_service.js";
+import { sourcePreviewInput } from "@/shared/api_types.js";
 import {
     createFlowFromTemplateInput,
     createFlowInput,
@@ -27,6 +38,7 @@ import type { FlowTemplateSummary } from "@/shared/flow_types.js";
 const PROJECT_FLOWS_PATH = "/projects/:projectId/flows";
 const PROJECT_FLOWS_IMPORT_PATH = `${PROJECT_FLOWS_PATH}/import`;
 const PROJECT_FLOWS_FROM_TEMPLATE_PATH = `${PROJECT_FLOWS_PATH}/from-template`;
+const PROJECT_FLOW_SOURCE_PREVIEW_PATH = `${PROJECT_FLOWS_PATH}/:flowId/source-preview`;
 const FLOW_TEMPLATES_PATH = "/flow-templates";
 const FLOW_PATH = "/flows/:flowId";
 const FLOW_ARCHIVE_PATH = `${FLOW_PATH}/archive`;
@@ -44,6 +56,7 @@ const YAML_BODY_CONTENT_TYPES = [YAML_CONTENT_TYPE, "text/yaml"];
 
 const projectParamsSchema = z.object({ projectId: z.string().min(1) });
 const flowParamsSchema = z.object({ flowId: z.string().min(1) });
+const projectFlowParamsSchema = projectParamsSchema.extend(flowParamsSchema.shape);
 const versionParamsSchema = flowParamsSchema.extend({
     version: z.coerce.number().int().positive(),
 });
@@ -57,6 +70,7 @@ export const registerFlowsRoutes: RouteModule = (app, deps) => {
     registerVersionRoutes(app, flows);
     registerYamlFileRoutes(app, flows);
     registerTemplateRoutes(app, flows);
+    registerSourcePreviewRoute(app, createAppSourcePreviewer(deps));
 };
 
 function registerProjectFlowsRoutes(app: FastifyInstance, flows: FlowService): void {
@@ -194,6 +208,31 @@ function registerTemplateRoutes(app: FastifyInstance, flows: FlowService): void 
             return reply.code(HTTP_CREATED).send(flow);
         },
     );
+}
+
+function registerSourcePreviewRoute(app: FastifyInstance, previewer: SourcePreviewer): void {
+    app.withTypeProvider<ZodTypeProvider>().post(
+        PROJECT_FLOW_SOURCE_PREVIEW_PATH,
+        { schema: { params: projectFlowParamsSchema, body: sourcePreviewInput } },
+        (request) => previewer.previewSourceItems(request.params.projectId, request.body.config),
+    );
+}
+
+function createAppSourcePreviewer(deps: AppDeps): SourcePreviewer {
+    return createSourcePreviewer({
+        projects: createProjectService({
+            repo: new ProjectRepository(deps.db),
+            git: deps.git,
+            fileExists: existsSync,
+            clock: systemClock,
+        }),
+        workItems: createWorkItemService({
+            repo: new WorkItemRepository(deps.db),
+            events: deps.events,
+            clock: systemClock,
+        }),
+        githubOf: createGithubOfProject({ ...deps, clock: systemClock }),
+    });
 }
 
 function summarizeTemplate(template: FlowTemplate): FlowTemplateSummary {

@@ -3,6 +3,7 @@ import { CONDITION_PATH_SEPARATOR } from "@/shared/conditions.js";
 export const DATA_ROOTS = ["item", "inputs", "nodes", "run", "project"] as const;
 export type DataRoot = (typeof DATA_ROOTS)[number];
 export const NODES_ROOT: DataRoot = "nodes";
+export const INPUTS_ROOT: DataRoot = "inputs";
 
 export type NodeOutputsBySlug = Record<string, Record<string, unknown>>;
 
@@ -31,6 +32,16 @@ export function findNodeSlugInPath(path: string): string | undefined {
     }
 
     return slug;
+}
+
+// The input port an `inputs.<port>...` path reads; undefined when the path reads another root.
+export function findInputPortInPath(path: string): string | undefined {
+    const [root, port = ""] = path.split(CONDITION_PATH_SEPARATOR);
+    if (root !== INPUTS_ROOT) {
+        return undefined;
+    }
+
+    return port;
 }
 
 export function buildNodeOutputPath(slug: string, port: string): string {

@@ -5,6 +5,7 @@ import { MAX_MAP_CONCURRENCY, MIN_MAP_CONCURRENCY } from "@/shared/flow_graph.js
 import type { FlowGraph, FlowGroup, LoopConfig, MapConfig } from "@/shared/flow_graph.js";
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHelp } from "@/web/canvas/inspector/field_help.js";
+import { FieldHint } from "@/web/canvas/inspector/field_hint.js";
 import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { GroupDataTab } from "@/web/canvas/inspector/node_data_tab.js";
 import { LoopFields } from "@/web/canvas/inspector/loop_fields.js";
@@ -55,6 +56,12 @@ function GroupConfigFields({ group, graph, onChange }: GroupInspectorProps): JSX
     }
 }
 
+const BARRIER_DOC = fieldDoc("map", "barrier");
+const FAIL_FAST_DOC = fieldDoc("map", "failFast");
+const CONCURRENCY_EXAMPLE =
+    "Quantos itens ao mesmo tempo. Ex.: com 3, três Devs implementam três issues em paralelo; " +
+    "com 1, um item por vez.";
+
 function MapFields({
     config,
     onChange,
@@ -76,15 +83,18 @@ function MapFields({
                     onChange={(concurrency) => onChange({ concurrency })}
                 />
                 <p className="text-xs text-muted">{describeConcurrency(config.concurrency)}</p>
+                <FieldHint>{CONCURRENCY_EXAMPLE}</FieldHint>
             </div>
             <SwitchField
-                doc={fieldDoc("map", "barrier")}
+                doc={BARRIER_DOC}
                 checked={config.barrier}
+                hint={BARRIER_DOC.description}
                 onChange={(barrier) => onChange({ barrier })}
             />
             <SwitchField
-                doc={fieldDoc("map", "failFast")}
+                doc={FAIL_FAST_DOC}
                 checked={config.failFast}
+                hint={FAIL_FAST_DOC.description}
                 onChange={(failFast) => onChange({ failFast })}
             />
         </>

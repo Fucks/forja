@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { JSX } from "react";
 
 import { isNodeOfType } from "@/shared/flow_graph.js";
@@ -15,11 +16,15 @@ import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
 import { NodeInspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
 import { withNodeConfig } from "@/web/canvas/inspector/node_updates.js";
 import { OptionCardsField } from "@/web/canvas/inspector/option_cards_field.js";
+import { SourcePreviewDialog } from "@/web/canvas/inspector/source_preview_dialog.js";
 import { SwitchField } from "@/web/canvas/inspector/switch_field.js";
 import { TextField, toOptionalText } from "@/web/canvas/inspector/text_field.js";
+import { useFlowInEditor } from "@/web/canvas/inspector/use_last_node_run_sample.js";
+import { Button } from "@/web/components/ui/button.js";
 
 const PROVIDER_DOC = fieldDoc("source", "provider");
 const PROVIDER_CARDS = fieldOptionCards(PROVIDER_DOC, SOURCE_PROVIDERS);
+const SKIP_BLOCKED_EXAMPLE = "#12 com ‘depends on #10’ só entra quando #10 fechar";
 
 export function SourceInspector({ node, graph, onChange }: InspectorProps): JSX.Element {
     // The registry routes only sources here; the check narrows the node to its source config.
@@ -56,9 +61,32 @@ export function SourceInspector({ node, graph, onChange }: InspectorProps): JSX.
                 <SwitchField
                     doc={fieldDoc("source", "skipBlocked")}
                     checked={config.skipBlocked}
+                    hint={SKIP_BLOCKED_EXAMPLE}
                     onChange={(skipBlocked) => changeConfig({ skipBlocked })}
                 />
+                <SourcePreviewButton config={config} />
             </InspectorFields>
         </NodeInspectorFrame>
+    );
+}
+
+function SourcePreviewButton({ config }: { config: SourceConfig }): JSX.Element {
+    const flow = useFlowInEditor();
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    if (!flow) {
+        return <></>;
+    }
+
+    return (
+        <>
+            <Button onClick={() => setIsPreviewOpen(true)}>Ver o que seria buscado agora</Button>
+            {isPreviewOpen && (
+                <SourcePreviewDialog
+                    flow={flow}
+                    config={config}
+                    onClose={() => setIsPreviewOpen(false)}
+                />
+            )}
+        </>
     );
 }

@@ -8,3 +8,4 @@ export const gateConfigSchema = z.object({
     timeoutHours: z.number().positive().optional(),
 });
 export type GateConfig = z.infer<typeof gateConfigSchema>;
+export type GateReviewSection = GateConfig["show"][number];

@@ -23,6 +23,9 @@ const KEEP_ITEM_CARD: OptionCard<typeof KEEP_ITEM> = {
     description: "O item fica onde está no board.",
 };
 
+const COMMENT_ON_ISSUE_HINT =
+    "O comentário traz o resultado da run e o link do PR. O motivo vem da primeira entrada com " +
+    "reason, notes ou failureSummary, como as notas do Reviewer.";
 const DESTINATION_DOC = fieldDoc("output", "moveItemTo");
 const DESTINATION_CARDS: OptionCard<DestinationChoice>[] = [
     ...fieldOptionCards(DESTINATION_DOC, ITEM_DESTINATIONS),
@@ -53,6 +56,7 @@ export function OutputInspector({ node, graph, onChange }: InspectorProps): JSX.
                 <SwitchField
                     doc={fieldDoc("output", "commentOnIssue")}
                     checked={config.commentOnIssue}
+                    hint={COMMENT_ON_ISSUE_HINT}
                     onChange={(commentOnIssue) => changeConfig({ commentOnIssue })}
                 />
             </InspectorFields>

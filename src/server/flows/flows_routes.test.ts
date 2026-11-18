@@ -10,21 +10,36 @@ import { normalizeFlowGraph } from "@/shared/normalize_flow_graph.js";
 import { buildProject } from "@/test/factories/project_factory.js";
 import { buildCanonicalFlow } from "@/test/factories/flow_graph_factory.js";
 import { updateNode } from "@/test/factories/flow_graph_variations.js";
+import { FakeCommandRunner } from "@/test/fakes/fake_command_runner.js";
 import { createTestAppDeps } from "@/test/test_app_deps.js";
 import { createTestDb } from "@/test/test_db.js";
 
 const PROJECT_ID = "prj_forja";
+const GITHUB_PROJECT_ID = "prj_github";
+const GITHUB_REPO = "Fucks/forja";
+const SANDCASTLE_ISSUE_JSON = {
+    number: 12,
+    title: "Tela de login",
+    body: "",
+    url: "https://github.com/Fucks/forja/issues/12",
+    labels: [{ name: "Sandcastle" }],
+    state: "OPEN",
+};
 const EXPORTED_AT = "2026-11-08T12:00:00.000Z";
 const GRAPH_WITHOUT_TRIGGER: FlowGraph = { schemaVersion: 2, nodes: [], edges: [], groups: [] };
 
 describe("flows routes", () => {
     let database: DatabaseHandle;
     let app: FastifyInstance;
+    let commands: FakeCommandRunner;
 
     beforeEach(async () => {
         database = createTestDb();
-        new ProjectRepository(database.db).insert(buildProject({ id: PROJECT_ID }));
-        app = await buildApp(createTestAppDeps(database.db));
+        const projects = new ProjectRepository(database.db);
+        projects.insert(buildProject({ id: PROJECT_ID }));
+        projects.insert(buildProject({ id: GITHUB_PROJECT_ID, githubRepo: GITHUB_REPO }));
+        commands = new FakeCommandRunner();
+        app = await buildApp(createTestAppDeps(database.db, { commands }));
     });
 
     afterEach(async () => {
@@ -488,4 +503,58 @@ describe("flows routes", () => {
             expect(response.statusCode).toBe(404);
         });
     });
+
+    describe("POST /api/projects/:projectId/flows/:flowId/source-preview", () => {
+        function previewSource(projectId: string) {
+            return app.inject({
+                method: "POST",
+                url: `/api/projects/${projectId}/flows/flw_entrega/source-preview`,
+                payload: { config: { provider: "github", label: "Sandcastle" } },
+            });
+        }
+
+        it("answers with the issues the source would take now", async () => {
+            commands
+                .when("gh", isGhIssueList)
+                .returns({ stdout: JSON.stringify([SANDCASTLE_ISSUE_JSON]) });
+            commands
+                .when("gh", (args) => args[0] === "api")
+                .returns({ exitCode: 1, stderr: "gh: Not Found (HTTP 404)" });
+
+            const response = await previewSource(GITHUB_PROJECT_ID);
+
+            expect(response.statusCode).toBe(200);
+            expect(response.json()).toEqual({
+                items: [{ number: 12, title: "Tela de login", labels: ["Sandcastle"] }],
+                skipped: 0,
+            });
+        });
+
+        it("answers 422 with a message for the user when GitHub fails", async () => {
+            commands
+                .when("gh", isGhIssueList)
+                .returns({ exitCode: 1, stderr: "HTTP 401: Bad credentials" });
+
+            const response = await previewSource(GITHUB_PROJECT_ID);
+
+            expect(response.statusCode).toBe(422);
+            expect(response.json()).toMatchObject({
+                error: { message: "Não foi possível buscar as issues do GitHub." },
+            });
+        });
+
+        it("answers 400 for a source config out of its limits", async () => {
+            const response = await app.inject({
+                method: "POST",
+                url: `/api/projects/${GITHUB_PROJECT_ID}/flows/flw_entrega/source-preview`,
+                payload: { config: { provider: "github", limit: 0 } },
+            });
+
+            expect(response.statusCode).toBe(400);
+        });
+    });
 });
+
+function isGhIssueList(args: string[]): boolean {
+    return args[0] === "issue" && args[1] === "list";
+}
