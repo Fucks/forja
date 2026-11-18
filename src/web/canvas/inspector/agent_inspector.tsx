@@ -9,6 +9,7 @@ import { AdvancedSection } from "@/web/canvas/inspector/advanced_section.js";
 import { ExecutionFields, ExecutionLimitFields } from "@/web/canvas/inspector/execution_fields.js";
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
+import { FocusableField } from "@/web/canvas/inspector/focusable_field.js";
 import { useInheritedSettings } from "@/web/canvas/inspector/inherited_settings.js";
 import { InsertDataButton } from "@/web/canvas/inspector/insert_data_button.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
@@ -57,10 +58,12 @@ export function AgentInspector({ node, graph, onChange }: InspectorProps): JSX.E
             </InspectorSection>
             <InspectorSection title="Formato da resposta">
                 <FieldHeading doc={fieldDoc("agent", "outputSchema")} />
-                <ResponseFormatEditor
-                    outputSchema={node.config.outputSchema}
-                    onChange={(outputSchema) => changeConfig({ outputSchema })}
-                />
+                <FocusableField fieldKey="outputSchema">
+                    <ResponseFormatEditor
+                        outputSchema={node.config.outputSchema}
+                        onChange={(outputSchema) => changeConfig({ outputSchema })}
+                    />
+                </FocusableField>
             </InspectorSection>
             <InspectorSection title="Portas">
                 <PortListEditor
@@ -86,18 +89,22 @@ function PromptSection({
     return (
         <InspectorSection title="Prompt" isInitiallyOpen>
             <FieldHeading doc={fieldDoc("agent", "prompt")} />
-            <PromptEditor
-                ref={promptEditorRef}
-                prompt={agent.config.prompt}
-                variables={variables}
-                onChange={(prompt) => onConfigChange({ prompt })}
-                toolbarActions={
-                    <InsertDataButton
-                        fields={fields}
-                        onInsert={(variable) => promptEditorRef.current?.insertAtCursor(variable)}
-                    />
-                }
-            />
+            <FocusableField fieldKey="prompt">
+                <PromptEditor
+                    ref={promptEditorRef}
+                    prompt={agent.config.prompt}
+                    variables={variables}
+                    onChange={(prompt) => onConfigChange({ prompt })}
+                    toolbarActions={
+                        <InsertDataButton
+                            fields={fields}
+                            onInsert={(variable) =>
+                                promptEditorRef.current?.insertAtCursor(variable)
+                            }
+                        />
+                    }
+                />
+            </FocusableField>
         </InspectorSection>
     );
 }
@@ -127,16 +134,20 @@ function AgentAdvancedSection({ agent, onConfigChange }: AgentSectionProps): JSX
     return (
         <AdvancedSection>
             <ExecutionLimitFields config={agent.config} onChange={onConfigChange} />
-            <ToolProfileField
-                toolProfileId={agent.config.toolProfileId}
-                inheritedToolProfileId={inheritedSettings?.defaultToolProfileId}
-                onChange={(toolProfileId) => onConfigChange({ toolProfileId })}
-            />
-            <CredentialField
-                credentialId={agent.config.credentialId}
-                inheritedCredentialId={inheritedSettings?.defaultCredentialId}
-                onChange={(credentialId) => onConfigChange({ credentialId })}
-            />
+            <FocusableField fieldKey="toolProfileId">
+                <ToolProfileField
+                    toolProfileId={agent.config.toolProfileId}
+                    inheritedToolProfileId={inheritedSettings?.defaultToolProfileId}
+                    onChange={(toolProfileId) => onConfigChange({ toolProfileId })}
+                />
+            </FocusableField>
+            <FocusableField fieldKey="credentialId">
+                <CredentialField
+                    credentialId={agent.config.credentialId}
+                    inheritedCredentialId={inheritedSettings?.defaultCredentialId}
+                    onChange={(credentialId) => onConfigChange({ credentialId })}
+                />
+            </FocusableField>
             <SwitchField
                 doc={fieldDoc("agent", "expandPromptCommands")}
                 checked={agent.config.expandPromptCommands}

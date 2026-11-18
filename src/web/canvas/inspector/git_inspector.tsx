@@ -13,6 +13,7 @@ import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.j
 import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { NodeInspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
 import { withNodeConfig } from "@/web/canvas/inspector/node_updates.js";
+import { useFocusField } from "@/web/canvas/inspector/use_focus_field.js";
 import { OptionCardsField } from "@/web/canvas/inspector/option_cards_field.js";
 import { SwitchField } from "@/web/canvas/inspector/switch_field.js";
 import { TextField, toOptionalText } from "@/web/canvas/inspector/text_field.js";
@@ -20,6 +21,7 @@ import { useAvailableData } from "@/web/canvas/inspector/use_available_data.js";
 
 const ACTION_DOC = fieldDoc("git", "action");
 const ACTION_CARDS = fieldOptionCards(ACTION_DOC, GIT_ACTIONS);
+const BODY_SOURCE_DOC = fieldDoc("git", "bodyFrom");
 const TEXT_DATA_TYPE: DataType = "string";
 
 export function GitInspector({ node, graph, onChange }: InspectorProps): JSX.Element {
@@ -76,11 +78,12 @@ function PullRequestBodyField({
 }): JSX.Element {
     const fields = useAvailableData(graph, gitNode.id, { scope: "node" });
     const bodySourceIssues = checkGitBodySource(graph, gitNode);
+    const fieldRef = useFocusField<HTMLDivElement>(BODY_SOURCE_DOC.key);
 
     return (
-        <div className="flex flex-col gap-1">
+        <div ref={fieldRef} className="flex flex-col gap-1">
             <DataPathField
-                doc={fieldDoc("git", "bodyFrom")}
+                doc={BODY_SOURCE_DOC}
                 path={gitNode.config.bodyFrom}
                 fields={listTextFieldsFirst(fields)}
                 onChange={onChange}

@@ -15,6 +15,7 @@ import { AdvancedSection } from "@/web/canvas/inspector/advanced_section.js";
 import { EnvListEditor } from "@/web/canvas/inspector/env_list_editor.js";
 import { fieldDoc, fieldOptionCards } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
+import { FocusableField } from "@/web/canvas/inspector/focusable_field.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorFields, InspectorSection } from "@/web/canvas/inspector/inspector_section.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
@@ -55,7 +56,9 @@ export function ScriptInspector({ node, graph, onChange }: InspectorProps): JSX.
     return (
         <NodeInspectorFrame node={node} graph={graph} onChange={onChange}>
             <InspectorFields>
-                <ScriptCommandField script={node} graph={graph} onConfigChange={changeConfig} />
+                <FocusableField fieldKey="command">
+                    <ScriptCommandField script={node} graph={graph} onConfigChange={changeConfig} />
+                </FocusableField>
                 <RunLocationField config={config} onConfigChange={changeConfig} />
                 <FailurePolicyField config={config} onConfigChange={changeConfig} />
             </InspectorFields>
@@ -76,12 +79,14 @@ export function ScriptInspector({ node, graph, onChange }: InspectorProps): JSX.
 function RunLocationField({ config, onConfigChange }: ScriptSectionProps): JSX.Element {
     return (
         <div className="flex flex-col gap-1">
-            <OptionCardsField
-                doc={RUN_LOCATION_DOC}
-                value={config.runIn}
-                options={RUN_LOCATION_CARDS}
-                onChange={(runIn) => onConfigChange(withRunLocation(runIn))}
-            />
+            <FocusableField fieldKey={RUN_LOCATION_DOC.key}>
+                <OptionCardsField
+                    doc={RUN_LOCATION_DOC}
+                    value={config.runIn}
+                    options={RUN_LOCATION_CARDS}
+                    onChange={(runIn) => onConfigChange(withRunLocation(runIn))}
+                />
+            </FocusableField>
             {config.runIn === "item" && (
                 <FieldNote>Precisa da entrada Item atual ligada.</FieldNote>
             )}
@@ -128,11 +133,13 @@ function EnvSection({
     return (
         <InspectorSection title={ENV_DOC.label}>
             <FieldHeading doc={ENV_DOC} />
-            <EnvListEditor
-                env={script.config.env}
-                fields={fields}
-                onChange={(env) => onConfigChange({ env })}
-            />
+            <FocusableField fieldKey={ENV_DOC.key}>
+                <EnvListEditor
+                    env={script.config.env}
+                    fields={fields}
+                    onChange={(env) => onConfigChange({ env })}
+                />
+            </FocusableField>
         </InspectorSection>
     );
 }

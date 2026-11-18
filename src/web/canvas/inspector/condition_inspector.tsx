@@ -11,6 +11,7 @@ import type { PickableDataField } from "@/web/canvas/inspector/data_picker.js";
 import { DecisionModeSwitch } from "@/web/canvas/inspector/decision_mode_switch.js";
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
+import { FocusableField } from "@/web/canvas/inspector/focusable_field.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { NodeInspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
@@ -60,11 +61,13 @@ function DecisionFields({
             return (
                 <>
                     <FieldHeading doc={fieldDoc("condition", "condition")} />
-                    <ConditionEditor
-                        value={config.condition}
-                        fields={fields}
-                        onChange={(condition) => onChange({ ...config, condition })}
-                    />
+                    <FocusableField fieldKey="condition">
+                        <ConditionEditor
+                            value={config.condition}
+                            fields={fields}
+                            onChange={(condition) => onChange({ ...config, condition })}
+                        />
+                    </FocusableField>
                     <ConditionPreview condition={config.condition} decisionId={decisionId} />
                 </>
             );
@@ -72,7 +75,13 @@ function DecisionFields({
             return (
                 <>
                     <FieldHeading doc={fieldDoc("condition", "branches")} />
-                    <ConditionBranchesEditor config={config} fields={fields} onChange={onChange} />
+                    <FocusableField fieldKey="branches">
+                        <ConditionBranchesEditor
+                            config={config}
+                            fields={fields}
+                            onChange={onChange}
+                        />
+                    </FocusableField>
                 </>
             );
         default:

@@ -5,6 +5,7 @@ import type { JSX } from "react";
 
 import { GROUP_KIND_ICONS } from "@/web/canvas/base/group_frame.js";
 import { NODE_TYPE_ICONS } from "@/web/canvas/base/node_type_icons.js";
+import { FocusableField } from "@/web/canvas/inspector/focusable_field.js";
 import { InlineTextInput } from "@/web/canvas/inspector/text_field.js";
 import { Button } from "@/web/components/ui/button.js";
 import { NodeDocDrawer } from "@/web/docs/node_doc_drawer.js";
@@ -34,7 +35,9 @@ export function InspectorHeader({
         <header className="flex flex-col gap-1 px-3 pb-2">
             <div className="flex items-center gap-2">
                 <TypeIcon size={TYPE_ICON_SIZE_PX} aria-hidden="true" className="shrink-0" />
-                <InlineTextInput label="Rótulo" text={label} onChange={onLabelChange} />
+                <FocusableField fieldKey="label">
+                    <InlineTextInput label="Rótulo" text={label} onChange={onLabelChange} />
+                </FocusableField>
                 <DocumentationButton type={type} />
             </div>
             <p className="truncate text-xs text-muted" title={doc.tagline}>

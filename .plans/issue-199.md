@@ -32,7 +32,7 @@
 - [x] 3. Rules teach: object-form `errorIssue`/`warningIssue`, revised messages with `fix`/`fieldKey` in
       `validation_rules/*` and `prompt_template.ts`; update the rule tests
 - [x] 4. `use_focus_field`: a request focuses the matching field and opens its section — `src/web/canvas/inspector/use_focus_field.ts` (+ test)
-- [ ] 5. Inspector: tabs switch to Configurar on a focus request; fields register their `fieldKey` — inspector files
+- [x] 5. Inspector: tabs switch to Configurar on a focus request; fields register their `fieldKey` — inspector files
 - [ ] 6. Problems panel shows "Como corrigir:" and the code; click selects the target and requests the field focus — `problems_panel.tsx` (+ test)
 - [ ] 7. Editor page: provider wired; clicking "O Agente ‘Dev’ não tem prompt" focuses Dev's prompt — `flow_editor_page.tsx` (+ test)
 - [ ] 8. Route `GET /api/flow-templates/:templateId` returns the template graph — `flows_routes.ts` (+ test)
