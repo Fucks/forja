@@ -4,6 +4,7 @@ import { isNodeOfType } from "@/shared/flow_graph.js";
 import { ITEM_DESTINATIONS } from "@/shared/node_configs/output_config.js";
 import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 import { fieldDoc, fieldOptionCards } from "@/web/canvas/inspector/field_doc.js";
+import { FieldHint } from "@/web/canvas/inspector/field_hint.js";
 import type { InspectorProps } from "@/web/canvas/inspector/inspector_registry.js";
 import { InspectorFields } from "@/web/canvas/inspector/inspector_section.js";
 import { NodeInspectorFrame } from "@/web/canvas/inspector/node_inspector_frame.js";
@@ -50,11 +51,18 @@ export function OutputInspector({ node, graph, onChange }: InspectorProps): JSX.
                         changeConfig({ moveItemTo: toMoveItemTo(destination) })
                     }
                 />
-                <SwitchField
-                    doc={fieldDoc("output", "commentOnIssue")}
-                    checked={config.commentOnIssue}
-                    onChange={(commentOnIssue) => changeConfig({ commentOnIssue })}
-                />
+                <div className="flex flex-col gap-1">
+                    <SwitchField
+                        doc={fieldDoc("output", "commentOnIssue")}
+                        checked={config.commentOnIssue}
+                        onChange={(commentOnIssue) => changeConfig({ commentOnIssue })}
+                    />
+                    <FieldHint>
+                        O comentário traz o resultado da run e o link do PR. O motivo vem da
+                        primeira entrada com reason, notes ou failureSummary, como as notas do
+                        Reviewer.
+                    </FieldHint>
+                </div>
             </InspectorFields>
         </NodeInspectorFrame>
     );

@@ -317,6 +317,28 @@ describe("OutputInspector", () => {
 
         expect(inspector.lastChangedNode("output").config.commentOnIssue).toBe(true);
     });
+
+    it("explains what the comment says and where its reason comes from", () => {
+        renderInspector(OutputInspector, createNodeOfType("output", "done", ORIGIN));
+
+        expect(
+            screen.getByText(
+                "O comentário traz o resultado da run e o link do PR. O motivo vem da primeira " +
+                    "entrada com reason, notes ou failureSummary, como as notas do Reviewer.",
+            ),
+        ).toBeInTheDocument();
+    });
+
+    it("describes the three destinations of the item in cards", () => {
+        renderInspector(OutputInspector, createNodeOfType("output", "done", ORIGIN));
+
+        const cards = within(screen.getByRole("radiogroup", { name: "Mover o item para" }));
+        expect(cards.getAllByRole("radio").map((card) => card.textContent)).toEqual([
+            "ConcluídoO trabalho terminou.",
+            "Precisa de humanoAlguém precisa olhar o item.",
+            "Não moverO item fica onde está no board.",
+        ]);
+    });
 });
 
 describe("TriggerInspector", () => {
