@@ -46,6 +46,7 @@ export function EnvVarRowEditor({
 }: EnvVarRowEditorProps): JSX.Element {
     const errorId = useId();
     const variableName = `variável ${rowNumber}`;
+    const hasNameError = nameError !== undefined;
 
     return (
         <fieldset aria-label={`Variável ${rowNumber}`} className="flex flex-1 flex-col gap-1.5">
@@ -53,14 +54,14 @@ export function EnvVarRowEditor({
                 <Input
                     mono
                     aria-label={`Nome da ${variableName}`}
-                    aria-describedby={nameError && errorId}
-                    invalid={nameError !== undefined}
+                    aria-describedby={hasNameError ? errorId : undefined}
+                    invalid={hasNameError}
                     value={row.name}
                     placeholder="NOME"
                     onChange={(event) => onEdit({ name: event.target.value })}
                     onBlur={onBlur}
                 />
-                {nameError && (
+                {hasNameError && (
                     <CircleAlert aria-hidden className="size-4 shrink-0 text-status-failed" />
                 )}
                 <Select
@@ -79,7 +80,7 @@ export function EnvVarRowEditor({
                 onApply={onApply}
                 onBlur={onBlur}
             />
-            {nameError && (
+            {hasNameError && (
                 <p id={errorId} className="text-xs text-status-failed">
                     {nameError}
                 </p>
