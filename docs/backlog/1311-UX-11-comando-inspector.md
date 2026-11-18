@@ -49,8 +49,8 @@ Alterar:
 ```ts
 export interface ScriptPreset {
     id: "tests" | "typecheck" | "lint" | "install" | "make" | "custom";
-    label: string;          // "Rodar testes"
-    description: string;    // "Roda a suíte de testes; falha se algum teste quebrar."
+    label: string; // "Rodar testes"
+    description: string; // "Roda a suíte de testes; falha se algum teste quebrar."
     config: Partial<ScriptConfig>;
 }
 export const SCRIPT_PRESETS: ScriptPreset[];
@@ -63,17 +63,17 @@ export const SCRIPT_PRESETS: ScriptPreset[];
 
 - Os presets aparecem como chips acima do comando. Aplicar um preset com o comando já preenchido pede confirmação
   inline ("Substituir o comando atual?", com botões Substituir e Cancelar; **não** use `window.confirm`).
-- "Onde roda" (`OptionCards`): *Container do item*: "Na cópia do código deste item, onde os agentes trabalham. Use para
-  testes, lint e build."; *Container isolado*: "Num container novo, sem o código do item. Use para tarefas que não
+- "Onde roda" (`OptionCards`): _Container do item_: "Na cópia do código deste item, onde os agentes trabalham. Use para
+  testes, lint e build."; _Container isolado_: "Num container novo, sem o código do item. Use para tarefas que não
   dependem da branch."
-- "Se o comando falhar" (`OptionCards`): *Marcar o nó como falho* (recomendado) e *Continuar e deixar uma Decisão
-  julgar*. A segunda opção mostra a dica "Ligue `Resultado › passed` a uma Decisão".
+- "Se o comando falhar" (`OptionCards`): _Marcar o nó como falho_ (recomendado) e _Continuar e deixar uma Decisão
+  julgar_. A segunda opção mostra a dica "Ligue `Resultado › passed` a uma Decisão".
 - "Inserir dado" no comando abre o `DataPicker` (#{UX-07}). Abaixo do editor fica o aviso fixo: "Valores inseridos com
   {{…}} entram entre aspas. Para textos longos, prefira as variáveis FORJA_* (ex.: `$FORJA_ITEM_TITLE`)." Um link abre
   a lista completa das variáveis (seção da documentação).
 - `EnvListEditor`: linhas `NOME` (mono, validado em tempo real) · tipo "Texto" ou "Credencial" · valor (texto com
   "Inserir dado", ou select de credenciais do projeto). Adicionar, remover e reordenar.
-- "Formato da saída" (`OptionCards`): *Texto* / *JSON (saída inteira)* / *JSON (última linha)*, com o exemplo de cada um.
+- "Formato da saída" (`OptionCards`): _Texto_ / _JSON (saída inteira)_ / _JSON (última linha)_, com o exemplo de cada um.
 - Avançado: `shell`, `workingDir` (placeholder "raiz do repositório"), `image` (só com isolado; placeholder "imagem do
   agente do projeto") e `timeoutMinutes`.
 

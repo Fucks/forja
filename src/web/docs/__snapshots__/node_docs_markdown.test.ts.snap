@@ -25,7 +25,7 @@ Cada nó e cada grupo do editor de fluxos, por categoria.
 
 ## Decidir
 
-- [Decisão](condition.md) — Se a regra for verdadeira, segue por Sim; senão, por Não
+- [Decisão](condition.md) — Escolhe o caminho do item: Sim/Não ou vários caminhos com Senão
 
 ## Humano
 

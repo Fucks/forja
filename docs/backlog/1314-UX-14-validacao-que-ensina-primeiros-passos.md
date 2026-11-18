@@ -10,7 +10,7 @@ depends_on: [UX-13, UX-03]
 ## Contexto
 
 Atende RF-EDT-14 e RF-EDT-05 (épico #185). As mensagens de `ValidationIssue` (`src/shared/validation_issue.ts`,
-`src/engine/validation_rules/*`) dizem *o que* está errado, mas não *como corrigir*, e clicar nelas não leva ao campo.
+`src/engine/validation_rules/*`) dizem _o que_ está errado, mas não _como corrigir_, e clicar nelas não leva ao campo.
 Quem abre o editor com o canvas vazio não tem ponto de partida. O template de loop de revisão existe
 (`src/server/flows/templates/review_loop.ts`), mas não é o exemplo didático da Decisão + Comando + Loop que o épico
 propõe.

@@ -18,14 +18,14 @@
 ## Tasks
 
 - [x] 1. Refactor: move `PORT_NAME_PATTERN` to `src/shared/port_name.ts`
-- [ ] 2. Test + implement the `mode` schema (preprocess, branch limits) — `condition_config.ts`,
+- [x] 2. Test + implement the `mode` schema (preprocess, branch limits) — `condition_config.ts`,
       `condition_config.test.ts`; add `mode: "if"` to defaults, templates, docs examples and test literals
-- [ ] 3. Test + implement `branchPortsOf` — `condition_branches.ts`, `condition_branches.test.ts`
-- [ ] 4. Test + implement the switch executor (first true wins, Senão) — `condition_executor.ts`,
+- [x] 3. Test + implement `branchPortsOf` — `condition_branches.ts`, `condition_branches.test.ts`
+- [x] 4. Test + implement the switch executor (first true wins, Senão) — `condition_executor.ts`,
       `deterministic_executors.test.ts`
-- [ ] 5. Test + implement no match without Senão (needs_human artifact with reason)
-- [ ] 6. Scheduler harness chooses ports with `chooseBranchPort` — `scheduler_harness.ts`
-- [ ] 7. Validation: operator types and agent result reads cover every branch — `condition_rules.ts`,
+- [x] 5. Test + implement no match without Senão (needs_human artifact with reason)
+- [x] 6. Scheduler harness chooses ports with `chooseBranchPort` — `scheduler_harness.ts`
+- [x] 7. Validation: operator types and agent result reads cover every branch — `condition_rules.ts`,
       `agent_rules.ts`
 - [ ] 8. Test + implement validation of duplicate/reserved ports and empty rules — `condition_rules.ts`,
       `graph_validation.test.ts`
@@ -37,7 +37,7 @@
 - [ ] 14. Test + implement the mode toggle in the inspector (if→switch, switch→if with confirmation) —
       `condition_inspector.tsx`
 - [ ] 15. Test + implement canvas port labels from branch labels — `port_label.ts` / `flow_node_card.tsx`
-- [ ] 16. Test + implement the switch summary — `node_summary.ts`
-- [ ] 17. Docs: `condition_doc.ts`, regenerate `docs/nos/condition.md`, adapt `node_docs.test.ts`
+- [x] 16. Test + implement the switch summary — `node_summary.ts`
+- [x] 17. Docs: `condition_doc.ts`, regenerate `docs/nos/condition.md`, adapt `node_docs.test.ts`
 - [ ] 18. Test: YAML export/import preserves branches — `flow_yaml.test.ts`
 - [ ] 19. Self-review checklist and feedback loops

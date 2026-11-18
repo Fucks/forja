@@ -220,12 +220,15 @@ describe("ConditionInspector", () => {
         await userEvent.click(screen.getByRole("combobox", { name: "Operador da regra 2" }));
         await userEvent.click(screen.getByRole("option", { name: "existe" }));
 
-        expect(inspector.lastChangedNode("condition").config.condition).toEqual({
-            op: "and",
-            conditions: [
-                { op: "eq", path: "inputs.value.approved", value: true },
-                { op: "exists", path: "review.notes" },
-            ],
+        expect(inspector.lastChangedNode("condition").config).toEqual({
+            mode: "if",
+            condition: {
+                op: "and",
+                conditions: [
+                    { op: "eq", path: "inputs.value.approved", value: true },
+                    { op: "exists", path: "review.notes" },
+                ],
+            },
         });
     });
 

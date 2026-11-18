@@ -105,7 +105,11 @@ function previewOf(runView: SerializedRunView, condition: Condition): ConditionP
 function buildReviewDecisionFlow(): FlowGraph {
     const decision = createNodeOfType("condition", DECISION_ID, { x: 0, y: 0 });
     const withDecision = addNodes(buildCanonicalFlow(), [
-        { ...decision, parentGroupId: REVIEW_GROUP_ID, config: { condition: REVIEW_APPROVED } },
+        {
+            ...decision,
+            parentGroupId: REVIEW_GROUP_ID,
+            config: { mode: "if", condition: REVIEW_APPROVED },
+        },
     ]);
 
     return addEdges(withDecision, [connect(["reviewer", "result"], [DECISION_ID, "value"])]);

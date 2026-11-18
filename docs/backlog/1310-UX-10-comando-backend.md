@@ -54,7 +54,7 @@ Alterar:
   `stderrTail`; `AgentRuntime` ganha `execHeadless(spec: HeadlessSpec, command: string, options: ExecOptions): Promise<ExecResult>`)
 - `src/integrations/agent_runtime/docker_workspace.ts` e `docker_agent_runtime.ts` (env, cwd, shell, stderr e
   `execHeadless` com container efêmero da imagem do projeto e repositório **somente leitura**, igual ao `workspace:
-  "none"` do agente)
+"none"` do agente)
 - `src/test/fakes/fake_agent_runtime.ts` (`execHeadless` roteirizável; registra env, cwd e shell recebidos)
 - `src/engine/validation_rules/port_rules.ts` (entrada `item` obrigatória só com `runIn: "item"`; e, no mesmo arquivo,
   as regras do Comando: comando vazio é erro, `image` só com `isolated`, nome de env duplicado é erro). **Não** mexa no
@@ -72,8 +72,8 @@ export const SCRIPT_OUTPUT_MODES = ["none", "json", "lastLineJson"] as const;
 
 export const scriptEnvVarSchema = z.object({
     name: z.string().regex(/^[A-Z_][A-Z0-9_]*$/),
-    value: z.string().optional(),          // aceita {{caminho}} do DataContext
-    credentialId: z.string().optional(),   // exatamente um de value/credentialId
+    value: z.string().optional(), // aceita {{caminho}} do DataContext
+    credentialId: z.string().optional(), // exatamente um de value/credentialId
 });
 
 export const scriptConfigSchema = z.object({
@@ -92,11 +92,11 @@ export const scriptConfigSchema = z.object({
 
 export interface ScriptResult {
     exitCode: number;
-    passed: boolean;         // exitCode === 0
-    stdout: string;          // últimas 200 linhas
-    stderr: string;          // últimas 200 linhas
+    passed: boolean; // exitCode === 0
+    stdout: string; // últimas 200 linhas
+    stderr: string; // últimas 200 linhas
     durationMs: number;
-    data?: unknown;          // parseOutput
+    data?: unknown; // parseOutput
 }
 ```
 

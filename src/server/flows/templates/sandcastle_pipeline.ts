@@ -139,7 +139,7 @@ function buildHasCommitsCondition(): FlowNode {
     return {
         ...condition,
         label: "Fez commits?",
-        config: { condition: { op: "gt", path: "inputs.value.commits", value: 0 } },
+        config: { mode: "if", condition: { op: "gt", path: "inputs.value.commits", value: 0 } },
     };
 }
 
@@ -190,7 +190,10 @@ function buildChecksPassedCondition(): FlowNode {
     return {
         ...condition,
         label: "Checks passaram?",
-        config: { condition: { op: "eq", path: "inputs.value.checksPassed", value: true } },
+        config: {
+            mode: "if",
+            condition: { op: "eq", path: "inputs.value.checksPassed", value: true },
+        },
     };
 }
 

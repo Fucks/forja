@@ -583,7 +583,7 @@ function updateLoopCondition(graph: FlowGraph, groupId: string, until: Condition
 function addReviewerDecision(graph: FlowGraph, condition: Condition): FlowGraph {
     const decision = createNodeOfType("condition", "check", { x: 0, y: 0 });
     const withDecision = addNodes(graph, [
-        { ...decision, parentGroupId: "review_and_open_pr", config: { condition } },
+        { ...decision, parentGroupId: "review_and_open_pr", config: { mode: "if", condition } },
     ]);
 
     return addEdges(withDecision, [connect(["reviewer", "result"], ["check", "value"])]);
@@ -596,5 +596,5 @@ function addDecisionReading(graph: FlowGraph, ...paths: string[]): FlowGraph {
         conditions: paths.map((path) => ({ op: "exists", path })),
     };
 
-    return addNodes(graph, [{ ...decision, config: { condition } }]);
+    return addNodes(graph, [{ ...decision, config: { mode: "if", condition } }]);
 }

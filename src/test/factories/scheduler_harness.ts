@@ -17,7 +17,8 @@ import type {
 import type { CancelTimeout } from "@/lib/clock.js";
 import { assertNever } from "@/lib/assert_never.js";
 import type { ApprovalDecision } from "@/shared/approval_types.js";
-import { type Condition, evaluateCondition } from "@/shared/conditions.js";
+import { chooseBranchPort } from "@/shared/node_configs/condition_branches.js";
+import type { ConditionConfig } from "@/shared/node_configs/condition_config.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import type { NodeRunStatusName } from "@/shared/events.js";
 import { buildRunState } from "@/test/factories/run_state_factory.js";
@@ -350,7 +351,7 @@ export class SchedulerHarness {
     private defaultOutputs(started: StartedNodeRun): Record<string, unknown> {
         const node = this.plan.findNode(started.nodeRun.nodeId);
         if (node?.type === "condition") {
-            return chooseConditionPort(node.config.condition, started.inputs);
+            return chooseConditionPort(node.config, started.inputs);
         }
 
         const outputPorts = node?.outputs ?? [];
@@ -394,13 +395,15 @@ function peakRunningCount(entries: TimelineEntry[]): number {
 }
 
 function chooseConditionPort(
-    condition: Condition,
+    config: ConditionConfig,
     inputs: Record<string, unknown>,
 ): Record<string, unknown> {
-    const value = inputs[CONDITION_INPUT_PORT];
-    const chosenPort = evaluateCondition(condition, { inputs }) ? "true" : "false";
+    const chosenPort = chooseBranchPort(config, { inputs });
+    if (chosenPort === undefined) {
+        return {};
+    }
 
-    return { [chosenPort]: value };
+    return { [chosenPort]: inputs[CONDITION_INPUT_PORT] };
 }
 
 function finishingEvent(nodeRunId: string, outcome: NodeOutcome, at: Date): SchedulerEvent {

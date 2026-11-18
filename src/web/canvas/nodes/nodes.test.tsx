@@ -108,6 +108,7 @@ describe("canvas node components", () => {
             ...decision,
             parentGroupId: "review_and_open_pr",
             config: {
+                mode: "if",
                 condition: { op: "eq", path: "nodes.reviewer.result.approved", value: true },
             },
         };

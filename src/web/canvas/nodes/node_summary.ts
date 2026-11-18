@@ -3,12 +3,17 @@ import type { DataField } from "@/engine/available_data.js";
 import type { Effort } from "@/shared/agent_types.js";
 import type { FlowGroup, FlowNode, NodeOfType } from "@/shared/flow_graph.js";
 import type { AgentConfig } from "@/shared/node_configs/agent_config.js";
+import type {
+    ConditionConfig,
+    SwitchConditionConfig,
+} from "@/shared/node_configs/condition_config.js";
 import type { GitConfig } from "@/shared/node_configs/git_config.js";
 import type { OutputConfig } from "@/shared/node_configs/output_config.js";
 import type { ScriptConfig } from "@/shared/node_configs/script_config.js";
 import type { SourceConfig } from "@/shared/node_configs/source_config.js";
 import type { TriggerConfig } from "@/shared/node_configs/trigger_config.js";
 import { conditionToSentence } from "@/web/canvas/inspector/condition_text.js";
+import { listSwitchBranchLabels } from "@/web/canvas/inspector/switch_branch_labels.js";
 
 interface NodeSummary {
     line1: string;
@@ -89,7 +94,7 @@ export function summarizeNode(
         case "script":
             return summarizeScript(node.config);
         case "condition":
-            return { line1: conditionToSentence(node.config.condition, dataFields) };
+            return { line1: summarizeDecision(node.config, dataFields) };
         case "gate":
             return { line1: truncate(node.config.message) };
         case "git":
@@ -117,6 +122,25 @@ export function describeGroupConfig(group: FlowGroup): string {
         default:
             return assertNever(group);
     }
+}
+
+function summarizeDecision(config: ConditionConfig, dataFields: DataField[]): string {
+    switch (config.mode) {
+        case "if":
+            return conditionToSentence(config.condition, dataFields);
+        case "switch":
+            return describeSwitchPaths(config);
+        default:
+            return assertNever(config);
+    }
+}
+
+function describeSwitchPaths(config: SwitchConditionConfig): string {
+    const branchCount = config.branches.length;
+    const pathWord = branchCount === 1 ? "caminho" : "caminhos";
+    const labels = listSwitchBranchLabels(config).join(PART_SEPARATOR);
+
+    return `${branchCount} ${pathWord}: ${labels}`;
 }
 
 function summarizeAgent(agent: NodeOfType<"agent">, defaults?: AgentDefaults): NodeSummary {

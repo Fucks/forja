@@ -5,6 +5,7 @@ import { listComparisons } from "@/shared/conditions.js";
 import type { Comparison, ComparisonOperator } from "@/shared/conditions.js";
 import { isNodeOfType } from "@/shared/flow_graph.js";
 import type { FlowGraph, NodeOfType, NodeType, Port } from "@/shared/flow_graph.js";
+import { listDecisionConditions } from "@/shared/node_configs/condition_branches.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 
 type KnownDataType = Exclude<DataType, "any">;
@@ -93,7 +94,9 @@ function findOperatorTypeProblemsOf(
         portLabels: labelPortByName,
     });
 
-    return listComparisons(decision.config.condition).flatMap((comparison) => {
+    const comparisons = listDecisionConditions(decision.config).flatMap(listComparisons);
+
+    return comparisons.flatMap((comparison) => {
         const mismatch = findMismatch(comparison, fields);
         if (mismatch === undefined) {
             return [];

@@ -18,18 +18,26 @@ export function ConditionInspector({ node, graph, onChange }: InspectorProps): J
         return <></>;
     }
 
+    const { config } = node;
+
     return (
         <NodeInspectorFrame node={node} graph={graph} onChange={onChange}>
             <InspectorFields>
-                <FieldHeading doc={fieldDoc("condition", "condition")} />
-                <ConditionEditor
-                    value={node.config.condition}
-                    fields={fields}
-                    onChange={(condition) =>
-                        onChange((current) => withNodeConfig(current, "condition", { condition }))
-                    }
-                />
-                <ConditionPreview condition={node.config.condition} decisionId={node.id} />
+                {config.mode === "if" && (
+                    <>
+                        <FieldHeading doc={fieldDoc("condition", "condition")} />
+                        <ConditionEditor
+                            value={config.condition}
+                            fields={fields}
+                            onChange={(condition) =>
+                                onChange((current) =>
+                                    withNodeConfig(current, "condition", { condition }),
+                                )
+                            }
+                        />
+                        <ConditionPreview condition={config.condition} decisionId={node.id} />
+                    </>
+                )}
             </InspectorFields>
         </NodeInspectorFrame>
     );

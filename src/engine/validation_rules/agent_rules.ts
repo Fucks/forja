@@ -13,6 +13,7 @@ import {
 } from "@/shared/conditions.js";
 import { NODES_ROOT } from "@/shared/data_context.js";
 import type { FlowGraph, FlowNode, NodeOfType } from "@/shared/flow_graph.js";
+import { listDecisionConditions } from "@/shared/node_configs/condition_branches.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
 
@@ -105,7 +106,7 @@ function agentNodes(graph: FlowGraph): AgentNode[] {
 function listGraphConditions(graph: FlowGraph): Condition[] {
     const decisionConditions = graph.nodes
         .filter(isConditionNode)
-        .map((node) => node.config.condition);
+        .flatMap((node) => listDecisionConditions(node.config));
     const loopConditions = graph.groups.filter(isLoopGroup).map((loop) => loop.config.until);
 
     return [...decisionConditions, ...loopConditions];

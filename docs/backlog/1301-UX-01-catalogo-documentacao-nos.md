@@ -57,37 +57,53 @@ export type GroupKind = "map" | "loop";
 export type DocumentedType = NodeType | GroupKind;
 
 export const NODE_CATEGORIES = [
-    "inicio", "trabalho", "ia", "executar", "decidir", "humano", "entrega", "fim", "grupo",
+    "inicio",
+    "trabalho",
+    "ia",
+    "executar",
+    "decidir",
+    "humano",
+    "entrega",
+    "fim",
+    "grupo",
 ] as const;
 export type NodeCategory = (typeof NODE_CATEGORIES)[number];
 
 export interface PortDoc {
-    name: string;           // nome técnico da porta ("result")
-    label: string;          // nome na tela ("Resultado estruturado")
+    name: string; // nome técnico da porta ("result")
+    label: string; // nome na tela ("Resultado estruturado")
     type: PortType | "loopExhausted";
     required: boolean;
     description: string;
 }
 
-export interface FieldOptionDoc { value: string; label: string; description: string }
-
-export interface FieldDoc {
-    key: string;            // chave da config ("maxIterations")
-    label: string;          // "Repetições do prompt"
-    description: string;    // 1–3 frases, sem jargão
-    defaultValue?: string;  // descrito para humanos: "1 (roda uma vez)"
-    options?: FieldOptionDoc[];
-    advanced?: boolean;     // aparece recolhido em "Avançado" no inspector
+export interface FieldOptionDoc {
+    value: string;
+    label: string;
+    description: string;
 }
 
-export interface NodeExample { title: string; description: string; config?: Record<string, unknown> }
+export interface FieldDoc {
+    key: string; // chave da config ("maxIterations")
+    label: string; // "Repetições do prompt"
+    description: string; // 1–3 frases, sem jargão
+    defaultValue?: string; // descrito para humanos: "1 (roda uma vez)"
+    options?: FieldOptionDoc[];
+    advanced?: boolean; // aparece recolhido em "Avançado" no inspector
+}
+
+export interface NodeExample {
+    title: string;
+    description: string;
+    config?: Record<string, unknown>;
+}
 
 export interface NodeDoc {
     type: DocumentedType;
-    title: string;          // "Decisão"
+    title: string; // "Decisão"
     category: NodeCategory;
-    tagline: string;        // ≤ 70 caracteres
-    whatItDoes: string;     // 2–4 frases
+    tagline: string; // ≤ 70 caracteres
+    whatItDoes: string; // 2–4 frases
     whenToUse: string[];
     whenNotToUse?: string[];
     ports: { inputs: PortDoc[]; outputs: PortDoc[] };

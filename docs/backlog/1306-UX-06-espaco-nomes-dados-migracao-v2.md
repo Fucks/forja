@@ -84,7 +84,15 @@ export type DataRoot = (typeof DATA_ROOTS)[number];
 export interface DataContext {
     inputs: Record<string, unknown>;
     nodes: Record<string, Record<string, unknown>>; // slug do nó → porta → valor
-    item?: { id: string; title: string; body: string; number?: number; url?: string; labels: string[]; branch?: string };
+    item?: {
+        id: string;
+        title: string;
+        body: string;
+        number?: number;
+        url?: string;
+        labels: string[];
+        branch?: string;
+    };
     project: { name: string; baseBranch: string; githubRepo?: string };
     run: { id: string; iteration: number; attempt: number };
 }
@@ -110,11 +118,11 @@ export function collectUpstreamOutputs(
 - No **Loop**, `until` continua vendo **só** os nós de dentro do grupo, na iteração que acabou de terminar, agora sob
   `nodes.*`.
 - Migração v1→v2, pura e idempotente:
-  1. `schemaVersion: 1` → `2`.
-  2. Nó `condition`: em toda comparação (recursivo em `and`/`or`/`not`), `path` → `inputs.value.<path>`.
-  3. Grupo `loop`: em toda comparação de `until`, `path` → `nodes.<path>`.
-  4. Nó `git` com `bodyFrom`: `bodyFrom` → `inputs.<bodyFrom>`.
-  5. Um grafo que já está em v2 volta idêntico.
+    1. `schemaVersion: 1` → `2`.
+    2. Nó `condition`: em toda comparação (recursivo em `and`/`or`/`not`), `path` → `inputs.value.<path>`.
+    3. Grupo `loop`: em toda comparação de `until`, `path` → `nodes.<path>`.
+    4. Nó `git` com `bodyFrom`: `bodyFrom` → `inputs.<bodyFrom>`.
+    5. Um grafo que já está em v2 volta idêntico.
 - Grafos guardados no banco (`draft_json`, versões publicadas, snapshots de run) **não são reescritos em massa**: a
   migração acontece na leitura (`parseFlowGraph`), e o próximo salvamento do rascunho grava em v2. Uma run recuperada
   após reinício (`recovery.ts`) com snapshot v1 também migra na leitura. Confira se `stored_snapshot.ts` passa por
