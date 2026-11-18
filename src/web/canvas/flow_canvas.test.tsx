@@ -64,7 +64,7 @@ const INVALID_MARKER_LABEL = "Configuração inválida";
 const EMPTY_PROMPT_ERROR: ValidationIssue = {
     level: "error",
     code: "empty_prompt",
-    message: 'O agente "Dev" está sem prompt.',
+    message: "O Agente ‘Dev’ não tem prompt.",
     target: { kind: "node", id: "dev" },
 };
 const GROUP_OVERLAP_ERROR: ValidationIssue = {

@@ -31,8 +31,8 @@ const PROJECT_FLOWS_URL = `/api/projects/${PROJECT_ID}/flows`;
 const HTTP_CREATED = 201;
 const HTTP_NOT_FOUND = 404;
 const TRIGGER_LABEL = "Gatilho";
-const NO_TRIGGER_MESSAGE = "O fluxo precisa de um nó de gatilho.";
-const EMPTY_PROMPT_MESSAGE = 'O agente "Dev" está sem prompt.';
+const NO_TRIGGER_MESSAGE = "O fluxo não tem Gatilho, então nada o faz começar.";
+const EMPTY_PROMPT_MESSAGE = "O Agente ‘Dev’ não tem prompt.";
 const VALIDATION_WAIT = { timeout: VALIDATION_DEBOUNCE_MS * 2 };
 const AUTOSAVE_WAIT_MS = AUTOSAVE_DELAY_MS * 3;
 

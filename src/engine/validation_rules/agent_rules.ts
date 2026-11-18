@@ -4,6 +4,7 @@ import type { AgentNode, ValidationContext } from "@/engine/graph_validation.js"
 import {
     errorIssue,
     nodeTarget,
+    quote,
     warningIssue,
 } from "@/engine/validation_rules/validation_issues.js";
 import {
@@ -23,11 +24,13 @@ export function findEmptyPrompts(graph: FlowGraph): ValidationIssue[] {
     );
 
     return agentsWithoutPrompt.map((node) =>
-        errorIssue(
-            "empty_prompt",
-            `O agente "${node.label}" está sem prompt.`,
-            nodeTarget(node.id),
-        ),
+        errorIssue({
+            code: "empty_prompt",
+            message: `O Agente ${quote(node.label)} não tem prompt.`,
+            fix: "Escreva o que o agente deve fazer na aba Configurar › Prompt.",
+            fieldKey: "prompt",
+            target: nodeTarget(node.id),
+        }),
     );
 }
 
@@ -45,11 +48,15 @@ export function findUnknownToolProfiles(
     );
 
     return agentsWithUnknownProfile.map((node) =>
-        errorIssue(
-            "unknown_tool_profile",
-            `O agente "${node.label}" usa um perfil de ferramentas que não existe.`,
-            nodeTarget(node.id),
-        ),
+        errorIssue({
+            code: "unknown_tool_profile",
+            message:
+                `O Agente ${quote(node.label)} usa um perfil de ferramentas ` +
+                "que não existe mais.",
+            fix: "Escolha outro perfil em Configurar › Avançado › Ferramentas.",
+            fieldKey: "toolProfileId",
+            target: nodeTarget(node.id),
+        }),
     );
 }
 
@@ -67,11 +74,13 @@ export function findUnknownCredentials(
     );
 
     return agentsWithUnknownCredential.map((node) =>
-        errorIssue(
-            "unknown_credential",
-            `O agente "${node.label}" usa uma credencial que não existe.`,
-            nodeTarget(node.id),
-        ),
+        errorIssue({
+            code: "unknown_credential",
+            message: `O Agente ${quote(node.label)} usa uma credencial que não existe mais.`,
+            fix: "Escolha outra credencial em Configurar › Avançado › Credencial.",
+            fieldKey: "credentialId",
+            target: nodeTarget(node.id),
+        }),
     );
 }
 
@@ -87,11 +96,15 @@ export function findAgentsWithoutResponseFormat(graph: FlowGraph): ValidationIss
     );
 
     return agentsWithoutFormat.map((node) =>
-        warningIssue(
-            "agent_without_response_format",
-            `Uma condição lê o resultado do agente "${node.label}", mas ele não tem formato da resposta.`,
-            nodeTarget(node.id),
-        ),
+        warningIssue({
+            code: "agent_without_response_format",
+            message:
+                `Uma condição lê o resultado do Agente ${quote(node.label)}, ` +
+                "mas ele não tem Formato da resposta.",
+            fix: "Adicione em Configurar › Formato da resposta os campos que a condição lê.",
+            fieldKey: "outputSchema",
+            target: nodeTarget(node.id),
+        }),
     );
 }
 

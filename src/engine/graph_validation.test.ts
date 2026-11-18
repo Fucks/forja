@@ -1,4 +1,10 @@
-import { type AgentNode, validateFlowGraph } from "@/engine/graph_validation.js";
+import {
+    type AgentNode,
+    VALIDATION_RULES,
+    type ValidationContext,
+    validateFlowGraph,
+} from "@/engine/graph_validation.js";
+import { checkPromptVariables } from "@/engine/prompt_template.js";
 import type { Condition } from "@/shared/conditions.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { branchPortsOf } from "@/shared/node_configs/condition_branches.js";
@@ -29,6 +35,7 @@ import {
     updateNode,
 } from "@/test/factories/flow_graph_variations.js";
 
+const ORIGIN = { x: 0, y: 0 };
 const APPROVED: Condition = { op: "eq", path: "inputs.value.approved", value: true };
 
 describe("validateFlowGraph", () => {
@@ -76,7 +83,11 @@ describe("duplicate_node_slug", () => {
             {
                 level: "error",
                 code: "duplicate_node_slug",
-                message: "Dois nós com o mesmo nome (dev): renomeie um deles",
+                message: "O nó ‘dev’ tem o mesmo nome de outro nó.",
+                fix:
+                    "Dê outro rótulo a este nó no topo do inspector: " +
+                    "os dados de um nó são lidos pelo nome.",
+                fieldKey: "label",
                 target: { kind: "node", id: "dev_2" },
             },
         ]);
@@ -426,7 +437,11 @@ describe("condition_operator_type", () => {
             {
                 level: "error",
                 code: "condition_operator_type",
-                message: "‘contém’ não serve para sim/não. Escolha ‘é verdadeiro’ ou ‘é falso’.",
+                message: "Na Decisão ‘Condição’, ‘contém’ não serve para sim/não.",
+                fix:
+                    "Escolha ‘é verdadeiro’ ou ‘é falso’ na regra que lê " +
+                    "‘nodes.reviewer.result.approved’.",
+                fieldKey: "condition",
                 target: { kind: "node", id: "check" },
             },
         ]);
@@ -522,7 +537,9 @@ describe("condition_branch_empty_rule", () => {
             {
                 level: "error",
                 code: "condition_branch_empty_rule",
-                message: "O caminho “changes” não tem regra.",
+                message: "Na Decisão ‘Triagem’, o caminho ‘changes’ não tem regra.",
+                fix: "Escolha um dado e uma regra para o caminho ‘changes’ ou apague-o.",
+                fieldKey: "branches",
                 target: { kind: "node", id: "triage" },
             },
         ]);
@@ -546,7 +563,10 @@ describe("condition_edge_without_branch", () => {
             {
                 level: "error",
                 code: "condition_edge_without_branch",
-                message: "A Decisão “Triagem” não tem mais o caminho “removed”.",
+                message:
+                    "Uma ligação sai do caminho ‘removed’ da Decisão ‘Triagem’, " +
+                    "que não existe mais.",
+                fix: "Apague essa ligação ou crie de novo o caminho ‘removed’.",
                 target: { kind: "edge", id: "triage.removed->done.item" },
             },
         ]);
@@ -572,8 +592,10 @@ describe("git_body_source_missing", () => {
                 level: "warning",
                 code: "git_body_source_missing",
                 message:
-                    "O corpo do PR aponta para ‘inputs.summary’, que não existe aqui. " +
-                    "Escolha o texto no seletor.",
+                    "O texto do PR de ‘Abrir PR’ vem de ‘inputs.summary’, " +
+                    "que não chega a este nó.",
+                fix: "Escolha o texto do PR no seletor de Configurar › Texto do PR vem de.",
+                fieldKey: "bodyFrom",
                 target: { kind: "node", id: "open_pr" },
             },
         ]);
@@ -696,6 +718,69 @@ describe("checkPrompt", () => {
         ]);
     });
 });
+
+describe("every registered rule", () => {
+    const context: ValidationContext = {
+        knownToolProfileIds: ["tlp_builtin_readonly"],
+        knownCredentialIds: ["crd_2"],
+        checkPrompt: checkPromptVariables,
+    };
+
+    it.each(VALIDATION_RULES.map((rule) => [rule.name, rule] as const))(
+        "%s tells how to fix every issue it finds",
+        (_ruleName, rule) => {
+            const issues = buildInvalidExamples().flatMap((graph) => rule(graph, context));
+
+            expect(issues.length).toBeGreaterThan(0);
+            expect(issues.filter((issue) => !issue.fix?.trim())).toEqual([]);
+        },
+    );
+});
+
+// At least one graph breaks each rule, so a rule added without an example fails the test above.
+function buildInvalidExamples(): FlowGraph[] {
+    const canonical = buildCanonicalFlow();
+    const loop = buildLoopFlow();
+    const switchDecision = addSwitchDecision(canonical, [
+        branch("approved", APPROVED),
+        branch("approved", { op: "and", conditions: [] }),
+        branch("otherwise", APPROVED),
+    ]);
+
+    return [
+        addEdges(canonical, [{ ...connect(["dev", "summary"], ["tl", "context"]), id: "dev" }]),
+        addNodes(canonical, [{ ...createDefaultNode("agent", "dev_2", ORIGIN), label: "Dev" }]),
+        removeNodes(canonical, ["trigger"]),
+        addEdges(canonical, [connect(["dev", "summary"], ["ghost", "context"])]),
+        removeEdges(canonical, ["tl.summary->dev.spec", "source.items->tl.item"]),
+        addEdges(loop, [connect(["tests", "result"], ["dev", "context"])]),
+        addScriptOutsideMaps(canonical, {
+            command: " ",
+            image: "node:22",
+            env: [
+                { name: "NODE_ENV", value: "test" },
+                { name: "NODE_ENV", value: "production" },
+            ],
+        }),
+        moveNode(canonical, "dev", "missing"),
+        addEdges(canonical, [connect(["reviewer", "summary"], ["tl", "context"])]),
+        removeEdges(loop, ["review.summary->dev.notes"]),
+        updateLoopCondition(loop, "review_loop", { op: "exists", path: "" }),
+        updateLoopCondition(loop, "review_loop", { op: "exists", path: "nodes.review.x" }),
+        addReviewerDecision(canonical, {
+            op: "contains",
+            path: "nodes.reviewer.result.approved",
+            value: "true",
+        }),
+        addEdges(switchDecision, [connect(["triage", "removed"], ["done", "item"])]),
+        updateBodyFrom(canonical, "inputs.summary"),
+        updateAgentConfig(canonical, "tl", {
+            prompt: "{{inputs.nada}} {{nodes.reviewer.summary}}",
+        }),
+        updateAgentConfig(canonical, "reviewer", { prompt: " ", credentialId: "crd_1" }),
+        addDecisionReading(canonical, "nodes.dev.result.x"),
+    ];
+}
 
 function issuesWithCode(graph: FlowGraph, code: string): ValidationIssue[] {
     return validateFlowGraph(graph).filter((issue) => issue.code === code);

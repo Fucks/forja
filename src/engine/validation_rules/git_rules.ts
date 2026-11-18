@@ -1,5 +1,5 @@
 import { incomingEdges, listUpstreamNodes } from "@/engine/graph_queries.js";
-import { nodeTarget, warningIssue } from "@/engine/validation_rules/validation_issues.js";
+import { nodeTarget, quote, warningIssue } from "@/engine/validation_rules/validation_issues.js";
 import { findInputPortInPath, findNodeSlugInPath } from "@/shared/data_context.js";
 import { type FlowGraph, isNodeOfType, type NodeOfType } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
@@ -20,12 +20,15 @@ export function checkGitBodySource(graph: FlowGraph, gitNode: GitNode): Validati
     }
 
     return [
-        warningIssue(
-            "git_body_source_missing",
-            `O corpo do PR aponta para ‘${bodyFrom}’, que não existe aqui. ` +
-                "Escolha o texto no seletor.",
-            nodeTarget(gitNode.id),
-        ),
+        warningIssue({
+            code: "git_body_source_missing",
+            message:
+                `O texto do PR de ${quote(gitNode.label)} vem de ${quote(bodyFrom)}, ` +
+                "que não chega a este nó.",
+            fix: "Escolha o texto do PR no seletor de Configurar › Texto do PR vem de.",
+            fieldKey: "bodyFrom",
+            target: nodeTarget(gitNode.id),
+        }),
     ];
 }
 

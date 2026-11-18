@@ -270,7 +270,8 @@ describe("flows routes", () => {
                         {
                             level: "error",
                             code: "no_trigger",
-                            message: "O fluxo precisa de um nó de gatilho.",
+                            message: "O fluxo não tem Gatilho, então nada o faz começar.",
+                            fix: "Arraste um Gatilho da paleta (categoria Início) para o canvas.",
                             target: { kind: "flow" },
                         },
                     ],

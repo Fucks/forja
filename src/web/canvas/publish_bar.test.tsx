@@ -31,7 +31,7 @@ const PUBLISHED_VERSION: FlowVersion = {
 const NO_TRIGGER_ISSUE: ValidationIssue = {
     level: "error",
     code: "no_trigger",
-    message: "O fluxo precisa de um nó de gatilho.",
+    message: "O fluxo não tem Gatilho, então nada o faz começar.",
     target: { kind: "flow" },
 };
 

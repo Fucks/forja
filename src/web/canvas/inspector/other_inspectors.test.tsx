@@ -251,8 +251,7 @@ describe("GitInspector", () => {
 
         expect(
             screen.getByText(
-                "O corpo do PR aponta para ‘inputs.summary’, que não existe aqui. " +
-                    "Escolha o texto no seletor.",
+                "O texto do PR de ‘Abrir PR’ vem de ‘inputs.summary’, que não chega a este nó.",
             ),
         ).toBeInTheDocument();
     });
@@ -262,7 +261,7 @@ describe("GitInspector", () => {
 
         renderInspector(GitInspector, requireNode("open_pr"));
 
-        expect(screen.queryByText(/O corpo do PR aponta para/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/O texto do PR de/)).not.toBeInTheDocument();
     });
 
     it("falls back to the project base branch when the field is cleared", async () => {

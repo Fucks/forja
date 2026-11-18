@@ -1,7 +1,11 @@
 import { describeAvailableData } from "@/engine/available_data.js";
 import type { DataField, DataType } from "@/engine/available_data.js";
-import { edgeTarget, errorIssue, nodeTarget } from "@/engine/validation_rules/validation_issues.js";
-import type { IssueTarget } from "@/engine/validation_rules/validation_issues.js";
+import {
+    edgeTarget,
+    errorIssue,
+    nodeTarget,
+    quote,
+} from "@/engine/validation_rules/validation_issues.js";
 import { listComparisons } from "@/shared/conditions.js";
 import type { Comparison, ComparisonOperator } from "@/shared/conditions.js";
 import { isNodeOfType } from "@/shared/flow_graph.js";
@@ -77,6 +81,9 @@ const SUGGESTED_OPERATOR_LABELS: Record<KnownDataType, string[]> = {
     object: ["existe", "não existe"],
 };
 
+const CONDITION_FIELD = "condition";
+const BRANCHES_FIELD = "branches";
+
 const LAST_SUGGESTION_SEPARATOR = " ou ";
 const SUGGESTION_SEPARATOR = ", ";
 
@@ -92,18 +99,38 @@ export function findEdgesWithoutBranch(graph: FlowGraph): ValidationIssue[] {
     return listDecisions(graph).flatMap((decision) => findEdgesWithoutBranchOf(graph, decision));
 }
 
+interface OperatorTypeMismatch {
+    problem: string;
+    suggestion: string;
+}
+
 /** Why the operator does not fit a value of the type; undefined when it fits or the type is unknown. */
 export function describeOperatorTypeMismatch(
     operator: ComparisonOperator,
     type: DataType,
 ): string | undefined {
+    const mismatch = findOperatorTypeMismatch(operator, type);
+    if (!mismatch) {
+        return undefined;
+    }
+
+    return `${mismatch.problem}. ${mismatch.suggestion}.`;
+}
+
+function findOperatorTypeMismatch(
+    operator: ComparisonOperator,
+    type: DataType,
+): OperatorTypeMismatch | undefined {
     if (type === "any" || ACCEPTED_OPERATORS[type].includes(operator)) {
         return undefined;
     }
 
     const suggestions = listInWords(SUGGESTED_OPERATOR_LABELS[type].map(quote));
 
-    return `${quote(OPERATOR_LABELS[operator])} não serve para ${TYPE_LABELS[type]}. Escolha ${suggestions}.`;
+    return {
+        problem: `${quote(OPERATOR_LABELS[operator])} não serve para ${TYPE_LABELS[type]}`,
+        suggestion: `Escolha ${suggestions}`,
+    };
 }
 
 function findOperatorTypeProblemsOf(graph: FlowGraph, decision: Decision): ValidationIssue[] {
@@ -120,7 +147,15 @@ function findOperatorTypeProblemsOf(graph: FlowGraph, decision: Decision): Valid
             return [];
         }
 
-        return [errorIssue("condition_operator_type", mismatch, nodeTarget(decision.id))];
+        return [
+            errorIssue({
+                code: "condition_operator_type",
+                message: `Na Decisão ${quote(decision.label)}, ${mismatch.problem}.`,
+                fix: `${mismatch.suggestion} na regra que lê ${quote(comparison.path)}.`,
+                fieldKey: CONDITION_FIELD,
+                target: nodeTarget(decision.id),
+            }),
+        ];
     });
 }
 
@@ -133,48 +168,56 @@ function isSwitchDecision(decision: Decision): decision is SwitchDecision {
 }
 
 function findBranchProblemsOf(decision: SwitchDecision): ValidationIssue[] {
-    const { branches } = decision.config;
-    const target = nodeTarget(decision.id);
-
     return [
-        ...findDuplicatePortIssues(branches, target),
-        ...findReservedPortIssues(branches, target),
-        ...findEmptyRuleIssues(branches, target),
+        ...findDuplicatePortIssues(decision),
+        ...findReservedPortIssues(decision),
+        ...findEmptyRuleIssues(decision),
     ];
 }
 
-function findDuplicatePortIssues(branches: SwitchBranch[], target: IssueTarget): ValidationIssue[] {
-    return findDuplicatePorts(branches).map((port) =>
-        errorIssue(
-            "condition_branch_port_duplicate",
-            `Dois caminhos usam a saída “${port}”.`,
-            target,
-        ),
+function findDuplicatePortIssues(decision: SwitchDecision): ValidationIssue[] {
+    return findDuplicatePorts(decision.config.branches).map((port) =>
+        branchIssue(decision, {
+            code: "condition_branch_port_duplicate",
+            problem: `dois caminhos usam a saída ${quote(port)}`,
+            fix: "Dê outro nome a um dos caminhos.",
+        }),
     );
 }
 
-function findReservedPortIssues(branches: SwitchBranch[], target: IssueTarget): ValidationIssue[] {
-    return branches
-        .filter(usesReservedPort)
-        .map((branch) =>
-            errorIssue(
-                "condition_branch_port_reserved",
-                `O caminho “${branch.label}” não pode usar a saída “${branch.port}”, que é da Decisão.`,
-                target,
-            ),
-        );
+function findReservedPortIssues(decision: SwitchDecision): ValidationIssue[] {
+    return decision.config.branches.filter(usesReservedPort).map((branch) =>
+        branchIssue(decision, {
+            code: "condition_branch_port_reserved",
+            problem:
+                `o caminho ${quote(branch.label)} usa a saída ${quote(branch.port)}, ` +
+                "que é reservada da Decisão",
+            fix: `Dê outro nome ao caminho ${quote(branch.label)}.`,
+        }),
+    );
 }
 
-function findEmptyRuleIssues(branches: SwitchBranch[], target: IssueTarget): ValidationIssue[] {
-    return branches
-        .filter(hasEmptyRule)
-        .map((branch) =>
-            errorIssue(
-                "condition_branch_empty_rule",
-                `O caminho “${branch.label}” não tem regra.`,
-                target,
-            ),
-        );
+function findEmptyRuleIssues(decision: SwitchDecision): ValidationIssue[] {
+    return decision.config.branches.filter(hasEmptyRule).map((branch) =>
+        branchIssue(decision, {
+            code: "condition_branch_empty_rule",
+            problem: `o caminho ${quote(branch.label)} não tem regra`,
+            fix: `Escolha um dado e uma regra para o caminho ${quote(branch.label)} ou apague-o.`,
+        }),
+    );
+}
+
+function branchIssue(
+    decision: SwitchDecision,
+    { code, problem, fix }: { code: string; problem: string; fix: string },
+): ValidationIssue {
+    return errorIssue({
+        code,
+        message: `Na Decisão ${quote(decision.label)}, ${problem}.`,
+        fix,
+        fieldKey: BRANCHES_FIELD,
+        target: nodeTarget(decision.id),
+    });
 }
 
 function findDuplicatePorts(branches: SwitchBranch[]): string[] {
@@ -205,11 +248,14 @@ function findEdgesWithoutBranchOf(graph: FlowGraph, decision: Decision): Validat
     );
 
     return edgesWithoutBranch.map((edge) =>
-        errorIssue(
-            "condition_edge_without_branch",
-            `A Decisão “${decision.label}” não tem mais o caminho “${edge.from.port}”.`,
-            edgeTarget(edge.id),
-        ),
+        errorIssue({
+            code: "condition_edge_without_branch",
+            message:
+                `Uma ligação sai do caminho ${quote(edge.from.port)} da Decisão ` +
+                `${quote(decision.label)}, que não existe mais.`,
+            fix: `Apague essa ligação ou crie de novo o caminho ${quote(edge.from.port)}.`,
+            target: edgeTarget(edge.id),
+        }),
     );
 }
 
@@ -218,17 +264,16 @@ function labelPortByName(_nodeType: NodeType, port: Port): string {
     return port.name;
 }
 
-function findMismatch(comparison: Comparison, fields: DataField[]): string | undefined {
+function findMismatch(
+    comparison: Comparison,
+    fields: DataField[],
+): OperatorTypeMismatch | undefined {
     const field = fields.find((candidate) => candidate.path === comparison.path);
     if (!field) {
         return undefined;
     }
 
-    return describeOperatorTypeMismatch(comparison.op, field.type);
-}
-
-function quote(text: string): string {
-    return `‘${text}’`;
+    return findOperatorTypeMismatch(comparison.op, field.type);
 }
 
 function listInWords(words: string[]): string {

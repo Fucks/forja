@@ -11,6 +11,7 @@ import {
     errorIssue,
     groupTarget,
     nodeTarget,
+    quote,
     warningIssue,
 } from "@/engine/validation_rules/validation_issues.js";
 import { listConditionPaths } from "@/shared/conditions.js";
@@ -18,6 +19,8 @@ import { findNodeSlugInPath } from "@/shared/data_context.js";
 import type { FlowGraph } from "@/shared/flow_graph.js";
 import { nodeSlug } from "@/shared/node_slug.js";
 import type { ValidationIssue } from "@/shared/validation_issue.js";
+
+const LOOP_CONDITION_FIELD = "until";
 
 type CycleNodeIds = [firstNodeId: string, ...otherNodeIds: string[]];
 
@@ -27,11 +30,14 @@ export function findCyclesOutsideLoops(graph: FlowGraph): ValidationIssue[] {
     );
 
     return cyclesOutsideLoops.map((cycleNodeIds) =>
-        errorIssue(
-            "cycle_outside_loop",
-            `Ciclo fora de um grupo loop entre os nós ${describeNodes(graph, cycleNodeIds)}.`,
-            nodeTarget(cycleNodeIds[0]),
-        ),
+        errorIssue({
+            code: "cycle_outside_loop",
+            message:
+                `Os nós ${describeNodes(graph, cycleNodeIds)} formam uma volta fora de um Loop, ` +
+                "que nunca terminaria.",
+            fix: "Selecione esses nós e agrupe-os num Loop, ou apague a ligação que volta.",
+            target: nodeTarget(cycleNodeIds[0]),
+        }),
     );
 }
 
@@ -41,11 +47,14 @@ export function findLoopsWithoutBackEdge(graph: FlowGraph): ValidationIssue[] {
         .filter((loop) => groupBoundaryEdges(graph, loop.id).back.length === 0);
 
     return loopsWithoutBackEdge.map((loop) =>
-        warningIssue(
-            "loop_without_back_edge",
-            `O loop "${loop.label}" não tem aresta de volta entre seus nós.`,
-            groupTarget(loop.id),
-        ),
+        warningIssue({
+            code: "loop_without_back_edge",
+            message:
+                `O Loop ${quote(loop.label)} não tem ligação de volta, ` +
+                "então uma volta não recebe nada da anterior.",
+            fix: "Ligue a saída do último nó do Loop a uma entrada do primeiro.",
+            target: groupTarget(loop.id),
+        }),
     );
 }
 
@@ -55,11 +64,13 @@ export function findLoopsWithoutCondition(graph: FlowGraph): ValidationIssue[] {
         .filter((loop) => listConditionPaths(loop.config.until).some(isBlankPath));
 
     return loopsWithoutCondition.map((loop) =>
-        errorIssue(
-            "loop_without_condition",
-            `O loop "${loop.label}" não tem a condição de saída definida.`,
-            groupTarget(loop.id),
-        ),
+        errorIssue({
+            code: "loop_without_condition",
+            message: `O Loop ${quote(loop.label)} não sabe quando parar.`,
+            fix: "Escolha o dado e a regra em Configurar › Parar quando.",
+            fieldKey: LOOP_CONDITION_FIELD,
+            target: groupTarget(loop.id),
+        }),
     );
 }
 
@@ -126,7 +137,7 @@ function isInsideOneLoop(graph: FlowGraph, nodeIds: string[]): boolean {
 }
 
 function describeNodes(graph: FlowGraph, nodeIds: string[]): string {
-    return nodeIds.map((nodeId) => `"${findNode(graph, nodeId)?.label ?? nodeId}"`).join(", ");
+    return nodeIds.map((nodeId) => quote(findNode(graph, nodeId)?.label ?? nodeId)).join(", ");
 }
 
 function findUnknownConditionPathsOfLoop(graph: FlowGraph, loop: LoopGroup): ValidationIssue[] {
@@ -138,11 +149,15 @@ function findUnknownConditionPathsOfLoop(graph: FlowGraph, loop: LoopGroup): Val
     );
 
     return unknownPaths.map((path) =>
-        warningIssue(
-            "loop_condition_unknown_port",
-            `A condição do loop "${loop.label}" usa "${path}", que não existe no loop.`,
-            groupTarget(loop.id),
-        ),
+        warningIssue({
+            code: "loop_condition_unknown_port",
+            message:
+                `A condição de parada do Loop ${quote(loop.label)} lê ${quote(path)}, ` +
+                "que não vem de um nó do Loop.",
+            fix: "Escolha no seletor de Parar quando um dado de um nó de dentro do Loop.",
+            fieldKey: LOOP_CONDITION_FIELD,
+            target: groupTarget(loop.id),
+        }),
     );
 }
 

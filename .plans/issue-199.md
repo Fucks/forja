@@ -28,8 +28,8 @@
 ## Tasks
 
 - [x] 1. `ValidationIssue` and its Zod schema accept `fix` and `fieldKey` — `src/shared/validation_issue.ts` (+ test)
-- [ ] 2. Test: every registered rule produces a `fix` over example invalid graphs — `src/engine/graph_validation.test.ts`
-- [ ] 3. Rules teach: object-form `errorIssue`/`warningIssue`, revised messages with `fix`/`fieldKey` in
+- [x] 2. Test: every registered rule produces a `fix` over example invalid graphs — `src/engine/graph_validation.test.ts`
+- [x] 3. Rules teach: object-form `errorIssue`/`warningIssue`, revised messages with `fix`/`fieldKey` in
       `validation_rules/*` and `prompt_template.ts`; update the rule tests
 - [ ] 4. `use_focus_field`: a request focuses the matching field and opens its section — `src/web/canvas/inspector/use_focus_field.ts` (+ test)
 - [ ] 5. Inspector: tabs switch to Configurar on a focus request; fields register their `fieldKey` — inspector files
