@@ -4,15 +4,21 @@ import type { JSX } from "react";
 import { nodesInsideGroup } from "@/engine/graph_queries.js";
 import type { LoopGroup } from "@/engine/graph_queries.js";
 import { loopConfigSchema, MAX_LOOP_ITERATIONS, MIN_LOOP_ITERATIONS } from "@/shared/flow_graph.js";
-import type { FlowGraph, LoopConfig } from "@/shared/flow_graph.js";
+import type { FlowGraph, FlowNode, LoopConfig } from "@/shared/flow_graph.js";
 import { ConditionEditor } from "@/web/canvas/inspector/condition_editor.js";
 import { fieldDoc } from "@/web/canvas/inspector/field_doc.js";
 import { FieldHeading } from "@/web/canvas/inspector/field_heading.js";
 import { IntegerField } from "@/web/canvas/inspector/integer_field.js";
-import { useAvailableData } from "@/web/canvas/inspector/use_available_data.js";
+import { LoopExhaustedDiagram } from "@/web/canvas/inspector/loop_exhausted_diagram.js";
+import { labelPort, useAvailableData } from "@/web/canvas/inspector/use_available_data.js";
 import { Switch } from "@/web/components/ui/switch.js";
 
 type LoopChange = (changes: Partial<LoopConfig>) => void;
+
+interface CarryOption {
+    port: string;
+    label: string;
+}
 
 const LOOP_FIELDS = loopConfigSchema.shape;
 const ITERATION_LIMITS = { min: MIN_LOOP_ITERATIONS, max: MAX_LOOP_ITERATIONS };
@@ -52,6 +58,7 @@ export function LoopFields({
                 carry={config.carry}
                 onChange={(carry) => onChange({ carry })}
             />
+            <LoopExhaustedDiagram maxIterations={config.maxIterations} />
         </>
     );
 }
@@ -61,7 +68,7 @@ function CarryPortSwitches({
     carry,
     onChange,
 }: {
-    options: string[];
+    options: CarryOption[];
     carry: string[];
     onChange: (carry: string[]) => void;
 }): JSX.Element {
@@ -76,10 +83,10 @@ function CarryPortSwitches({
             {options.length === 0 && (
                 <p className="text-xs text-muted">Nenhuma porta de saída dentro do loop.</p>
             )}
-            {options.map((port) => (
+            {options.map(({ port, label }) => (
                 <Switch
                     key={port}
-                    label={`Levar ${port}`}
+                    label={label}
                     checked={carry.includes(port)}
                     onChange={(shouldCarry) => toggleCarry(port, shouldCarry)}
                 />
@@ -89,10 +96,32 @@ function CarryPortSwitches({
 }
 
 // Ports already carried stay listed even if no node inside produces them anymore.
-function listCarryOptions(graph: FlowGraph, loop: LoopGroup): string[] {
-    const outputNames = nodesInsideGroup(graph, loop.id).flatMap((node) =>
-        node.outputs.map((port) => port.name),
-    );
+function listCarryOptions(graph: FlowGraph, loop: LoopGroup): CarryOption[] {
+    const loopNodes = nodesInsideGroup(graph, loop.id);
+    const outputNames = loopNodes.flatMap((node) => node.outputs.map((port) => port.name));
+    const portNames = [...new Set([...outputNames, ...loop.config.carry])];
 
-    return [...new Set([...outputNames, ...loop.config.carry])];
+    return portNames.map((port) => ({
+        port,
+        label: describeCarriedPort(
+            port,
+            loopNodes.filter((node) => producesPort(node, port)),
+        ),
+    }));
+}
+
+function producesPort(node: FlowNode, portName: string): boolean {
+    return node.outputs.some((port) => port.name === portName);
+}
+
+// Named like the Dados tab names the port, with the nodes of the loop that produce it.
+function describeCarriedPort(portName: string, producers: FlowNode[]): string {
+    const [firstProducer] = producers;
+    const producedPort = firstProducer?.outputs.find((port) => port.name === portName);
+    if (!firstProducer || !producedPort) {
+        return `Levar ${portName}`;
+    }
+
+    const producerLabels = producers.map((node) => node.label).join(", ");
+    return `Levar ${labelPort(firstProducer.type, producedPort)} (${producerLabels})`;
 }
