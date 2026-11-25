@@ -24,6 +24,21 @@ jobs:
 
             - run: npm ci
 
+            # The tag that triggered the release decides the published version ("0.2.0" or "v0.2.0"),
+            # so package.json never has to be bumped by hand before tagging.
+            - name: Set the package version from the tag
+              env:
+                  REF_TYPE: ${{ github.ref_type }}
+                  REF_NAME: ${{ github.ref_name }}
+              run: |
+                  if [ "$REF_TYPE" != "tag" ]; then
+                      echo "::error::Run the Release workflow on a tag (e.g. 0.2.0), not on the branch $REF_NAME."
+                      exit 1
+                  fi
+                  version="${REF_NAME#v}"
+                  npm version "$version" --no-git-tag-version --allow-same-version
+                  echo "Publishing version $(node -p 'require("./package.json").version')"
+
             - run: npm run typecheck
 
             - run: npm run lint
