@@ -25,7 +25,7 @@ const DEPS: ToolProfileMaterializationDeps = {
     runtimeDir: RUNTIME_DIR,
     credentialEnv: (id) =>
         id === GITHUB_CREDENTIAL_ID ? { envVar: "GH_TOKEN", value: GITHUB_TOKEN } : undefined,
-    hasPackageJson: false,
+    packageManager: null,
 };
 
 function preset(id: string): ToolProfile {
@@ -111,7 +111,7 @@ describe("materializeToolProfile", () => {
     });
 
     it("installs the dependencies first when the repository has a package.json", () => {
-        const deps = { ...DEPS, hasPackageJson: true };
+        const deps = { ...DEPS, packageManager: "npm" as const };
 
         const materialization = materializeToolProfile(preset(CODEGRAPH_PRESET_ID), deps);
 
@@ -120,6 +120,21 @@ describe("materializeToolProfile", () => {
             "codegraph init --yes",
         ]);
     });
+
+    it.each([
+        ["pnpm", "COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm install"],
+        ["yarn", "COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack yarn install"],
+        ["bun", "bun install"],
+    ] as const)(
+        "installs the dependencies with %s when the repository uses it",
+        (manager, command) => {
+            const deps = { ...DEPS, packageManager: manager };
+
+            const materialization = materializeToolProfile(preset(DEFAULT_PRESET_ID), deps);
+
+            expect(materialization.setupCommands.map((setup) => setup.command)).toEqual([command]);
+        },
+    );
 
     it("keeps the credential out of the MCP file and passes its value through the env", () => {
         const profile = profileWithGithubMcp({
@@ -183,7 +198,7 @@ describe("workspaceSetupCommands", () => {
             preset(CODEGRAPH_PRESET_ID),
         ];
 
-        const commands = workspaceSetupCommands(profiles, { hasPackageJson: true });
+        const commands = workspaceSetupCommands(profiles, { packageManager: "npm" });
 
         expect(commands.map(({ command }) => command)).toEqual(["npm i", "codegraph init --yes"]);
     });

@@ -25,8 +25,11 @@ export interface CredentialEnv {
     value: string;
 }
 
+export type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
+
 export interface RepositoryFacts {
-    hasPackageJson: boolean;
+    /** The manager that installs the repository dependencies; null when there is no package.json. */
+    packageManager: PackageManager | null;
 }
 
 export interface ToolProfileMaterializationDeps extends RepositoryFacts {
@@ -43,7 +46,14 @@ export class UnknownCredentialError extends AgentRuntimeError {
 }
 
 const MS_PER_MINUTE = 60_000;
-const INSTALL_DEPENDENCIES: SetupCommand = { command: "npm i", timeoutMs: 15 * MS_PER_MINUTE };
+const INSTALL_TIMEOUT_MS = 15 * MS_PER_MINUTE;
+// Corepack asks before it downloads pnpm or yarn; there is no one to answer in the container.
+const INSTALL_COMMANDS: Record<PackageManager, string> = {
+    npm: "npm i",
+    pnpm: "COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm install",
+    yarn: "COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack yarn install",
+    bun: "bun install",
+};
 const INDEX_WITH_CODEGRAPH: SetupCommand = {
     command: "codegraph init --yes",
     timeoutMs: 15 * MS_PER_MINUTE,
@@ -187,7 +197,14 @@ function envOf(credentials: Map<string, CredentialEnv>): Record<string, string> 
 
 function setupCommandsOf(profile: ToolProfile, repository: RepositoryFacts): SetupCommand[] {
     return [
-        ...(repository.hasPackageJson ? [INSTALL_DEPENDENCIES] : []),
+        ...(repository.packageManager
+            ? [
+                  {
+                      command: INSTALL_COMMANDS[repository.packageManager],
+                      timeoutMs: INSTALL_TIMEOUT_MS,
+                  },
+              ]
+            : []),
         ...(profile.indexCodegraphOnStart ? [INDEX_WITH_CODEGRAPH] : []),
     ];
 }
