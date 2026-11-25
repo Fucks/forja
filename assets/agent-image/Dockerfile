@@ -33,6 +33,28 @@ ENV CODEGRAPH_TELEMETRY=0
 ENV CODEGRAPH_MCP_TOOLS=explore,node,search,callers,callees,impact,files
 RUN npm install -g @colbymchenry/codegraph@1.6.2
 
+# RTK compacts the output of the agents' shell commands before Claude reads it. Only the Apache-2.0
+# "rtk-oss" edition: the full one bundles rtk-engine under BUSL-1.1. Telemetry is blocked even if
+# something asks for consent. --build-arg INSTALL_RTK=false leaves out RTK and its hook.
+ARG INSTALL_RTK=true
+ARG RTK_VERSION=1.2.1
+ARG RTK_SHA256_AMD64=44aa460c4827d206d11405c652832c9f7082edccfbc3a9f15a69a851e8a9e8b4
+ARG RTK_SHA256_ARM64=b01860ae2d3f44e0f7fc4431a95dd66b29b4bd87ec7f5e60aff13681b05db5dd
+ENV RTK_TELEMETRY_DISABLED=1
+RUN if [ "$INSTALL_RTK" = "true" ]; then \
+      case "$(dpkg --print-architecture)" in \
+        amd64) target=x86_64-unknown-linux-musl; sha256=$RTK_SHA256_AMD64 ;; \
+        arm64) target=aarch64-unknown-linux-musl; sha256=$RTK_SHA256_ARM64 ;; \
+        *) echo "RTK has no build for $(dpkg --print-architecture)" >&2; exit 1 ;; \
+      esac; \
+      archive=/tmp/rtk-oss.tar.gz; \
+      curl -fsSL -o "$archive" \
+        "https://github.com/rtk-ai/rtk/releases/download/v$RTK_VERSION/rtk-oss-$target.tar.gz" \
+      && echo "$sha256  $archive" | sha256sum -c - \
+      && tar -xzf "$archive" -C /usr/local/bin rtk \
+      && rm "$archive"; \
+    fi
+
 # Forja passes the host user's UID/GID, so files written in the container and in the
 # bind-mounted worktree share an owner without a chown at runtime.
 ARG AGENT_UID=1000
@@ -44,6 +66,10 @@ USER ${AGENT_UID}:${AGENT_GID}
 
 RUN curl -fsSL https://claude.ai/install.sh | bash
 ENV PATH="/home/agent/.local/bin:$PATH"
+
+# Registers the "rtk hook claude" PreToolUse hook in /home/agent/.claude/settings.json, which
+# rewrites "git status" to "rtk git status". Without a TTY, init only patches it with --auto-patch.
+RUN if [ "$INSTALL_RTK" = "true" ]; then rtk init --global --auto-patch; fi
 
 # Trust the bind-mounted worktree so .claude/settings.json permissions load without the dialog.
 RUN f=/home/agent/.claude.json; [ -f "$f" ] || echo '{}' > "$f"; \
