@@ -7,7 +7,7 @@ export function buildRunToolProfiles(): RunToolProfiles {
     return {
         profileOf: defaultPreset,
         credentialEnv: () => undefined,
-        hasPackageJson: false,
+        packageManager: null,
         workspaceSetupCommands: [],
     };
 }

@@ -13,10 +13,8 @@ import {
 
 const ISSUE_1 = buildIssueSnapshot(1);
 const GITHUB_TOKEN = "ghp_super-secret-token";
-const PACKAGE_JSON_OF_TEST_PROJECT = path.join(
-    buildProject({ id: TEST_PROJECT_ID }).repoPath,
-    "package.json",
-);
+const REPO_OF_TEST_PROJECT = buildProject({ id: TEST_PROJECT_ID }).repoPath;
+const PACKAGE_JSON_OF_TEST_PROJECT = path.join(REPO_OF_TEST_PROJECT, "package.json");
 
 describe("executor tool profiles", () => {
     let bed: ExecutorTestBed;
@@ -147,5 +145,17 @@ describe("executor tool profiles", () => {
             "npm i",
             "codegraph init --yes",
         ]);
+    });
+
+    it("installs the dependencies with the package manager of the lockfile", async () => {
+        bed.existingFiles.add(PACKAGE_JSON_OF_TEST_PROJECT);
+        bed.existingFiles.add(path.join(REPO_OF_TEST_PROJECT, "pnpm-lock.yaml"));
+
+        await runToTheEnd(buildCanonicalFlow());
+
+        const [opened] = bed.runtime.openedSpecs;
+        expect(opened?.setupCommands[0]?.command).toBe(
+            "COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm install",
+        );
     });
 });

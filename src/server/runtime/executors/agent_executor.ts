@@ -128,7 +128,7 @@ function materializeNodeToolProfile(
         nodeId: node.id,
         runtimeDir,
         credentialEnv: (id) => toolProfiles.credentialEnv(id),
-        hasPackageJson: toolProfiles.hasPackageJson,
+        packageManager: toolProfiles.packageManager,
     });
 }
 

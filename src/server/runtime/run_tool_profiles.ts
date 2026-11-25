@@ -6,6 +6,7 @@ import {
     credentialIdsReferencedBy,
     workspaceSetupCommands,
     type CredentialEnv,
+    type PackageManager,
 } from "@/integrations/agent_runtime/tool_profile_materializer.js";
 import type { CredentialService } from "@/server/credentials/credential_service.js";
 import { NotFoundError } from "@/server/errors.js";
@@ -22,7 +23,7 @@ export interface RunToolProfiles {
     /** The node's own profile, or the project's default one. */
     profileOf(node: AgentNode): ToolProfile;
     credentialEnv(id: string): CredentialEnv | undefined;
-    hasPackageJson: boolean;
+    packageManager: PackageManager | null;
     /** The union of the profiles of the nodes that run in the item workspace. */
     workspaceSetupCommands: SetupCommand[];
 }
@@ -40,6 +41,13 @@ export interface RunToolProfilesSource {
 }
 
 const PACKAGE_JSON = "package.json";
+// Checked in order: a repository with no known lockfile installs with npm.
+const LOCKFILES: [string, PackageManager][] = [
+    ["pnpm-lock.yaml", "pnpm"],
+    ["yarn.lock", "yarn"],
+    ["bun.lock", "bun"],
+    ["bun.lockb", "bun"],
+];
 
 /** @throws NotFoundError for a profile or a credential that no longer exists */
 export async function loadRunToolProfiles(
@@ -51,18 +59,30 @@ export async function loadRunToolProfiles(
         resolveAgentDefaults(source.settings, node.config).toolProfileId;
     const profiles = await loadProfiles(agentNodes.map(profileIdOf), deps);
     const credentials = await revealCredentials([...profiles.values()], deps);
-    const hasPackageJson = deps.fileExists(path.join(source.project.repoPath, PACKAGE_JSON));
+    const packageManager = detectPackageManager(source.project.repoPath, deps);
     const profileOf = (node: AgentNode): ToolProfile => findProfile(profiles, profileIdOf(node));
     const itemWorkspaceNodes = agentNodes.filter((node) => node.config.workspace === "item");
 
     return {
         profileOf,
         credentialEnv: (id) => credentials.get(id),
-        hasPackageJson,
+        packageManager,
         workspaceSetupCommands: workspaceSetupCommands(itemWorkspaceNodes.map(profileOf), {
-            hasPackageJson,
+            packageManager,
         }),
     };
+}
+
+function detectPackageManager(
+    repoPath: string,
+    deps: Pick<RunToolProfilesDeps, "fileExists">,
+): PackageManager | null {
+    if (!deps.fileExists(path.join(repoPath, PACKAGE_JSON))) {
+        return null;
+    }
+    const lockfile = LOCKFILES.find(([name]) => deps.fileExists(path.join(repoPath, name)));
+
+    return lockfile ? lockfile[1] : "npm";
 }
 
 async function loadProfiles(
