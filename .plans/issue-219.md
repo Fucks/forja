@@ -21,5 +21,5 @@
 
 - [x] 1. Install the pinned `rtk-oss` binary behind `ARG INSTALL_RTK=true` with telemetry off — `assets/agent-image/Dockerfile`
 - [x] 2. Register the Claude Code hook as `agent` with `rtk init --global --auto-patch` — `assets/agent-image/Dockerfile`
-- [ ] 3. Agent image guide (what RTK does, how to turn it off, how to run a command unfiltered) — `docs/imagem-agente.md`, `README.md`
+- [x] 3. Agent image guide (what RTK does, how to turn it off, how to run a command unfiltered) — `docs/imagem-agente.md`, `README.md`
 - [ ] 4. Self-review checklist and feedback loops (typecheck, lint, test)

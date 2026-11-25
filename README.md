@@ -54,10 +54,12 @@ Nas **Configurações** do projeto, escolha a credencial padrão do Claude e a d
 Os agentes rodam na imagem `forja-agent:latest` (configurável por projeto). Nas **Configurações** do projeto,
 no painel da imagem do agente, clique em **Construir imagem**; o log do `docker build` aparece ao vivo.
 
-A Forja usa o Dockerfile padrão dela (Node 22, git, gh, CodeGraph e o Claude Code). Se o repositório tiver
-um `.sandcastle/Dockerfile`, ele é usado no lugar. Um Dockerfile próprio precisa manter o contrato descrito
-no começo de `assets/agent-image/Dockerfile`: um usuário `agent` com o UID/GID do host, o worktree em
-`/home/agent/workspace` e um container que só dorme, porque a Forja roda cada nó com `docker exec`.
+A Forja usa o Dockerfile padrão dela (Node 22, git, gh, CodeGraph, o Claude Code e o RTK, que compacta a
+saída dos comandos para gastar menos tokens; veja o [guia da imagem do agente](docs/imagem-agente.md)).
+Se o repositório tiver um `.sandcastle/Dockerfile`, ele é usado no lugar. Um Dockerfile próprio precisa
+manter o contrato descrito no começo de `assets/agent-image/Dockerfile`: um usuário `agent` com o UID/GID do
+host, o worktree em `/home/agent/workspace` e um container que só dorme, porque a Forja roda cada nó com
+`docker exec`.
 
 ## Criar um fluxo pela "Fábrica básica"
 
