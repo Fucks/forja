@@ -3,6 +3,8 @@ export interface CommandResult {
     stdout: string;
     stderr: string;
     timedOut: boolean;
+    /** The executable does not exist on the PATH, so the process never ran. */
+    notFound: boolean;
 }
 
 export type LineListener = (line: string) => void;

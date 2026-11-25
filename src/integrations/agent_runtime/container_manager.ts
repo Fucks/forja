@@ -4,6 +4,7 @@ import {
     AgentCanceledError,
     AgentTimeoutError,
     assertCommandSucceeded,
+    WorkspaceError,
 } from "@/integrations/agent_runtime/agent_errors.js";
 import type {
     CommandResult,
@@ -76,6 +77,10 @@ const EXEC_ID_VARIABLE = "FORJA_EXEC_ID";
 const OUTPUT_TAIL_CHARS = 4_000;
 const DOCKER_RUN_TIMEOUT_MS = 600_000;
 const DOCKER_COMMAND_TIMEOUT_MS = 30_000;
+const DOCKER_NOT_FOUND_HINT =
+    "o comando docker não foi encontrado. Instale o Docker e confira se ele está no PATH deste terminal";
+const DOCKER_TIMEOUT_HINT =
+    "o Docker não respondeu a tempo. Confira se o Docker Desktop (ou o serviço docker) está rodando e se `docker ps` responde";
 const NO_SUCH_CONTAINER_MESSAGE = "No such container";
 const LIST_FORMAT = "{{.ID}}\t{{.Labels}}";
 const LABEL_SEPARATOR = ",";
@@ -125,7 +130,7 @@ export function createContainerManager(
     return {
         async start(input) {
             const result = await runDocker(buildRunArgs(input), DOCKER_RUN_TIMEOUT_MS);
-            assertCommandSucceeded(result, `Não foi possível iniciar o container ${input.name}`);
+            assertDockerSucceeded(result, `Não foi possível iniciar o container ${input.name}`);
 
             return { id: result.stdout.trim() };
         },
@@ -160,7 +165,7 @@ export function createContainerManager(
                 return;
             }
 
-            assertCommandSucceeded(result, `Não foi possível remover o container ${id}`);
+            assertDockerSucceeded(result, `Não foi possível remover o container ${id}`);
         },
 
         async list(labels) {
@@ -171,11 +176,23 @@ export function createContainerManager(
                 "--format",
                 LIST_FORMAT,
             ]);
-            assertCommandSucceeded(result, "Não foi possível listar os containers da Forja");
+            assertDockerSucceeded(result, "Não foi possível listar os containers da Forja");
 
             return parseContainerList(result.stdout);
         },
     };
+}
+
+/** Explains the failures docker leaves without a stderr: a missing binary and a timeout. */
+function assertDockerSucceeded(result: CommandResult, failureMessage: string): void {
+    if (result.notFound) {
+        throw new WorkspaceError(`${failureMessage}: ${DOCKER_NOT_FOUND_HINT}`);
+    }
+    if (result.timedOut) {
+        throw new WorkspaceError(`${failureMessage}: ${DOCKER_TIMEOUT_HINT}`);
+    }
+
+    assertCommandSucceeded(result, failureMessage);
 }
 
 export function wrapWithExecMarker(command: string[], execId: string): string[] {

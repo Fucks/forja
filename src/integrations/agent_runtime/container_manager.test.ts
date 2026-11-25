@@ -339,4 +339,30 @@ describe("ContainerManager.list", () => {
 
         await expect(listing).rejects.toThrow(WorkspaceError);
     });
+
+    it("says docker is missing when the docker command is not on the PATH", async () => {
+        const commands = new FakeCommandRunner();
+        commands
+            .when("docker", ["ps", "-a", "--filter", "label=forja.workspace", ...LIST_FORMAT])
+            .returns({ exitCode: -1, notFound: true });
+
+        const listing = createManager(commands).list({ "forja.workspace": "" });
+
+        await expect(listing).rejects.toThrow(
+            "Não foi possível listar os containers da Forja: o comando docker não foi encontrado",
+        );
+    });
+
+    it("says docker did not answer when the docker command times out", async () => {
+        const commands = new FakeCommandRunner();
+        commands
+            .when("docker", ["ps", "-a", "--filter", "label=forja.workspace", ...LIST_FORMAT])
+            .returns({ exitCode: -1, timedOut: true });
+
+        const listing = createManager(commands).list({ "forja.workspace": "" });
+
+        await expect(listing).rejects.toThrow(
+            "Não foi possível listar os containers da Forja: o Docker não respondeu a tempo",
+        );
+    });
 });

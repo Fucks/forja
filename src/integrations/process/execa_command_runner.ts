@@ -10,6 +10,7 @@ import type {
 // execa leaves exitCode undefined when the process never ran or was killed (timeout, abort).
 const NO_EXIT_CODE = -1;
 const BUFFER_ONLY = "pipe";
+const EXECUTABLE_NOT_FOUND_CODE = "ENOENT";
 
 export class ExecaCommandRunner implements CommandRunner {
     async run(command: string, args: string[], options: CommandOptions): Promise<CommandResult> {
@@ -31,6 +32,7 @@ export class ExecaCommandRunner implements CommandRunner {
             stdout: result.stdout,
             stderr: result.stderr,
             timedOut: result.timedOut,
+            notFound: "code" in result && result.code === EXECUTABLE_NOT_FOUND_CODE,
         };
     }
 }

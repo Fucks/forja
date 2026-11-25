@@ -40,7 +40,7 @@ class EndlessBuildRunner implements CommandRunner {
         return new Promise((resolve) => {
             options.signal?.addEventListener("abort", () => {
                 this.markAborted();
-                resolve({ exitCode: KILLED_EXIT_CODE, stdout: "", stderr: "", timedOut: false });
+                resolve({ exitCode: KILLED_EXIT_CODE, stdout: "", stderr: "", timedOut: false, notFound: false });
             });
         });
     }
