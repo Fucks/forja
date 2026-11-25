@@ -57,7 +57,7 @@ function replayLines(output: string, listener: LineListener | undefined): void {
 }
 
 function buildCommandResult(overrides: Partial<CommandResult> = {}): CommandResult {
-    return { exitCode: 0, stdout: "", stderr: "", timedOut: false, ...overrides };
+    return { exitCode: 0, stdout: "", stderr: "", timedOut: false, notFound: false, ...overrides };
 }
 
 function buildUnscriptedResult(command: string, args: string[]): CommandResult {

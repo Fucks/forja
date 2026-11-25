@@ -9,7 +9,13 @@ describe("FakeCommandRunner", () => {
 
         const result = await commands.run("git", ["branch", "--show-current"], OPTIONS);
 
-        expect(result).toEqual({ exitCode: 0, stdout: "main", stderr: "", timedOut: false });
+        expect(result).toEqual({
+            exitCode: 0,
+            stdout: "main",
+            stderr: "",
+            timedOut: false,
+            notFound: false,
+        });
     });
 
     it("fails a command that was not scripted", async () => {
