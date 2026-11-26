@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { copyFile, mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 
 import { assertCommandSucceeded } from "@/integrations/agent_runtime/agent_errors.js";
@@ -27,29 +29,59 @@ const GIT_WORKTREE_TIMEOUT_MS = 120_000;
 const BRANCH_SEPARATOR = "/";
 const BRANCH_SEPARATOR_IN_DIR_NAME = "__";
 
+// Every worktree is locked because the agent's container mounts it somewhere other than its host
+// path: a `git worktree prune` run there sees the registered path as missing and drops the
+// registration. A locked worktree is never pruned.
+const LOCK_FLAG = "--lock";
+const NO_CHECKOUT_FLAG = "--no-checkout";
+const GIT_DIR_FILE = ".git";
+const REATTACH_STAGING_PREFIX = ".reattach-";
+const PORCELAIN_BLOCK_SEPARATOR = /\n\s*\n/;
+const PORCELAIN_LOCKED_LINE = /^locked( |$)/m;
+
+interface WorktreeRegistration {
+    locked: boolean;
+}
+
 export function createWorktreeManager(commands: CommandRunner): WorktreeManager {
     const git = new CliGitProvider(commands);
 
-    function runGit(repoPath: string, args: string[]): Promise<CommandResult> {
-        return commands.run("git", args, { cwd: repoPath, timeoutMs: GIT_WORKTREE_TIMEOUT_MS });
+    function runGit(cwd: string, args: string[]): Promise<CommandResult> {
+        return commands.run("git", args, { cwd, timeoutMs: GIT_WORKTREE_TIMEOUT_MS });
     }
 
-    async function isRegistered(repoPath: string, worktreePath: string): Promise<boolean> {
+    async function findRegistration(
+        repoPath: string,
+        worktreePath: string,
+    ): Promise<WorktreeRegistration | undefined> {
         const result = await runGit(repoPath, ["worktree", "list", "--porcelain"]);
         assertCommandSucceeded(result, "Não foi possível listar os worktrees do repositório");
 
-        return parseWorktreePaths(result.stdout).some((registeredPath) =>
-            isSamePath(registeredPath, worktreePath),
-        );
+        const block = result.stdout
+            .split(PORCELAIN_BLOCK_SEPARATOR)
+            .find((candidate) =>
+                parseWorktreePaths(candidate).some((registeredPath) =>
+                    isSamePath(registeredPath, worktreePath),
+                ),
+            );
+
+        return block === undefined ? undefined : { locked: PORCELAIN_LOCKED_LINE.test(block) };
+    }
+
+    async function lock(repoPath: string, worktreePath: string): Promise<void> {
+        const result = await runGit(repoPath, ["worktree", "lock", worktreePath]);
+        assertCommandSucceeded(result, `Não foi possível travar o worktree ${worktreePath}`);
     }
 
     async function addOnExistingBranch(
         input: EnsureWorktreeInput,
         worktreePath: string,
+        flags: string[],
     ): Promise<void> {
         const result = await runGit(input.repoPath, [
             "worktree",
             "add",
+            ...flags,
             worktreePath,
             input.branch,
         ]);
@@ -59,9 +91,13 @@ export function createWorktreeManager(commands: CommandRunner): WorktreeManager 
         );
     }
 
-    async function addOnNewBranch(input: EnsureWorktreeInput, worktreePath: string): Promise<void> {
+    async function addOnNewBranch(
+        input: EnsureWorktreeInput,
+        worktreePath: string,
+        flags: string[],
+    ): Promise<void> {
         const { repoPath, branch, baseBranch } = input;
-        const addArgs = ["worktree", "add", "-b", branch, worktreePath];
+        const addArgs = ["worktree", "add", ...flags, "-b", branch, worktreePath];
 
         const fromOriginBase = await runGit(repoPath, [...addArgs, `origin/${baseBranch}`]);
         if (commandSucceeded(fromOriginBase)) {
@@ -75,27 +111,76 @@ export function createWorktreeManager(commands: CommandRunner): WorktreeManager 
         );
     }
 
+    async function add(
+        input: EnsureWorktreeInput,
+        worktreePath: string,
+        flags: string[],
+    ): Promise<void> {
+        if (await git.branchExists(input.repoPath, input.branch)) {
+            await addOnExistingBranch(input, worktreePath, flags);
+        } else {
+            await addOnNewBranch(input, worktreePath, flags);
+        }
+    }
+
+    // `git worktree add` refuses a directory that exists, so git registers an empty staging
+    // directory with the same name and `repair` moves that registration onto the old directory,
+    // keeping its files (uncommitted work, node_modules) as they are.
+    async function reattach(input: EnsureWorktreeInput, worktreePath: string): Promise<void> {
+        const stagingDir = await mkdtemp(path.join(input.worktreesDir, REATTACH_STAGING_PREFIX));
+        const stagingPath = path.join(stagingDir, path.basename(worktreePath));
+
+        try {
+            await add(input, stagingPath, [LOCK_FLAG, NO_CHECKOUT_FLAG]);
+            await copyFile(
+                path.join(stagingPath, GIT_DIR_FILE),
+                path.join(worktreePath, GIT_DIR_FILE),
+            );
+
+            const repaired = await runGit(input.repoPath, ["worktree", "repair", worktreePath]);
+            assertCommandSucceeded(
+                repaired,
+                `Não foi possível registrar de novo o worktree ${worktreePath}`,
+            );
+
+            const indexed = await runGit(worktreePath, ["reset", "--quiet"]);
+            assertCommandSucceeded(
+                indexed,
+                `Não foi possível recriar o índice do worktree ${worktreePath}`,
+            );
+        } finally {
+            await rm(stagingDir, { recursive: true, force: true });
+        }
+    }
+
     return {
         async ensure(input) {
             const worktreePath = worktreePathFor(input.worktreesDir, input.branch);
-            if (await isRegistered(input.repoPath, worktreePath)) {
+            const registration = await findRegistration(input.repoPath, worktreePath);
+
+            if (registration) {
+                if (!registration.locked) {
+                    await lock(input.repoPath, worktreePath);
+                }
                 return { path: worktreePath, created: false };
             }
 
-            if (await git.branchExists(input.repoPath, input.branch)) {
-                await addOnExistingBranch(input, worktreePath);
-            } else {
-                await addOnNewBranch(input, worktreePath);
+            if (existsSync(worktreePath)) {
+                await reattach(input, worktreePath);
+                return { path: worktreePath, created: false };
             }
 
+            await add(input, worktreePath, [LOCK_FLAG]);
             return { path: worktreePath, created: true };
         },
 
         async remove(repoPath, worktreePath) {
-            if (await isRegistered(repoPath, worktreePath)) {
+            if (await findRegistration(repoPath, worktreePath)) {
+                // Passing --force twice is what lets git remove a locked worktree.
                 const result = await runGit(repoPath, [
                     "worktree",
                     "remove",
+                    "--force",
                     "--force",
                     worktreePath,
                 ]);

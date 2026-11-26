@@ -96,7 +96,9 @@ Diferenças que importam na migração:
   `{{BASE_BRANCH}}` → `{{project.baseBranch}}`. As diretivas `` !`…` `` continuam: a Forja as executa no
   workspace do item antes de enviar o prompt.
 - O branch de cada issue é `forja/issue-<número>`, num worktree em `~/.forja/worktrees/` montado num container
-  por item.
+  por item. O worktree é criado travado (`git worktree lock`): no container ele fica em outro caminho, e um
+  `git worktree prune` rodado lá dentro apagaria o registro. Se o registro sumir mesmo assim, a Forja registra o
+  diretório de novo no mesmo lugar, sem perder o que não foi commitado.
 - As screenshots da evidência ficam em `.pr-evidence/screenshots/`, mas a Forja não as envia ao PR.
 - Quando o limite de uso do Claude é atingido, a run pausa e retoma sozinha depois do reset mais a
   "Margem após o limite de uso" das **Configurações do projeto**; o `tokenBudgetPerWindow` vira o orçamento por
