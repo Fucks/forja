@@ -141,7 +141,7 @@ function scriptHealthyHost(commands: FakeCommandRunner): void {
         .when("git", ["worktree", "list", "--porcelain"])
         .returns({ stdout: `worktree ${REPO_PATH}\n` });
     commands.when("git", ["show-ref", "--verify", "--quiet", `refs/heads/${BRANCH}`]).returns({});
-    commands.when("git", ["worktree", "add", worktreePath, BRANCH]).returns({});
+    commands.when("git", ["worktree", "add", "--lock", worktreePath, BRANCH]).returns({});
     commands.when("git", ["rev-parse", "--git-common-dir"]).returns({ stdout: ".git\n" });
     commands.when("git", ["worktree", "prune"]).returns({});
     commands.when("docker", isDocker("run")).returns({ stdout: `${CONTAINER_ID}\n` });
@@ -155,8 +155,8 @@ function scriptHealthyHost(commands: FakeCommandRunner): void {
 function scriptRegisteredWorktree(commands: FakeCommandRunner): void {
     commands
         .when("git", ["worktree", "list", "--porcelain"])
-        .returns({ stdout: `worktree ${REPO_PATH}\n\nworktree ${worktreePath}\n` });
-    commands.when("git", ["worktree", "remove", "--force", worktreePath]).returns({});
+        .returns({ stdout: `worktree ${REPO_PATH}\n\nworktree ${worktreePath}\nlocked\n` });
+    commands.when("git", ["worktree", "remove", "--force", "--force", worktreePath]).returns({});
 }
 
 function createRuntime(
@@ -201,7 +201,13 @@ describe("DockerAgentRuntime.openWorkspace", () => {
         );
 
         expect(workspace).toMatchObject({ id: WORKSPACE_ID, branch: BRANCH, root: worktreePath });
-        expect(argsOf(commands, "git")).toContainEqual(["worktree", "add", worktreePath, BRANCH]);
+        expect(argsOf(commands, "git")).toContainEqual([
+            "worktree",
+            "add",
+            "--lock",
+            worktreePath,
+            BRANCH,
+        ]);
         expect(dockerRunArgs(commands)).toEqual([
             "run",
             "-d",
@@ -257,7 +263,7 @@ describe("DockerAgentRuntime.openWorkspace", () => {
             .when("git", ["show-ref", "--verify", "--quiet", `refs/heads/${BRANCH}`])
             .returns({ exitCode: 1 });
         commands
-            .when("git", ["worktree", "add", "-b", BRANCH, worktreePath, "origin/main"])
+            .when("git", ["worktree", "add", "--lock", "-b", BRANCH, worktreePath, "origin/main"])
             .returns({});
 
         await createRuntime(commands).openWorkspace(workspaceSpec(), SILENT_HOOKS, neverAborted());
@@ -265,6 +271,7 @@ describe("DockerAgentRuntime.openWorkspace", () => {
         expect(argsOf(commands, "git")).toContainEqual([
             "worktree",
             "add",
+            "--lock",
             "-b",
             BRANCH,
             worktreePath,
@@ -603,6 +610,7 @@ describe("DockerAgentRuntime workspace", () => {
         expect(argsOf(commands, "git")).toContainEqual([
             "worktree",
             "remove",
+            "--force",
             "--force",
             worktreePath,
         ]);
